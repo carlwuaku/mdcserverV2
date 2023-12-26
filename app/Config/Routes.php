@@ -17,7 +17,7 @@ $routes->group("api", ["namespace" => "App\Controllers"], function(RouteCollecti
     $routes->post("register", [AuthController::class,"register"]);
     $routes->post("login", [AuthController::class,"login"]);
     $routes->get("profile", [AuthController::class,"profile"], ["filter" => "apiauth"]);
-    $routes->post("logout", [AuthController::class,"logout"], ["filter" => "apiauth"]);
+    $routes->get("logout", [AuthController::class,"logout"], ["filter" => "apiauth"]);
 });
 
 service('auth')->routes($routes);

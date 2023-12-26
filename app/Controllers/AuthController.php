@@ -19,15 +19,8 @@ class AuthController extends ResourceController
         ];
         if (!$this->validate($rules)) {
             return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
-            // $response = [
-            //     "status" => false,
-            //     "message" => $this->validator->getErrors(),
-            //     "data" => []
-            // ];
+
         }
-
-        // $data = $this->validator->getValidated();
-
         $userObject = new UserModel();
         $userEntityObject = new User(
             [
@@ -56,38 +49,34 @@ class AuthController extends ResourceController
             "password" => "required"
         ];
         if (!$this->validate($rules)) {
+            return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
+        }
+        // success
+        $credentials = [
+            "email" => $this->request->getVar("email"),
+            "password" => $this->request->getVar("password")
+        ];
+
+        $loginAttempt = auth()->attempt($credentials);
+        if (!$loginAttempt->isOK()) {
             $response = [
                 "status" => false,
-                "message" => $this->validator->getErrors(),
+                "message" => "Invalid login details",
                 "data" => []
             ];
         } else {
-            // success
-            $credentials = [
-                "email" => $this->request->getVar("email"),
-                "password" => $this->request->getVar("password")
+            $userObject = new UserModel();
+            $userData = $userObject->findById(auth()->id());
+            $token = $userData->generateAccessToken("somesecretkey");
+            $response = [
+                "status" => true,
+                "message" => "User logged in successfully",
+                "data" => [
+                    "token" => $token->raw_token
+                ]
             ];
-
-            $loginAttempt = auth()->attempt($credentials);
-            if (!$loginAttempt->isOK()) {
-                $response = [
-                    "status" => false,
-                    "message" => "Invalid login details",
-                    "data" => []
-                ];
-            } else {
-                $userObject = new UserModel();
-                $userData = $userObject->findById(auth()->id());
-                $token = $userData->generateAccessToken("somesecretkey");
-                $response = [
-                    "status" => true,
-                    "message" => "User logged in successfully",
-                    "data" => [
-                        "token" => $token->raw_token
-                    ]
-                ];
-            }
         }
+
         return $this->respondCreated($response);
     }
 
@@ -122,12 +111,10 @@ class AuthController extends ResourceController
     public function accessDenied()
     {
         return $this->respond(['message' => "You're not logged in"], ResponseInterface::HTTP_UNAUTHORIZED);
-        // return $this->respondCreated([
-        //     "status" => false,
-        //     "message" => "Invalid access",
-        //     "data" => []
-        // ]);
+        
     }
+
+    
     /**
      * Return an array of resource objects, themselves in array format
      *
