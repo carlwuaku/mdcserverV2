@@ -16,6 +16,7 @@ $routes->group("api", ["namespace" => "App\Controllers"], function(RouteCollecti
     $routes->get("invalid-access", [AuthController::class, "accessDenied"]);
     $routes->post("register", [AuthController::class,"register"]);
     $routes->post("login", [AuthController::class,"login"]);
+    $routes->post("mobile_login", [AuthController::class,"mobileLogin"]);
     $routes->get("profile", [AuthController::class,"profile"], ["filter" => "apiauth"]);
     $routes->get("logout", [AuthController::class,"logout"], ["filter" => "apiauth"]);
 });
