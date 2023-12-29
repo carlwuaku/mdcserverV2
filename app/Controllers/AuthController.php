@@ -2,10 +2,13 @@
 
 namespace App\Controllers;
 
+use App\Models\PermissionsModel;
+use App\Models\RolePermissionsModel;
+use App\Models\RolesModel;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
-use CodeIgniter\Shield\Models\UserModel;
 use CodeIgniter\Shield\Entities\User;
+use App\Models\UsersModel;
 
 class AuthController extends ResourceController
 {
@@ -21,7 +24,7 @@ class AuthController extends ResourceController
             return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
 
         }
-        $userObject = new UserModel();
+        $userObject = new UsersModel();
         $userEntityObject = new User(
             [
                 "username" => $this->request->getVar("username"),
@@ -65,7 +68,7 @@ class AuthController extends ResourceController
                 "data" => []
             ];
         } else {
-            $userObject = new UserModel();
+            $userObject = new UsersModel();
             $userData = $userObject->findById(auth()->id());
             $token = $userData->generateAccessToken("somesecretkey");
             $response = [
@@ -83,13 +86,19 @@ class AuthController extends ResourceController
     public function profile()
     {
         $userId = auth()->id();
-        $userObject = new UserModel();
+        $userObject = new UsersModel();
         $userData = $userObject->findById($userId);
+        if(!$userData){
+            return $this->respond("User not found", ResponseInterface::HTTP_NOT_FOUND);
+        }
+        $permissionsObject = new PermissionsModel();
+        $permissions = $permissionsObject->getRolePermissions($userData->role_id, true);
         return $this->respondCreated([
             "status" => true,
             "message" => "Profile",
             "data" => [
-                "user" => $userData
+                "user" => $userData,
+                "permissions"=> $permissions
             ]
         ]);
     }
@@ -111,7 +120,7 @@ class AuthController extends ResourceController
     public function accessDenied()
     {
         return $this->respond(['message' => "You're not logged in"], ResponseInterface::HTTP_UNAUTHORIZED);
-        
+
     }
 
     public function mobileLogin()
@@ -129,20 +138,20 @@ class AuthController extends ResourceController
             ],
         ];
 
-        if (! $this->validateData($this->request->getPost(), $rules, [], config('Auth')->DBGroup)) {
+        if (!$this->validateData($this->request->getPost(), $rules, [], config('Auth')->DBGroup)) {
             return $this->response
                 ->setJSON(['errors' => $this->validator->getErrors()])
                 ->setStatusCode(401);
         }
 
         // Get the credentials for login
-        $credentials             = $this->request->getPost(setting('Auth.validFields'));
-        $credentials             = array_filter($credentials);
+        $credentials = $this->request->getPost(setting('Auth.validFields'));
+        $credentials = array_filter($credentials);
         $credentials['password'] = $this->request->getPost('password');
 
         // Attempt to login
         $result = auth()->attempt($credentials);
-        if (! $result->isOK()) {
+        if (!$result->isOK()) {
             return $this->response
                 ->setJSON(['error' => $result->reason()])
                 ->setStatusCode(401);
@@ -153,6 +162,95 @@ class AuthController extends ResourceController
 
         return $this->response
             ->setJSON(['token' => $token->raw_token]);
+    }
+
+    //add permissions to role_id, remove permission from role_id, create a role, edit a role,
+
+    public function createRole()
+    {
+        $data = $this->request->getPost();
+        $model = new RolesModel();
+        if (!$model->insert($data)) {
+            return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+        $id = $model->getInsertID();
+        return $this->respond(['message' => 'Role created successfully', 'data' => $id], ResponseInterface::HTTP_OK);
+    }
+
+    public function updateRole($role_id)
+    {
+        $data = $this->request->getVar();
+        //restore it if it had been deleted
+        $data->deleted_at = null;
+        $data->role_id = $role_id;
+        $model = new RolesModel();
+        if (!$model->update($role_id, $data)) {
+            return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+        return $this->respond(['message' => 'Role updated successfully'], ResponseInterface::HTTP_OK);
+    }
+
+    public function deleteRole($role_id)
+    {
+        $model = new RolesModel();
+        if (!$model->delete($role_id)) {
+            return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+        return $this->respond(['message' => 'Role deleted successfully'], ResponseInterface::HTTP_OK);
+    }
+
+    public function getRole($role_id)
+    {
+        $model = new RolesModel();
+        $data = $model->find($role_id);
+        if (!$data) {
+            return $this->respond("Role not found", ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+        $permissionsModel = new PermissionsModel();
+        $permissions = $permissionsModel->getRolePermissions($role_id);
+        $excludedPermissions = $permissionsModel->getRoleExcludedPermissions($role_id);
+        return $this->respond(['role' => $data, 'permissions' => $permissions, 'excludedPermissions' => $excludedPermissions], ResponseInterface::HTTP_OK);
+    }
+
+    public function getRoles()
+    {
+        $model = new RolesModel();
+        return $this->respond(['data' => $model->paginate(3), 'pager' => $model->pager->getDetails()], ResponseInterface::HTTP_OK);
+    }
+
+    /**
+     * @api {post} /rolePermission add a permission to a role
+     * @apiName addRolePermission
+     * @apiGroup RolePermission
+     *
+     * @apiSuccess {String} Permission added to Role successfully.
+     */
+    public function addRolePermission()
+    {
+        $data = $this->request->getPost();
+        $model = new RolePermissionsModel();
+        if (!$model->insert($data)) {
+            return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+        return $this->respond(['message' => 'Permission added to role'], ResponseInterface::HTTP_OK);
+    }
+
+    /**
+     * @api {delete} /rolePermission/:id Delete a permission from a role
+     * @apiName DeleteRolePermission
+     * @apiGroup RolePermission
+     *
+     * @apiParam {Number} id The id of that role permission from the database.
+     *
+     * @apiSuccess {String} message Role deleted successfully.
+     */
+    public function deleteRolePermission($id)
+    {
+        $model = new RolePermissionsModel();
+        if (!$model->delete($id)) {
+            return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+        return $this->respond(['message' => 'Permission deleted from role successfully'], ResponseInterface::HTTP_OK);
     }
 
 
