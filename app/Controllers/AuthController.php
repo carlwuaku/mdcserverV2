@@ -13,6 +13,11 @@ use App\Models\UsersModel;
 class AuthController extends ResourceController
 {
 
+    public function appName()
+    {
+        return $this->respond(['data' => 'MDC Management System'], ResponseInterface::HTTP_OK);
+    }
+
     public function register()
     {
         $rules = [
@@ -62,23 +67,22 @@ class AuthController extends ResourceController
 
         $loginAttempt = auth()->attempt($credentials);
         if (!$loginAttempt->isOK()) {
-            $response = [
-                "status" => false,
-                "message" => "Invalid login details",
-                "data" => []
-            ];
-        } else {
-            $userObject = new UsersModel();
-            $userData = $userObject->findById(auth()->id());
-            $token = $userData->generateAccessToken("somesecretkey");
-            $response = [
-                "status" => true,
-                "message" => "User logged in successfully",
-                "data" => [
-                    "token" => $token->raw_token
-                ]
-            ];
+            return $this->respond(["message" => "Wrong combination. Try again"], ResponseInterface::HTTP_NOT_FOUND);
+          
         }
+
+        $userObject = new UsersModel();
+        $userData = $userObject->findById(auth()->id());
+        $token = $userData->generateAccessToken("somesecretkey");
+        $permissionsObject = new PermissionsModel();
+        $permissions = $permissionsObject->getRolePermissions($userData->role_id, true);
+        $userData->permissions = $permissions;
+        $response = [
+            "token" => $token->raw_token,
+            "user" => $userData,
+
+        ];
+
 
         return $this->respondCreated($response);
     }
@@ -88,18 +92,15 @@ class AuthController extends ResourceController
         $userId = auth()->id();
         $userObject = new UsersModel();
         $userData = $userObject->findById($userId);
-        if(!$userData){
-            return $this->respond("User not found", ResponseInterface::HTTP_NOT_FOUND);
+        if (!$userData) {
+            return $this->respond("User not found", ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
         $permissionsObject = new PermissionsModel();
         $permissions = $permissionsObject->getRolePermissions($userData->role_id, true);
+        $userData->permissions = $permissions;
         return $this->respondCreated([
-            "status" => true,
-            "message" => "Profile",
-            "data" => [
-                "user" => $userData,
-                "permissions"=> $permissions
-            ]
+            "user" => $userData,
+            "permissions" => $permissions
         ]);
     }
 
@@ -153,7 +154,7 @@ class AuthController extends ResourceController
         $result = auth()->attempt($credentials);
         if (!$result->isOK()) {
             return $this->response
-                ->setJSON(['error' => $result->reason()])
+                ->setJSON(['message' => $result->reason()])
                 ->setStatusCode(401);
         }
 
@@ -215,7 +216,7 @@ class AuthController extends ResourceController
     public function getRoles()
     {
         $model = new RolesModel();
-        return $this->respond(['data' => $model->paginate(3), 'pager' => $model->pager->getDetails()], ResponseInterface::HTTP_OK);
+        return $this->respond(['data' => $model->paginate(), 'pager' => $model->pager->getDetails()], ResponseInterface::HTTP_OK);
     }
 
     /**
@@ -254,73 +255,154 @@ class AuthController extends ResourceController
     }
 
 
-    /**
-     * Return an array of resource objects, themselves in array format
-     *
-     * @return mixed
-     */
-    public function index()
+
+    public function createUser()
     {
-        //
+        $rules = [
+            "username" => "required|is_unique[users.username]",
+            "email" => "required|valid_email|is_unique[auth_identities.secret]",
+            "phone" => "required|min_length[10]",
+            "role_id" => "required|is_natural_no_zero|is_not_unique[roles.role_id]",
+            "password" => "required|min_length[8]|strong_password[]",
+            "password_confirm" => "required|matches[password]",
+        ];
+        if (!$this->validate($rules)) {
+            return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
+        }
+        $userObject = auth()->getProvider();
+        $data = $this->request->getVar();
+        $userEntityObject = new User(
+            $data
+        );
+        $userObject->save($userEntityObject);
+
+        $id = $userObject->getInsertID();
+        return $this->respond(['message' => 'User created successfully', 'data' => $id], ResponseInterface::HTTP_OK);
     }
 
-    /**
-     * Return the properties of a resource object
-     *
-     * @return mixed
-     */
-    public function show($id = null)
+    // public function updateUser($userId)
+    // {
+    //     $rules = [
+    //         "username" => "required|is_unique[users.username,id,{$userId}]",
+    //         "email" => "required|valid_email|is_unique[auth_identities.secret,id,{$userId}]",
+    //         "phone" => "required|min_length[10]",
+    //         "role_id" => "required|is_natural_no_zero|is_not_unique[roles.role_id]",
+    //         "password" => "if_exist|min_length[8]",
+    //         "password_confirm" => "required_with[password]|matches[password]",
+    //     ];
+    //     if (!$this->validate($rules)) {
+    //         return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
+    //     }
+    //     $data = $this->request->getVar();
+
+    //     //restore it if it had been deleted
+    //     $data->id = $userId;
+    //     // log_message('info',$data);
+    //     $model = new UsersModel();
+    //     if (!$model->update($userId, $data)) {
+    //         return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+    //     }
+    //     return $this->respond(['message' => 'User updated successfully'], ResponseInterface::HTTP_OK);
+    // }
+
+
+    public function updateUser($userId)
+{
+   // Get the existing user
+   $userObject = auth()->getProvider();
+   $existingUser = $userObject->find($userId);
+
+   if ($existingUser === null) {
+       return $this->respond(['error' => 'User not found'], ResponseInterface::HTTP_NOT_FOUND);
+   }
+
+   // Validate the request data
+   $rules = [
+       "username" => "permit_empty|is_unique[users.username,id,$userId]",
+       "email" => "permit_empty|valid_email|is_unique[auth_identities.secret,user_id,$userId]",
+       "phone" => "permit_empty|min_length[10]",
+       "role_id" => "permit_empty|is_natural_no_zero|is_not_unique[roles.role_id]",
+       "password" => "permit_empty|min_length[8]|strong_password[]",
+       "password_confirm" => "permit_empty|matches[password]",
+   ];
+
+   if (!$this->validate($rules)) {
+       return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
+   }
+
+   // Update the user details
+   $data = $this->request->getVar();
+   foreach ($data as $key => $value) {
+       if ($value !== null && $value !== '') {
+           $existingUser->{$key} = $value;
+       }
+   }
+
+   // If a new password was provided, hash it before saving
+//    if (isset($data['password']) && $data['password'] !== '') {
+//        $existingUser->password = password_hash($data['password'], PASSWORD_DEFAULT);
+//    }
+
+   $userObject->save($existingUser);
+
+   return $this->respond(['message' => 'User updated successfully'], ResponseInterface::HTTP_OK);
+}
+
+    public function deleteUser($userId)
     {
-        //
+        $model = new UsersModel();
+        if (!$model->delete($userId)) {
+            return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+        return $this->respond(['message' => 'User deleted successfully'], ResponseInterface::HTTP_OK);
     }
 
-    /**
-     * Return a new resource object, with default properties
-     *
-     * @return mixed
-     */
-    public function new()
+    public function getUser($userId)
     {
-        //
+        $model = new UsersModel();
+        $data = $model->find($userId);
+        if (!$data) {
+            return $this->respond("User not found", ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+
+        return $this->respond(['data' => $data,], ResponseInterface::HTTP_OK);
     }
 
-    /**
-     * Create a new resource object, from "posted" parameters
-     *
-     * @return mixed
-     */
-    public function create()
+    public function getUsers()
     {
-        //
+        $per_page = $this->request->getVar('limit') ? (int) $this->request->getVar('limit') : 100;
+        $model = new UsersModel();
+        $builder = $model->builder();
+        $builder->join('roles', "roles.role_id = {$model->tableName}.role_id")
+        ->select("$model->tableName.*, roles.role_name");
+
+        return $this->respond(['data' => $model->withDeleted()->paginate($per_page), 'pager' => $model->pager->getDetails(),
+            'displayColumns' => $model->getDisplayColumns()
+        ], ResponseInterface::HTTP_OK);
     }
 
-    /**
-     * Return the editable properties of a resource object
-     *
-     * @return mixed
-     */
-    public function edit($id = null)
-    {
-        //
+    public function banUser($userId){
+        $userObject = new UsersModel();
+        $reason = $this->request->getVar('reason') ?? '' ;
+        /** @var UsersModel $user */
+        $user = $userObject->find($userId);
+        if (!$user) {
+            return $this->respond(['message' => 'User not found'], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+        
+        $user->ban($reason);
+        return $this->respond(['message' => 'User banned successfully'], ResponseInterface::HTTP_OK);
     }
 
-    /**
-     * Add or update a model resource, from "posted" properties
-     *
-     * @return mixed
-     */
-    public function update($id = null)
-    {
-        //
-    }
-
-    /**
-     * Delete the designated resource object from the model
-     *
-     * @return mixed
-     */
-    public function delete($id = null)
-    {
-        //
+    public function unbanUser($userId){
+        $userObject = new UsersModel();
+        /** @var UsersModel $user */
+        $user = $userObject->find($userId);
+        if (!$user) {
+            return $this->respond(['message' => 'User not found'], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+        
+        $user->unBan();
+        return $this->respond(['message' => 'User unbanned successfully'], ResponseInterface::HTTP_OK);
     }
 }

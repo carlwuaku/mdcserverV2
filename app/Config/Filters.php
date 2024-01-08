@@ -21,6 +21,7 @@ class Filters extends BaseConfig
      * @phpstan-var array<string, class-string|list<class-string>>
      */
     public array $aliases = [
+        'cors' => \Fluent\Cors\Filters\CorsFilter::class,
         'csrf' => CSRF::class,
         'toolbar' => DebugToolbar::class,
         'honeypot' => Honeypot::class,
@@ -70,5 +71,10 @@ class Filters extends BaseConfig
      * Example:
      * 'isLoggedIn' => ['before' => ['account/*', 'profiles/*']]
      */
-    public array $filters = [];
+    public array $filters = [
+        'cors' => [
+            'before' => ['api/*','admin/*'],
+            'after' => ['api/*','admin/*']
+        ],
+    ];
 }
