@@ -3,8 +3,10 @@
 namespace App\Models;
 
 use CodeIgniter\Model;
+use App\Helpers\Interfaces\TableDisplayInterface;
 
-class RolesModel extends Model
+
+class RolesModel extends MyBaseModel implements TableDisplayInterface
 {
     protected $table            = 'roles';
     protected $primaryKey       = 'role_id';
@@ -12,7 +14,7 @@ class RolesModel extends Model
     protected $returnType       = 'array';
     protected $useSoftDeletes   = true;
     protected $protectFields    = true;
-    protected $allowedFields    = ['role_name','description','login_destination','deleted_at'];
+    public $allowedFields    = ['role_name','description','login_destination','deleted_at'];
 
     // Dates
     protected $useTimestamps = true;
@@ -22,9 +24,7 @@ class RolesModel extends Model
     protected $deletedField  = 'deleted_at';
 
     // Validation
-    protected $validationRules      = [
-        "role_name" => "required|is_unique[roles.role_name, role_id, {role_id}]",
-    ];
+    protected $validationRules      = [];
     protected $validationMessages   = [];
     protected $skipValidation       = false;
     protected $cleanValidationRules = true;
@@ -39,4 +39,21 @@ class RolesModel extends Model
     protected $afterFind      = [];
     protected $beforeDelete   = [];
     protected $afterDelete    = [];
+
+    public $searchFields = ['role_name'];
+
+    public function getDisplayColumns(): array
+    {
+        return [
+            'role_name',
+            'description',
+            'number_of_users',
+            'deleted_at'
+        ];
+    }
+
+    public function getDisplayColumnLabels(): array
+    {
+        return [];
+    }
 }

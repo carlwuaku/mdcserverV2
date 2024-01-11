@@ -55,9 +55,9 @@ class PermissionsModel extends Model
     {
         $rolepermissionsModel = new RolePermissionsModel();
         $rolepermissionsTableName = $rolepermissionsModel->getTableName();
-        $this->select("permission_id, name");
-        $this->where("permission_id NOT IN (SELECT permission_id FROM $rolepermissionsTableName WHERE role_id = $role_id)", NULL, FALSE);
-        return $this->findAll();
+        return $this->select("permission_id, name, description")
+        ->where("permission_id NOT IN (SELECT permission_id FROM $rolepermissionsTableName WHERE role_id = $role_id)", NULL, FALSE)
+        ->findAll();
     }
 
     /**
@@ -68,14 +68,14 @@ class PermissionsModel extends Model
     {
         $rolepermissionsModel = new RolePermissionsModel();
         $rolepermissionsTableName = $rolepermissionsModel->getTableName();
-        $this->select("permission_id, name");
-        $this->where("permission_id IN (SELECT permission_id FROM $rolepermissionsTableName WHERE role_id = $role_id)", NULL, FALSE);
-        $results = $this->findAll();
+        $results = $this->select("permission_id, name, description")
+        ->where("permission_id IN (SELECT permission_id FROM $rolepermissionsTableName WHERE role_id = $role_id)", NULL, FALSE)
+        ->findAll();
         if($namesOnly){
             $names = array_map(function ($obj){ return $obj['name']; }, $results);
             return $names;
         }
-        return $this->findAll();
+        return $results;
 
         // $permissionsModel = new PermissionsModel();
         // $permissionsTableName = $permissionsModel->getTableName();
