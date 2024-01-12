@@ -87,6 +87,13 @@ class AuthController extends ResourceController
         return $this->respondCreated($response);
     }
 
+    /**
+     * @api {get} /profile get the details of the currently logged in user making the request
+     * @apiName profile
+     * @apiGroup Authentication
+     *
+     * @apiSuccess {['user' => UserObject, 'permissions' => [string array]]} Permission added to Role successfully.
+     */
     public function profile()
     {
         $userId = auth()->id();
@@ -169,6 +176,13 @@ class AuthController extends ResourceController
 
     public function createRole()
     {
+        $rules = [
+            "role_name" => "required|is_unique[roles.role_name]"
+        ];
+
+        if (!$this->validate($rules)) {
+            return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
+        }
         $data = $this->request->getPost();
         $model = new RolesModel();
         if (!$model->insert($data)) {
@@ -180,6 +194,13 @@ class AuthController extends ResourceController
 
     public function updateRole($role_id)
     {
+        $rules = [
+            "role_name" => "permit_empty|is_unique[roles.role_name,role_id,$role_id]"
+        ];
+
+        if (!$this->validate($rules)) {
+            return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
+        }
         $data = $this->request->getVar();
         //restore it if it had been deleted
         $data->deleted_at = null;
@@ -200,6 +221,15 @@ class AuthController extends ResourceController
         return $this->respond(['message' => 'Role deleted successfully'], ResponseInterface::HTTP_OK);
     }
 
+    public function restoreRole($role_id)
+    {
+        $model = new RolesModel();
+        if (!$model->update($role_id, ['deleted_at'=> null])) {
+            return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+        return $this->respond(['message' => 'Role restored successfully'], ResponseInterface::HTTP_OK);
+    }
+
     public function getRole($role_id)
     {
         $model = new RolesModel();
@@ -210,13 +240,30 @@ class AuthController extends ResourceController
         $permissionsModel = new PermissionsModel();
         $permissions = $permissionsModel->getRolePermissions($role_id);
         $excludedPermissions = $permissionsModel->getRoleExcludedPermissions($role_id);
-        return $this->respond(['role' => $data, 'permissions' => $permissions, 'excludedPermissions' => $excludedPermissions], ResponseInterface::HTTP_OK);
+        return $this->respond(['data' => $data, 'permissions' => $permissions, 'excludedPermissions' => $excludedPermissions], ResponseInterface::HTTP_OK);
     }
 
     public function getRoles()
     {
+        $per_page = $this->request->getVar('limit') ? (int) $this->request->getVar('limit') : 100;
+        $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
+        $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted');
+        $param = $this->request->getVar('param');
         $model = new RolesModel();
-        return $this->respond(['data' => $model->paginate(), 'pager' => $model->pager->getDetails()], ResponseInterface::HTTP_OK);
+        $builder = $param ? $model->search($param) : $model->builder();
+        $builder->join('users', "roles.role_id = users.role_id","left")
+        ->select("roles.*, count(users.id) as number_of_users")
+        ->groupBy('roles.role_id');
+        if($withDeleted){
+            $model->withDeleted();
+        }
+        $totalBuilder = clone $builder;
+        $total = $totalBuilder->countAllResults();
+        $result = $builder->get($per_page, $page)->getResult();
+        
+        return $this->respond(['data' => $result, 'total' => $total,
+            'displayColumns' => $model->getDisplayColumns()
+        ], ResponseInterface::HTTP_OK);
     }
 
     /**
@@ -233,7 +280,7 @@ class AuthController extends ResourceController
         if (!$model->insert($data)) {
             return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
-        return $this->respond(['message' => 'Permission added to role'], ResponseInterface::HTTP_OK);
+        return $this->respond(['message' => 'Permission added to role successfully'], ResponseInterface::HTTP_OK);
     }
 
     /**
@@ -245,10 +292,10 @@ class AuthController extends ResourceController
      *
      * @apiSuccess {String} message Role deleted successfully.
      */
-    public function deleteRolePermission($id)
+    public function deleteRolePermission($roleId, $permissionId)
     {
         $model = new RolePermissionsModel();
-        if (!$model->delete($id)) {
+        if (!$model->where("role_id = $roleId and permission_id = $permissionId")->delete(null, true)) {
             return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
         return $this->respond(['message' => 'Permission deleted from role successfully'], ResponseInterface::HTTP_OK);

@@ -27,11 +27,12 @@ $routes->group("admin", ["namespace" => "App\Controllers", "filter" => "apiauth"
     $routes->get("logout", [AuthController::class, "logout"]);
     $routes->post("roles", [AuthController::class, "createRole"]);
     $routes->put("roles/(:num)", [AuthController::class, "updateRole/$1"]);
+    $routes->put("roles/(:num)/restore", [AuthController::class, "restoreRole/$1"]);
     $routes->delete("roles/(:num)", [AuthController::class, "deleteRole/$1"]);
     $routes->get("roles/(:num)", [AuthController::class, "getRole/$1"]);
     $routes->get("roles", [AuthController::class, "getRoles"]);
     $routes->post("rolePermissions", [AuthController::class, "addRolePermission"]);
-    $routes->delete("rolePermissions/(:num)", [AuthController::class, "deleteRolePermission/$1"]);
+    $routes->delete("rolePermissions/(:num)/(:num)", [AuthController::class, "deleteRolePermission/$1/$2"]);
     $routes->post("users", [AuthController::class, "createUser"]);
     $routes->put("users/(:num)", [AuthController::class, "updateUser/$1"]);
     $routes->put("users/(:num)/deactivate", [AuthController::class, "banUser/$1"]);
