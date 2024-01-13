@@ -50,4 +50,15 @@ class RolePermissionsModel extends Model
     public function getTableName():string{
         return $this->table;
     }
+
+    /**
+     * return true if a role_id has a permission_id/name in the role_permissions table.
+     * @var string $role_id 
+     * @var string $permission the name or id of the permission
+     * @return boolean
+     */
+    public function hasPermission(string $role_id, string $permission):bool{
+        $rows = $this->where('role_id', $role_id)->where("permission_id in (select permission_id from permissions where name = '$permission' or permission_id = '$permission' )")->findAll();
+        return count($rows) > 0;
+    }
 }
