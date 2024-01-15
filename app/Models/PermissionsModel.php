@@ -76,18 +76,6 @@ class PermissionsModel extends Model
             return $names;
         }
         return $results;
-
-        // $permissionsModel = new PermissionsModel();
-        // $permissionsTableName = $permissionsModel->getTableName();
-        // $this->select("$permissionsTableName.permission_id, $permissionsTableName.name");
-        // $this->join($permissionsTableName, "$permissionsTableName.permission_id = $this->table.permission_id");
-        // $this->where("role_id", $role_id);
-        // $results = $this->findAll();
-        // if($namesOnly){
-        //     $names = array_map(function ($obj){ return $obj['permission_name']; }, $results);
-        //     return $names;
-        // }
-        // return $this->findAll();
     }
     
 }

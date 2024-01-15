@@ -25,7 +25,10 @@ protected $searchFields = [];
         foreach ($words as $word) {
             $likeCondition = '';
             foreach ($fields as $column) {
-                $likeCondition .= "{$column} LIKE '%{$word}%' OR ";
+                //append the table name to the column if it doesn't already have it appended. if there's a dot, leave it.
+                //so that if we add joined tables it doesn't add the wrong table names
+                $columnName = str_contains($column,".") ? $column : $this->table .".". $column;
+                $likeCondition .= "{$columnName} LIKE '%{$word}%' OR ";
             }
             $likeCondition = rtrim($likeCondition, ' OR ');
             $builder->where("({$likeCondition})");
