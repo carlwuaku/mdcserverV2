@@ -3,6 +3,7 @@
 use App\Controllers\AuthController;
 use CodeIgniter\Router\RouteCollection;
 use App\Controllers\Pages;
+use App\Controllers\PractitionerController;
 
 /**
  * @var RouteCollection $routes
@@ -40,6 +41,15 @@ $routes->group("admin", ["namespace" => "App\Controllers", "filter" => "apiauth"
     $routes->delete("users/(:num)", [AuthController::class, "deleteUser/$1"]);
     $routes->get("users/(:num)", [AuthController::class, "getUser/$1"]);
     $routes->get("users", [AuthController::class, "getUsers"]);
+});
+
+$routes->group("practitioners", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
+    $routes->put("practitioners/(:num)", [PractitionerController::class, "updateRole/$1"]);
+    $routes->put("practitioners/(:num)/restore", [PractitionerController::class, "restoreRole/$1"]);
+    $routes->delete("practitioners/(:num)", [PractitionerController::class, "deleteRole/$1"]);
+    $routes->get("practitioners/(:num)", [PractitionerController::class, "getRole/$1"]);
+    $routes->get("practitioners", [PractitionerController::class, "getPractitioners"]);
+    $routes->post("practitioners", [PractitionerController::class, "createUser"]);
 });
 
 
