@@ -16,7 +16,6 @@ class PractitionerAdditionalQualification extends Migration
                 'constraint' => 36,
                 'null' => false,
                 'unique' => true,
-                'default' => new RawSql('UUID()'),
             ],
             'registration_number' => [
                 'type' => 'VARCHAR',

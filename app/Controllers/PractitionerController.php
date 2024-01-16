@@ -96,6 +96,9 @@ class PractitionerController extends ResourceController
         WHEN EXISTS (SELECT 1 FROM practitioner_renewal WHERE practitioner_renewal.practitioner_uuid = practitioners.uuid AND CURDATE() BETWEEN practitioner_renewal.year AND practitioner_renewal.expiry) THEN 'yes'
         ELSE 'no'
     END) AS in_good_standing")
+    ->select("(CASE status when 1 THEN 'Alive'
+        ELSE 'Deceased'
+    END) AS status")
         ->groupBy('practitioners.uuid');
         if($withDeleted){
             $model->withDeleted();

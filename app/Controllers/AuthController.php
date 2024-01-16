@@ -9,7 +9,7 @@ use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 use CodeIgniter\Shield\Entities\User;
 use App\Models\UsersModel;
-
+use CodeIgniter\Database\MigrationRunner;
 class AuthController extends ResourceController
 {
 
@@ -451,5 +451,10 @@ class AuthController extends ResourceController
         
         $user->unBan();
         return $this->respond(['message' => 'User unbanned successfully'], ResponseInterface::HTTP_OK);
+    }
+
+    public function migrate(){
+        $migration = service('migration');
+        $migration->latest();
     }
 }
