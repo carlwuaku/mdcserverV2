@@ -16,6 +16,7 @@ $routes->group("api", ["namespace" => "App\Controllers"], function (RouteCollect
     $routes->post("register", [AuthController::class, "register"]);
     $routes->post("login", [AuthController::class, "login"]);
     $routes->post("mobile-login", [AuthController::class, "mobileLogin"]);
+    $routes->get("invalid-access", [AuthController::class, "accessDenied"]);
 
 });
 
