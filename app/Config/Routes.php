@@ -2,7 +2,6 @@
 
 use App\Controllers\AuthController;
 use CodeIgniter\Router\RouteCollection;
-use App\Controllers\Pages;
 use App\Controllers\PractitionerController;
 
 /**
@@ -12,8 +11,6 @@ $routes->get('/', 'Home::index');
 $routes->get('phpinfo', function () {
     phpinfo();
 });
-$routes->get('pages', [Pages::class, 'index']);
-$routes->get('(:segment)', [Pages::class, 'view']);
 $routes->group("api", ["namespace" => "App\Controllers"], function (RouteCollection $routes) {
     $routes->get("app-name", [AuthController::class, "appName"]);
     $routes->post("register", [AuthController::class, "register"]);
