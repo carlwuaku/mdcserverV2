@@ -43,12 +43,11 @@ $routes->group("admin", ["namespace" => "App\Controllers", "filter" => "apiauth"
 });
 
 $routes->group("practitioners", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
-    $routes->put("practitioners/(:num)", [PractitionerController::class, "updateRole/$1"]);
-    $routes->put("practitioners/(:num)/restore", [PractitionerController::class, "restoreRole/$1"]);
-    $routes->delete("practitioners/(:num)", [PractitionerController::class, "deleteRole/$1"]);
-    $routes->get("practitioners/(:segment)", [PractitionerController::class, "getPractitioner/$1"]);
-    $routes->get("practitioners", [PractitionerController::class, "getPractitioners"]);
-    $routes->post("practitioners", [PractitionerController::class, "createUser"]);
+    $routes->put("details/(:segment)", [PractitionerController::class, "updatePractitioner/$1"]);
+    $routes->delete("details/(:segment)", [PractitionerController::class, "deleteRole/$1"]);
+    $routes->get("details/(:segment)", [PractitionerController::class, "getPractitioner/$1"]);
+    $routes->get("details", [PractitionerController::class, "getPractitioners"]);
+    $routes->post("details", [PractitionerController::class, "createPractitioner"]);
 });
 
 $routes->group("file-server", ["namespace" => "App\Controllers"], function (RouteCollection $routes) {

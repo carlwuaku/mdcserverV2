@@ -7,35 +7,7 @@ use CodeIgniter\HTTP\ResponseInterface;
 
 class AssetController extends ResourceController
 {
-    /**
-     * Return an array of resource objects, themselves in array format
-     *
-     * @return mixed
-     */
-    public function index()
-    {
-        //
-    }
-
-    /**
-     * Return the properties of a resource object
-     *
-     * @return mixed
-     */
-    public function show($id = null)
-    {
-        //
-    }
-
-    /**
-     * Return a new resource object, with default properties
-     *
-     * @return mixed
-     */
-    public function new()
-    {
-        //
-    }
+    
 
     /**
      * upload a new file. the type specifies which subfolder it should be placed in
@@ -69,8 +41,8 @@ class AssetController extends ResourceController
 
             if (!$img->hasMoved()) {
                 $filepath = $destination . $img->store($destination);
-
-                $data = ['filePath' => $filepath];
+                $filepathParts = explode("/", $filepath);
+                $data = ['filePath' => array_pop($filepathParts)];
                 return $this->respond($data, ResponseInterface::HTTP_OK);
             }
         } catch (\Throwable $th) {

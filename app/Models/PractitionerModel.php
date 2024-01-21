@@ -81,7 +81,8 @@ class PractitionerModel extends MyBaseModel implements TableDisplayInterface
             "sex", "register_type", "category", "registration_date", "nationality",
              "date_of_birth", "provisional_number", "specialty", "subspecialty",
             "qualification_at_registration", "training_institution", "qualification_date",
-            "year_of_permanent", "year_of_provisional", "college_membership", "deleted_at","uuid"
+            "year_of_permanent", "year_of_provisional", "college_membership", "deleted_at","uuid",
+            "practitioner_type","place_of_work","institution_type","region","district","title"
         ];
         $builder->join($renewalTable, "$practitionersTable.uuid = $renewalTable.practitioner_uuid", "left")
             ->select(implode(', ', array_map(function ($col) {
