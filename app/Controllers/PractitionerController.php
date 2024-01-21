@@ -5,6 +5,8 @@ namespace App\Controllers;
 use CodeIgniter\RESTful\ResourceController;
 use CodeIgniter\HTTP\ResponseInterface;
 use App\Models\PractitionerModel;
+use App\Helpers\AppConstants;
+
 class PractitionerController extends ResourceController
 {
 
@@ -12,9 +14,9 @@ class PractitionerController extends ResourceController
     {
         $rules = [
             "registration_number" => "required|is_unique[practitioners.registration_number]",
-            "last_name"=> "required",
-            "date_of_birth"=> "required|valid_date",
-            "sex"=> "required",
+            "last_name" => "required",
+            "date_of_birth" => "required|valid_date",
+            "sex" => "required",
 
         ];
 
@@ -35,7 +37,8 @@ class PractitionerController extends ResourceController
     {
         $rules = [
             "registration_number" => "if_exist|is_unique[practitioners.registration_number, uuid, $uuid]",
-            
+            "uuid" => "required",
+            "date_of_birth" => "if_exist|required|valid_date",
 
         ];
 
@@ -63,7 +66,7 @@ class PractitionerController extends ResourceController
     public function restorePractitioner($uuid)
     {
         $model = new PractitionerModel();
-        if (!$model->builder()->where(['uuid' => $uuid])->update(['deleted_at'=> null])) {
+        if (!$model->builder()->where(['uuid' => $uuid])->update(['deleted_at' => null])) {
             return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
         return $this->respond(['message' => 'Practitioner restored successfully'], ResponseInterface::HTTP_OK);
@@ -72,7 +75,10 @@ class PractitionerController extends ResourceController
     public function getPractitioner($uuid)
     {
         $model = new PractitionerModel();
-        $data = $model->find($uuid);
+         $builder = $model->builder();
+        $builder = $model->addCustomFields($builder);
+        $builder->where($model->getTableName().'.uuid', $uuid);
+        $data =$model->first();
         if (!$data) {
             return $this->respond("Practitioner not found", ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -81,34 +87,31 @@ class PractitionerController extends ResourceController
 
     public function getPractitioners()
     {
-        $per_page = $this->request->getVar('limit') ? (int) $this->request->getVar('limit') : 100;
-        $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
-        $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted');
-        $param = $this->request->getVar('param');
-        $model = new PractitionerModel();
-        $builder = $param ? $model->search($param) : $model->builder();
-        $columns = $model->getDisplayColumns();
-        $builder->join('practitioner_renewal', "practitioners.uuid = practitioner_renewal.practitioner_uuid","left")
-        ->select( implode(', ', array_map(function($col) {
-            return 'practitioners.' . $col;
-          }, $columns)))
-        ->select("(CASE 
-        WHEN EXISTS (SELECT 1 FROM practitioner_renewal WHERE practitioner_renewal.practitioner_uuid = practitioners.uuid AND CURDATE() BETWEEN practitioner_renewal.year AND practitioner_renewal.expiry) THEN 'yes'
-        ELSE 'no'
-    END) AS in_good_standing")
-    ->select("(CASE status when 1 THEN 'Alive'
-        ELSE 'Deceased'
-    END) AS status")
-        ->groupBy('practitioners.uuid');
-        if($withDeleted){
-            $model->withDeleted();
+        try {
+            //code...
+
+            $per_page = $this->request->getVar('limit') ? (int) $this->request->getVar('limit') : 100;
+            $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
+            $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted');
+            $param = $this->request->getVar('param');
+            $model = new PractitionerModel();
+            
+            $builder = $param ? $model->search($param) : $model->builder();
+            $builder = $model->addCustomFields($builder);
+            
+            if ($withDeleted) {
+                $model->withDeleted();
+            }
+            $totalBuilder = clone $builder;
+            $total = $totalBuilder->countAllResults();
+            $result = $builder->get($per_page, $page)->getResult();
+
+            return $this->respond(['data' => $result, 'total' => $total,
+                'displayColumns' => $model->getDisplayColumns()
+            ], ResponseInterface::HTTP_OK);
+        } catch (\Throwable $th) {
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
-        $totalBuilder = clone $builder;
-        $total = $totalBuilder->countAllResults();
-        $result = $builder->get($per_page, $page)->getResult();
-        
-        return $this->respond(['data' => $result, 'total' => $total,
-            'displayColumns' => $columns
-        ], ResponseInterface::HTTP_OK);
     }
+
 }

@@ -73,8 +73,8 @@ class Filters extends BaseConfig
      */
     public array $filters = [
         'cors' => [
-            'before' => ['api/*','admin/*','practitioners/*'],
-            'after' => ['api/*','admin/*','practitioners/*']
+            'before' => ['api/*','admin/*','practitioners/*', 'file-server/*'],
+            'after' => ['api/*','admin/*','practitioners/*', 'file-server/*']
         ],
     ];
 }

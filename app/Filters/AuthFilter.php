@@ -27,8 +27,8 @@ class AuthFilter implements FilterInterface
     {
         helper("auth");
         if(!auth("tokens")->loggedIn()){
-            return redirect()->to(base_url("api/invalid-access"));
-            //or return
+            $response = service('response');
+        return $response->setStatusCode(401)->setBody('{"message": "you are not logged in"}');
         }
     }
 

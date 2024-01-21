@@ -1,5 +1,6 @@
 <?php
 
+use App\Controllers\AssetController;
 use App\Controllers\AuthController;
 use CodeIgniter\Router\RouteCollection;
 use App\Controllers\PractitionerController;
@@ -45,9 +46,14 @@ $routes->group("practitioners", ["namespace" => "App\Controllers", "filter" => "
     $routes->put("practitioners/(:num)", [PractitionerController::class, "updateRole/$1"]);
     $routes->put("practitioners/(:num)/restore", [PractitionerController::class, "restoreRole/$1"]);
     $routes->delete("practitioners/(:num)", [PractitionerController::class, "deleteRole/$1"]);
-    $routes->get("practitioners/(:num)", [PractitionerController::class, "getRole/$1"]);
+    $routes->get("practitioners/(:segment)", [PractitionerController::class, "getPractitioner/$1"]);
     $routes->get("practitioners", [PractitionerController::class, "getPractitioners"]);
     $routes->post("practitioners", [PractitionerController::class, "createUser"]);
+});
+
+$routes->group("file-server", ["namespace" => "App\Controllers"], function (RouteCollection $routes) {
+    $routes->post("new/(:segment)", [AssetController::class, "upload/$1"]);
+    $routes->get('image-render/(:segment)/(:segment)', [AssetController::class, "serveFile/$1/$2"]);
 });
 
 
