@@ -105,7 +105,6 @@ class PractitionerController extends ResourceController
             $totalBuilder = clone $builder;
             $total = $totalBuilder->countAllResults();
             $result = $builder->get($per_page, $page)->getResult();
-
             return $this->respond(['data' => $result, 'total' => $total,
                 'displayColumns' => $model->getDisplayColumns()
             ], ResponseInterface::HTTP_OK);
