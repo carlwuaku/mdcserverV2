@@ -36,7 +36,7 @@ class PractitionerController extends ResourceController
     public function updatePractitioner($uuid)
     {
         $rules = [
-            "registration_number" => "if_exist|is_unique[practitioners.registration_number, uuid, $uuid]",
+            "registration_number" => "if_exist|is_unique[practitioners.registration_number,uuid,$uuid]",
             "uuid" => "required",
             "date_of_birth" => "if_exist|required|valid_date",
 
@@ -47,6 +47,7 @@ class PractitionerController extends ResourceController
         }
         $data = $this->request->getVar();
         $data->uuid = $uuid;
+        if(property_exists($data, "id")) {unset($data->id);}
         $model = new PractitionerModel();
         if (!$model->builder()->where(['uuid' => $uuid])->update($data)) {
             return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
@@ -88,8 +89,6 @@ class PractitionerController extends ResourceController
     public function getPractitioners()
     {
         try {
-            //code...
-
             $per_page = $this->request->getVar('limit') ? (int) $this->request->getVar('limit') : 100;
             $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
             $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted');

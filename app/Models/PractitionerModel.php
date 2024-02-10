@@ -57,10 +57,10 @@ class PractitionerModel extends MyBaseModel implements TableDisplayInterface
     public function getDisplayColumns(): array
     {
         return [
-            "registration_number", "first_name", "middle_name", "last_name","in_good_standing", "status",
+            "picture", "registration_number", "first_name", "middle_name", "last_name","in_good_standing", "status",
             "email", "phone", "maiden_name",
             "sex", "register_type", "category", "registration_date", "nationality",
-            "picture", "date_of_birth", "provisional_number", "specialty", "subspecialty",
+            "date_of_birth", "provisional_number", "specialty", "subspecialty",
             "qualification_at_registration", "training_institution", "qualification_date",
             "year_of_permanent", "year_of_provisional", "college_membership", "deleted_at"
         ];

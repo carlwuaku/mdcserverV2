@@ -16,9 +16,7 @@ class AssetController extends ResourceController
      */
     public function upload(string $type)
     {
-        try {
-            //code...
-
+       
             $validationRule = [
                 'uploadFile' => [
                     'label' => 'Image File',
@@ -42,14 +40,12 @@ class AssetController extends ResourceController
             if (!$img->hasMoved()) {
                 $filepath = $destination . $img->store($destination);
                 $filepathParts = explode("/", $filepath);
-                $data = ['filePath' => array_pop($filepathParts)];
+                $fileName = array_pop($filepathParts);
+                $data = ['filePath' => $fileName, 
+                'fullPath' => base_url("file-server/image-render/$fileName/$type")];
                 return $this->respond($data, ResponseInterface::HTTP_OK);
             }
-        } catch (\Throwable $th) {
-            //throw $th;
-            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
-
-        }
+        
     }
 
     private function getImageDirectory(string $type):string{
@@ -79,7 +75,7 @@ class AssetController extends ResourceController
         try {        
         $image = file_get_contents($filePath);
         // choose the right mime type
-        $mimeType = $this->getMimeType($imageName);
+        $mimeType = $this->getMimeType($filePath);
 
         $this->response
             ->setStatusCode(200)
@@ -87,6 +83,7 @@ class AssetController extends ResourceController
             ->setBody($image)
             ->send();
         } catch (\Throwable $th) {
+            log_message("error", $th->getMessage());
             return $this->respond(['message' => "Invalid file"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
 
