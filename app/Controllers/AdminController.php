@@ -2,77 +2,63 @@
 
 namespace App\Controllers;
 
+use App\Models\SettingsModel;
 use CodeIgniter\RESTful\ResourceController;
+use CodeIgniter\HTTP\ResponseInterface;
 
 class AdminController extends ResourceController
 {
-    /**
-     * Return an array of resource objects, themselves in array format
-     *
-     * @return mixed
-     */
-    public function index()
-    {
-        //
+    
+    public function getSetting($name = null){
+        $settings = service("settings");
+        $value = $settings->get($name);
+        return $this->respond(['message' => '', 'data' => $value], ResponseInterface::HTTP_OK);
     }
 
-    /**
-     * Return the properties of a resource object
-     *
-     * @return mixed
-     */
-    public function show($id = null)
+    public function getSettings()
     {
-        //
+        $settings = service("settings");
+        try {
+            $per_page = $this->request->getVar('limit') ? (int) $this->request->getVar('limit') : 1000;
+            $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
+            $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted');
+            $param = $this->request->getVar('param');
+            $model = new SettingsModel();
+            
+            $builder = $param ? $model->search($param) : $model->builder();
+            
+            if ($withDeleted) {
+                $model->withDeleted();
+            }
+            $totalBuilder = clone $builder;
+            $total = $totalBuilder->countAllResults();
+            $result = $builder->get($per_page, $page)->getResult();
+            foreach ($result as  $value) {
+                if($value->type !== 'string') {
+                $value->value = $settings->get($value->class.".".$value->key);
+                }
+            }
+            return $this->respond(['data' => $result, 'total' => $total,
+                'displayColumns' => $model->getDisplayColumns()
+            ], ResponseInterface::HTTP_OK);
+        } catch (\Throwable $th) {
+            log_message('error', __METHOD__ .''. $th->getMessage());
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 
-    /**
-     * Return a new resource object, with default properties
-     *
-     * @return mixed
-     */
-    public function new()
-    {
-        //
+    public function saveSetting(){
+        $settings = service("settings");
+        $name = $this->request->getVar("name");
+        $value = $this->request->getVar("value");
+        $settings->set($name, $value);
+        return $this->respond(['message' => "Setting $name updated successfully", 'data' => null], ResponseInterface::HTTP_OK);
     }
 
-    /**
-     * Create a new resource object, from "posted" parameters
-     *
-     * @return mixed
-     */
-    public function create()
-    {
-        //
-    }
+    public function deleteSetting($name){
+        $settings = service("settings");
+        $settings->delete($name);
+        return $this->respond(['message' => "Setting $name deleted successfully", 'data' => null], ResponseInterface::HTTP_OK);
 
-    /**
-     * Return the editable properties of a resource object
-     *
-     * @return mixed
-     */
-    public function edit($id = null)
-    {
-        //
-    }
-
-    /**
-     * Add or update a model resource, from "posted" properties
-     *
-     * @return mixed
-     */
-    public function update($id = null)
-    {
-        //
-    }
-
-    /**
-     * Delete the designated resource object from the model
-     *
-     * @return mixed
-     */
-    public function delete($id = null)
-    {
-        //
     }
 }

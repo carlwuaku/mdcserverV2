@@ -83,7 +83,7 @@ class PractitionerController extends ResourceController
         if (!$data) {
             return $this->respond("Practitioner not found", ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
-        return $this->respond(['data' => $data], ResponseInterface::HTTP_OK);
+        return $this->respond(['data' => $data, 'displayColumns' => $model->getDisplayColumns()], ResponseInterface::HTTP_OK);
     }
 
     public function getPractitioners()

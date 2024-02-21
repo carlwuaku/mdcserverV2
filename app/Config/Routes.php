@@ -1,7 +1,10 @@
 <?php
 
+use App\Controllers\AdminController;
 use App\Controllers\AssetController;
 use App\Controllers\AuthController;
+use App\Controllers\RegionController;
+use App\Controllers\SpecialtiesController;
 use CodeIgniter\Router\RouteCollection;
 use App\Controllers\PractitionerController;
 
@@ -40,6 +43,11 @@ $routes->group("admin", ["namespace" => "App\Controllers", "filter" => "apiauth"
     $routes->delete("users/(:num)", [AuthController::class, "deleteUser/$1"]);
     $routes->get("users/(:num)", [AuthController::class, "getUser/$1"]);
     $routes->get("users", [AuthController::class, "getUsers"]);
+    $routes->post("settings", [AdminController::class, "saveSetting"]);
+    $routes->put("settings", [AdminController::class, "saveSetting"]);
+    $routes->get("settings/(:segment)", [AdminController::class, "getSetting/$1"]);
+    $routes->get("settings", [AdminController::class, "getSettings"]);
+
 });
 
 $routes->group("practitioners", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
@@ -48,6 +56,18 @@ $routes->group("practitioners", ["namespace" => "App\Controllers", "filter" => "
     $routes->get("details/(:segment)", [PractitionerController::class, "getPractitioner/$1"]);
     $routes->get("details", [PractitionerController::class, "getPractitioners"]);
     $routes->post("details", [PractitionerController::class, "createPractitioner"]);
+});
+
+$routes->group("regions", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
+    $routes->get("regions", [RegionController::class, "getRegions"]);
+    $routes->get("districts", [RegionController::class, "getDistricts"]);
+    $routes->get("districts/(:segment)", [RegionController::class, "getDistricts/$1"]);
+});
+
+$routes->group("specialties", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
+    $routes->get("specialties", [SpecialtiesController::class, "getSpecialties"]);
+    $routes->get("subspecialties", [SpecialtiesController::class, "getSubspecialties"]);
+    $routes->get("subspecialties/(:segment)", [SpecialtiesController::class, "getSubspecialties/$1"]);
 });
 
 $routes->group("file-server", ["namespace" => "App\Controllers"], function (RouteCollection $routes) {
