@@ -3,14 +3,15 @@
 namespace App\Models;
 
 use CodeIgniter\Model;
+use App\Helpers\Interfaces\TableDisplayInterface;
 
-class PractitionerAdditionalQualificationsModel extends Model
+class PractitionerAdditionalQualificationsModel extends MyBaseModel implements TableDisplayInterface
 {
     protected $table            = '	practitioner_additional_qualifications';
     protected $primaryKey       = 'id';
     protected $useAutoIncrement = true;
     protected $returnType       = 'array';
-    protected $useSoftDeletes   = false;
+    protected $useSoftDeletes   = true;
     protected $protectFields    = true;
     protected $allowedFields    = [
         "registration_number", 
@@ -48,4 +49,37 @@ class PractitionerAdditionalQualificationsModel extends Model
     protected $afterFind      = [];
     protected $beforeDelete   = [];
     protected $afterDelete    = [];
+
+    public $searchFields = [
+        "registration_number", 
+    "institution", 
+    "start_date", 
+    "end_date", 
+    "qualification"];
+
+    public function getDisplayColumns(): array
+    {
+        return [
+            "registration_number", 
+            "institution", 
+            "start_date", 
+            "end_date", 
+            "qualification",
+            "created_by",
+            "created_on",
+            "modified_on",
+            "picture",
+            "status",
+            "deleted_at"
+        ];
+    }
+
+    public function getDisplayColumnLabels(): array
+    {
+        return [];
+    }
+
+    public function getTableName(): string{
+        return $this->table;
+    }
 }

@@ -52,10 +52,19 @@ $routes->group("admin", ["namespace" => "App\Controllers", "filter" => "apiauth"
 
 $routes->group("practitioners", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
     $routes->put("details/(:segment)", [PractitionerController::class, "updatePractitioner/$1"]);
-    $routes->delete("details/(:segment)", [PractitionerController::class, "deleteRole/$1"]);
+    $routes->delete("details/(:segment)", [PractitionerController::class, "deletePractitioner/$1"]);
     $routes->get("details/(:segment)", [PractitionerController::class, "getPractitioner/$1"]);
     $routes->get("details", [PractitionerController::class, "getPractitioners"]);
     $routes->post("details", [PractitionerController::class, "createPractitioner"]);
+    $routes->put("details/(:segment)/restore", [AuthController::class, "restorePractitioner/$1"]);
+
+    $routes->put("qualifications/(:segment)", [PractitionerController::class, "updatePractitionerQualification/$1"]);
+    $routes->delete("qualifications/(:segment)", [PractitionerController::class, "deletePractitionerQualification/$1"]);
+    $routes->get("qualifications/(:segment)", [PractitionerController::class, "getPractitionerQualification/$1"]);
+    $routes->get("qualifications", [PractitionerController::class, "getPractitionerQualifications"]);
+    $routes->post("qualifications", [PractitionerController::class, "createPractitionerQualification"]);
+    $routes->put("qualifications/(:segment)/restore", [PractitionerController::class, "restorePractitionerQualification/$1"]);
+
 });
 
 $routes->group("regions", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {

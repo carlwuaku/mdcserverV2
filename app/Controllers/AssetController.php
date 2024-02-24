@@ -42,7 +42,7 @@ class AssetController extends ResourceController
                 $filepathParts = explode("/", $filepath);
                 $fileName = array_pop($filepathParts);
                 $data = ['filePath' => $fileName, 
-                'fullPath' => base_url("file-server/image-render/$fileName/$type")];
+                'fullPath' => base_url("file-server/image-render/$type/$fileName")];
                 return $this->respond($data, ResponseInterface::HTTP_OK);
             }
         
@@ -65,7 +65,7 @@ class AssetController extends ResourceController
             return $destination;
     }
 
-    public function serveFile($imageName, $type)
+    public function serveFile($type,$imageName)
     {
         $directory = $this->getImageDirectory($type);
         $filePath = WRITEPATH . 'uploads/'.$directory.$imageName;
