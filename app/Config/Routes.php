@@ -50,20 +50,29 @@ $routes->group("admin", ["namespace" => "App\Controllers", "filter" => "apiauth"
 
 });
 
-$routes->group("practitioners", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
+$routes->group("practitioners", ["namespace" => "App\Controllers",], function (RouteCollection $routes) {
     $routes->put("details/(:segment)", [PractitionerController::class, "updatePractitioner/$1"]);
     $routes->delete("details/(:segment)", [PractitionerController::class, "deletePractitioner/$1"]);
     $routes->get("details/(:segment)", [PractitionerController::class, "getPractitioner/$1"]);
     $routes->get("details", [PractitionerController::class, "getPractitioners"]);
     $routes->post("details", [PractitionerController::class, "createPractitioner"]);
-    $routes->put("details/(:segment)/restore", [AuthController::class, "restorePractitioner/$1"]);
+    $routes->put("details/(:segment)/restore", [PractitionerController::class, "restorePractitioner/$1"]);
+    $routes->get("pictures", [PractitionerController::class, "filterPictures"]);
 
     $routes->put("qualifications/(:segment)", [PractitionerController::class, "updatePractitionerQualification/$1"]);
     $routes->delete("qualifications/(:segment)", [PractitionerController::class, "deletePractitionerQualification/$1"]);
-    $routes->get("qualifications/(:segment)", [PractitionerController::class, "getPractitionerQualification/$1"]);
-    $routes->get("qualifications", [PractitionerController::class, "getPractitionerQualifications"]);
+    $routes->get("qualifications", [PractitionerController::class, "getPractitionerQualifications"], ["filter" => ["hasPermission:Site.Content.View"]],);
+    $routes->get("qualifications/(:segment)", [PractitionerController::class, "getPractitionerQualification/$1"], ["filter" => ["hasPermission:Site.Content.View"]],);
     $routes->post("qualifications", [PractitionerController::class, "createPractitionerQualification"]);
     $routes->put("qualifications/(:segment)/restore", [PractitionerController::class, "restorePractitionerQualification/$1"]);
+
+
+    $routes->put("workhistory/(:segment)", [PractitionerController::class, "updatePractitionerWorkHistory/$1"]);
+    $routes->delete("workhistory/(:segment)", [PractitionerController::class, "deletePractitionerWorkHistory/$1"]);
+    $routes->get("workhistory", [PractitionerController::class, "getPractitionerWorkHistories"], ["filter" => ["hasPermission:Site.Content.View"]],);
+    $routes->get("workhistory/(:segment)", [PractitionerController::class, "getPractitionerWorkHistory/$1"], ["filter" => ["hasPermission:Site.Content.View"]],);
+    $routes->post("workhistory", [PractitionerController::class, "createPractitionerWorkHistory"]);
+    $routes->put("workhistory/(:segment)/restore", [PractitionerController::class, "restorePractitionerWorkHistory/$1"]);
 
 });
 

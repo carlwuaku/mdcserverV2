@@ -35,7 +35,7 @@ class AdminController extends ResourceController
             $result = $builder->get($per_page, $page)->getResult();
             foreach ($result as  $value) {
                 if($value->type !== 'string') {
-                $value->value = $settings->get($value->class.".".$value->key);
+                $value->value = unserialize($value->value);
                 }
             }
             return $this->respond(['data' => $result, 'total' => $total,
