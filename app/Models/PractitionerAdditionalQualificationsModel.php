@@ -62,7 +62,6 @@ class PractitionerAdditionalQualificationsModel extends MyBaseModel implements T
     public function getDisplayColumns(): array
     {
         return [
-            "registration_number",
             "institution",
             "start_date",
             "end_date",
@@ -70,7 +69,6 @@ class PractitionerAdditionalQualificationsModel extends MyBaseModel implements T
             "created_by",
             "created_on",
             "modified_on",
-            "picture",
             "status",
             "deleted_at"
         ];

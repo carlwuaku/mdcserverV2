@@ -61,21 +61,20 @@ class PractitionerWorkHistoryModel extends MyBaseModel implements TableDisplayIn
         "end_date",
         "position",
         "institution_type",
-        
+
     ];
 
     public function getDisplayColumns(): array
     {
         return [
-            "registration_number",
             "institution",
+            "position",
+            "institution_type",
             "start_date",
             "end_date",
-            "qualification",
             "created_by",
             "created_on",
             "modified_on",
-            "picture",
             "status",
             "deleted_at"
         ];

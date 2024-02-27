@@ -353,7 +353,7 @@ class PractitionerController extends ResourceController
 
         /** @var ActivitiesModel $activitiesModel */
         $activitiesModel = new ActivitiesModel();
-        $activitiesModel->logActivity("updated work history for practitioner {$data['registration_number']}. Changes: $changes");
+        $activitiesModel->logActivity("updated work history for practitioner {$data->registration_number}. Changes: $changes");
 
         return $this->respond(['message' => 'Practitioner additional qualification updated successfully'], ResponseInterface::HTTP_OK);
     }
