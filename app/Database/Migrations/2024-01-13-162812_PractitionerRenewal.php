@@ -15,9 +15,8 @@ class PractitionerRenewal extends Migration
             'uuid' => [
                 'type' => 'CHAR',
                 'constraint' => 36,
-                'null' => false,
-                'unique' => true,
-                'default' => new RawSql('UUID()'),
+                'null' => true,
+                'unique' => true
             ],
             'registration_number' => [
                 'type' => 'VARCHAR',

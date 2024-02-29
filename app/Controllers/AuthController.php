@@ -9,7 +9,7 @@ use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 use CodeIgniter\Shield\Entities\User;
 use App\Models\UsersModel;
-
+use CodeIgniter\Database\MigrationRunner;
 class AuthController extends ResourceController
 {
 
@@ -247,7 +247,7 @@ class AuthController extends ResourceController
     {
         $per_page = $this->request->getVar('limit') ? (int) $this->request->getVar('limit') : 100;
         $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
-        $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted');
+        $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted')  === "yes";
         $param = $this->request->getVar('param');
         $model = new RolesModel();
         $builder = $param ? $model->search($param) : $model->builder();
@@ -451,5 +451,10 @@ class AuthController extends ResourceController
         
         $user->unBan();
         return $this->respond(['message' => 'User unbanned successfully'], ResponseInterface::HTTP_OK);
+    }
+
+    public function migrate(){
+        $migration = service('migration');
+        $migration->latest();
     }
 }

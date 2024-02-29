@@ -3,49 +3,17 @@
 namespace App\Models;
 
 use CodeIgniter\Model;
+use App\Helpers\Interfaces\TableDisplayInterface;
 
-class PractitionerRenewalModel extends Model
+class SubspecialtiesModel extends MyBaseModel implements TableDisplayInterface
 {
-    protected $table            = 'practitioner_renewal';
+    protected $table            = 'subspecialties';
     protected $primaryKey       = 'id';
     protected $useAutoIncrement = true;
     protected $returnType       = 'array';
-    protected $useSoftDeletes   = true;
+    protected $useSoftDeletes   = false;
     protected $protectFields    = true;
-    protected $allowedFields    = [
-        'uuid',
-        'registration_number',
-        'deleted_by',
-        'deleted',
-        'modified_by',
-        'created_by',
-        'created_on',
-        'modified_on',
-        'receipt',
-        'qr_code',
-        'qr_text',
-        'expiry',
-        'specialty',
-        'place_of_work',
-        'region',
-        'institution_type',
-        'district',
-        'status',
-        'payment_date',
-        'payment_file',
-        'payment_file_date',
-        'subspecialty',
-        'college_membership',
-        'payment_invoice_number',
-        'first_name',
-        'middle_name',
-        'last_name',
-        'title',
-        'maiden_name',
-        'marital_status',
-        'picture',
-
-    ];
+    protected $allowedFields    = ['specialty','subspecialty'];
 
     // Dates
     protected $useTimestamps = false;
@@ -70,4 +38,16 @@ class PractitionerRenewalModel extends Model
     protected $afterFind      = [];
     protected $beforeDelete   = [];
     protected $afterDelete    = [];
+
+    public function getDisplayColumns(): array
+    {
+        return [
+            'specialty','subspecialty'
+        ];
+    }
+
+    public function getDisplayColumnLabels(): array
+    {
+        return [];
+    }
 }

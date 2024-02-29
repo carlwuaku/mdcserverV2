@@ -1,51 +1,19 @@
 <?php
 
 namespace App\Models;
+use App\Helpers\Interfaces\TableDisplayInterface;
 
 use CodeIgniter\Model;
 
-class PractitionerRenewalModel extends Model
+class SettingsModel extends MyBaseModel implements TableDisplayInterface
 {
-    protected $table            = 'practitioner_renewal';
+    protected $table            = 'settings';
     protected $primaryKey       = 'id';
     protected $useAutoIncrement = true;
     protected $returnType       = 'array';
-    protected $useSoftDeletes   = true;
+    protected $useSoftDeletes   = false;
     protected $protectFields    = true;
-    protected $allowedFields    = [
-        'uuid',
-        'registration_number',
-        'deleted_by',
-        'deleted',
-        'modified_by',
-        'created_by',
-        'created_on',
-        'modified_on',
-        'receipt',
-        'qr_code',
-        'qr_text',
-        'expiry',
-        'specialty',
-        'place_of_work',
-        'region',
-        'institution_type',
-        'district',
-        'status',
-        'payment_date',
-        'payment_file',
-        'payment_file_date',
-        'subspecialty',
-        'college_membership',
-        'payment_invoice_number',
-        'first_name',
-        'middle_name',
-        'last_name',
-        'title',
-        'maiden_name',
-        'marital_status',
-        'picture',
-
-    ];
+    protected $allowedFields    = ["key","value","type","context","class"];
 
     // Dates
     protected $useTimestamps = false;
@@ -70,4 +38,18 @@ class PractitionerRenewalModel extends Model
     protected $afterFind      = [];
     protected $beforeDelete   = [];
     protected $afterDelete    = [];
+
+    public function getDisplayColumns(): array
+    {
+        return [
+            "key","value","type","context","class","created_at","deleted_at"
+        ];
+    }
+
+    public function getDisplayColumnLabels(): array
+    {
+        return [];
+    }
+
+    public $searchFields = [ "key","value"];
 }

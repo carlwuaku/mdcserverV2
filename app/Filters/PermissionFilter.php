@@ -2,17 +2,13 @@
 
 namespace App\Filters;
 
-use App\Models\RolePermissionsModel;
 use CodeIgniter\Filters\FilterInterface;
 use CodeIgniter\HTTP\RequestInterface;
 use CodeIgniter\HTTP\ResponseInterface;
+use App\Models\RolePermissionsModel;
 
-class AuthFilter implements FilterInterface
+class PermissionFilter implements FilterInterface
 {
-    public $routePermissions = [
-        "roles" => "",
-
-    ];
     /**
      * Do whatever processing this filter needs to do.
      * By default it should not return anything during
@@ -37,11 +33,16 @@ class AuthFilter implements FilterInterface
         }
         if($arguments){
             //the arguments would be permissions the user needs to have
-            log_message("info", $arguments);
             $rpModel = new RolePermissionsModel();
-            if(!$rpModel->hasPermission(auth()->getUser()->role_id, $arguments)){
-                return $response->setStatusCode(401)->setBody('{"message": "you are not permitted to perform this action"}');
+            foreach ($arguments as $permission) {
+                if(!$rpModel->hasPermission(auth()->getUser()->role_id, $permission)){
+                    // return  $response->setJSON(['message' => "Server error"])->setStatusCode(ResponseInterface::HTTP_UNAUTHORIZED, "you are not permitted to perform this action");
+                    // return $response->setStatusCode(401)->setBody('{"message": "you are not permitted to perform this action"}');
+                    return $response->setStatusCode(ResponseInterface::HTTP_INTERNAL_SERVER_ERROR)->setJSON(['message'=> 'Server error']);
+
+                }
             }
+            
         }
     }
 
@@ -62,5 +63,3 @@ class AuthFilter implements FilterInterface
         //
     }
 }
-
-
