@@ -216,7 +216,6 @@ class PractitionerRenewal extends Migration
         $this->forge->addKey('subspecialty', false);
         $this->forge->addKey('college_membership', false);
         $this->forge->addKey('payment_invoice_number', false);
-        $this->forge->addForeignKey('registration_number', 'practitioners', 'registration_number', 'CASCADE', 'CASCADE');
 
         $this->forge->createTable('practitioner_renewal', true);
 

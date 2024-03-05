@@ -2,15 +2,16 @@
 
 namespace App\Models;
 
-use CodeIgniter\Model;
+use App\Helpers\Interfaces\TableDisplayInterface;
+use CodeIgniter\Database\BaseBuilder;
 
-class PractitionerRenewalModel extends Model
+class PractitionerRenewalModel extends MyBaseModel implements TableDisplayInterface
 {
     protected $table            = 'practitioner_renewal';
     protected $primaryKey       = 'id';
     protected $useAutoIncrement = true;
     protected $returnType       = 'array';
-    protected $useSoftDeletes   = true;
+    protected $useSoftDeletes   = false;
     protected $protectFields    = true;
     protected $allowedFields    = [
         'uuid',
@@ -44,6 +45,8 @@ class PractitionerRenewalModel extends Model
         'maiden_name',
         'marital_status',
         'picture',
+        'year',
+        'practitioner_uuid'
 
     ];
 
@@ -70,4 +73,77 @@ class PractitionerRenewalModel extends Model
     protected $afterFind      = [];
     protected $beforeDelete   = [];
     protected $afterDelete    = [];
+
+    public $searchFields = ["first_name", "last_name", "middle_name",
+        "registration_number", "maiden_name", 'specialty',
+        'place_of_work',
+        'region',
+        'institution_type',
+        'district',
+        'status',];
+
+    public function getDisplayColumns(): array
+    {
+        return [
+            "registration_number",
+            "created_on", 
+            "expiry",  
+            "first_name", 
+            "middle_name", 
+            "last_name", 
+            "status",
+            
+            "picture", 
+            "year", 
+            'specialty',
+            'place_of_work',
+            'region',
+            'institution_type',
+            'district',
+            'payment_date',
+            'payment_file',
+            'payment_file_date',
+            'subspecialty',
+            'college_membership',
+            'payment_invoice_number',
+            'deleted_at'
+        ];
+    }
+
+    public function getDisplayColumnLabels(): array
+    {
+        return [];
+    }
+
+    public function addCustomFields(BaseBuilder $builder): BaseBuilder
+    {
+        
+        $filteredColumns = [
+            "registration_number","created_on", "expiry",  "first_name", "middle_name", "last_name", "status",
+            
+            "picture", "year", 'specialty',
+            'place_of_work',
+            'region',
+            'institution_type',
+            'district',
+            'status',
+            'payment_date',
+            'payment_file',
+            'payment_file_date',
+            'subspecialty',
+            'college_membership',
+            'payment_invoice_number',
+            'uuid',
+            'practitioner_uuid'
+        ];
+        $builder
+            ->select(implode(', ', $filteredColumns))
+            
+            ->select("CONCAT('" . base_url("file-server/image-render") . "','/practitioners_images/'," . "picture) as picture");
+        return $builder;
+    }
+
+    public function getTableName(): string{
+        return $this->table;
+    }
 }

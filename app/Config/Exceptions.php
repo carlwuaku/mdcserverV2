@@ -99,7 +99,7 @@ class Exceptions extends BaseConfig
      */
     public function handler(int $statusCode, Throwable $exception): ExceptionHandlerInterface
     {
-        if (in_array($statusCode, [400, 404, 500], true)) {
+        if (in_array($statusCode, [400, 401, 404, 500], true)) {
             return new \App\Libraries\GlobalErrorHandler($this);
         }
         return new ExceptionHandler($this);

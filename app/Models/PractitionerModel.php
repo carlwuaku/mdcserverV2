@@ -89,8 +89,10 @@ class PractitionerModel extends MyBaseModel implements TableDisplayInterface
                 return 'practitioners.' . $col;
             }, $filteredColumns)))
             ->select("(CASE 
-        WHEN EXISTS (SELECT 1 FROM $renewalTable WHERE $renewalTable.practitioner_uuid = $practitionersTable.uuid AND CURDATE() BETWEEN $renewalTable.year AND $renewalTable.expiry AND $renewalTable.status = 'Approved') THEN 'yes'
-        ELSE 'no'
+        WHEN EXISTS (SELECT 1 FROM $renewalTable WHERE $renewalTable.practitioner_uuid = $practitionersTable.uuid AND CURDATE() BETWEEN $renewalTable.year AND $renewalTable.expiry AND $renewalTable.status = 'Approved') THEN 'In Good Standing'
+        WHEN EXISTS (SELECT 1 FROM $renewalTable WHERE $renewalTable.practitioner_uuid = $practitionersTable.uuid AND CURDATE() BETWEEN $renewalTable.year AND $renewalTable.expiry AND $renewalTable.status = 'Pending Payment') THEN 'Pending Payment'
+        WHEN EXISTS (SELECT 1 FROM $renewalTable WHERE $renewalTable.practitioner_uuid = $practitionersTable.uuid AND CURDATE() BETWEEN $renewalTable.year AND $renewalTable.expiry AND $renewalTable.status = 'Pending Approval') THEN 'Pending Approval'
+        ELSE 'Not In Good Standing'
     END) AS in_good_standing")
             ->select("(CASE $practitionersTable.status when 1 THEN 'Alive'
         ELSE 'Deceased'

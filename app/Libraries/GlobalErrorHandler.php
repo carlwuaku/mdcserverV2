@@ -19,6 +19,17 @@ class GlobalErrorHandler extends BaseExceptionHandler implements ExceptionHandle
         int $exitCode
     ): void {
         log_message("error", $exception->getMessage());
-        $response->setStatusCode(ResponseInterface::HTTP_INTERNAL_SERVER_ERROR)->setJSON(['message'=> 'Server error']);
+        $response->setStatusCode(ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        
+        // Set the JSON response
+        $response->setJSON(['message'=> 'Server error. Please try again!']);
+        
+        // Ensure the Content-Type header is set to application/json
+        $response->setHeader('Content-Type', 'application/json');
+        
+        // Send the response back to the client
+        $response->send();
+        exit($exitCode);
+
     }
 }
