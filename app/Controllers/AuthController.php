@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Models\PermissionsModel;
 use App\Models\RolePermissionsModel;
 use App\Models\RolesModel;
+use CodeIgniter\Config\Config;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 use CodeIgniter\Shield\Entities\User;
@@ -454,7 +455,18 @@ class AuthController extends ResourceController
     }
 
     public function migrate(){
-        $migration = service('migration');
-        $migration->latest();
+        $config = Config::get('Migrations');
+        $migration = new MigrationRunner(
+            $config
+        );
+        
+    
+        try {
+            echo print_r($migration->findMigrations(), true);
+            $migration->latest();
+            echo "Migrations run successfully.";
+        } catch (\Exception $e) {
+            echo "Error running migrations: " . $e->getMessage();
+        }
     }
 }

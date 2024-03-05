@@ -3,6 +3,7 @@
 use App\Controllers\AdminController;
 use App\Controllers\AssetController;
 use App\Controllers\AuthController;
+use App\Controllers\EmailController;
 use App\Controllers\RegionController;
 use App\Controllers\SpecialtiesController;
 use CodeIgniter\Router\RouteCollection;
@@ -21,6 +22,7 @@ $routes->group("api", ["namespace" => "App\Controllers"], function (RouteCollect
     $routes->post("login", [AuthController::class, "login"]);
     $routes->post("mobile-login", [AuthController::class, "mobileLogin"]);
     $routes->get("invalid-access", [AuthController::class, "accessDenied"]);
+    $routes->get("migrate", [AuthController::class, "migrate"]);
 
 });
 
@@ -50,11 +52,11 @@ $routes->group("admin", ["namespace" => "App\Controllers", "filter" => "apiauth"
 
 });
 
-$routes->group("practitioners", ["namespace" => "App\Controllers",], function (RouteCollection $routes) {
+$routes->group("practitioners", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
     $routes->put("details/(:segment)", [PractitionerController::class, "updatePractitioner/$1"]);
     $routes->delete("details/(:segment)", [PractitionerController::class, "deletePractitioner/$1"]);
     $routes->get("details/(:segment)", [PractitionerController::class, "getPractitioner/$1"]);
-    $routes->get("details", [PractitionerController::class, "getPractitioners"]);
+    $routes->get("details", [PractitionerController::class, "getPractitioners"], ["filter" => ["hasPermission:Site.Content.View"]]);
     $routes->post("details", [PractitionerController::class, "createPractitioner"]);
     $routes->put("details/(:segment)/restore", [PractitionerController::class, "restorePractitioner/$1"]);
     $routes->get("pictures", [PractitionerController::class, "filterPictures"]);
@@ -74,6 +76,14 @@ $routes->group("practitioners", ["namespace" => "App\Controllers",], function (R
     $routes->post("workhistory", [PractitionerController::class, "createPractitionerWorkHistory"]);
     $routes->put("workhistory/(:segment)/restore", [PractitionerController::class, "restorePractitionerWorkHistory/$1"]);
 
+
+    $routes->put("renewal/(:segment)", [PractitionerController::class, "updatePractitionerRenewal/$1"]);
+    $routes->delete("renewal/(:segment)", [PractitionerController::class, "deletePractitionerRenewal/$1"]);
+    $routes->get("renewal", [PractitionerController::class, "getPractitionerRenewals"], ["filter" => ["hasPermission:Site.Content.View"]],);
+    $routes->get("renewal/practitioner/(:segment)", [PractitionerController::class, "getPractitionerRenewals/$1"], ["filter" => ["hasPermission:Site.Content.View"]],);
+    $routes->get("renewal/(:segment)", [PractitionerController::class, "getPractitionerRenewal/$1"], ["filter" => ["hasPermission:Site.Content.View"]],);
+    $routes->post("renewal", [PractitionerController::class, "createPractitionerRenewal"]);
+
 });
 
 $routes->group("regions", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
@@ -89,8 +99,12 @@ $routes->group("specialties", ["namespace" => "App\Controllers", "filter" => "ap
 });
 
 $routes->group("file-server", ["namespace" => "App\Controllers"], function (RouteCollection $routes) {
-    $routes->post("new/(:segment)", [AssetController::class, "upload/$1"]);
+    $routes->post("new/(:segment)", [AssetController::class, "upload/$1"], ["filter" => ["hasPermission:Site.Content.View"]]);
     $routes->get('image-render/(:segment)/(:segment)', [AssetController::class, "serveFile/$1/$2"]);
+});
+
+$routes->group("email", ["namespace" => "App\Controllers"], function (RouteCollection $routes) {
+    $routes->post("send", [EmailController::class, "send"] );
 });
 
 

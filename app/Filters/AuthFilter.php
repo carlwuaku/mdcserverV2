@@ -33,7 +33,8 @@ class AuthFilter implements FilterInterface
         helper("auth");
         $response = service('response');
         if(!auth("tokens")->loggedIn()){            
-        return $response->setStatusCode(401)->setBody('{"message": "you are not logged in"}');
+         $response->setStatusCode(401)->setBody('you are not logged in')->send();
+        exit();
         }
         if($arguments){
             //the arguments would be permissions the user needs to have

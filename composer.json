@@ -15,7 +15,8 @@
         "codeigniter4/framework": "^4.0",
         "codeigniter4/settings": "^2.2",
         "codeigniter4/shield": "^1.0@beta",
-        "ramsey/uuid": "^4.7"
+        "ramsey/uuid": "^4.7",
+        "simplesoftwareio/simple-qrcode": "^4.2"
     },
     "require-dev": {
         "fakerphp/faker": "^1.9",
