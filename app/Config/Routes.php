@@ -3,6 +3,7 @@
 use App\Controllers\AdminController;
 use App\Controllers\AssetController;
 use App\Controllers\AuthController;
+use App\Controllers\EmailController;
 use App\Controllers\RegionController;
 use App\Controllers\SpecialtiesController;
 use CodeIgniter\Router\RouteCollection;
@@ -98,8 +99,12 @@ $routes->group("specialties", ["namespace" => "App\Controllers", "filter" => "ap
 });
 
 $routes->group("file-server", ["namespace" => "App\Controllers"], function (RouteCollection $routes) {
-    $routes->post("new/(:segment)", [AssetController::class, "upload/$1"]);
+    $routes->post("new/(:segment)", [AssetController::class, "upload/$1"], ["filter" => ["hasPermission:Site.Content.View"]]);
     $routes->get('image-render/(:segment)/(:segment)', [AssetController::class, "serveFile/$1/$2"]);
+});
+
+$routes->group("email", ["namespace" => "App\Controllers"], function (RouteCollection $routes) {
+    $routes->post("send", [EmailController::class, "send"] );
 });
 
 
