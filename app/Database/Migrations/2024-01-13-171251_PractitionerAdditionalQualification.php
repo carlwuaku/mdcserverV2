@@ -75,7 +75,9 @@ class PractitionerAdditionalQualification extends Migration
         $this->forge->addKey('qualification', false);
         $this->forge->addForeignKey('registration_number', 'practitioners', 'registration_number', 'CASCADE', 'CASCADE','add_qualification_reg_num');
 
-        $this->forge->createTable('practitioner_additional_qualifications', true);
+        $this->forge->createTable('practitioner_additional_qualifications', true, [
+            'ENGINE' => 'InnoDB',
+        ]);
 
     }
 

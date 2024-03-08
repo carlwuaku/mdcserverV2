@@ -31,7 +31,9 @@ class AddRegions extends Migration
         $this->forge->addKey('id', true);
         $this->forge->addKey('name', false, false, 'region_name');
 
-        $this->forge->createTable('regions', true);
+        $this->forge->createTable('regions', true, [
+            'ENGINE' => 'InnoDB',
+        ]);
     }
 
     public function down()

@@ -57,7 +57,9 @@ class AddRolesTable extends Migration
         $this->forge->addPrimaryKey('role_id');
         $this->forge->addUniqueKey(['role_name']);
    
-        $this->forge->createTable($this->table, TRUE);
+        $this->forge->createTable($this->table, TRUE, [
+            'ENGINE' => 'InnoDB',
+        ]);
     }
 
     public function down()

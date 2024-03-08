@@ -36,7 +36,9 @@ class AddSubspecialties extends Migration
         $this->forge->addKey('specialty', false, false, 'specialty_key');
         $this->forge->addForeignKey('specialty', 'specialties', 'name', 'CASCADE', 'CASCADE');
 
-        $this->forge->createTable('subspecialties', true);
+        $this->forge->createTable('subspecialties', true, [
+            'ENGINE' => 'InnoDB',
+        ]);
     }
 
     public function down()

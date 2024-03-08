@@ -25,7 +25,9 @@ class AddSpecialties extends Migration
         $this->forge->addKey('id', true);
         $this->forge->addKey('name', false, false, 'specialty');
 
-        $this->forge->createTable('specialties', true);
+        $this->forge->createTable('specialties', true, [
+            'ENGINE' => 'InnoDB',
+        ]);
     }
 
     public function down()

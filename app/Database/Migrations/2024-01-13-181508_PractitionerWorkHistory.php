@@ -104,7 +104,9 @@ class PractitionerWorkHistory extends Migration
         $this->forge->addKey('region', false);
         $this->forge->addForeignKey('registration_number', 'practitioners', 'registration_number', 'CASCADE', 'CASCADE', 'work_history_reg_num');
 
-        $this->forge->createTable('practitioner_work_history', true);
+        $this->forge->createTable('practitioner_work_history', true, [
+            'ENGINE' => 'InnoDB',
+        ]);
 
     }
 

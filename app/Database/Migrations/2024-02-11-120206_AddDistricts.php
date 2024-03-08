@@ -36,7 +36,9 @@ class AddDistricts extends Migration
         $this->forge->addKey('region', false, false, 'region_key');
         $this->forge->addForeignKey('region', 'regions', 'name', 'CASCADE', 'CASCADE');
 
-        $this->forge->createTable('districts', true);
+        $this->forge->createTable('districts', true, [
+            'ENGINE' => 'InnoDB',
+        ]);
     }
 
     public function down()

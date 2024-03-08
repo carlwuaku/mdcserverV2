@@ -23,6 +23,7 @@ $routes->group("api", ["namespace" => "App\Controllers"], function (RouteCollect
     $routes->post("mobile-login", [AuthController::class, "mobileLogin"]);
     $routes->get("invalid-access", [AuthController::class, "accessDenied"]);
     $routes->get("migrate", [AuthController::class, "migrate"]);
+    $routes->get("migrate-cmd", [AuthController::class, "runShieldMigration"]);
 
 });
 

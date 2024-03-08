@@ -19,11 +19,14 @@ class CreateActivities extends Migration
                 
             ],
             'activity'=> [
-                'type' => 'TEXT',
+                'type' => 'VARCHAR',
+                'constraint' => 5000
+                ,
                'null' => false
             ],
             'module'=> [
-                'type' => 'TEXT',
+                'type' => 'VARCHAR',
+                'constraint' => 5000,
                'null' => false,
                'default' => 'General'
             ],
@@ -47,7 +50,9 @@ class CreateActivities extends Migration
         $this->forge->addKey('activity', false);
         $this->forge->addKey('created_on', false);
 
-        $this->forge->createTable('activities', true);
+        $this->forge->createTable('activities', true, [
+            'ENGINE' => 'InnoDB',
+        ]);
     }
 
     public function down()
