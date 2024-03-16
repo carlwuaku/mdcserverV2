@@ -34,13 +34,14 @@ class SpecialtiesController extends ResourceController
         }
     }
 
-    public function getSubspecialties($specialtyName = null)
+    public function getSubspecialties()
     {
         try {
             $per_page = $this->request->getVar('limit') ? (int) $this->request->getVar('limit') : 1000;
             $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
             $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted')  === "yes";
             $param = $this->request->getVar('param');
+            $specialtyName = $this->request->getVar('specialty');
             $model = new SubspecialtiesModel();
             
             $builder = $param ? $model->search($param) : $model->builder();

@@ -71,14 +71,12 @@ class PractitionerRenewal extends Migration
                 'default'=> null
             ],
             'qr_code' => [
-                'type' => 'VARCHAR',
-                'constraint' => '100',
+                'type' => 'TEXT',
                 'null' => true,
                 'default'=> null
             ],
             'qr_text' => [
-                'type' => 'VARCHAR',
-                'constraint' => '500',
+                'type' => 'TEXT',
                 'null' => true,
                 'default'=> null
             ],

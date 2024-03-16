@@ -25,6 +25,8 @@ class MyBaseModel extends Model
      * @return BaseBuilder an object that can be used in chain queries like ->join() or ->select()
      */
     public function search(string $searchString): BaseBuilder{
+        //sanitize the search string
+        $searchString = $this->db->escapeLikeString($searchString);
         $words = array_map('trim', explode(',', $searchString));
         $builder = $this->db->table($this->table);
         $fields = $this->searchFields ?? $this->allowedFields;

@@ -17,6 +17,6 @@ class EmailController extends ResourceController
     $bcc = $this->request->getVar('bcc');
     $attachment = $this->request->getVar('attachment');
 
-    Utils::sendEmail($message, $subject, $receiver);
+    Utils::sendEmail($message, $subject, $receiver, $sender);
    }
 }

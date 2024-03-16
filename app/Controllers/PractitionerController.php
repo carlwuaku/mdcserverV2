@@ -73,8 +73,9 @@ class PractitionerController extends ResourceController
         $model = new PractitionerModel();
         $oldData = $model->where(["uuid" => $uuid])->first();
         $changes = implode(", ", Utils::compareObjects($oldData, $data));
+        log_message('info', print_r($data, true));
         if (!$model->builder()->where(['uuid' => $uuid])->update($data)) {
-            return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
         }
         /** @var ActivitiesModel $activitiesModel */
         $activitiesModel = new ActivitiesModel();
@@ -119,7 +120,8 @@ class PractitionerController extends ResourceController
      * @return PractitionerModel|null The practitioner data if found, null otherwise
      * @throws Exception If practitioner is not found
      */
-    private function getPractitionerDetails(string $uuid): array|object|null {
+    private function getPractitionerDetails(string $uuid): array|object|null
+    {
         $model = new PractitionerModel();
         $builder = $model->builder();
         $builder = $model->addCustomFields($builder);
@@ -148,10 +150,24 @@ class PractitionerController extends ResourceController
             $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
             $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted') === "yes";
             $param = $this->request->getVar('param');
-            $model = new PractitionerModel();
+            $sortBy = $this->request->getVar('sortBy') ?? "id";
+            $sortOrder = $this->request->getVar('sortOrder') ?? "asc";
 
+            $model = new PractitionerModel();
+            /** if set, use this year for checking whether the person is in goodstanding */
+            $renewalDate = $this->request->getVar('renewalDate');
+            if ($renewalDate) {
+                $model->renewalDate = date("Y-m-d", strtotime($renewalDate));
+            }
             $builder = $param ? $model->search($param) : $model->builder();
             $builder = $model->addCustomFields($builder);
+            if ($renewalDate) {
+                //this is pretty much only used when selecting people for renewal. in this case
+                //we want to know the last uuid for a renewal so we can edit or delete it
+                $builder = $model->addLastRenewalField($builder);
+            }
+            $tableName = $model->getTableName();
+            $builder->orderBy("$tableName.$sortBy", $sortOrder);
 
             if ($withDeleted) {
                 $model->withDeleted();
@@ -459,6 +475,8 @@ class PractitionerController extends ResourceController
             $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
             $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted') === "yes";
             $param = $this->request->getVar('param');
+            $sortBy = $this->request->getVar('sortBy') ?? "id";
+            $sortOrder = $this->request->getVar('sortOrder') ?? "asc";
 
             $model = new PractitionerRenewalModel();
             $registration_number = $this->request->getGet('registration_number');
@@ -473,6 +491,8 @@ class PractitionerController extends ResourceController
             if ($withDeleted) {
                 $model->withDeleted();
             }
+            $builder->orderBy("$sortBy", $sortOrder);
+
             $totalBuilder = clone $builder;
             $total = $totalBuilder->countAllResults();
             $result = $builder->get($per_page, $page)->getResult();
@@ -491,6 +511,7 @@ class PractitionerController extends ResourceController
     {
         $model = new PractitionerRenewalModel();
         $builder = $model->builder();
+        $builder = $model->addCustomFields($builder);
         $builder->where($model->getTableName() . '.uuid', $uuid);
         $data = $model->first();
         if (!$data) {
@@ -501,140 +522,210 @@ class PractitionerController extends ResourceController
 
     public function createPractitionerRenewal()
     {
-        try {        
-        $rules = [
-            "registration_number" => "required",
-            "year" => "required",
-            "practitioner_uuid" => "required",
-            "status" => "required",
-        ];
+        try {
+            $rules = [
+                "registration_number" => "required",
+                "year" => "required",
+                "practitioner_uuid" => "required",
+                "status" => "required",
+            ];
 
 
-        if (!$this->validate($rules)) {
-            return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
-        }
-        $practitioner_uuid = $this->request->getPost('practitioner_uuid');
+            if (!$this->validate($rules)) {
+                return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
+            }
+            $practitioner_uuid = $this->request->getPost('practitioner_uuid');
 
-        $registration_number = $this->request->getPost('registration_number');
-        $year = $this->request->getPost('year') ?? date("Y");
+            $registration_number = $this->request->getPost('registration_number');
+            $startDate = $this->request->getPost('year') ?? date("Y-m-d");
+            $year = date('Y', strtotime($startDate));
+            $data = $this->request->getPost();
+            $model = new PractitionerRenewalModel();
+            $practitioner = $this->getPractitionerDetails($practitioner_uuid);
+            $expiry = $this->request->getPost('expiry');
+            if ($practitioner['in_good_standing'] === "yes") {
+                return $this->respond(['message' => "Practitioner is already in good standing"], ResponseInterface::HTTP_BAD_REQUEST);
+            }
 
-        $data = $this->request->getPost();
-        $model = new PractitionerRenewalModel();
-        $practitioner = $this->getPractitionerDetails($practitioner_uuid);
 
-        if ($practitioner['in_good_standing'] === "yes") {
-            return $this->respond(['message' => "Practitioner is already in good standing"], ResponseInterface::HTTP_BAD_REQUEST);
-        }
 
-        
-        
-        //if expiry is empty, and $practitioner->register_type is Permanent, set to the end of the year in $data->year. if $practitioner->register_type is Temporary, set to 3 months from today. if $practitioner->register_type is Provisional, set to a year from today
-        if ($practitioner['register_type'] === "Permanent") {
-            $data['expiry'] = date("Y-m-d", strtotime($year . "-12-31"));
+            if (empty($expiry)) {
+                $data['expiry'] = Utils::generateRenewalExpiryDate($practitioner, $startDate);
+            }
+
+            if ($data['status'] === "Approved") {
+                $code = md5($registration_number . "%%" . $year);
+                $qrText = "manager.mdcghana.org/api/verifyRelicensure/$code";
+                $qrCodeGenerator = new Generator;
+                $qrCode = $qrCodeGenerator
+                    ->size(200)
+                    ->margin(10)
+                    ->generate($qrText);
+                $data['qr_code'] = $qrCode;
+                $data['qr_text'] = $qrText;
+            }
+            //start a transaction
+            $model->db->transStart();
+            $model->insert($data);
+            $place_of_work = $this->request->getPost('place_of_work');
+            $region = $this->request->getPost('region');
+            $district = $this->request->getPost('district');
+            $institution_type = $this->request->getPost('institution_type');
+            $specialty = $this->request->getPost('specialty');
+            $subspecialty = $this->request->getPost('subspecialty');
+            $college_membership = $this->request->getPost('college_membership');
+
+            $practitionerModel = new PractitionerModel();
+            $practitionerUpdate = [
+                "place_of_work" => $place_of_work,
+                "region" => $region,
+                "district" => $district,
+                "institution_type" => $institution_type,
+                "specialty" => $specialty,
+                "subspecialty" => $subspecialty,
+                "college_membership" => $college_membership,
+                "last_renewal_start" => $startDate,
+                "last_renewal_expiry" => $data['expiry'],
+                "last_renewal_status" => $data['status'],
+
+            ];
+            $practitionerModel->builder()->where(['uuid' => $practitioner_uuid])->update($practitionerUpdate);
+            $model->db->transComplete();
+            if ($model->db->transStatus() === false) {
+                log_message("error", $model->getError());
+                return $this->respond(['message' => "Error inserting data. Please make sure all fields are filled correctly and try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+                // generate an error... or use the log_message() function to log your error
+            }
+            //send email to the user from here if the setting RENEWAL_EMAIL_TO is set to true
+            /** @var ActivitiesModel $activitiesModel */
+            $activitiesModel = new ActivitiesModel();
+            $activitiesModel->logActivity("added retention record for $registration_number ");
+            return $this->respond(['message' => "Renewal created successfully", 'data' => ""], ResponseInterface::HTTP_OK);
+        } catch (\Throwable $th) {
+            log_message("error", $th->getMessage());
+            return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+
         }
-        if ($practitioner['register_type'] === "Temporary") {
-            $data['expiry'] = date("Y-m-d", strtotime("+3 months"));
-        }
-        if ($practitioner['register_type'] === "Provisional") {
-            $data['expiry'] = date("Y-m-d", strtotime("+1 year"));
-        }
-        if($data['status'] === "Approved"){
-        $code = md5($registration_number . "%%" . $year);
-        $qrText = "manager.mdcghana.org/api/verifyRelicensure/$code";
-        $qrCodeGenerator = new Generator;
-        $qrCode = $qrCodeGenerator
-            ->size(200)
-            ->margin(10)
-            ->generate($qrText);
-        $data['qr_code'] = $qrCode;
-        $data['qr_text'] = $qrText;
-        }
-        $data['year'] = date("Y-m-d", strtotime("$year-01-01"));
-        // $data['status'] = "Approved";
-        //start a transaction
-        $model->db->transStart();
-        $model->insert($data);
-        $practitionerModel = new PractitionerModel();
-        $practitionerUpdate = [
-            "place_of_work" => $data['place_of_work'],
-            "region" => $data['region'],
-            "district" => $data['district'],
-            "institution_type" => $data['institution_type'],
-            "specialty" => $data['specialty'],
-            "subspecialty" => $data['subspecialty'],
-            "college_membership" => $data['college_membership']
-        ];
-        $practitionerModel->builder()->where(['uuid' => $practitioner_uuid])->update($practitionerUpdate);
-        $model->db->transComplete();
-        if ($model->db->transStatus() === false) {
-            log_message("error", $model->getError());
-            return $this->respond(['message' => "Error inserting data. Please make sure all fields are filled correctly and try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
-            // generate an error... or use the log_message() function to log your error
-        }
-        //send email to the user from here if the setting RENEWAL_EMAIL_TO is set to true
-        /** @var ActivitiesModel $activitiesModel */
-        $activitiesModel = new ActivitiesModel();
-        $activitiesModel->logActivity("added retention record for $registration_number ");
-        return $this->respond(['message' => "Renewal created successfully", 'data' => ""], ResponseInterface::HTTP_OK);
-    } catch (\Throwable $th) {
-        log_message("error", $th->getMessage());
-        return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
-    
-    }
     }
 
     public function updatePractitionerRenewal($uuid)
     {
-        $rules = [
-            "registration_number" => "required",
-            "practitioner_uuid" => "required"
-        ];
+        try {
+            $rules = [
+                "registration_number" => "required",
+                "practitioner_uuid" => "required"
+            ];
+            $practitioner_uuid = $this->request->getVar('practitioner_uuid');
 
-        if (!$this->validate($rules)) {
-            return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
+            if (!$this->validate($rules)) {
+                return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
+            }
+            $data = $this->request->getVar();
+            $data->uuid = $uuid;
+            if (property_exists($data, "id")) {
+                unset($data->id);
+            }
+
+            $registration_number = $this->request->getVar('registration_number');
+            $startDate = $this->request->getVar('year') ?? date("Y-m-d");
+            $year = date('Y', strtotime($startDate));
+            $expiry = $this->request->getVar('expiry');
+            $practitioner = $this->getPractitionerDetails($practitioner_uuid);
+            if (empty($expiry)) {
+                $data->expiry = Utils::generateRenewalExpiryDate($practitioner, $startDate);
+            }
+            //get only the last part of the picture path
+            if (property_exists($data, "picture")) {
+                $splitPicturePath = explode("/", $data->picture);
+                $data->picture = array_pop($splitPicturePath);
+            }
+
+            //if the status is approved, generate a qr code. else remove it if it exists
+            if ($data->status === "Approved") {
+                    $code = md5($registration_number . "%%" . $year);
+                    $qrText = "manager.mdcghana.org/api/verifyRelicensure/$code";
+                    $qrCodeGenerator = new Generator;
+                    $qrCode = $qrCodeGenerator
+                        ->size(200)
+                        ->margin(10)
+                        ->generate($qrText);
+                    $data->qr_code = $qrCode;
+                    $data->qr_text = $qrText;
+            }
+            else{
+                $data->qr_code = null;
+                $data->qr_text = null;
+            }
+            
+            $model = new PractitionerRenewalModel();
+            $model->db->transStart();
+            $oldData = $model->where(["uuid" => $uuid])->first();
+            $changes = implode(", ", Utils::compareObjects($oldData, $data));
+
+            $model->builder()->where(['uuid' => $uuid])->update($data);
+            $practitionerModel = new PractitionerModel();
+
+            $place_of_work = $this->request->getVar('place_of_work');
+            $region = $this->request->getVar('region');
+            $district = $this->request->getVar('district');
+            $institution_type = $this->request->getVar('institution_type');
+            $specialty = $this->request->getVar('specialty');
+            $subspecialty = $this->request->getVar('subspecialty');
+            $college_membership = $this->request->getVar('college_membership');
+
+            $practitionerUpdate = [
+                "place_of_work" => $place_of_work,
+                "region" => $region,
+                "district" => $district,
+                "institution_type" => $institution_type,
+                "specialty" => $specialty,
+                "subspecialty" => $subspecialty,
+                "college_membership" => $college_membership,
+                "last_renewal_start" => $startDate,
+                "last_renewal_expiry" => $data->expiry,
+                "last_renewal_status" => $data->status,
+            ];
+            $practitionerModel->builder()->where(['uuid' => $practitioner_uuid])->update($practitionerUpdate);
+            $model->db->transComplete();
+            if ($model->db->transStatus() === false) {
+                log_message("error", $model->getError());
+                return $this->respond(['message' => "Error updating data. Please make sure all fields are filled correctly and try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+            }
+
+            /** @var ActivitiesModel $activitiesModel */
+            $activitiesModel = new ActivitiesModel();
+            $activitiesModel->logActivity("updated renewal for practitioner {$data->registration_number}. Changes: $changes");
+
+            return $this->respond(['message' => 'Practitioner renewal updated successfully'], ResponseInterface::HTTP_OK);
+        } catch (\Throwable $th) {
+            log_message("error", $th->getMessage());
+            return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+
         }
-        $data = $this->request->getVar();
-        $data->uuid = $uuid;
-        if (property_exists($data, "id")) {
-            unset($data->id);
-        }
-        //get only the last part of the picture path
-        if (property_exists($data, "picture")) {
-            $splitPicturePath = explode("/", $data->picture);
-            $data->picture = array_pop($splitPicturePath);
-        }
-        $model = new PractitionerRenewalModel();
-
-        $oldData = $model->where(["uuid" => $uuid])->first();
-        $changes = implode(", ", Utils::compareObjects($oldData, $data));
-
-        if (!$model->builder()->where(['uuid' => $uuid])->update($data)) {
-            return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
-        }
-
-        /** @var ActivitiesModel $activitiesModel */
-        $activitiesModel = new ActivitiesModel();
-        $activitiesModel->logActivity("updated renewal for practitioner {$data['registration_number']}. Changes: $changes");
-
-        return $this->respond(['message' => 'Practitioner additional qualification updated successfully'], ResponseInterface::HTTP_OK);
     }
 
     public function deletePractitionerRenewal($uuid)
     {
-        $model = new PractitionerRenewalModel();
-        $data = $model->where(["uuid" => $uuid])->first();
+        try {
+            $model = new PractitionerRenewalModel();
+            $data = $model->where(["uuid" => $uuid])->first();
 
-        if (!$model->where('uuid', $uuid)->delete()) {
-            return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+            if (!$model->where('uuid', $uuid)->delete()) {
+                return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+            }
+
+            /** @var ActivitiesModel $activitiesModel */
+            $activitiesModel = new ActivitiesModel();
+            $activitiesModel->logActivity("Deleted renewal for practitioner {$data['registration_number']}. ");
+
+            return $this->respond(['message' => 'Practitioner renewal deleted successfully'], ResponseInterface::HTTP_OK);
+        } catch (\Throwable $th) {
+            log_message("error", $th->getMessage());
+            return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+
         }
-
-        /** @var ActivitiesModel $activitiesModel */
-        $activitiesModel = new ActivitiesModel();
-        $activitiesModel->logActivity("Deleted renewal for practitioner {$data['registration_number']}. ");
-
-        return $this->respond(['message' => 'Practitioner renewal deleted successfully'], ResponseInterface::HTTP_OK);
     }
 
-    
+
 
 }

@@ -134,7 +134,8 @@ class PractitionerRenewalModel extends MyBaseModel implements TableDisplayInterf
             'college_membership',
             'payment_invoice_number',
             'uuid',
-            'practitioner_uuid'
+            'practitioner_uuid',
+            "title"
         ];
         $builder
             ->select(implode(', ', $filteredColumns))

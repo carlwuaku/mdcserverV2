@@ -39,7 +39,8 @@
         "sort-packages": true
     },
     "scripts": {
-        "test": "phpunit"
+        "test": "phpunit",
+        "build-prod": "composer update --no-dev"
     },
     "minimum-stability": "dev",
     "prefer-stable": true

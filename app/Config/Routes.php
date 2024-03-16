@@ -23,6 +23,7 @@ $routes->group("api", ["namespace" => "App\Controllers"], function (RouteCollect
     $routes->post("mobile-login", [AuthController::class, "mobileLogin"]);
     $routes->get("invalid-access", [AuthController::class, "accessDenied"]);
     $routes->get("migrate", [AuthController::class, "migrate"]);
+    $routes->get("migrate-cmd", [AuthController::class, "runShieldMigration"]);
 
 });
 
@@ -95,7 +96,6 @@ $routes->group("regions", ["namespace" => "App\Controllers", "filter" => "apiaut
 $routes->group("specialties", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
     $routes->get("specialties", [SpecialtiesController::class, "getSpecialties"]);
     $routes->get("subspecialties", [SpecialtiesController::class, "getSubspecialties"]);
-    $routes->get("subspecialties/(:segment)", [SpecialtiesController::class, "getSubspecialties/$1"]);
 });
 
 $routes->group("file-server", ["namespace" => "App\Controllers"], function (RouteCollection $routes) {
