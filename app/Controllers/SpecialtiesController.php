@@ -16,6 +16,8 @@ class SpecialtiesController extends ResourceController
             $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
             $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted')  === "yes";
             $param = $this->request->getVar('param');
+            $sortBy = $this->request->getVar('sortBy') ?? "id";
+            $sortOrder = $this->request->getVar('sortOrder') ?? "asc";
             $model = new SpecialtiesModel();
             
             $builder = $param ? $model->search($param) : $model->builder();
@@ -23,6 +25,8 @@ class SpecialtiesController extends ResourceController
             if ($withDeleted) {
                 $model->withDeleted();
             }
+
+            $builder->orderBy($sortBy, $sortOrder);
             $totalBuilder = clone $builder;
             $total = $totalBuilder->countAllResults();
             $result = $builder->get($per_page, $page)->getResult();
@@ -42,6 +46,8 @@ class SpecialtiesController extends ResourceController
             $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted')  === "yes";
             $param = $this->request->getVar('param');
             $specialtyName = $this->request->getVar('specialty');
+            $sortBy = $this->request->getVar('sortBy') ?? "id";
+            $sortOrder = $this->request->getVar('sortOrder') ?? "asc";
             $model = new SubspecialtiesModel();
             
             $builder = $param ? $model->search($param) : $model->builder();
@@ -51,6 +57,8 @@ class SpecialtiesController extends ResourceController
             if ($withDeleted) {
                 $model->withDeleted();
             }
+
+            $builder->orderBy($sortBy, $sortOrder);
             $totalBuilder = clone $builder;
             $total = $totalBuilder->countAllResults();
             $result = $builder->get($per_page, $page)->getResult();

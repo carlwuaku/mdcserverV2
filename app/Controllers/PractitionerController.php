@@ -54,7 +54,6 @@ class PractitionerController extends ResourceController
             "registration_number" => "if_exist|is_unique[practitioners.registration_number,uuid,$uuid]",
             "uuid" => "required",
             "date_of_birth" => "if_exist|required|valid_date",
-
         ];
 
         if (!$this->validate($rules)) {
@@ -192,6 +191,8 @@ class PractitionerController extends ResourceController
             $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
             $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted') === "yes";
             $param = $this->request->getVar('param');
+            $sortBy = $this->request->getVar('sortBy') ?? "id";
+            $sortOrder = $this->request->getVar('sortOrder') ?? "asc";
 
             $model = new PractitionerAdditionalQualificationsModel();
             $registration_number = $this->request->getGet('registration_number');
@@ -202,6 +203,7 @@ class PractitionerController extends ResourceController
             if ($withDeleted) {
                 $model->withDeleted();
             }
+            $builder->orderBy("$sortBy", $sortOrder);
             $totalBuilder = clone $builder;
             $total = $totalBuilder->countAllResults();
             $result = $builder->get($per_page, $page)->getResult();
@@ -443,6 +445,8 @@ class PractitionerController extends ResourceController
             $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
             $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted') === "yes";
             $param = $this->request->getVar('param');
+            $sortBy = $this->request->getVar('sortBy') ?? "id";
+            $sortOrder = $this->request->getVar('sortOrder') ?? "asc";
 
             $model = new PractitionerWorkHistoryModel();
             $registration_number = $this->request->getGet('registration_number');
@@ -453,6 +457,7 @@ class PractitionerController extends ResourceController
             if ($withDeleted) {
                 $model->withDeleted();
             }
+            $builder->orderBy("$sortBy", $sortOrder);
             $totalBuilder = clone $builder;
             $total = $totalBuilder->countAllResults();
             $result = $builder->get($per_page, $page)->getResult();
@@ -471,6 +476,13 @@ class PractitionerController extends ResourceController
     public function getPractitionerRenewals($practitioner_uuid = null)
     {
         try {
+            $rules = [
+                "start_date" => "if_exist|valid_date",
+                "expiry" => "if_exist|valid_date",
+            ];
+            if (!$this->validate($rules)) {
+                return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
+            }
             $per_page = $this->request->getVar('limit') ? (int) $this->request->getVar('limit') : 100;
             $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
             $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted') === "yes";
@@ -479,14 +491,32 @@ class PractitionerController extends ResourceController
             $sortOrder = $this->request->getVar('sortOrder') ?? "asc";
 
             $model = new PractitionerRenewalModel();
+
             $registration_number = $this->request->getGet('registration_number');
+        $status = $this->request->getGet('status');
+        $start_date = $this->request->getGet('start_date');
+        $expiry = $this->request->getGet('expiry');
+        $practitioner_type = $this->request->getGet('practitioner_type');
+
             $builder = $param ? $model->search($param) : $model->builder();
             $builder = $model->addCustomFields($builder);
             if ($registration_number !== null) {
-                $builder->where(["registration_number" => $registration_number]);
+                $builder->where("registration_number",$registration_number);
             }
             if ($practitioner_uuid !== null) {
-                $builder->where(["practitioner_uuid" => $practitioner_uuid]);
+                $builder->where("practitioner_uuid", $practitioner_uuid);
+            }
+            if ($status !== null) {
+                $builder->where('status', $status);
+            }
+            if ($start_date !== null) {
+                $builder->where('year >=', $start_date);
+            }
+            if ($expiry !== null) {
+                $builder->where('expiry <=', $expiry);
+            }
+            if ($practitioner_type !== null) {
+                $builder->where('practitioner_type', $practitioner_type);
             }
             if ($withDeleted) {
                 $model->withDeleted();
@@ -723,6 +753,51 @@ class PractitionerController extends ResourceController
             log_message("error", $th->getMessage());
             return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
 
+        }
+    }
+
+    public function countRenewals(){
+        try {
+            $rules = [
+                "start_date" => "if_exist|valid_date",
+                "expiry" => "if_exist|valid_date",
+            ];
+            if (!$this->validate($rules)) {
+                return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
+            }
+            $param = $this->request->getVar('param');
+        $model = new PractitionerRenewalModel();
+        $registration_number = $this->request->getGet('registration_number');
+        $status = $this->request->getGet('status');
+        $start_date = $this->request->getGet('start_date');
+        $expiry = $this->request->getGet('expiry');
+        $practitioner_type = $this->request->getGet('practitioner_type');
+
+        // Validate inputs here
+
+        $builder = $param ? $model->search($param) : $model->builder();
+        if ($registration_number !== null) {
+            $builder->where('registration_number', $registration_number);
+        }
+        if ($status !== null) {
+            $builder->where('status', $status);
+        }
+        if ($start_date !== null) {
+            $builder->where('year >=', $start_date);
+        }
+        if ($expiry !== null) {
+            $builder->where('expiry <=', $expiry);
+        }
+        if ($practitioner_type !== null) {
+            $builder->where('practitioner_type', $practitioner_type);
+        }
+        $total = $builder->countAllResults();
+        return $this->respond([
+            'data' => $total
+        ], ResponseInterface::HTTP_OK);
+        } catch (\Throwable $th) {
+            log_message("error", $th->getMessage());
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 

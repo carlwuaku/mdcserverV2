@@ -250,6 +250,8 @@ class AuthController extends ResourceController
         $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
         $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted')  === "yes";
         $param = $this->request->getVar('param');
+        $sortBy = $this->request->getVar('sortBy') ?? "id";
+            $sortOrder = $this->request->getVar('sortOrder') ?? "asc";
         $model = new RolesModel();
         $builder = $param ? $model->search($param) : $model->builder();
         $builder->join('users', "roles.role_id = users.role_id","left")
@@ -258,6 +260,7 @@ class AuthController extends ResourceController
         if($withDeleted){
             $model->withDeleted();
         }
+        $builder->orderBy($sortBy, $sortOrder);
         $totalBuilder = clone $builder;
         $total = $totalBuilder->countAllResults();
         $result = $builder->get($per_page, $page)->getResult();
