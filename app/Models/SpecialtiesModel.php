@@ -50,4 +50,8 @@ class SpecialtiesModel extends MyBaseModel implements TableDisplayInterface
     {
         return [];
     }
+
+    public function getDisplayColumnFilters(): array{
+        return [];
+    }
 }

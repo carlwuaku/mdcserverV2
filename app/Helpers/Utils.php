@@ -23,7 +23,7 @@ class Utils
         $obj2Vars = get_object_vars($newObject);
         $differentKeys = [];
         foreach ($obj2Vars as $key => $value) {
-            if (isset($obj1Vars[$key]) && $obj1Vars[$key] !== $value) {
+            if ($key !== "qr_code" &&isset($obj1Vars[$key]) && $obj1Vars[$key] !== $value) {
                 $differentKeys[] = $key . ": {$obj1Vars[$key]} -> $value";
             }
         }

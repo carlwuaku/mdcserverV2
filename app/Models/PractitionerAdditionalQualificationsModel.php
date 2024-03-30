@@ -83,4 +83,7 @@ class PractitionerAdditionalQualificationsModel extends MyBaseModel implements T
     {
         return $this->table;
     }
+    public function getDisplayColumnFilters(): array{
+        return [];
+    }
 }

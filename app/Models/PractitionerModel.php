@@ -274,4 +274,8 @@ class PractitionerModel extends MyBaseModel implements TableDisplayInterface
     {
         return $this->table;
     }
+
+    public function getDisplayColumnFilters(): array{
+        return [];
+    }
 }

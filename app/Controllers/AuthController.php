@@ -173,6 +173,36 @@ class AuthController extends ResourceController
             ->setJSON(['token' => $token->raw_token]);
     }
 
+    public function practitionerLogin()
+    {
+        // Validate credentials
+        $rules = [
+            'username' => 'required',
+            'password' => 'required',
+            'type' => 'required|string',
+        ];
+
+        if (!$this->validate($rules)) {
+            return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
+        }
+        $credentials = [
+            'email' => $this->request->getPost('username'),
+            'password' => $this->request->getPost('password'),
+        ];
+        $result = auth()->attempt($credentials, 'practitioners');
+        if (!$result->isOK()) {
+            return $this->response
+                ->setJSON(['message' => $result->reason()])
+                ->setStatusCode(401);
+        }
+
+        // Generate token and return to client
+        $token = auth()->user()->generateAccessToken(service('request')->getVar('device_name'));
+
+        return $this->response
+            ->setJSON(['token' => $token->raw_token]);
+    }
+
     //add permissions to role_id, remove permission from role_id, create a role, edit a role,
 
     public function createRole()
@@ -471,6 +501,17 @@ class AuthController extends ResourceController
         } catch (\Exception $e) {
             echo "Error running migrations: " . $e->getMessage();
         }
+    }
+
+    public function createApiKey(){
+        // $userObject = auth()->getProvider();
+        // $token =  $userObject->generateHmacToken(service('request')->getVar('token_name'));
+    // log_message('debug',     config('Encryption')->key);
+    $userObject = new UsersModel();
+        $userData = $userObject->findById(auth()->id());
+        $token = $userData->generateHmacToken(service('request')->getVar('token_name'));
+    // $token = auth()->user()->generateHmacToken(service('request')->getVar('token_name'));
+    return json_encode(['key' => $token->secret, 'secretKey' => $token->rawSecretKey]);
     }
 
     public function runShieldMigration()

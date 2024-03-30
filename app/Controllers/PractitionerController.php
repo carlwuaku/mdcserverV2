@@ -493,15 +493,16 @@ class PractitionerController extends ResourceController
             $model = new PractitionerRenewalModel();
 
             $registration_number = $this->request->getGet('registration_number');
-        $status = $this->request->getGet('status');
-        $start_date = $this->request->getGet('start_date');
-        $expiry = $this->request->getGet('expiry');
-        $practitioner_type = $this->request->getGet('practitioner_type');
+            $status = $this->request->getGet('status');
+            $start_date = $this->request->getGet('start_date');
+            $expiry = $this->request->getGet('expiry');
+            $practitioner_type = $this->request->getGet('practitioner_type');
+            $created_on = $this->request->getGet('created_on');
 
             $builder = $param ? $model->search($param) : $model->builder();
             $builder = $model->addCustomFields($builder);
             if ($registration_number !== null) {
-                $builder->where("registration_number",$registration_number);
+                $builder->where("registration_number", $registration_number);
             }
             if ($practitioner_uuid !== null) {
                 $builder->where("practitioner_uuid", $practitioner_uuid);
@@ -518,6 +519,12 @@ class PractitionerController extends ResourceController
             if ($practitioner_type !== null) {
                 $builder->where('practitioner_type', $practitioner_type);
             }
+            if ($practitioner_type !== null) {
+                $builder->where('practitioner_type', $practitioner_type);
+            }
+            if ($created_on !== null) {
+                $builder->where('date(created_on)  = ', $created_on);
+            }
             if ($withDeleted) {
                 $model->withDeleted();
             }
@@ -529,7 +536,10 @@ class PractitionerController extends ResourceController
             return $this->respond([
                 'data' => $result,
                 'total' => $total,
-                'displayColumns' => $model->getDisplayColumns()
+                'displayColumns' => $model->getDisplayColumns(),
+                'columnLabels' => $model->getDisplayColumnLabels(),
+                'columnFilters' => $model->getDisplayColumnFilters()
+                
             ], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
             log_message("error", $th->getMessage());
@@ -579,7 +589,7 @@ class PractitionerController extends ResourceController
 
 
 
-            if (empty($expiry)) {
+            if (empty ($expiry)) {
                 $data['expiry'] = Utils::generateRenewalExpiryDate($practitioner, $startDate);
             }
 
@@ -660,8 +670,9 @@ class PractitionerController extends ResourceController
             $startDate = $this->request->getVar('year') ?? date("Y-m-d");
             $year = date('Y', strtotime($startDate));
             $expiry = $this->request->getVar('expiry');
+            log_message("info", $practitioner_uuid);
             $practitioner = $this->getPractitionerDetails($practitioner_uuid);
-            if (empty($expiry)) {
+            if (empty ($expiry)) {
                 $data->expiry = Utils::generateRenewalExpiryDate($practitioner, $startDate);
             }
             //get only the last part of the picture path
@@ -672,21 +683,20 @@ class PractitionerController extends ResourceController
 
             //if the status is approved, generate a qr code. else remove it if it exists
             if ($data->status === "Approved") {
-                    $code = md5($registration_number . "%%" . $year);
-                    $qrText = "manager.mdcghana.org/api/verifyRelicensure/$code";
-                    $qrCodeGenerator = new Generator;
-                    $qrCode = $qrCodeGenerator
-                        ->size(200)
-                        ->margin(10)
-                        ->generate($qrText);
-                    $data->qr_code = $qrCode;
-                    $data->qr_text = $qrText;
-            }
-            else{
+                $code = md5($registration_number . "%%" . $year);
+                $qrText = "manager.mdcghana.org/api/verifyRelicensure/$code";
+                $qrCodeGenerator = new Generator;
+                $qrCode = $qrCodeGenerator
+                    ->size(200)
+                    ->margin(10)
+                    ->generate($qrText);
+                $data->qr_code = $qrCode;
+                $data->qr_text = $qrText;
+            } else {
                 $data->qr_code = null;
                 $data->qr_text = null;
             }
-            
+
             $model = new PractitionerRenewalModel();
             $model->db->transStart();
             $oldData = $model->where(["uuid" => $uuid])->first();
@@ -756,7 +766,8 @@ class PractitionerController extends ResourceController
         }
     }
 
-    public function countRenewals(){
+    public function countRenewals()
+    {
         try {
             $rules = [
                 "start_date" => "if_exist|valid_date",
@@ -766,35 +777,35 @@ class PractitionerController extends ResourceController
                 return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
             }
             $param = $this->request->getVar('param');
-        $model = new PractitionerRenewalModel();
-        $registration_number = $this->request->getGet('registration_number');
-        $status = $this->request->getGet('status');
-        $start_date = $this->request->getGet('start_date');
-        $expiry = $this->request->getGet('expiry');
-        $practitioner_type = $this->request->getGet('practitioner_type');
+            $model = new PractitionerRenewalModel();
+            $registration_number = $this->request->getGet('registration_number');
+            $status = $this->request->getGet('status');
+            $start_date = $this->request->getGet('start_date');
+            $expiry = $this->request->getGet('expiry');
+            $practitioner_type = $this->request->getGet('practitioner_type');
 
-        // Validate inputs here
+            // Validate inputs here
 
-        $builder = $param ? $model->search($param) : $model->builder();
-        if ($registration_number !== null) {
-            $builder->where('registration_number', $registration_number);
-        }
-        if ($status !== null) {
-            $builder->where('status', $status);
-        }
-        if ($start_date !== null) {
-            $builder->where('year >=', $start_date);
-        }
-        if ($expiry !== null) {
-            $builder->where('expiry <=', $expiry);
-        }
-        if ($practitioner_type !== null) {
-            $builder->where('practitioner_type', $practitioner_type);
-        }
-        $total = $builder->countAllResults();
-        return $this->respond([
-            'data' => $total
-        ], ResponseInterface::HTTP_OK);
+            $builder = $param ? $model->search($param) : $model->builder();
+            if ($registration_number !== null) {
+                $builder->where('registration_number', $registration_number);
+            }
+            if ($status !== null) {
+                $builder->where('status', $status);
+            }
+            if ($start_date !== null) {
+                $builder->where('year >=', $start_date);
+            }
+            if ($expiry !== null) {
+                $builder->where('expiry <=', $expiry);
+            }
+            if ($practitioner_type !== null) {
+                $builder->where('practitioner_type', $practitioner_type);
+            }
+            $total = $builder->countAllResults();
+            return $this->respond([
+                'data' => $total
+            ], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
             log_message("error", $th->getMessage());
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);

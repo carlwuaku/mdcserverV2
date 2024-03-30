@@ -7,13 +7,13 @@ use CodeIgniter\Database\BaseBuilder;
 
 class PractitionerRenewalModel extends MyBaseModel implements TableDisplayInterface
 {
-    protected $table            = 'practitioner_renewal';
-    protected $primaryKey       = 'id';
+    protected $table = 'practitioner_renewal';
+    protected $primaryKey = 'id';
     protected $useAutoIncrement = true;
-    protected $returnType       = 'array';
-    protected $useSoftDeletes   = false;
-    protected $protectFields    = true;
-    protected $allowedFields    = [
+    protected $returnType = 'array';
+    protected $useSoftDeletes = false;
+    protected $protectFields = true;
+    protected $allowedFields = [
         'uuid',
         'registration_number',
         'deleted_by',
@@ -46,55 +46,66 @@ class PractitionerRenewalModel extends MyBaseModel implements TableDisplayInterf
         'marital_status',
         'picture',
         'year',
-        'practitioner_uuid'
+        'practitioner_uuid',
+        'register_type',
+        'practitioner_type'
 
     ];
 
     // Dates
     protected $useTimestamps = false;
-    protected $dateFormat    = 'datetime';
-    protected $createdField  = 'created_at';
-    protected $updatedField  = 'updated_at';
-    protected $deletedField  = 'deleted_at';
+    protected $dateFormat = 'datetime';
+    protected $createdField = 'created_at';
+    protected $updatedField = 'updated_at';
+    protected $deletedField = 'deleted_at';
 
     // Validation
-    protected $validationRules      = [];
-    protected $validationMessages   = [];
-    protected $skipValidation       = false;
+    protected $validationRules = [];
+    protected $validationMessages = [];
+    protected $skipValidation = false;
     protected $cleanValidationRules = true;
 
     // Callbacks
     protected $allowCallbacks = true;
-    protected $beforeInsert   = [];
-    protected $afterInsert    = [];
-    protected $beforeUpdate   = [];
-    protected $afterUpdate    = [];
-    protected $beforeFind     = [];
-    protected $afterFind      = [];
-    protected $beforeDelete   = [];
-    protected $afterDelete    = [];
+    protected $beforeInsert = [];
+    protected $afterInsert = [];
+    protected $beforeUpdate = [];
+    protected $afterUpdate = [];
+    protected $beforeFind = [];
+    protected $afterFind = [];
+    protected $beforeDelete = [];
+    protected $afterDelete = [];
 
-    public $searchFields = ["first_name", "last_name", "middle_name",
-        "registration_number", "maiden_name", 'specialty',
+    public $searchFields = [
+        "first_name",
+        "last_name",
+        "middle_name",
+        "registration_number",
+        "maiden_name",
+        'specialty',
         'place_of_work',
         'region',
         'institution_type',
         'district',
-        'status',];
+        'status',
+    ];
 
     public function getDisplayColumns(): array
     {
         return [
             "registration_number",
-            "created_on", 
-            "expiry",  
-            "first_name", 
-            "middle_name", 
-            "last_name", 
+            "created_on",
+            "year",
+            "expiry",
+            "first_name",
+            "middle_name",
+            "last_name",
             "status",
-            
-            "picture", 
-            "year", 
+
+            "register_type",
+            "practitioner_type",
+            "picture",
+
             'specialty',
             'place_of_work',
             'region',
@@ -112,21 +123,30 @@ class PractitionerRenewalModel extends MyBaseModel implements TableDisplayInterf
 
     public function getDisplayColumnLabels(): array
     {
-        return [];
+        return [
+            "year" => "Start Date",
+        ];
     }
 
     public function addCustomFields(BaseBuilder $builder): BaseBuilder
     {
-        
+
         $filteredColumns = [
-            "registration_number","created_on", "expiry",  "first_name", "middle_name", "last_name", "status",
-            
-            "picture", "year", 'specialty',
+            "registration_number",
+            "created_on",
+            "expiry",
+            "first_name",
+            "middle_name",
+            "last_name",
+            "status",
+
+            "picture",
+            "year",
+            'specialty',
             'place_of_work',
             'region',
             'institution_type',
             'district',
-            'status',
             'payment_date',
             'payment_file',
             'payment_file_date',
@@ -135,16 +155,68 @@ class PractitionerRenewalModel extends MyBaseModel implements TableDisplayInterf
             'payment_invoice_number',
             'uuid',
             'practitioner_uuid',
-            "title"
+            "title",
+            "register_type",
+            "practitioner_type",
+            'qr_code',
         ];
         $builder
             ->select(implode(', ', $filteredColumns))
-            
+
             ->select("CONCAT('" . base_url("file-server/image-render") . "','/practitioners_images/'," . "picture) as picture");
         return $builder;
     }
 
-    public function getTableName(): string{
+    public function getTableName(): string
+    {
         return $this->table;
+    }
+
+    public function getDisplayColumnFilters(): array
+    {
+        return [
+            [
+                "label" => "Registration Number",
+                "name" => "registration_number",
+                "type" => "text",
+                "hint" => "",
+                "options" => [],
+                "value" => "",
+                "required" => false
+            ],
+            [
+                "label" => "Date created",
+                "name" => "created_on",
+                "type" => "date",
+                "hint" => "",
+                "options" => [],
+                "value" => "",
+                "required" => false
+            ],
+            [
+                "label" => "Status",
+                "name" => "status",
+                "type" => "select",
+                "hint" => "",
+                "options" => [["key" => "Approved", "value" => "Approved"]],
+                "value" => "",
+                "required" => false
+            ],
+
+
+            // "registration_number" => ["type" => "text"],
+            // "created_on" => ["type" => "date"],
+            // "expiry" => ["type" => "date"],
+            // "status" => ["type" => "select", "options" => ["Approved", "Pending Payment", "Pending Approval"]],
+            // "year" => ["type" => "date"],
+            // 'specialty' => ["type" => "text"],
+
+            // 'subspecialty' => ["type" => "text"],
+            // 'college_membership' => ["type" => "text"],
+            // 'payment_invoice_number' => ["type" => "text"],
+
+            // "register_type" => ["type" => "select", "options" => ["Permanent", "Provisional", "Temporary"]],
+            // "practitioner_type" => ["type" => "select", "options" => ["Doctor", "Physician Assistant"]],
+        ];
     }
 }

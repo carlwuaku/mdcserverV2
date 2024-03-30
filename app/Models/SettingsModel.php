@@ -52,4 +52,8 @@ class SettingsModel extends MyBaseModel implements TableDisplayInterface
     }
 
     public $searchFields = [ "key","value"];
+
+    public function getDisplayColumnFilters(): array{
+        return [];
+    }
 }

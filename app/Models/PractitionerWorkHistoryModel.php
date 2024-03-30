@@ -89,4 +89,9 @@ class PractitionerWorkHistoryModel extends MyBaseModel implements TableDisplayIn
     {
         return $this->table;
     }
+
+
+    public function getDisplayColumnFilters(): array{
+        return [];
+    }
 }
