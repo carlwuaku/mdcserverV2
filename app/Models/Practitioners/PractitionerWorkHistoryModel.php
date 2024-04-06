@@ -1,8 +1,7 @@
 <?php
 
-namespace App\Models;
-
-use CodeIgniter\Model;
+namespace App\Models\Practitioners;
+use App\Models\MyBaseModel;
 use App\Helpers\Interfaces\TableDisplayInterface;
 
 class PractitionerWorkHistoryModel extends MyBaseModel implements TableDisplayInterface

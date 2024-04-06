@@ -95,8 +95,44 @@ class MyBaseModel extends Model
 
         $likeConditions = implode(" or ", $likeConditionsArray);
         //$likeConditions = (("first_name like 'kofi' or last_name like 'kofi'") and (first_name like 'mensa' or last_name like 'mensah')) or ((first_name like 'akosua' or last_name like 'akosua') and (first_name like 'kobi' or last_name like 'kobi') )
-        log_message("info", "$likeConditions");
+        // log_message("info", "$likeConditions");
         $builder->where("({$likeConditions})");
         return $builder;
+    }
+
+    /**
+     * Retrieves distinct values from a given column in the database.
+     *
+     * @param string $column The name of the column to retrieve distinct values from.
+     * @return array An array of distinct values from the specified column.
+     */
+    public function getDistinctValues(string $column): array{
+        $query = $this->builder()->distinct()->select($column);
+        return $query->get()->getResultArray();
+    }
+
+    /**
+     * A function that prepares the given results as an array of values.
+     *
+     * @param array $results The array of results to be prepared.
+     * @return array The array of key-value pairs prepared from the results.
+     */
+    public function prepResultsAsValuesArray(array $results): array{
+        $keyValuePairs = [];
+        foreach($results as $key => $value){
+            $keyValuePairs[]= ["key"=>$value, "value"=>$value];
+        }
+        return $keyValuePairs;
+    }
+
+    /**
+     * A function to get distinct values as key-value pairs.
+     *
+     * @param string $column The column to retrieve distinct values from.
+     * @return array
+     */
+    public function getDistinctValuesAsKeyValuePairs(string $column): array{
+        $results = $this->getDistinctValues($column);
+        return $this->prepResultsAsValuesArray($results);
     }
 }

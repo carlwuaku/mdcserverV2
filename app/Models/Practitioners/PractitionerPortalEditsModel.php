@@ -1,6 +1,7 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Practitioners;
+use App\Models\MyBaseModel;
 
 use CodeIgniter\Model;
 

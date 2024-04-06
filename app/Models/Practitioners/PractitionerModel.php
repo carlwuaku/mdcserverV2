@@ -1,11 +1,10 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Practitioners;
 
 use CodeIgniter\Database\BaseBuilder;
-use CodeIgniter\Model;
 use App\Helpers\Interfaces\TableDisplayInterface;
-
+use App\Models\MyBaseModel;
 class PractitionerModel extends MyBaseModel implements TableDisplayInterface
 {
     protected $table = 'practitioners';

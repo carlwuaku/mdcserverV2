@@ -9,7 +9,7 @@ use App\Controllers\RegionController;
 use App\Controllers\SpecialtiesController;
 use CodeIgniter\Router\RouteCollection;
 use App\Controllers\PractitionerController;
-
+use App\Controllers\ApplicationsController;
 /**
  * @var RouteCollection $routes
  */
@@ -26,6 +26,7 @@ $routes->group("api", ["namespace" => "App\Controllers"], function (RouteCollect
     $routes->get("invalid-access", [AuthController::class, "accessDenied"]);
     $routes->get("migrate", [AuthController::class, "migrate"]);
     $routes->get("migrate-cmd", [AuthController::class, "runShieldMigration"]);
+    $routes->get("sqlquery", [AuthController::class, "sqlQuery"]);
     $routes->get("getPractitionerDetails", [AuthController::class, "appName"], ['filter' => 'hmac']);
 });
 
@@ -113,6 +114,17 @@ $routes->group("file-server", ["namespace" => "App\Controllers"], function (Rout
 
 $routes->group("email", ["namespace" => "App\Controllers"], function (RouteCollection $routes) {
     $routes->post("send", [EmailController::class, "send"]);
+});
+
+$routes->group("applications", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
+    $routes->put("details/(:segment)", [ApplicationsController::class, "updateApplication/$1"]);
+    $routes->delete("details/(:segment)", [ApplicationsController::class, "deleteApplication/$1"]);
+    $routes->get("details/(:segment)", [ApplicationsController::class, "getApplication/$1"]);
+    $routes->get("details", [ApplicationsController::class, "getApplications"], ["filter" => ["hasPermission:Site.Content.View"]]);
+    $routes->post("details", [ApplicationsController::class, "createApplication"]);
+    $routes->put("details/(:segment)/restore", [ApplicationsController::class, "restoreApplication/$1"]);
+    $routes->get("count", [ApplicationsController::class, "countApplications"], ["filter" => ["hasPermission:Site.Content.View"]], );
+
 });
 
 

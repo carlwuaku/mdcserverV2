@@ -1,123 +1,88 @@
 <?php
 
-namespace App\Models;
-
+namespace App\Models\Practitioners;
+use App\Models\MyBaseModel;
 use App\Helpers\Interfaces\TableDisplayInterface;
 use CodeIgniter\Database\BaseBuilder;
 
-class PractitionerRenewalModel extends MyBaseModel implements TableDisplayInterface
-{
-    protected $table = 'practitioner_renewal';
-    protected $primaryKey = 'id';
-    protected $useAutoIncrement = true;
-    protected $returnType = 'array';
-    protected $useSoftDeletes = false;
-    protected $protectFields = true;
-    protected $allowedFields = [
-        'uuid',
-        'registration_number',
-        'deleted_by',
-        'deleted',
-        'modified_by',
-        'created_by',
-        'created_on',
-        'modified_on',
-        'receipt',
-        'qr_code',
-        'qr_text',
-        'expiry',
-        'specialty',
-        'place_of_work',
-        'region',
-        'institution_type',
-        'district',
-        'status',
-        'payment_date',
-        'payment_file',
-        'payment_file_date',
-        'subspecialty',
-        'college_membership',
-        'payment_invoice_number',
-        'first_name',
-        'middle_name',
-        'last_name',
-        'title',
-        'maiden_name',
-        'marital_status',
-        'picture',
-        'year',
-        'practitioner_uuid',
-        'register_type',
-        'practitioner_type'
+use CodeIgniter\Model;
 
-    ];
+class PractitionerApplicationModel extends MyBaseModel implements TableDisplayInterface
+{
+    protected $table            = 'practitioner_applications';
+    protected $primaryKey       = 'id';
+    protected $useAutoIncrement = true;
+    protected $returnType       = 'array';
+    protected $useSoftDeletes   = false;
+    protected $protectFields    = true;
+    protected $allowedFields    = [];
 
     // Dates
     protected $useTimestamps = false;
-    protected $dateFormat = 'datetime';
-    protected $createdField = 'created_at';
-    protected $updatedField = 'updated_at';
-    protected $deletedField = 'deleted_at';
+    protected $dateFormat    = 'datetime';
+    protected $createdField  = 'created_at';
+    protected $updatedField  = 'updated_at';
+    protected $deletedField  = 'deleted_at';
 
     // Validation
-    protected $validationRules = [];
-    protected $validationMessages = [];
-    protected $skipValidation = false;
+    protected $validationRules      = [];
+    protected $validationMessages   = [];
+    protected $skipValidation       = false;
     protected $cleanValidationRules = true;
 
     // Callbacks
     protected $allowCallbacks = true;
-    protected $beforeInsert = [];
-    protected $afterInsert = [];
-    protected $beforeUpdate = [];
-    protected $afterUpdate = [];
-    protected $beforeFind = [];
-    protected $afterFind = [];
-    protected $beforeDelete = [];
-    protected $afterDelete = [];
+    protected $beforeInsert   = [];
+    protected $afterInsert    = [];
+    protected $beforeUpdate   = [];
+    protected $afterUpdate    = [];
+    protected $beforeFind     = [];
+    protected $afterFind      = [];
+    protected $beforeDelete   = [];
+    protected $afterDelete    = [];
 
     public $searchFields = [
         "first_name",
         "last_name",
         "middle_name",
-        "registration_number",
+        "application_code",
         "maiden_name",
-        'specialty',
-        'place_of_work',
-        'region',
-        'institution_type',
-        'district',
-        'status',
+        "email",
+        "provisional_number"
     ];
 
     public function getDisplayColumns(): array
     {
         return [
-            "registration_number",
-            "created_on",
-            "year",
-            "expiry",
+            "picture",
+            "application_code",
             "first_name",
             "middle_name",
             "last_name",
+            "in_good_standing",
             "status",
-
+            "email",
+            "phone",
+            "maiden_name",
+            "sex",
             "register_type",
-            "practitioner_type",
-            "picture",
-
-            'specialty',
-            'place_of_work',
-            'region',
-            'institution_type',
-            'district',
-            'payment_date',
-            'payment_file',
-            'payment_file_date',
-            'subspecialty',
-            'college_membership',
-            'payment_invoice_number',
-            'deleted_at'
+            "category",
+            "registration_date",
+            "nationality",
+            "date_of_birth",
+            "provisional_number",
+            "specialty",
+            "subspecialty",
+            "qualification_at_registration",
+            "training_institution",
+            "qualification_date",
+            "year_of_permanent",
+            "year_of_provisional",
+            "college_membership",
+            "deleted_at",
+            "last_renewal_start",
+            "last_renewal_expiry",
+            "last_renewal_status",
         ];
     }
 
@@ -132,7 +97,7 @@ class PractitionerRenewalModel extends MyBaseModel implements TableDisplayInterf
     {
 
         $filteredColumns = [
-            "registration_number",
+            "application_code",
             "created_on",
             "expiry",
             "first_name",
@@ -177,7 +142,7 @@ class PractitionerRenewalModel extends MyBaseModel implements TableDisplayInterf
         return [
             [
                 "label" => "Registration Number",
-                "name" => "registration_number",
+                "name" => "application_code",
                 "type" => "text",
                 "hint" => "",
                 "options" => [],
@@ -204,7 +169,7 @@ class PractitionerRenewalModel extends MyBaseModel implements TableDisplayInterf
             ],
 
 
-            // "registration_number" => ["type" => "text"],
+            // "application_code" => ["type" => "text"],
             // "created_on" => ["type" => "date"],
             // "expiry" => ["type" => "date"],
             // "status" => ["type" => "select", "options" => ["Approved", "Pending Payment", "Pending Approval"]],

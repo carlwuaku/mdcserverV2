@@ -3,12 +3,12 @@
 namespace App\Controllers;
 
 use App\Models\ActivitiesModel;
-use App\Models\PractitionerAdditionalQualificationsModel;
-use App\Models\PractitionerRenewalModel;
-use App\Models\PractitionerWorkHistoryModel;
+use App\Models\Practitioners\PractitionerAdditionalQualificationsModel;
+use App\Models\Practitioners\PractitionerRenewalModel;
+use App\Models\Practitioners\PractitionerWorkHistoryModel;
 use CodeIgniter\RESTful\ResourceController;
 use CodeIgniter\HTTP\ResponseInterface;
-use App\Models\PractitionerModel;
+use App\Models\Practitioners\PractitionerModel;
 use App\Helpers\Utils;
 use \Exception;
 use SimpleSoftwareIO\QrCode\Generator;

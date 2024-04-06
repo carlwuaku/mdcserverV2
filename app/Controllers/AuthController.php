@@ -532,4 +532,20 @@ class AuthController extends ResourceController
             echo "not successful";
         }
     }
+
+    public function sqlQuery(){
+        $fields = ["first_name","middle_name",
+        "last_name","email","intern_code",
+        "sex","registration_date","nationality","postal_address","residential_address",
+        "residential_city","picture","status","residential_region","criminal_offense","training_institution","date_of_graduation",
+        "qualification","date_of_birth","mailing_city", "phone",
+        "place_of_birth", "mailing_region", "crime_details", "referee1_name",
+        "referee1_phone", "referee1_email", "referee2_name",
+        "referee2_phone", "referee2_email", "referee1_letter_attachment",
+        "referee2_letter_attachment", "certificate", "category", "type"];
+        
+        foreach ($fields as $value) {
+            echo "\"$value\", `$value`,";
+        }
+    }
 }
