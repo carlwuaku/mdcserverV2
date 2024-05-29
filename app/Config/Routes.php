@@ -124,7 +124,11 @@ $routes->group("applications", ["namespace" => "App\Controllers", "filter" => "a
     $routes->post("details", [ApplicationsController::class, "createApplication"]);
     $routes->put("details/(:segment)/restore", [ApplicationsController::class, "restoreApplication/$1"]);
     $routes->get("count", [ApplicationsController::class, "countApplications"], ["filter" => ["hasPermission:Site.Content.View"]], );
-
+    $routes->get("templates", [ApplicationsController::class, "getApplicationTemplates"], ["filter" => ["hasPermission:Site.Content.View"]], );
+    $routes->put("templates/(:segment)", [ApplicationsController::class, "updateApplicationTemplates/$1"]);
+    $routes->delete("templates/(:segment)", [ApplicationsController::class, "deleteApplicationTemplates/$1"]);
+    $routes->get("templates/(:segment)", [ApplicationsController::class, "getApplicationTemplates/$1"]);
+    $routes->post("templates", [ApplicationsController::class, "createApplicationTemplates"]);
 });
 
 

@@ -148,7 +148,6 @@ class PractitionerModel extends MyBaseModel implements TableDisplayInterface
         if($this->renewalDate === "") {
             $this->renewalDate = date("Y-m-d");
         }
-        $renewalTable = "practitioner_renewal";
         $practitionersTable = $this->table;
 
         $filteredColumns = [
@@ -173,12 +172,6 @@ class PractitionerModel extends MyBaseModel implements TableDisplayInterface
             when last_renewal_status = 'Pending Approval' and '$this->renewalDate' BETWEEN last_renewal_start AND last_renewal_expiry THEN 'Pending Approval'
              ELSE 'Not In Good Standing'
              END) as in_good_standing")
-    //         ->select("(CASE 
-    //     WHEN EXISTS (SELECT 1 FROM $renewalTable WHERE $renewalTable.practitioner_uuid = $practitionersTable.uuid AND '$this->renewalDate' BETWEEN $renewalTable.year AND $renewalTable.expiry AND $renewalTable.status = 'Approved') THEN 'In Good Standing'
-    //     WHEN EXISTS (SELECT 1 FROM $renewalTable WHERE $renewalTable.practitioner_uuid = $practitionersTable.uuid AND '$this->renewalDate' BETWEEN $renewalTable.year AND $renewalTable.expiry AND $renewalTable.status = 'Pending Payment') THEN 'Pending Payment'
-    //     WHEN EXISTS (SELECT 1 FROM $renewalTable WHERE $renewalTable.practitioner_uuid = $practitionersTable.uuid AND '$this->renewalDate' BETWEEN $renewalTable.year AND $renewalTable.expiry AND $renewalTable.status = 'Pending Approval') THEN 'Pending Approval'
-    //     ELSE 'Not In Good Standing'
-    // END) AS in_good_standing")
             
             ->select("CONCAT('" . base_url("file-server/image-render") . "','/practitioners_images/'," . "$practitionersTable.picture) as picture");
             // ->groupBy("$practitionersTable.uuid");

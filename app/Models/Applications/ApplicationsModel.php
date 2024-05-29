@@ -19,6 +19,7 @@ class ApplicationsModel extends MyBaseModel implements TableDisplayInterface
         'uuid',
         'practitioner_type',
         'form_type',
+        'picture',
         'first_name',
         'middle_name',
         'last_name',
@@ -85,7 +86,6 @@ class ApplicationsModel extends MyBaseModel implements TableDisplayInterface
             'phone',
             'application_code',
             'form_data',
-
             'created_on',
             'deleted_at',
 
@@ -138,5 +138,28 @@ class ApplicationsModel extends MyBaseModel implements TableDisplayInterface
                 "required" => false
             ],
         ];
+    }
+
+    public function addCustomFields(BaseBuilder $builder): BaseBuilder
+    {
+        $fields = [
+            'uuid',
+            'practitioner_type',
+            'status',
+            'form_type',
+            'first_name',
+            'middle_name',
+            'last_name',
+            'email',
+            'phone',
+            'application_code',
+            'form_data',
+            'created_on',
+            'deleted_at',
+        ];
+        $builder->select("*")->
+        select("CONCAT('" . base_url("file-server/image-render") . "','/practitioners_images/'," . "picture) as picture");
+        ;
+        return $builder;
     }
 }

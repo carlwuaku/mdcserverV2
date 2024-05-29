@@ -32,6 +32,11 @@ class AddApplicationForms extends Migration
                 'constraint' => '255',
                'null' => false
             ],
+            'picture'=> [
+                'type' => 'TEXT',
+               'null' => true,
+               'default' => null
+            ],
             'first_name'=> [
                 'type' => 'VARCHAR',
                'constraint' => '255',
