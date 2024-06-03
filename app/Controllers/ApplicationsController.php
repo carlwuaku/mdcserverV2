@@ -51,54 +51,54 @@ class ApplicationsController extends ResourceController
 
     public function updateApplication($uuid)
     {
-        try{
-        $rules = [
-            "uuid" => "required",
-        ];
+        try {
+            $rules = [
+                "uuid" => "required",
+            ];
 
-        if (!$this->validate($rules)) {
-            return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
-        }
-        $data = $this->request->getVar();
-        $data->uuid = $uuid;
-        if (property_exists($data, "id")) {
-            unset($data->id);
-        }
-        $model = new ApplicationsModel();
-        $oldData = $model->where(["uuid" => $uuid])->first();
-        $changes = implode(", ", Utils::compareObjects($oldData, $data));
-        if (!$model->builder()->where(['uuid' => $uuid])->update($data)) {
-            return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
-        }
-        /** @var ActivitiesModel $activitiesModel */
-        $activitiesModel = new ActivitiesModel();
-        $activitiesModel->logActivity("Updated application {$data['application_type']}  {$oldData['email']}. Changes: $changes");
+            if (!$this->validate($rules)) {
+                return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
+            }
+            $data = $this->request->getVar();
+            $data->uuid = $uuid;
+            if (property_exists($data, "id")) {
+                unset($data->id);
+            }
+            $model = new ApplicationsModel();
+            $oldData = $model->where(["uuid" => $uuid])->first();
+            $changes = implode(", ", Utils::compareObjects($oldData, $data));
+            if (!$model->builder()->where(['uuid' => $uuid])->update($data)) {
+                return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+            /** @var ActivitiesModel $activitiesModel */
+            $activitiesModel = new ActivitiesModel();
+            $activitiesModel->logActivity("Updated application {$data['application_type']}  {$oldData['email']}. Changes: $changes");
 
-        return $this->respond(['message' => 'Application updated successfully'], ResponseInterface::HTTP_OK);
-    } catch (\Throwable $th) {
-        log_message('error', $th->getMessage());
-        return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
-    }
+            return $this->respond(['message' => 'Application updated successfully'], ResponseInterface::HTTP_OK);
+        } catch (\Throwable $th) {
+            log_message('error', $th->getMessage());
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 
     public function deleteApplication($uuid)
     {
-        try{
-        $model = new ApplicationsModel();
-        $data = $model->where(["uuid" => $uuid])->first();
+        try {
+            $model = new ApplicationsModel();
+            $data = $model->where(["uuid" => $uuid])->first();
 
-        if (!$model->where('uuid', $uuid)->delete()) {
-            return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+            if (!$model->where('uuid', $uuid)->delete()) {
+                return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+            }
+            /** @var ActivitiesModel $activitiesModel */
+            $activitiesModel = new ActivitiesModel();
+            $activitiesModel->logActivity("Deleted application {$data['application_type']}  for {$data['email']}  ");
+
+            return $this->respond(['message' => 'Application deleted successfully'], ResponseInterface::HTTP_OK);
+        } catch (\Throwable $th) {
+            log_message('error', $th->getMessage());
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
-        /** @var ActivitiesModel $activitiesModel */
-        $activitiesModel = new ActivitiesModel();
-        $activitiesModel->logActivity("Deleted application {$data['application_type']}  for {$data['email']}  ");
-
-        return $this->respond(['message' => 'Application deleted successfully'], ResponseInterface::HTTP_OK);
-    } catch (\Throwable $th) {
-        log_message('error', $th->getMessage());
-        return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
-    }
     }
 
     public function restoreApplication($uuid)
@@ -126,7 +126,7 @@ class ApplicationsController extends ResourceController
     {
         $model = new ApplicationsModel();
         $builder = $model->builder();
-        $builder->where( '.uuid', $uuid);
+        $builder->where('.uuid', $uuid);
         $data = $model->first();
         if (!$data) {
             throw new Exception("Application not found");
@@ -159,11 +159,11 @@ class ApplicationsController extends ResourceController
             $end_date = $this->request->getGet('end_date');
             $practitioner_type = $this->request->getGet('practitioner_type');
             $form_type = $this->request->getGet('form_type');
-            
+
             $model = new ApplicationsModel();
-            
+
             $builder = $param ? $model->search($param) : $model->builder();
-            $builder = $model->addCustomFields($builder);           
+            $builder = $model->addCustomFields($builder);
             $builder->orderBy("$sortBy", $sortOrder);
             if ($application_code !== null) {
                 $builder->where('application_code', $application_code);
@@ -196,13 +196,22 @@ class ApplicationsController extends ResourceController
                 //convert json string in form_data to json object
                 $form_data = json_decode($value->form_data, true);
                 $form_data['picture'] = $value->picture;
-                if(empty($displayColumns)){
+                if (empty($displayColumns)) {
                     $displayColumns = array_keys($form_data);
+                    
+                    if (array_key_exists('picture', $form_data)) {
+                        //if the picture key exists, move it to the first position
+                        //move it to the first position
+                        $pictureIndex = array_search('picture', $displayColumns);
+                        unset($displayColumns[$pictureIndex]);
+                        array_unshift($displayColumns, 'picture');
+                    }
                 }
                 // $value = array_replace((array) $value, $form_data);
                 //convert json object in form_data to array
-                $final[]= $form_data;
+                $final[] = $form_data;
             }
+            
 
             return $this->respond([
                 'data' => $final,
@@ -274,11 +283,11 @@ class ApplicationsController extends ResourceController
             $param = $this->request->getVar('param');
             $sortBy = $this->request->getVar('sortBy') ?? "id";
             $sortOrder = $this->request->getVar('sortOrder') ?? "asc";
-            
+
             $model = new ApplicationTemplateModel();
-            
+
             $builder = $param ? $model->search($param) : $model->builder();
-            $builder = $model->addCustomFields($builder);           
+            $builder = $model->addCustomFields($builder);
             $builder->orderBy("$sortBy", $sortOrder);
 
             if ($withDeleted) {
@@ -290,7 +299,7 @@ class ApplicationsController extends ResourceController
             foreach ($result as $value) {
                 //convert json string in form_data to json object
                 $value->data = json_decode($value->data, true);
-                
+
             }
 
             return $this->respond([
@@ -339,53 +348,53 @@ class ApplicationsController extends ResourceController
 
     public function updateApplicationTemplate($uuid)
     {
-        try{
-        $rules = [
-            "uuid" => "required",
-        ];
+        try {
+            $rules = [
+                "uuid" => "required",
+            ];
 
-        if (!$this->validate($rules)) {
-            return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
-        }
-        $data = $this->request->getVar();
-        $data->uuid = $uuid;
-        if (property_exists($data, "id")) {
-            unset($data->id);
-        }
-        $model = new ApplicationTemplateModel();
-        $oldData = $model->where(["uuid" => $uuid])->first();
-        $changes = implode(", ", Utils::compareObjects($oldData, $data));
-        if (!$model->builder()->where(['uuid' => $uuid])->update($data)) {
-            return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
-        }
-        /** @var ActivitiesModel $activitiesModel */
-        $activitiesModel = new ActivitiesModel();
-        $activitiesModel->logActivity("Updated application template. Changes: $changes");
+            if (!$this->validate($rules)) {
+                return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
+            }
+            $data = $this->request->getVar();
+            $data->uuid = $uuid;
+            if (property_exists($data, "id")) {
+                unset($data->id);
+            }
+            $model = new ApplicationTemplateModel();
+            $oldData = $model->where(["uuid" => $uuid])->first();
+            $changes = implode(", ", Utils::compareObjects($oldData, $data));
+            if (!$model->builder()->where(['uuid' => $uuid])->update($data)) {
+                return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+            /** @var ActivitiesModel $activitiesModel */
+            $activitiesModel = new ActivitiesModel();
+            $activitiesModel->logActivity("Updated application template. Changes: $changes");
 
-        return $this->respond(['message' => 'Application template updated successfully'], ResponseInterface::HTTP_OK);
-    } catch (\Throwable $th) {
-        log_message('error', $th->getMessage());
-        return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
-    }
+            return $this->respond(['message' => 'Application template updated successfully'], ResponseInterface::HTTP_OK);
+        } catch (\Throwable $th) {
+            log_message('error', $th->getMessage());
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 
     public function deleteApplicationTemplate($uuid)
     {
-        try{
-        $model = new ApplicationTemplateModel();
-        $data = $model->where(["uuid" => $uuid])->first();
+        try {
+            $model = new ApplicationTemplateModel();
+            $data = $model->where(["uuid" => $uuid])->first();
 
-        if (!$model->where('uuid', $uuid)->delete()) {
-            return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+            if (!$model->where('uuid', $uuid)->delete()) {
+                return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+            }
+            /** @var ActivitiesModel $activitiesModel */
+            $activitiesModel = new ActivitiesModel();
+            $activitiesModel->logActivity("Deleted application template {$data['form_name']}  ");
+
+            return $this->respond(['message' => 'Application template deleted successfully'], ResponseInterface::HTTP_OK);
+        } catch (\Throwable $th) {
+            log_message('error', $th->getMessage());
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
-        /** @var ActivitiesModel $activitiesModel */
-        $activitiesModel = new ActivitiesModel();
-        $activitiesModel->logActivity("Deleted application template {$data['form_name']}  ");
-
-        return $this->respond(['message' => 'Application template deleted successfully'], ResponseInterface::HTTP_OK);
-    } catch (\Throwable $th) {
-        log_message('error', $th->getMessage());
-        return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
-    }
     }
 }
