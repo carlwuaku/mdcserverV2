@@ -33,7 +33,9 @@ class AddRolesPermissionsTable extends Migration
         $this->forge->addForeignKey('role_id', 'roles', 'role_id', 'CASCADE', 'CASCADE');
         $this->forge->addForeignKey('permission_id', 'permissions', 'permission_id', 'CASCADE', 'CASCADE');
  
-        $this->forge->createTable($this->table, TRUE);
+        $this->forge->createTable($this->table, TRUE, [
+            'ENGINE' => 'InnoDB',
+        ]);
     }
 
     public function down()

@@ -34,7 +34,9 @@ class AddPermissionsTable extends Migration
         $this->forge->addPrimaryKey('permission_id');
         $this->forge->addUniqueKey(['name']);
   
-        $this->forge->createTable($this->tableName, TRUE);
+        $this->forge->createTable($this->tableName, TRUE, [
+            'ENGINE' => 'InnoDB',
+        ]);
     }
 
     public function down()

@@ -531,6 +531,24 @@ class AuthController extends ResourceController
         }
     }
 
+    public function runShieldMigration()
+    {
+        // Define the command to run the migration
+        $command = 'php spark migrate -n CodeIgniter\Shield';
+
+        // Execute the command
+        exec($command, $output, $return_var);
+
+        // Check if the command was successful
+        if ($return_var === 0) {
+            // Migration was successful
+            echo "migration was successful";
+        } else {
+            // Migration failed
+            echo "not successful";
+        }
+    }
+
     public function createApiKey()
     {
         // $userObject = auth()->getProvider();

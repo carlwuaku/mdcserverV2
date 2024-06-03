@@ -358,7 +358,9 @@ class PractitionerTable extends Migration
         $this->forge->addKey('email', false);
         $this->forge->addKey('phone', false);
 
-        $this->forge->createTable('practitioners', true);
+        $this->forge->createTable('practitioners', true, [
+            'ENGINE' => 'InnoDB',
+        ]);
     }
 
     public function down()

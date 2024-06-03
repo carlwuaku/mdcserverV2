@@ -26,6 +26,7 @@ $routes->group("api", ["namespace" => "App\Controllers"], function (RouteCollect
     $routes->get("invalid-access", [AuthController::class, "accessDenied"]);
     $routes->get("migrate", [AuthController::class, "migrate"]);
     $routes->get("migrate-cmd", [AuthController::class, "runShieldMigration"]);
+    $routes->get("migrate-cmd", [AuthController::class, "runShieldMigration"]);
     $routes->get("sqlquery", [AuthController::class, "sqlQuery"]);
     $routes->get("getPractitionerDetails", [AuthController::class, "appName"], ['filter' => 'hmac']);
 });

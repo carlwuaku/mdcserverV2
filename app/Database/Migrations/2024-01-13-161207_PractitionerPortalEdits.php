@@ -80,7 +80,9 @@ class PractitionerPortalEdits extends Migration
         $this->forge->addKey('admin_comment', false);
         $this->forge->addForeignKey('registration_number', 'practitioners', 'registration_number', 'CASCADE', 'CASCADE');
 
-        $this->forge->createTable('practitioner_portal_edits', true);
+        $this->forge->createTable('practitioner_portal_edits', true, [
+            'ENGINE' => 'InnoDB',
+        ]);
     }
 
     public function down()

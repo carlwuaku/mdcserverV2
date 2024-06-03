@@ -14,8 +14,8 @@ class AddUserFields extends Migration
         $this->forge->addColumn("users", [
             'role_id' => [
                 'type' => 'INT',
-                'null' => false,
-                'default'=> 1,
+                'null' => true,
+                'default'=> null,
                 'unsigned' => true,
             ],
          ]);

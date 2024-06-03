@@ -215,7 +215,9 @@ class PractitionerRenewal extends Migration
         $this->forge->addKey('college_membership', false);
         $this->forge->addKey('payment_invoice_number', false);
 
-        $this->forge->createTable('practitioner_renewal', true);
+        $this->forge->createTable('practitioner_renewal', true, [
+            'ENGINE' => 'InnoDB',
+        ]);
 
     }
 
