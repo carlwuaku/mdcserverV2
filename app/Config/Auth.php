@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace Config;
 
+use App\Models\PractitionerModel;
 use CodeIgniter\Shield\Config\Auth as ShieldAuth;
 use CodeIgniter\Shield\Authentication\Actions\ActionInterface;
 use CodeIgniter\Shield\Authentication\AuthenticatorInterface;
@@ -117,6 +118,12 @@ class Auth extends ShieldAuth
         'tokens'  => AccessTokens::class,
         'session' => Session::class,
         'hmac'    => HmacSha256::class,
+        'practitioners'   => [
+            'model' => PractitionerModel::class,
+            'table' => 'practitioners',
+            'identityColumn' => 'registration_number',
+            'passwordColumn' => 'password_hash'
+        ] 
         // 'jwt'     => JWT::class,
     ];
 
@@ -515,7 +522,7 @@ class Auth extends ShieldAuth
      *
      * @param string $url an absolute URL or a named route or just URI path
      */
-    protected function getUrl(string $url): string
+    protected function getUrl($url): string
     {
         // To accommodate all url patterns
         $final_url = '';

@@ -1,13 +1,12 @@
 <?php
 
-namespace App\Models;
-
-use CodeIgniter\Model;
+namespace App\Models\Practitioners;
+use App\Models\MyBaseModel;
 use App\Helpers\Interfaces\TableDisplayInterface;
 
 class PractitionerAdditionalQualificationsModel extends MyBaseModel implements TableDisplayInterface
 {
-    protected $table = '	practitioner_additional_qualifications';
+    protected $table = 'practitioner_additional_qualifications';
     protected $primaryKey = 'id';
     protected $useAutoIncrement = true;
     protected $returnType = 'array';
@@ -82,5 +81,8 @@ class PractitionerAdditionalQualificationsModel extends MyBaseModel implements T
     public function getTableName(): string
     {
         return $this->table;
+    }
+    public function getDisplayColumnFilters(): array{
+        return [];
     }
 }

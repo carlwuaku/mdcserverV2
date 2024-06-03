@@ -91,4 +91,8 @@ class ActivitiesModel extends MyBaseModel implements TableDisplayInterface
             "ip_address" => $ip
         ]);
     }
+
+    public function getDisplayColumnFilters(): array{
+        return [];
+    }
 }

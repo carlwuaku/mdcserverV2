@@ -22,12 +22,14 @@ class RegionController extends ResourceController
             $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted')  === "yes";
             $param = $this->request->getVar('param');
             $model = new RegionModel();
-            
+            $sortBy = $this->request->getVar('sortBy') ?? "id";
+            $sortOrder = $this->request->getVar('sortOrder') ?? "asc";
             $builder = $param ? $model->search($param) : $model->builder();
             
             if ($withDeleted) {
                 $model->withDeleted();
             }
+            $builder->orderBy("$sortBy", $sortOrder);
             $totalBuilder = clone $builder;
             $total = $totalBuilder->countAllResults();
             $result = $builder->get($per_page, $page)->getResult();
@@ -46,6 +48,8 @@ class RegionController extends ResourceController
             $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
             $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted')  === "yes";
             $param = $this->request->getVar('param');
+            $sortBy = $this->request->getVar('sortBy') ?? "id";
+            $sortOrder = $this->request->getVar('sortOrder') ?? "asc";
             $model = new DistrictModel();
             
             $builder = $param ? $model->search($param) : $model->builder();
@@ -55,6 +59,7 @@ class RegionController extends ResourceController
             if ($withDeleted) {
                 $model->withDeleted();
             }
+            $builder->orderBy("$sortBy", $sortOrder);
             $totalBuilder = clone $builder;
             $total = $totalBuilder->countAllResults();
             $result = $builder->get($per_page, $page)->getResult();

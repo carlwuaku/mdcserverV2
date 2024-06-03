@@ -1,5 +1,6 @@
 <?php
 
+use App\Controllers\ActivitiesController;
 use App\Controllers\AdminController;
 use App\Controllers\AssetController;
 use App\Controllers\AuthController;
@@ -8,7 +9,7 @@ use App\Controllers\RegionController;
 use App\Controllers\SpecialtiesController;
 use CodeIgniter\Router\RouteCollection;
 use App\Controllers\PractitionerController;
-
+use App\Controllers\ApplicationsController;
 /**
  * @var RouteCollection $routes
  */
@@ -21,14 +22,21 @@ $routes->group("api", ["namespace" => "App\Controllers"], function (RouteCollect
     $routes->post("register", [AuthController::class, "register"]);
     $routes->post("login", [AuthController::class, "login"]);
     $routes->post("mobile-login", [AuthController::class, "mobileLogin"]);
+    $routes->post("practitioner-login", [AuthController::class, "practitionerLogin"]);
     $routes->get("invalid-access", [AuthController::class, "accessDenied"]);
     $routes->get("migrate", [AuthController::class, "migrate"]);
     $routes->get("migrate-cmd", [AuthController::class, "runShieldMigration"]);
+    $routes->get("migrate-cmd", [AuthController::class, "runShieldMigration"]);
+    $routes->get("sqlquery", [AuthController::class, "sqlQuery"]);
+    $routes->get("getPractitionerDetails", [AuthController::class, "appName"], ['filter' => 'hmac']);
+});
 
+$routes->group("activities", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
+    $routes->get("", [ActivitiesController::class, "index"]);
 });
 
 $routes->group("admin", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
-    
+
     $routes->get("profile", [AuthController::class, "profile"]);
     $routes->get("logout", [AuthController::class, "logout"]);
     $routes->post("roles", [AuthController::class, "createRole"]);
@@ -50,6 +58,7 @@ $routes->group("admin", ["namespace" => "App\Controllers", "filter" => "apiauth"
     $routes->put("settings", [AdminController::class, "saveSetting"]);
     $routes->get("settings/(:segment)", [AdminController::class, "getSetting/$1"]);
     $routes->get("settings", [AdminController::class, "getSettings"]);
+    $routes->post("api-user", [AuthController::class, "createApiKey"]);
 
 });
 
@@ -64,25 +73,26 @@ $routes->group("practitioners", ["namespace" => "App\Controllers", "filter" => "
 
     $routes->put("qualifications/(:segment)", [PractitionerController::class, "updatePractitionerQualification/$1"]);
     $routes->delete("qualifications/(:segment)", [PractitionerController::class, "deletePractitionerQualification/$1"]);
-    $routes->get("qualifications", [PractitionerController::class, "getPractitionerQualifications"], ["filter" => ["hasPermission:Site.Content.View"]],);
-    $routes->get("qualifications/(:segment)", [PractitionerController::class, "getPractitionerQualification/$1"], ["filter" => ["hasPermission:Site.Content.View"]],);
+    $routes->get("qualifications", [PractitionerController::class, "getPractitionerQualifications"], ["filter" => ["hasPermission:Site.Content.View"]], );
+    $routes->get("qualifications/(:segment)", [PractitionerController::class, "getPractitionerQualification/$1"], ["filter" => ["hasPermission:Site.Content.View"]], );
     $routes->post("qualifications", [PractitionerController::class, "createPractitionerQualification"]);
     $routes->put("qualifications/(:segment)/restore", [PractitionerController::class, "restorePractitionerQualification/$1"]);
 
 
     $routes->put("workhistory/(:segment)", [PractitionerController::class, "updatePractitionerWorkHistory/$1"]);
     $routes->delete("workhistory/(:segment)", [PractitionerController::class, "deletePractitionerWorkHistory/$1"]);
-    $routes->get("workhistory", [PractitionerController::class, "getPractitionerWorkHistories"], ["filter" => ["hasPermission:Site.Content.View"]],);
-    $routes->get("workhistory/(:segment)", [PractitionerController::class, "getPractitionerWorkHistory/$1"], ["filter" => ["hasPermission:Site.Content.View"]],);
+    $routes->get("workhistory", [PractitionerController::class, "getPractitionerWorkHistories"], ["filter" => ["hasPermission:Site.Content.View"]], );
+    $routes->get("workhistory/(:segment)", [PractitionerController::class, "getPractitionerWorkHistory/$1"], ["filter" => ["hasPermission:Site.Content.View"]], );
     $routes->post("workhistory", [PractitionerController::class, "createPractitionerWorkHistory"]);
     $routes->put("workhistory/(:segment)/restore", [PractitionerController::class, "restorePractitionerWorkHistory/$1"]);
 
 
     $routes->put("renewal/(:segment)", [PractitionerController::class, "updatePractitionerRenewal/$1"]);
     $routes->delete("renewal/(:segment)", [PractitionerController::class, "deletePractitionerRenewal/$1"]);
-    $routes->get("renewal", [PractitionerController::class, "getPractitionerRenewals"], ["filter" => ["hasPermission:Site.Content.View"]],);
-    $routes->get("renewal/practitioner/(:segment)", [PractitionerController::class, "getPractitionerRenewals/$1"], ["filter" => ["hasPermission:Site.Content.View"]],);
-    $routes->get("renewal/(:segment)", [PractitionerController::class, "getPractitionerRenewal/$1"], ["filter" => ["hasPermission:Site.Content.View"]],);
+    $routes->get("renewal", [PractitionerController::class, "getPractitionerRenewals"], ["filter" => ["hasPermission:Site.Content.View"]], );
+    $routes->get("renewal-count", [PractitionerController::class, "countRenewals"], ["filter" => ["hasPermission:Site.Content.View"]], );
+    $routes->get("renewal/practitioner/(:segment)", [PractitionerController::class, "getPractitionerRenewals/$1"], ["filter" => ["hasPermission:Site.Content.View"]], );
+    $routes->get("renewal/(:segment)", [PractitionerController::class, "getPractitionerRenewal/$1"], ["filter" => ["hasPermission:Site.Content.View"]], );
     $routes->post("renewal", [PractitionerController::class, "createPractitionerRenewal"]);
 
 });
@@ -96,7 +106,6 @@ $routes->group("regions", ["namespace" => "App\Controllers", "filter" => "apiaut
 $routes->group("specialties", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
     $routes->get("specialties", [SpecialtiesController::class, "getSpecialties"]);
     $routes->get("subspecialties", [SpecialtiesController::class, "getSubspecialties"]);
-    $routes->get("subspecialties/(:segment)", [SpecialtiesController::class, "getSubspecialties/$1"]);
 });
 
 $routes->group("file-server", ["namespace" => "App\Controllers"], function (RouteCollection $routes) {
@@ -105,7 +114,22 @@ $routes->group("file-server", ["namespace" => "App\Controllers"], function (Rout
 });
 
 $routes->group("email", ["namespace" => "App\Controllers"], function (RouteCollection $routes) {
-    $routes->post("send", [EmailController::class, "send"] );
+    $routes->post("send", [EmailController::class, "send"]);
+});
+
+$routes->group("applications", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
+    $routes->put("details/(:segment)", [ApplicationsController::class, "updateApplication/$1"]);
+    $routes->delete("details/(:segment)", [ApplicationsController::class, "deleteApplication/$1"]);
+    $routes->get("details/(:segment)", [ApplicationsController::class, "getApplication/$1"]);
+    $routes->get("details", [ApplicationsController::class, "getApplications"], ["filter" => ["hasPermission:Site.Content.View"]]);
+    $routes->post("details", [ApplicationsController::class, "createApplication"]);
+    $routes->put("details/(:segment)/restore", [ApplicationsController::class, "restoreApplication/$1"]);
+    $routes->get("count", [ApplicationsController::class, "countApplications"], ["filter" => ["hasPermission:Site.Content.View"]], );
+    $routes->get("templates", [ApplicationsController::class, "getApplicationTemplates"], ["filter" => ["hasPermission:Site.Content.View"]], );
+    $routes->put("templates/(:segment)", [ApplicationsController::class, "updateApplicationTemplates/$1"]);
+    $routes->delete("templates/(:segment)", [ApplicationsController::class, "deleteApplicationTemplates/$1"]);
+    $routes->get("templates/(:segment)", [ApplicationsController::class, "getApplicationTemplates/$1"]);
+    $routes->post("templates", [ApplicationsController::class, "createApplicationTemplates"]);
 });
 
 

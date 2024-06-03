@@ -11,6 +11,7 @@ use CodeIgniter\RESTful\ResourceController;
 use CodeIgniter\Shield\Entities\User;
 use App\Models\UsersModel;
 use CodeIgniter\Database\MigrationRunner;
+
 class AuthController extends ResourceController
 {
 
@@ -69,7 +70,7 @@ class AuthController extends ResourceController
         $loginAttempt = auth()->attempt($credentials);
         if (!$loginAttempt->isOK()) {
             return $this->respond(["message" => "Wrong combination. Try again"], ResponseInterface::HTTP_NOT_FOUND);
-          
+
         }
 
         $userObject = new UsersModel();
@@ -173,6 +174,36 @@ class AuthController extends ResourceController
             ->setJSON(['token' => $token->raw_token]);
     }
 
+    public function practitionerLogin()
+    {
+        // Validate credentials
+        $rules = [
+            'username' => 'required',
+            'password' => 'required',
+            'type' => 'required|string',
+        ];
+
+        if (!$this->validate($rules)) {
+            return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
+        }
+        $credentials = [
+            'email' => $this->request->getPost('username'),
+            'password' => $this->request->getPost('password'),
+        ];
+        $result = auth()->attempt($credentials, 'practitioners');
+        if (!$result->isOK()) {
+            return $this->response
+                ->setJSON(['message' => $result->reason()])
+                ->setStatusCode(401);
+        }
+
+        // Generate token and return to client
+        $token = auth()->user()->generateAccessToken(service('request')->getVar('device_name'));
+
+        return $this->response
+            ->setJSON(['token' => $token->raw_token]);
+    }
+
     //add permissions to role_id, remove permission from role_id, create a role, edit a role,
 
     public function createRole()
@@ -225,7 +256,7 @@ class AuthController extends ResourceController
     public function restoreRole($role_id)
     {
         $model = new RolesModel();
-        if (!$model->update($role_id, ['deleted_at'=> null])) {
+        if (!$model->update($role_id, ['deleted_at' => null])) {
             return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
         return $this->respond(['message' => 'Role restored successfully'], ResponseInterface::HTTP_OK);
@@ -248,21 +279,26 @@ class AuthController extends ResourceController
     {
         $per_page = $this->request->getVar('limit') ? (int) $this->request->getVar('limit') : 100;
         $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
-        $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted')  === "yes";
+        $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted') === "yes";
         $param = $this->request->getVar('param');
+        $sortBy = $this->request->getVar('sortBy') ?? "id";
+        $sortOrder = $this->request->getVar('sortOrder') ?? "asc";
         $model = new RolesModel();
         $builder = $param ? $model->search($param) : $model->builder();
-        $builder->join('users', "roles.role_id = users.role_id","left")
-        ->select("roles.*, count(users.id) as number_of_users")
-        ->groupBy('roles.role_id');
-        if($withDeleted){
+        $builder->join('users', "roles.role_id = users.role_id", "left")
+            ->select("roles.*, count(users.id) as number_of_users")
+            ->groupBy('roles.role_id');
+        if ($withDeleted) {
             $model->withDeleted();
         }
+        $builder->orderBy($sortBy, $sortOrder);
         $totalBuilder = clone $builder;
         $total = $totalBuilder->countAllResults();
         $result = $builder->get($per_page, $page)->getResult();
-        
-        return $this->respond(['data' => $result, 'total' => $total,
+
+        return $this->respond([
+            'data' => $result,
+            'total' => $total,
             'displayColumns' => $model->getDisplayColumns()
         ], ResponseInterface::HTTP_OK);
     }
@@ -355,46 +391,51 @@ class AuthController extends ResourceController
 
 
     public function updateUser($userId)
-{
-   // Get the existing user
-   $userObject = auth()->getProvider();
-   $existingUser = $userObject->find($userId);
+    {
+        try {
+            // Get the existing user
+            $userObject = auth()->getProvider();
+            $existingUser = $userObject->find($userId);
 
-   if ($existingUser === null) {
-       return $this->respond(['error' => 'User not found'], ResponseInterface::HTTP_NOT_FOUND);
-   }
+            if ($existingUser === null) {
+                return $this->respond(['error' => 'User not found'], ResponseInterface::HTTP_NOT_FOUND);
+            }
 
-   // Validate the request data
-   $rules = [
-       "username" => "permit_empty|is_unique[users.username,id,$userId]",
-       "email" => "permit_empty|valid_email|is_unique[auth_identities.secret,user_id,$userId]",
-       "phone" => "permit_empty|min_length[10]",
-       "role_id" => "permit_empty|is_natural_no_zero|is_not_unique[roles.role_id]",
-       "password" => "permit_empty|min_length[8]|strong_password[]",
-       "password_confirm" => "permit_empty|matches[password]",
-   ];
+            // Validate the request data
+            $rules = [
+                "username" => "permit_empty|is_unique[users.username,id,$userId]",
+                "email" => "permit_empty|valid_email|is_unique[auth_identities.secret,user_id,$userId]",
+                "phone" => "permit_empty|min_length[10]",
+                "role_id" => "permit_empty|is_natural_no_zero|is_not_unique[roles.role_id]",
+                "password" => "permit_empty|min_length[8]|strong_password[]",
+                "password_confirm" => "permit_empty|matches[password]",
+            ];
 
-   if (!$this->validate($rules)) {
-       return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
-   }
+            if (!$this->validate($rules)) {
+                return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
+            }
 
-   // Update the user details
-   $data = $this->request->getVar();
-   foreach ($data as $key => $value) {
-       if ($value !== null && $value !== '') {
-           $existingUser->{$key} = $value;
-       }
-   }
+            // Update the user details
+            $data = $this->request->getVar();
+            foreach ($data as $key => $value) {
+                if ($value !== null && $value !== '') {
+                    $existingUser->{$key} = $value;
+                }
+            }
 
-   // If a new password was provided, hash it before saving
+            // If a new password was provided, hash it before saving
 //    if (isset($data['password']) && $data['password'] !== '') {
 //        $existingUser->password = password_hash($data['password'], PASSWORD_DEFAULT);
 //    }
 
-   $userObject->save($existingUser);
+            $userObject->save($existingUser);
 
-   return $this->respond(['message' => 'User updated successfully'], ResponseInterface::HTTP_OK);
-}
+            return $this->respond(['message' => 'User updated successfully'], ResponseInterface::HTTP_OK);
+        } catch (\Throwable $th) {
+            log_message('error', $th->getMessage());
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 
     public function deleteUser($userId)
     {
@@ -418,49 +459,69 @@ class AuthController extends ResourceController
 
     public function getUsers()
     {
-        $per_page = $this->request->getVar('limit') ? (int) $this->request->getVar('limit') : 100;
-        $model = new UsersModel();
-        $builder = $model->builder();
-        $builder->join('roles', "roles.role_id = {$model->tableName}.role_id")
-        ->select("$model->tableName.*, roles.role_name");
+        try {
+            $per_page = $this->request->getVar('limit') ? (int) $this->request->getVar('limit') : 100;
+            $model = new UsersModel();
+            $builder = $model->builder();
+            $builder->join('roles', "roles.role_id = {$model->tableName}.role_id")
+                ->select("$model->tableName.*, roles.role_name");
 
-        return $this->respond(['data' => $model->withDeleted()->paginate($per_page), 'pager' => $model->pager->getDetails(),
-            'displayColumns' => $model->getDisplayColumns()
-        ], ResponseInterface::HTTP_OK);
-    }
-
-    public function banUser($userId){
-        $userObject = new UsersModel();
-        $reason = $this->request->getVar('reason') ?? '' ;
-        /** @var UsersModel $user */
-        $user = $userObject->find($userId);
-        if (!$user) {
-            return $this->respond(['message' => 'User not found'], ResponseInterface::HTTP_BAD_REQUEST);
+            return $this->respond([
+                'data' => $model->withDeleted()->paginate($per_page),
+                'pager' => $model->pager->getDetails(),
+                'displayColumns' => $model->getDisplayColumns()
+            ], ResponseInterface::HTTP_OK);
+        } catch (\Throwable $th) {
+            log_message('error', $th->getMessage());
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
-        
-        $user->ban($reason);
-        return $this->respond(['message' => 'User banned successfully'], ResponseInterface::HTTP_OK);
     }
 
-    public function unbanUser($userId){
-        $userObject = new UsersModel();
-        /** @var UsersModel $user */
-        $user = $userObject->find($userId);
-        if (!$user) {
-            return $this->respond(['message' => 'User not found'], ResponseInterface::HTTP_BAD_REQUEST);
+    public function banUser($userId)
+    {
+        try {
+            $userObject = new UsersModel();
+            $reason = $this->request->getVar('reason') ?? '';
+            /** @var UsersModel $user */
+            $user = $userObject->find($userId);
+            if (!$user) {
+                return $this->respond(['message' => 'User not found'], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+
+            $user->ban($reason);
+            return $this->respond(['message' => 'User banned successfully'], ResponseInterface::HTTP_OK);
+        } catch (\Throwable $th) {
+            log_message('error', $th->getMessage());
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
-        
-        $user->unBan();
-        return $this->respond(['message' => 'User unbanned successfully'], ResponseInterface::HTTP_OK);
     }
 
-    public function migrate(){
+    public function unbanUser($userId)
+    {
+        try {
+            $userObject = new UsersModel();
+            /** @var UsersModel $user */
+            $user = $userObject->find($userId);
+            if (!$user) {
+                return $this->respond(['message' => 'User not found'], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+
+            $user->unBan();
+            return $this->respond(['message' => 'User unbanned successfully'], ResponseInterface::HTTP_OK);
+        } catch (\Throwable $th) {
+            log_message('error', $th->getMessage());
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function migrate()
+    {
         $config = Config::get('Migrations');
         $migration = new MigrationRunner(
             $config
         );
-        
-    
+
+
         try {
             echo print_r($migration->findMigrations(), true);
             $migration->latest();
@@ -485,6 +546,82 @@ class AuthController extends ResourceController
         } else {
             // Migration failed
             echo "not successful";
+        }
+    }
+
+    public function createApiKey()
+    {
+        // $userObject = auth()->getProvider();
+        // $token =  $userObject->generateHmacToken(service('request')->getVar('token_name'));
+        // log_message('debug',     config('Encryption')->key);
+        $userObject = new UsersModel();
+        $userData = $userObject->findById(auth()->id());
+        $token = $userData->generateHmacToken(service('request')->getVar('token_name'));
+        // $token = auth()->user()->generateHmacToken(service('request')->getVar('token_name'));
+        return json_encode(['key' => $token->secret, 'secretKey' => $token->rawSecretKey]);
+    }
+
+    public function runShieldMigration()
+    {
+        // Define the command to run the migration
+        $command = 'php spark migrate -n CodeIgniter\Shield';
+
+        // Execute the command
+        exec($command, $output, $return_var);
+
+        // Check if the command was successful
+        if ($return_var === 0) {
+            // Migration was successful
+            echo "migration was successful";
+        } else {
+            echo print_r($output, true);
+            // Migration failed
+            echo "not successful";
+        }
+    }
+
+    public function sqlQuery()
+    {
+        $fields = [
+            "first_name",
+            "middle_name",
+            "last_name",
+            "email",
+            "intern_code",
+            "sex",
+            "registration_date",
+            "nationality",
+            "postal_address",
+            "residential_address",
+            "residential_city",
+            "picture",
+            "status",
+            "residential_region",
+            "criminal_offense",
+            "training_institution",
+            "date_of_graduation",
+            "qualification",
+            "date_of_birth",
+            "mailing_city",
+            "phone",
+            "place_of_birth",
+            "mailing_region",
+            "crime_details",
+            "referee1_name",
+            "referee1_phone",
+            "referee1_email",
+            "referee2_name",
+            "referee2_phone",
+            "referee2_email",
+            "referee1_letter_attachment",
+            "referee2_letter_attachment",
+            "certificate",
+            "category",
+            "type"
+        ];
+
+        foreach ($fields as $value) {
+            echo "\"$value\", `$value`,";
         }
     }
 }

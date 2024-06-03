@@ -74,4 +74,8 @@ class UsersModel extends UserModel implements TableDisplayInterface
         ];
     }
 
+    public function getDisplayColumnFilters(): array{
+        return [];
+    }
+
 }
