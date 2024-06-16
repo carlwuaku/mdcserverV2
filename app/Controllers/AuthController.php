@@ -11,13 +11,36 @@ use CodeIgniter\RESTful\ResourceController;
 use CodeIgniter\Shield\Entities\User;
 use App\Models\UsersModel;
 use CodeIgniter\Database\MigrationRunner;
+use Google\ReCaptcha\ReCaptcha;
+use ReCaptcha\ReCaptcha as ReCaptchaReCaptcha;
 
 class AuthController extends ResourceController
 {
 
-    public function appName()
+    public function appSettings()
     {
-        return $this->respond(['data' => 'MDC Management System'], ResponseInterface::HTTP_OK);
+        //read the data from app-settings.json at the root of the project
+        $data = json_decode(file_get_contents(ROOTPATH . 'app-settings.json'), true);
+        //if logo is set, append the base url to it
+        if (isset($data['logo'])) {
+            $data['logo'] = base_url() . $data['logo'];
+        }
+        $data['recaptchaSiteKey'] = getenv('RECAPTCHA_PUBLIC_KEY');
+        return $this->respond($data, ResponseInterface::HTTP_OK);
+    }
+
+    public function verifyRecaptcha()
+    {
+        //get the recaptcha key from .env
+        $key = getenv('RECAPTCHA_PRIVATE_KEY');
+        $recaptcha = new ReCaptchaReCaptcha($key);
+        $token = $this->request->getVar('g-recaptcha-response');
+        $resp = $recaptcha->verify($token, $_SERVER['REMOTE_ADDR']);
+        if ($resp->isSuccess()) {
+            return $this->respond(['message' => 'Recaptcha verified'], ResponseInterface::HTTP_OK);
+        } else {
+            return $this->respond(['message' => 'Recaptcha not verified'], ResponseInterface::HTTP_BAD_REQUEST);
+        }
     }
 
     public function register()
