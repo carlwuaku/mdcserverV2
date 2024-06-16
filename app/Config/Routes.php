@@ -18,7 +18,7 @@ $routes->get('phpinfo', function () {
     phpinfo();
 });
 $routes->group("api", ["namespace" => "App\Controllers"], function (RouteCollection $routes) {
-    $routes->get("app-name", [AuthController::class, "appName"]);
+    $routes->get("app-settings", [AuthController::class, "appSettings"]);
     $routes->post("register", [AuthController::class, "register"]);
     $routes->post("login", [AuthController::class, "login"]);
     $routes->post("mobile-login", [AuthController::class, "mobileLogin"]);
@@ -29,6 +29,7 @@ $routes->group("api", ["namespace" => "App\Controllers"], function (RouteCollect
     $routes->get("migrate-cmd", [AuthController::class, "runShieldMigration"]);
     $routes->get("sqlquery", [AuthController::class, "sqlQuery"]);
     $routes->get("getPractitionerDetails", [AuthController::class, "appName"], ['filter' => 'hmac']);
+    $routes->post("verify-recaptcha", [AuthController::class, "verifyRecaptcha"]);
 });
 
 $routes->group("activities", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
@@ -126,10 +127,10 @@ $routes->group("applications", ["namespace" => "App\Controllers", "filter" => "a
     $routes->put("details/(:segment)/restore", [ApplicationsController::class, "restoreApplication/$1"]);
     $routes->get("count", [ApplicationsController::class, "countApplications"], ["filter" => ["hasPermission:Site.Content.View"]], );
     $routes->get("templates", [ApplicationsController::class, "getApplicationTemplates"], ["filter" => ["hasPermission:Site.Content.View"]], );
-    $routes->put("templates/(:segment)", [ApplicationsController::class, "updateApplicationTemplates/$1"]);
+    $routes->put("templates/(:segment)", [ApplicationsController::class, "updateApplicationTemplate/$1"]);
     $routes->delete("templates/(:segment)", [ApplicationsController::class, "deleteApplicationTemplates/$1"]);
-    $routes->get("templates/(:segment)", [ApplicationsController::class, "getApplicationTemplates/$1"]);
-    $routes->post("templates", [ApplicationsController::class, "createApplicationTemplates"]);
+    $routes->get("templates/(:segment)", [ApplicationsController::class, "getApplicationTemplate/$1"]);
+    $routes->post("templates", [ApplicationsController::class, "createApplicationTemplate"]);
 });
 
 

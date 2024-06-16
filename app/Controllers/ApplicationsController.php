@@ -33,7 +33,7 @@ class ApplicationsController extends ResourceController
             $data = $this->request->getPost();
             $model = new ApplicationsModel();
             if (!$model->insert($data)) {
-                log_message('error', $model->errors());
+                log_message('error', $model->errors()["message"]);
                 return $this->respond(['message' => 'Server error. Please try again'], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
             }
             $id = $model->getInsertID();
@@ -313,6 +313,29 @@ class ApplicationsController extends ResourceController
         }
     }
 
+
+    private function getApplicationTemplateDetails(string $uuid): array|object|null
+    {
+        $model = new ApplicationTemplateModel();
+        $builder = $model->builder();
+        $builder->where('uuid', $uuid);
+        $data = $model->first();
+        if (!$data) {
+            throw new Exception("Application template not found");
+        }
+        $data['data'] = json_decode($data['data'], true);
+        return $data;
+    }
+
+    public function getApplicationTemplate($uuid)
+    {
+        $data = $this->getApplicationTemplateDetails($uuid);
+        if (!$data) {
+            return $this->respond("Application template not found", ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+        return $this->respond(['data' => $data], ResponseInterface::HTTP_OK);
+    }
+
     public function createApplicationTemplate()
     {
         try {
@@ -330,7 +353,7 @@ class ApplicationsController extends ResourceController
             $data = $this->request->getPost();
             $model = new ApplicationTemplateModel();
             if (!$model->insert($data)) {
-                log_message('error', $model->errors());
+                log_message('error', $model->errors()["message"]);
                 return $this->respond(['message' => 'Server error. Please try again'], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
             }
             $id = $model->getInsertID();
@@ -350,7 +373,7 @@ class ApplicationsController extends ResourceController
     {
         try {
             $rules = [
-                "uuid" => "required",
+                "id" => "required",
             ];
 
             if (!$this->validate($rules)) {
