@@ -13,6 +13,10 @@ class AddPractitionerSoftDeletes extends Migration
        $tables = $this->db->listTables();
 
        foreach ($tables as $table) {
+        //if the table is named migrations, skip it
+           if ($table === 'migrations') {
+               continue;
+           }
            if (!$this->db->fieldExists('deleted_at', $table)) {
                $this->forge->addColumn($table, [
                   'deleted_at' => [

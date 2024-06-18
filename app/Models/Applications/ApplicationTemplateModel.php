@@ -75,11 +75,7 @@ class ApplicationTemplateModel extends MyBaseModel implements TableDisplayInterf
         //return the $allowedFields without the uuid, created_on, updated_at, deleted_at
         return  [
             'form_name',
-            'description',
-            'guidelines',
-            'header',
-            'footer',
-            'data',
+            
             'open_date',
             'close_date',
             'on_submit_email',
