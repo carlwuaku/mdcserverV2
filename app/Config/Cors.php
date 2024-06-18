@@ -81,7 +81,7 @@ class Cors extends \Fluent\Cors\Config\Cors
      *
      * @var int
      */
-    public $maxAge = 0;
+    public $maxAge = 1800;
 
     /**
      * --------------------------------------------------------------------------

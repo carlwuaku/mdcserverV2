@@ -49,6 +49,51 @@ class AuthController extends ResourceController
         return $this->respondCreated($response);
     }
 
+    public function registerNew()
+    {
+        // Define validation rules
+        $rules = [
+            "username" => "required|is_unique[users.username]",
+            "password" => "required",
+            "email" => "required|valid_email|is_unique[auth_identities.secret]",
+        ];
+
+        // Validate input data
+        if (!$this->validate($rules)) {
+            return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
+        }
+
+        // Get input data
+        $username = $this->request->getVar("username");
+        $password = $this->request->getVar("password");
+        $email = $this->request->getVar("email");
+
+        // Create user entity
+        $userEntityObject = new User([
+            "username" => $username,
+            "password" => password_hash($password, PASSWORD_DEFAULT), // Hash the password
+            "email" => $email,
+        ]);
+
+        // Save user to the database
+        $userObject = new UsersModel();
+        $userObject->save($userEntityObject);
+
+        // Create response
+        $response = [
+            "status" => true,
+            "message" => "User saved successfully",
+            "data" => [
+                "username" => $username,
+                "email" => $email,
+            ],
+        ];
+
+        // Return created response
+        return $this->respondCreated($response);
+    }
+
+
     public function login()
     {
         if (auth()->loggedIn()) {
@@ -531,23 +576,23 @@ class AuthController extends ResourceController
         }
     }
 
-    public function runShieldMigration()
-    {
-        // Define the command to run the migration
-        $command = 'php spark migrate -n CodeIgniter\Shield';
+    // public function runShieldMigration()
+    // {
+    //     // Define the command to run the migration
+    //     $command = 'php spark migrate -n CodeIgniter\Shield';
 
-        // Execute the command
-        exec($command, $output, $return_var);
+    //     // Execute the command
+    //     exec($command, $output, $return_var);
 
-        // Check if the command was successful
-        if ($return_var === 0) {
-            // Migration was successful
-            echo "migration was successful";
-        } else {
-            // Migration failed
-            echo "not successful";
-        }
-    }
+    //     // Check if the command was successful
+    //     if ($return_var === 0) {
+    //         // Migration was successful
+    //         echo "migration was successful";
+    //     } else {
+    //         // Migration failed
+    //         echo "not successful";
+    //     }
+    // }
 
     public function createApiKey()
     {
