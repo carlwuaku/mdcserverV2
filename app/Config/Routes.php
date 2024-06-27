@@ -10,6 +10,8 @@ use App\Controllers\SpecialtiesController;
 use CodeIgniter\Router\RouteCollection;
 use App\Controllers\PractitionerController;
 use App\Controllers\ApplicationsController;
+use App\Controllers\PortalsController;
+
 /**
  * @var RouteCollection $routes
  */
@@ -17,6 +19,9 @@ $routes->get('/', 'Home::index');
 $routes->get('phpinfo', function () {
     phpinfo();
 });
+$routes->get('/portals/management', [PortalsController::class, "managementPortal"]);
+$routes->get('/portals/management/(:any)', [PortalsController::class, "managementPortal"]);
+
 $routes->group("api", ["namespace" => "App\Controllers"], function (RouteCollection $routes) {
     $routes->get("app-settings", [AuthController::class, "appSettings"]);
     $routes->post("register", [AuthController::class, "register"]);

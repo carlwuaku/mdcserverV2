@@ -1,0 +1,13 @@
+{
+    "featureToggles": {
+      },
+      "config": {
+        "production": false,
+        "useSessionStorage": false
+      },
+      "api": {
+        "host":"https://dcq02.loxampad.com/",
+        "namespace": "api/v2/"
+      },
+      "googleAnalyticsTrackingId": "0"
+}
