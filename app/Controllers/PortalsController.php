@@ -7,6 +7,6 @@ class PortalsController extends BaseController
     
     public function managementPortal()
     {
-        return view('portals/management_portal');
+        return view('portals/index.html');
     }
 }
