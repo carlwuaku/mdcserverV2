@@ -140,7 +140,9 @@ class PractitionerModel extends MyBaseModel implements TableDisplayInterface
 
     public function getDisplayColumnLabels(): array
     {
-        return [];
+        return [
+            "sex" => "Gender"
+        ];
     }
 
     public function addCustomFields(BaseBuilder $builder): BaseBuilder
