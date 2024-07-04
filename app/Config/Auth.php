@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace Config;
 
-use App\Models\PractitionerModel;
+
 use CodeIgniter\Shield\Config\Auth as ShieldAuth;
 use CodeIgniter\Shield\Authentication\Actions\ActionInterface;
 use CodeIgniter\Shield\Authentication\AuthenticatorInterface;
@@ -27,6 +27,7 @@ use CodeIgniter\Shield\Authentication\Passwords\NothingPersonalValidator;
 use CodeIgniter\Shield\Authentication\Passwords\PwnedValidator;
 use CodeIgniter\Shield\Authentication\Passwords\ValidatorInterface;
 use CodeIgniter\Shield\Models\UserModel;
+use App\Models\Practitioners\PractitionerModel;
 
 class Auth extends ShieldAuth
 {
