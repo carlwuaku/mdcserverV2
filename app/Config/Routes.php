@@ -139,4 +139,12 @@ $routes->group("applications", ["namespace" => "App\Controllers", "filter" => "a
 });
 
 
+$routes->group("payments", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
+    $routes->post('payments/initiate', 'PaymentsController::initiatePayment');
+    $routes->get('payments/status/(:segment)', 'PaymentsController::checkPaymentStatus/$1');
+    $routes->get('payments/details/(:segment)', 'PaymentsController::getPaymentDetails/$1');
+    $routes->post('payments/callback', 'PaymentsController::handleCallback');
+});
+
+
 service('auth')->routes($routes);
