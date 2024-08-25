@@ -128,14 +128,19 @@ $routes->group("applications", ["namespace" => "App\Controllers", "filter" => "a
     $routes->delete("details/(:segment)", [ApplicationsController::class, "deleteApplication/$1"]);
     $routes->get("details/(:segment)", [ApplicationsController::class, "getApplication/$1"]);
     $routes->get("details", [ApplicationsController::class, "getApplications"], ["filter" => ["hasPermission:Site.Content.View"]]);
-    $routes->post("details", [ApplicationsController::class, "createApplication"]);
+    $routes->post("details/(:segment)", [ApplicationsController::class, "createApplication"]);
     $routes->put("details/(:segment)/restore", [ApplicationsController::class, "restoreApplication/$1"]);
     $routes->get("count", [ApplicationsController::class, "countApplications"], ["filter" => ["hasPermission:Site.Content.View"]], );
+    $routes->get("types/(:segment)", [ApplicationsController::class, "getApplicationFormTypes"], ["filter" => ["hasPermission:Site.Content.View"]]);
+
     $routes->get("templates", [ApplicationsController::class, "getApplicationTemplates"], ["filter" => ["hasPermission:Site.Content.View"]], );
     $routes->put("templates/(:segment)", [ApplicationsController::class, "updateApplicationTemplate/$1"]);
-    $routes->delete("templates/(:segment)", [ApplicationsController::class, "deleteApplicationTemplates/$1"]);
+    $routes->delete("templates/(:segment)", [ApplicationsController::class, "deleteApplicationTemplate/$1"]);
     $routes->get("templates/(:segment)", [ApplicationsController::class, "getApplicationTemplate/$1"]);
     $routes->post("templates", [ApplicationsController::class, "createApplicationTemplate"]);
+    $routes->put("details/(:segment)/(:segment)", [ApplicationsController::class, "finishApplication/$1/$2"]);
+    $routes->get("config/(:segment)/(:segment)", [ApplicationsController::class, "getApplicationConfig/$1/$2"]);
+    $routes->get("config", [ApplicationsController::class, "getApplicationConfig"]);
 });
 
 

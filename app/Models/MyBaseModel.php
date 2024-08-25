@@ -119,7 +119,7 @@ class MyBaseModel extends Model
      */
     public function prepResultsAsValuesArray(array $results): array{
         $keyValuePairs = [];
-        foreach($results as $key => $value){
+        foreach($results as  $value){
             $keyValuePairs[]= ["key"=>$value, "value"=>$value];
         }
         return $keyValuePairs;
@@ -132,7 +132,27 @@ class MyBaseModel extends Model
      * @return array
      */
     public function getDistinctValuesAsKeyValuePairs(string $column): array{
-        $results = $this->getDistinctValues($column);
-        return $this->prepResultsAsValuesArray($results);
+        $results = $this->getDistinctValues($column);//[[$column=>"value1"], [$column=>"value2"]]
+        $oneDimensionalArray = [];
+        foreach ($results as $result) {
+            $oneDimensionalArray[] = $result[$column];
+        }
+        //convert the results to a one-dimensional array of key-value pairs
+
+        
+        
+        return $this->prepResultsAsValuesArray($oneDimensionalArray);
+    }
+
+    /**
+     * A function to create an array based on the allowedFields property of the model.
+     * it creates an array with the keys as the allowed fields and the values extracted for each key from the provided array 
+     */
+    public function createArrayFromAllowedFields(array $data): array{
+        $array = [];
+        foreach($this->allowedFields as $field){
+            $array[$field] = $data[$field] ?? null;
+        }
+        return $array;
     }
 }

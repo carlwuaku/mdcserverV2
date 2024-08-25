@@ -94,3 +94,10 @@ define('EVENT_PRIORITY_NORMAL', 100);
 define('EVENT_PRIORITY_HIGH', 10);
 
 define('PAGINATION_NUM_ROWS', 100);
+
+define("practitionersImagesLocation","./assets/images/doctors_pictures/");
+define("PRACTITIONERS_RENEWAL_TABLE","practitioners_renewal");
+define("PRACTITIONERS_TABLE","practitioners");
+define("APPLICATIONS_ASSETS_FOLDER", "applications");
+define("PRACTITIONERS_ASSETS_FOLDER", "practitioners_images");
+define("UPLOADS_FOLDER", "uploads");
