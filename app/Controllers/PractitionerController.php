@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Helpers\PractitionerUtils;
 use App\Models\ActivitiesModel;
 use App\Models\Practitioners\PractitionerAdditionalQualificationsModel;
 use App\Models\Practitioners\PractitionerRenewalModel;
@@ -15,6 +16,11 @@ use SimpleSoftwareIO\QrCode\Generator;
 
 class PractitionerController extends ResourceController
 {
+    private $practitionerUtils ;
+    public function __construct()
+    {
+        $this->practitionerUtils = new PractitionerUtils();
+    }
 
     public function createPractitioner()
     {
@@ -112,30 +118,12 @@ class PractitionerController extends ResourceController
         return $this->respond(['message' => 'Practitioner restored successfully'], ResponseInterface::HTTP_OK);
     }
 
-    /**
-     * Get practitioner details by UUID.
-     *
-     * @param string $uuid The UUID of the practitioner
-     * @return PractitionerModel|null The practitioner data if found, null otherwise
-     * @throws Exception If practitioner is not found
-     */
-    private function getPractitionerDetails(string $uuid): array|object|null
-    {
-        $model = new PractitionerModel();
-        $builder = $model->builder();
-        $builder = $model->addCustomFields($builder);
-        $builder->where($model->getTableName() . '.uuid', $uuid);
-        $data = $model->first();
-        if (!$data) {
-            throw new Exception("Practitioner not found");
-        }
-        return $data;
-    }
+    
 
     public function getPractitioner($uuid)
     {
         $model = new PractitionerModel();
-        $data = $this->getPractitionerDetails($uuid);
+        $data = $this->practitionerUtils->getPractitionerDetails($uuid);
         if (!$data) {
             return $this->respond("Practitioner not found", ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -575,38 +563,15 @@ class PractitionerController extends ResourceController
                 return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
             }
             $practitioner_uuid = $this->request->getPost('practitioner_uuid');
-
-            $registration_number = $this->request->getPost('registration_number');
             $startDate = $this->request->getPost('year') ?? date("Y-m-d");
             $year = date('Y', strtotime($startDate));
             $data = $this->request->getPost();
             $model = new PractitionerRenewalModel();
-            $practitioner = $this->getPractitionerDetails($practitioner_uuid);
             $expiry = $this->request->getPost('expiry');
-            if ($practitioner['in_good_standing'] === "yes") {
-                return $this->respond(['message' => "Practitioner is already in good standing"], ResponseInterface::HTTP_BAD_REQUEST);
-            }
-
-
-
-            if (empty ($expiry)) {
-                $data['expiry'] = Utils::generateRenewalExpiryDate($practitioner, $startDate);
-            }
-
-            if ($data['status'] === "Approved") {
-                $code = md5($registration_number . "%%" . $year);
-                $qrText = "manager.mdcghana.org/api/verifyRelicensure/$code";
-                $qrCodeGenerator = new Generator;
-                $qrCode = $qrCodeGenerator
-                    ->size(200)
-                    ->margin(10)
-                    ->generate($qrText);
-                $data['qr_code'] = $qrCode;
-                $data['qr_text'] = $qrText;
-            }
+            $today = date("Y-m-d");
             //start a transaction
-            $model->db->transStart();
-            $model->insert($data);
+            $model->db->transException(true)->transStart();
+
             $place_of_work = $this->request->getPost('place_of_work');
             $region = $this->request->getPost('region');
             $district = $this->request->getPost('district');
@@ -614,32 +579,23 @@ class PractitionerController extends ResourceController
             $specialty = $this->request->getPost('specialty');
             $subspecialty = $this->request->getPost('subspecialty');
             $college_membership = $this->request->getPost('college_membership');
-
-            $practitionerModel = new PractitionerModel();
-            $practitionerUpdate = [
-                "place_of_work" => $place_of_work,
-                "region" => $region,
-                "district" => $district,
-                "institution_type" => $institution_type,
-                "specialty" => $specialty,
-                "subspecialty" => $subspecialty,
-                "college_membership" => $college_membership,
-                "last_renewal_start" => $startDate,
-                "last_renewal_expiry" => $data['expiry'],
-                "last_renewal_status" => $data['status'],
-
-            ];
-            $practitionerModel->builder()->where(['uuid' => $practitioner_uuid])->update($practitionerUpdate);
+            
+            PractitionerUtils::retainPractitioner(
+                $practitioner_uuid,
+                $expiry,
+                $data,
+                $year,
+                $place_of_work,
+                $region,
+                $district,
+                $institution_type,
+                $specialty,
+                $subspecialty,
+                $college_membership
+            );
+           
             $model->db->transComplete();
-            if ($model->db->transStatus() === false) {
-                log_message("error", $model->getError());
-                return $this->respond(['message' => "Error inserting data. Please make sure all fields are filled correctly and try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
-                // generate an error... or use the log_message() function to log your error
-            }
-            //send email to the user from here if the setting RENEWAL_EMAIL_TO is set to true
-            /** @var ActivitiesModel $activitiesModel */
-            $activitiesModel = new ActivitiesModel();
-            $activitiesModel->logActivity("added retention record for $registration_number ");
+            
             return $this->respond(['message' => "Renewal created successfully", 'data' => ""], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
             log_message("error", $th->getMessage());
@@ -671,9 +627,9 @@ class PractitionerController extends ResourceController
             $year = date('Y', strtotime($startDate));
             $expiry = $this->request->getVar('expiry');
             log_message("info", $practitioner_uuid);
-            $practitioner = $this->getPractitionerDetails($practitioner_uuid);
+            $practitioner = $this->practitionerUtils->getPractitionerDetails($practitioner_uuid);
             if (empty ($expiry)) {
-                $data->expiry = Utils::generateRenewalExpiryDate($practitioner, $startDate);
+                $data->expiry = PractitionerUtils::generateRenewalExpiryDate($practitioner, $startDate);
             }
             //get only the last part of the picture path
             if (property_exists($data, "picture")) {

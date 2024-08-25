@@ -13,7 +13,7 @@ class ApplicationsModel extends MyBaseModel implements TableDisplayInterface
     protected $primaryKey = 'id';
     protected $useAutoIncrement = true;
     protected $returnType = 'array';
-    protected $useSoftDeletes = false;
+    protected $useSoftDeletes = true;
     protected $protectFields = true;
     protected $allowedFields = [
         'uuid',
@@ -111,6 +111,15 @@ class ApplicationsModel extends MyBaseModel implements TableDisplayInterface
     {
         return [
             [
+                "label" => "Practitioner Type",
+                "name" => "practitioner_type",
+                "type" => "select",
+                "hint" => "",
+                "options" => $this->getDistinctValuesAsKeyValuePairs('practitioner_type'),
+                "value" => "",
+                "required" => false
+            ],
+            [
                 "label" => "Application Type",
                 "name" => "form_type",
                 "type" => "select",
@@ -158,7 +167,7 @@ class ApplicationsModel extends MyBaseModel implements TableDisplayInterface
             'deleted_at',
         ];
         $builder->select("*")->
-        select("CONCAT('" . base_url("file-server/image-render") . "','/practitioners_images/'," . "picture) as picture");
+        select("CONCAT('" . base_url("file-server/image-render") . "','/applications/'," . "picture) as picture");
         ;
         return $builder;
     }

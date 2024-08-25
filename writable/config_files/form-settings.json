@@ -1,0 +1,71 @@
+{
+    "Practitioners-Permanent-Registration-Application": {
+        "finish": {
+            "approve": {
+                "additionalFields": [
+                    {
+                        "type": "text",
+                        "name": "registration_number",
+                        "label": "Registration Number",
+                        "hint": "Enter the registration number",
+                        "value": "",
+                        "options": []
+                      },
+                      {
+                    "type": "html",
+                    "name": "emailTemplate",
+                    "label": "Email Template",
+                    "hint": "This is the email template that will be sent to the applicant",
+                    "value": "",
+                    "options": []
+                  }]
+            }
+        }
+    },
+    "Practitioners-Temporary-Registration-Application": {
+        "finish": {
+            "approve": {
+                "additionalFields": [
+                    {
+                        "type": "text",
+                        "name": "registration_number",
+                        "label": "Registration Number",
+                        "hint": "Enter the registration number",
+                        "value": "",
+                        "options": []
+                      },
+                      {
+                    "type": "html",
+                    "name": "emailTemplate",
+                    "label": "Email Template",
+                    "hint": "This is the email template that will be sent to the applicant",
+                    "value": "",
+                    "options": []
+                  }]
+            }
+        }
+    },
+    "Practitioners-Provisional-Registration-Application": {
+        "finish": {
+            "approve": {
+                "additionalFields": [
+                    {
+                        "type": "text",
+                        "name": "registration_number",
+                        "label": "Registration Number",
+                        "hint": "Enter the registration number",
+                        "value": "",
+                        "options": []
+                      },
+                      {
+                    "type": "html",
+                    "name": "emailTemplate",
+                    "label": "Email Template",
+                    "hint": "This is the email template that will be sent to the applicant",
+                    "value": "",
+                    "options": []
+                  }]
+            }
+        }
+    }
+}

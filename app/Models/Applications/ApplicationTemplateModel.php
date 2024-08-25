@@ -26,6 +26,10 @@ class ApplicationTemplateModel extends MyBaseModel implements TableDisplayInterf
         'close_date',
         'on_submit_email',
         'on_submit_message',
+        'on_approve_email_template',
+        'on_deny_email_template',
+        'approve_url',
+        'deny_url',
         'created_on',
         'updated_at',
         'deleted_at',
@@ -73,17 +77,21 @@ class ApplicationTemplateModel extends MyBaseModel implements TableDisplayInterf
     public function getDisplayColumns(): array
     {
         //return the $allowedFields without the uuid, created_on, updated_at, deleted_at
-        return  [
+        return [
             'form_name',
-            
+
             'open_date',
             'close_date',
             'on_submit_email',
             'on_submit_message',
+            'on_approve_email_template',
+            'on_deny_email_template',
+            'approve_url',
+            'deny_url',
             'created_on',
             'updated_at',
             'deleted_at',
-    
+
         ];
     }
 
@@ -92,14 +100,14 @@ class ApplicationTemplateModel extends MyBaseModel implements TableDisplayInterf
         return [];
     }
 
-    
+
 
     public function getTableName(): string
     {
         return $this->table;
     }
 
-    
+
 
     public function getDisplayColumnFilters(): array
     {

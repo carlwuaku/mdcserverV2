@@ -21,74 +21,72 @@ class AddApplicationForms extends Migration
                 'null' => false,
                 'unique' => true,
             ],
-            'practitioner_type'=> [
-                'type' => 'ENUM',
-                'constraint' => ['Doctor','Physician Assistant'],
-               'null' => true,
-               'default' => null
+            'practitioner_type' => [
+                'type' => 'TEXT',
+                'null' => false,
             ],
-            'form_type'=> [
+            'form_type' => [
                 'type' => 'VARCHAR',
                 'constraint' => '255',
-               'null' => false
+                'null' => false
             ],
-            'picture'=> [
+            'picture' => [
                 'type' => 'TEXT',
-               'null' => true,
-               'default' => null
+                'null' => true,
+                'default' => null
             ],
-            'first_name'=> [
+            'first_name' => [
                 'type' => 'VARCHAR',
-               'constraint' => '255',
-               'null' => true,
-               'default'=> null,
+                'constraint' => '255',
+                'null' => true,
+                'default' => null,
             ],
-            'middle_name'=> [
+            'middle_name' => [
                 'type' => 'VARCHAR',
-               'constraint' => '255',
-               'null' => true,
-               'default' => null
+                'constraint' => '255',
+                'null' => true,
+                'default' => null
             ],
-            'last_name'=> [
+            'last_name' => [
                 'type' => 'VARCHAR',
-               'constraint' => '255',
-               'null' => false,
+                'constraint' => '255',
+                'null' => false,
             ],
-            'application_code'=> [
+            'application_code' => [
                 'type' => 'VARCHAR',
-               'constraint' => '50',
-               'null' => false,
-               'unique'=> true
-            ],
-            
-            'form_data'=> [
-                'type' => 'JSON',
-               'null' => false
-            ],
-            'status'=> [
-                'type' => 'VARCHAR',
-               'constraint' => '255',
-               'null' => true,
-               'default' => null
+                'constraint' => '50',
+                'null' => false,
+                'unique' => true
             ],
 
-            'phone'=> [
-                'type' => 'VARCHAR',
-               'constraint' => '255',
-               'null' => true,
-               'default' => null
+            'form_data' => [
+                'type' => 'JSON',
+                'null' => false
             ],
-            'email'=> [
+            'status' => [
                 'type' => 'VARCHAR',
-               'constraint' => '500',
-               'null' => true,
-               'default'=> null
+                'constraint' => '255',
+                'null' => true,
+                'default' => null
             ],
-            
-            'qr_code'=> [
+
+            'phone' => [
+                'type' => 'VARCHAR',
+                'constraint' => '255',
+                'null' => true,
+                'default' => null
+            ],
+            'email' => [
+                'type' => 'VARCHAR',
+                'constraint' => '500',
+                'null' => true,
+                'default' => null
+            ],
+
+            'qr_code' => [
                 'type' => 'TEXT',
-               'null' => true,
-               'default' => null
+                'null' => true,
+                'default' => null
             ],
             'deleted_at' => [
                 'type' => 'DATETIME',
