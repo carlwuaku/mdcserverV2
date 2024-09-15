@@ -49,4 +49,81 @@ class Utils
         return $prefix . $suffix;
     }
 
+    public static function getAppSettings(string $key = null): ?array
+    {
+        /**
+         * @var array
+         */
+        $data = json_decode(file_get_contents(ROOTPATH . 'app-settings.json'), true);
+        if ($key) {
+            return $data[$key] ?? null;
+        }
+        return $data;
+    }
+
+    public static function setAppSettings(string $key, $value)
+    {
+        $data = json_decode(file_get_contents(ROOTPATH . 'app-settings.json'), true);
+        $data[$key] = $value;
+        file_put_contents(ROOTPATH . 'app-settings.json', json_encode($data));
+    }
+
+    /**
+     * get the table name, fields, other settings for a license type
+     * @param string $license
+     * @return object {table: string, fields: array, onCreateValidation: array, onUpdateValidation: array}
+     */
+    public static function getLicenseSetting(string $license): object
+    {
+        $licenses = self::getAppSettings("licenseTypes");
+        if (!$licenses || !array_key_exists($license, $licenses)) {
+            throw new \Exception("License not found");
+        }
+        return (object) $licenses[$license];
+    }
+
+    public static function getLicenseFields(string $license): array
+    {
+        try {
+            $licenseDef = self::getLicenseSetting($license);
+            return $licenseDef->fields;
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+
+    }
+
+    public static function getLicenseTable(string $license): string
+    {
+        try {
+            $licenseDef = self::getLicenseSetting($license);
+            return $licenseDef->table;
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+
+    }
+
+    public static function getLicenseOnCreateValidation(string $license): array
+    {
+        try {
+            $licenseDef = self::getLicenseSetting($license);
+            return $licenseDef->onCreateValidation;
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+
+    }
+
+    public static function getLicenseOnUpdateValidation(string $license): array
+    {
+        try {
+            $licenseDef = self::getLicenseSetting($license);
+            return $licenseDef->onUpdateValidation;
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+
+    }
+
 }

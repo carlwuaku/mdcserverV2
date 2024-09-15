@@ -20,21 +20,21 @@ class AddDistricts extends Migration
                 'null' => false,
                 'unique' => false,
             ],
-            'region'=> [
+            'region' => [
                 'type' => 'VARCHAR',
-               'constraint' => 255,
-               'null' => false
+                'constraint' => 255,
+                'null' => false
             ],
-            'region_id'=> [
+            'region_id' => [
                 'type' => 'INT',
-               'constraint' => 9,
-               'null' => false
+                'constraint' => 9,
+                'null' => false
             ],
         ]);
 
         $this->forge->addKey('id', true);
         $this->forge->addKey('region', false, false, 'region_key');
-        $this->forge->addForeignKey('region', 'regions', 'name', 'CASCADE', 'CASCADE');
+        $this->forge->addForeignKey('region', 'regions', 'name', 'CASCADE', 'RESTRICT');
 
         $this->forge->createTable('districts', true, [
             'ENGINE' => 'InnoDB',

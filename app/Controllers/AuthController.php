@@ -213,7 +213,7 @@ class AuthController extends ResourceController
             'email' => $this->request->getPost('username'),
             'password' => $this->request->getPost('password'),
         ];
-        $result = auth()->attempt($credentials, 'practitioners');
+        $result = auth()->attempt($credentials);
         if (!$result->isOK()) {
             return $this->response
                 ->setJSON(['message' => $result->reason()])
@@ -279,7 +279,7 @@ class AuthController extends ResourceController
     public function restoreRole($role_id)
     {
         $model = new RolesModel();
-        if (!$model->update($role_id, ['deleted_at' => null])) {
+        if (!$model->update($role_id, (object) ['deleted_at' => null])) {
             return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
         return $this->respond(['message' => 'Role restored successfully'], ResponseInterface::HTTP_OK);

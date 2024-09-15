@@ -5,6 +5,7 @@ use App\Controllers\AdminController;
 use App\Controllers\AssetController;
 use App\Controllers\AuthController;
 use App\Controllers\EmailController;
+use App\Controllers\LicensesController;
 use App\Controllers\RegionController;
 use App\Controllers\SpecialtiesController;
 use CodeIgniter\Router\RouteCollection;
@@ -75,7 +76,6 @@ $routes->group("practitioners", ["namespace" => "App\Controllers", "filter" => "
     $routes->get("details", [PractitionerController::class, "getPractitioners"], ["filter" => ["hasPermission:Site.Content.View"]]);
     $routes->post("details", [PractitionerController::class, "createPractitioner"]);
     $routes->put("details/(:segment)/restore", [PractitionerController::class, "restorePractitioner/$1"]);
-    $routes->get("pictures", [PractitionerController::class, "filterPictures"]);
 
     $routes->put("qualifications/(:segment)", [PractitionerController::class, "updatePractitionerQualification/$1"]);
     $routes->delete("qualifications/(:segment)", [PractitionerController::class, "deletePractitionerQualification/$1"]);
@@ -141,6 +141,26 @@ $routes->group("applications", ["namespace" => "App\Controllers", "filter" => "a
     $routes->put("details/(:segment)/(:segment)", [ApplicationsController::class, "finishApplication/$1/$2"]);
     $routes->get("config/(:segment)/(:segment)", [ApplicationsController::class, "getApplicationConfig/$1/$2"]);
     $routes->get("config", [ApplicationsController::class, "getApplicationConfig"]);
+});
+
+$routes->group("licenses", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
+    $routes->put("details/(:segment)", [LicensesController::class, "updateLicense/$1"]);
+    $routes->delete("details/(:segment)", [LicensesController::class, "deleteLicense/$1"]);
+    $routes->get("details/(:segment)", [LicensesController::class, "getLicense/$1"]);
+    $routes->get("details", [LicensesController::class, "getLicenses"], ["filter" => ["hasPermission:Site.Content.View"]]);
+    $routes->post("details", [LicensesController::class, "createLicense"]);
+    $routes->put("details/(:segment)/restore", [LicensesController::class, "restoreLicense/$1"]);
+
+    $routes->get("config/(:segment)", [LicensesController::class, "getLicenseFormFields/$1"]);
+
+    $routes->put("renewal/(:segment)", [PractitionerController::class, "updatePractitionerRenewal/$1"]);
+    $routes->delete("renewal/(:segment)", [PractitionerController::class, "deletePractitionerRenewal/$1"]);
+    $routes->get("renewal", [PractitionerController::class, "getPractitionerRenewals"], ["filter" => ["hasPermission:Site.Content.View"]], );
+    $routes->get("renewal-count", [PractitionerController::class, "countRenewals"], ["filter" => ["hasPermission:Site.Content.View"]], );
+    $routes->get("renewal/practitioner/(:segment)", [PractitionerController::class, "getPractitionerRenewals/$1"], ["filter" => ["hasPermission:Site.Content.View"]], );
+    $routes->get("renewal/(:segment)", [PractitionerController::class, "getPractitionerRenewal/$1"], ["filter" => ["hasPermission:Site.Content.View"]], );
+    $routes->post("renewal", [PractitionerController::class, "createPractitionerRenewal"]);
+
 });
 
 

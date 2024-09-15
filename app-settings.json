@@ -2,5 +2,326 @@
     "appName": "MDC Ghana",
     "appVersion": "1.0.0",
     "appLongName": "Medical & Dental Council Ghana",
-    "logo": "assets/images/logo.png"
+    "logo": "assets/images/logo.png",
+    "defaultEmailSenderEmail": "info@mdcghana.org",
+    "defaultEmailSenderName": "MDC Ghana",
+    "sidebarMenu": [
+        {
+            "title": "Dashboard",
+            "url": "/dashboard",
+            "icon": "dashboard",
+            "children": []
+        },
+        {
+            "title": "Retention",
+            "url": "/relicensure",
+            "icon": "published_with_changes",
+            "children": []
+        },
+        {
+            "title": "CPD",
+            "active_children": false,
+            "url": "",
+            "icon": "auto_stories_outlined",
+            "children": [
+                {
+                    "title": "Dashboard/Search",
+                    "url": "/cpd_dashboard",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Add New CPD",
+                    "url": "/add_cpd",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "View CPD Topics",
+                    "url": "/list_cpd",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "CDP Organizers",
+                    "url": "/list_cpd_facilities",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "CPD Report",
+                    "url": "/cpd_attendance_report",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "CDP Online",
+                    "url": "/cpd_online_providers",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Approval",
+                    "url": "/approve_cpd_attendance",
+                    "icon": "",
+                    "children": []
+                }
+            ]
+        },
+        {
+            "title": "Applications",
+            "active_children": false,
+            "url": "",
+            "icon": "list_alt",
+            "children": [
+                {
+                    "title": "All Applications",
+                    "url": "/applications",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Manage Templates",
+                    "url": "/application-templates",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Add New Templates",
+                    "url": "/application-templates/form",
+                    "icon": "",
+                    "children": []
+                }
+            ]
+        },
+        {
+            "title": "Licensing",
+            "active_children": false,
+            "url": "",
+            "icon": "person_outlined",
+            "children": [
+                {
+                    "title": "Dashboard/Search",
+                    "url": "/licenses",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Add New Licenses",
+                    "url": "/licenses/form/create/facilities",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Start Renewal",
+                    "url": "/practitioners/renewal-form",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Renewal History",
+                    "url": "/practitioners/renewals",
+                    "icon": "",
+                    "children": []
+                }
+            ]
+        },
+        {
+            "title": "Practitioners",
+            "active_children": false,
+            "url": "",
+            "icon": "person_outlined",
+            "children": [
+                {
+                    "title": "Dashboard/Search",
+                    "url": "/practitioners",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Add New Practitioner/Search",
+                    "url": "/practitioners/practitioner-form",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Start Renewal",
+                    "url": "/practitioners/renewal-form",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Renewal History",
+                    "url": "/practitioners/renewals",
+                    "icon": "",
+                    "children": []
+                }
+            ]
+        },
+        {
+            "title": "Messaging",
+            "active_children": false,
+            "url": "",
+            "icon": "mail",
+            "children": [
+                {
+                    "title": "Send Email",
+                    "url": "/send_mail",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Send SMS",
+                    "url": "/send_sms",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Email Queue",
+                    "url": "/email_queue",
+                    "icon": "",
+                    "children": []
+                }
+            ]
+        },
+        {
+            "title": "System Config",
+            "active_children": false,
+            "url": "",
+            "icon": "settings",
+            "children": [
+                {
+                    "title": "New User",
+                    "url": "/admin/userForm",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "View Users",
+                    "url": "/admin/users",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Manage Roles",
+                    "url": "/admin/roles",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Permissions",
+                    "url": "/admin/permission_matrix",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "System Settings",
+                    "url": "/settings",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Flags",
+                    "url": "/admin/flags",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Activities",
+                    "url": "/activities",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Logs",
+                    "url": "/admin/logs",
+                    "icon": "",
+                    "children": []
+                }
+            ]
+        }
+    ],
+    "licenseTypes": {
+        "facilities": {
+            "table": "facilities",
+            "fields": [
+                {
+                    "label": "License Number",
+                    "name": "license_number",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": true
+                },
+                {
+                    "label": "Name",
+                    "name": "name",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": true
+                },
+                {
+                    "label": "Business Type",
+                    "name": "business_type",
+                    "hint": "",
+                    "options": [
+                        {
+                            "key": "Hospital",
+                            "value": "Hospital"
+                        },
+                        {
+                            "key": "Clinic",
+                            "value": "Clinic"
+                        },
+                        {
+                            "key": "Pharmacy",
+                            "value": "Pharmacy"
+                        }
+                    ],
+                    "type": "select",
+                    "value": "",
+                    "required": true
+                },
+                {
+                    "label": "Suburb",
+                    "name": "suburb",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": true
+                },
+                {
+                    "label": "House Number",
+                    "name": "house_number",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": true
+                },
+                {
+                    "label": "Longitude/Latitude",
+                    "name": "coordinates",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": true
+                }
+            ],
+            "onCreateValidation": {
+                "name": "required",
+                "business_type": "required",
+                "suburb": "required",
+                "house_number": "required",
+                "region": "required",
+                "district": "required"
+            },
+            "onUpdateValidation": {}
+        }
+    }
 }
