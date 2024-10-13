@@ -140,6 +140,30 @@ class LicensesController extends ResourceController
 
     }
 
+    public function countLicenses()
+    {
+        try {
+
+            $param = $this->request->getVar('param');
+            $model = new LicensesModel();
+            $filterArray = $model->createArrayFromAllowedFields((array) $this->request->getGet());
+            // Validate inputs here
+
+            $builder = $param ? $model->search($param) : $model->builder();
+            array_map(function ($value, $key) use ($builder) {
+                $builder->where($key, $value);
+            }, $filterArray, array_keys($filterArray));
+
+            $total = $builder->countAllResults();
+            return $this->respond([
+                'data' => $total
+            ], ResponseInterface::HTTP_OK);
+        } catch (\Throwable $th) {
+            log_message("error", $th->getMessage());
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     public function restoreLicense($uuid)
     {
         try {
@@ -190,6 +214,12 @@ class LicensesController extends ResourceController
             if ($renewalDate) {
                 $model->renewalDate = date("Y-m-d", strtotime($renewalDate));
             }
+            $model->joinSearchFields = [
+                "facilities" => [
+                    "fields" => ["name", "town", "suburb", "business_type"],
+                    "joinCondition" => "licenses.license_number = facilities.license_number"
+                ]
+            ];
             $builder = $param ? $model->search($param) : $model->builder();
             $builder = $model->addCustomFields($builder);
             if ($renewalDate) {
@@ -203,13 +233,15 @@ class LicensesController extends ResourceController
             if ($withDeleted) {
                 $model->withDeleted();
             }
+            log_message("info", $builder->getCompiledSelect(false));
             $totalBuilder = clone $builder;
             $total = $totalBuilder->countAllResults();
             $result = $builder->get($per_page, $page)->getResult();
             return $this->respond([
                 'data' => $result,
                 'total' => $total,
-                'displayColumns' => $model->getDisplayColumns()
+                'displayColumns' => $model->getDisplayColumns(),
+                'columnFilters' => $model->getDisplayColumnFilters()
             ], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);

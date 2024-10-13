@@ -2,39 +2,47 @@
 
 namespace App\Models\Licenses;
 
+use CodeIgniter\Model;
 use App\Helpers\Interfaces\TableDisplayInterface;
 use App\Helpers\Interfaces\FormInterface;
 use App\Helpers\Utils;
 use CodeIgniter\Database\BaseBuilder;
 use App\Models\MyBaseModel;
+use App\Models\Licenses\LicensesModel;
 
-class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormInterface
+
+class LicenseRenewal extends MyBaseModel implements TableDisplayInterface, FormInterface
 {
-    protected $table = 'licenses';
+    protected $table = 'license_renewal';
     protected $primaryKey = 'id';
     protected $useAutoIncrement = true;
     protected $returnType = 'array';
-    protected $useSoftDeletes = true;
+    protected $useSoftDeletes = false;
     protected $protectFields = true;
     protected $allowedFields = [
         'uuid',
         'license_number',
-        'name',
-        'registration_date',
-        'status',
-        'email',
-        'postal_address',
-        'picture',
-        'type',
-        'phone',
-        'region',
-        'district',
-        'portal_access',
-        'last_renewal_start',
-        'last_renewal_expiry',
-        'last_renewal_status',
+        'updated_at',
         'deleted_at',
-        'created_on'
+        'modified_by',
+        'created_by',
+        'created_on',
+        'modified_on',
+        'start_date',
+        'receipt',
+        'qr_code',
+        'qr_text',
+        'expiry',
+        'status',
+        'batch_number',
+        'payment_date',
+        'payment_file',
+        'payment_file_date',
+        'payment_invoice_number',
+        'approve_online_certificate',
+        'online_certificate_start_date',
+        'online_certificate_end_date',
+        'picture'
     ];
 
     protected bool $allowEmptyInserts = false;
@@ -42,7 +50,7 @@ class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormIn
     // Dates
     protected $useTimestamps = false;
     protected $dateFormat = 'datetime';
-    protected $createdField = 'created_at';
+    protected $createdField = 'created_on';
     protected $updatedField = 'updated_at';
     protected $deletedField = 'deleted_at';
 
@@ -64,12 +72,6 @@ class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormIn
     protected $afterDelete = [];
     public $licenseType = null;
 
-    public $renewalDate = "";
-    public function setRenewalDate(string $date)
-    {
-        $this->renewalDate = $date;
-    }
-
     public function __construct($licenseType = null)
     {
         parent::__construct();
@@ -79,10 +81,9 @@ class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormIn
     public $searchFields = [
         'type',
         'license_number',
-        'email',
-        'phone',
-        'region',
-        'district'
+        'receipt',
+        'batch_number',
+        'payment_invoice_number',
     ];
 
 
@@ -94,17 +95,23 @@ class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormIn
             'picture',
             'type',
             'license_number',
-            'name',
-            'in_good_standing',
-            'status',
-            'registration_date',
-            'email',
-            'phone',
-            'postal_address',
-            'region',
-            'district',
+            'created_by',
             'created_on',
-            'portal_access',
+            'modified_on',
+            'start_date',
+            'receipt',
+            'qr_code',
+            'qr_text',
+            'expiry',
+            'status',
+            'batch_number',
+            'payment_date',
+            'payment_file',
+            'payment_file_date',
+            'payment_invoice_number',
+            'approve_online_certificate',
+            'online_certificate_start_date',
+            'online_certificate_end_date',
         ];
         if ($this->licenseType) {
             $licenseTypes = Utils::getAppSettings("licenseTypes");
@@ -115,7 +122,7 @@ class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormIn
                 return $defaultColumns;
             }
             $licenseDef = $licenseTypes[$this->licenseType];
-            $fields = $licenseDef['fields'];
+            $fields = $licenseDef['renewalFields'];
             $columns = array_map(function ($field) {
                 return $field['name'];
             }, $fields);
@@ -218,64 +225,29 @@ class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormIn
 
 
 
-    public function addCustomFields(BaseBuilder $builder): BaseBuilder
-    {
-        if ($this->renewalDate === "") {
-            $this->renewalDate = date("Y-m-d");
-        }
 
-        $filteredColumns = [
-            'uuid',
-            'license_number',
-            'name',
-            'registration_date',
-            'status',
-            'email',
-            'postal_address',
-            'picture',
-            'type',
-            'phone',
-            'region',
-            'district',
-            'portal_access',
-            "last_renewal_start",
-            "last_renewal_expiry",
-            "last_renewal_status",
-            "deleted_at",
-            "created_on"
-        ];
-
-        //add the table name to the columns
-        $filteredColumns = array_map(function ($column) {
-            return $this->table . '.' . $column;
-        }, $filteredColumns);
-
-        $builder
-            ->select(implode(', ', $filteredColumns))
-            ->select("(CASE  
-            when last_renewal_status = 'Approved' and '$this->renewalDate' BETWEEN last_renewal_start AND last_renewal_expiry THEN 'In Good Standing'
-            when last_renewal_status = 'Pending Payment' and '$this->renewalDate' BETWEEN last_renewal_start AND last_renewal_expiry THEN 'Pending Payment'
-            when last_renewal_status = 'Pending Approval' and '$this->renewalDate' BETWEEN last_renewal_start AND last_renewal_expiry THEN 'Pending Approval'
-             ELSE 'Not In Good Standing'
-             END) as in_good_standing");
-        // ->
-        // select("CONCAT('" . base_url("file-server/image-render") . "','/applications/'," . "picture) as picture");
-
-        return $builder;
-    }
 
     public function addLicenseDetails(BaseBuilder $builder, string $licenseType): BaseBuilder
     {
         try {
             $licenseDef = Utils::getLicenseSetting($licenseType);
-            $fields = $licenseDef->fields;
-            $table = $licenseDef->table;
+            $licenseTypeFields = $licenseDef->fields;
+            $licenseTypeTable = $licenseDef->table;
+            //get the sub table for that license type
+            $renewalSubTable = $licenseDef->renewalTable;
+            $renewalSubFields = $licenseDef->renewalFields;
             $columns = [];
-            for ($i = 0; $i < count($fields); $i++) {
-                $columns[] = $table . $fields[$i]['name'];
+            for ($i = 0; $i < count($licenseTypeFields); $i++) {
+                $columns[] = $licenseTypeTable . $licenseTypeFields[$i]['name'];
+            }
+            for ($i = 0; $i < count($renewalSubFields); $i++) {
+                $columns[] = $renewalSubTable . $renewalSubFields[$i]['name'];
             }
             $builder->select($columns);
-            $builder->join($table, $table . '.license_number = licenses.license_number');
+            $builder->join("licenses", $this->table . '.license_number = licenses.license_number');
+
+            $builder->join($licenseTypeTable, $this->table . ".license_number = $licenseTypeTable.license_number");
+            $builder->join($renewalSubTable, $this->table . ".license_number = $renewalSubTable.license_number");
             return $builder;
         } catch (\Throwable $th) {
             log_message('error', $th->getMessage());
@@ -284,17 +256,17 @@ class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormIn
     }
 
     /**
-     * insert or update license details. the table is obtained from the license type in app settings
+     * insert or update renewal details. the table is obtained from the license type in app.settings.json
      * @param string $licenseType
      * @param array $formData
      * @return void
      */
-    public function createOrUpdateLicenseDetails($licenseType, $formData)
+    public function createOrUpdateSubDetails($licenseType, $formData)
     {
         try {
             $licenseDef = Utils::getLicenseSetting($licenseType);
-            $table = $licenseDef->table;
-            $licenseFields = $licenseDef->fields;
+            $table = $licenseDef->renewalTable;
+            $licenseFields = $licenseDef->renewalFields;
             $data = new \stdClass();
             //make sure $formdata is an array
             if (!is_array($formData)) {
@@ -319,13 +291,18 @@ class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormIn
         }
     }
 
-    public function getLicenseDetailsFromSubTable(string $uuid, string $type = ""): array
+    public function getDetailsFromSubTable(string $uuid, string $type = ""): array
     {
         $data = $this->where('uuid', $uuid)->orWhere('license_number', $uuid)->first();
         if (!$data) {
-            throw new \Exception("License not found");
+            throw new \Exception("License renewal not found");
         }
         if (empty($type)) {
+            $licenseModel = new LicensesModel();
+            $license = $licenseModel->where('license_number', $data['license_number'])->first();
+            if (!$license) {
+                throw new \Exception("License not found");
+            }
             $type = $data['type'];
         }
         $table = Utils::getLicenseTable($type);
@@ -339,41 +316,36 @@ class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormIn
         return $data;
     }
 
-    public function addLastRenewalField(BaseBuilder $builder): BaseBuilder
-    {
-        $licensesTable = $this->table;
-        $renewalTable = "license_renewal";
-        $builder->select("(SELECT $renewalTable.uuid 
-             FROM $renewalTable 
-             WHERE $renewalTable.practitioner_uuid = $licensesTable.uuid AND '$this->renewalDate' BETWEEN $renewalTable.year AND $renewalTable.expiry 
-             LIMIT 1) AS last_renewal_uuid");
-        return $builder;
-    }
 
     public function getFormFields(): array
     {
         return [
             [
-                "label" => "License Type",
-                "name" => "type",
-                "type" => "select",
+                "label" => "License Number",
+                "name" => "license_number",
+                "type" => "api",
                 "hint" => "",
-                "options" => [
-                    [
-                        "key" => "Facility",
-                        "value" => "facilities"
-                    ],
-                    [
-                        "key" => "Practitioner",
-                        "value" => "practitioners"
-                    ]
-                ],
+                "options" => [],
+                "value" => "",
+                "required" => true,
+                "api_url" => "licenses/licenses",
+                "apiKeyProperty" => "license_number",
+                "apiLabelProperty" => "name",
+                "apiType" => "search" | "select" | "datalist"
+            ],
+            [
+                "label" => "Start Date",
+                "name" => "start_date",
+                "type" => "date",
+                "hint" => "",
+                "options" => [],
                 "value" => "",
                 "required" => true
             ],
+
             [
-                "label" => "Registration Date",
-                "name" => "registration_date",
+                "label" => "End Date",
+                "name" => "expiry",
                 "type" => "date",
                 "hint" => "",
                 "options" => [],

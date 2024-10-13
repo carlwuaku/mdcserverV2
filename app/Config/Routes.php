@@ -150,6 +150,7 @@ $routes->group("licenses", ["namespace" => "App\Controllers", "filter" => "apiau
     $routes->get("details", [LicensesController::class, "getLicenses"], ["filter" => ["hasPermission:Site.Content.View"]]);
     $routes->post("details", [LicensesController::class, "createLicense"]);
     $routes->put("details/(:segment)/restore", [LicensesController::class, "restoreLicense/$1"]);
+    $routes->get("count", [LicensesController::class, "countLicenses"], ["filter" => ["hasPermission:Site.Content.View"]], );
 
     $routes->get("config/(:segment)", [LicensesController::class, "getLicenseFormFields/$1"]);
 

@@ -71,7 +71,7 @@ class Utils
     /**
      * get the table name, fields, other settings for a license type
      * @param string $license
-     * @return object {table: string, fields: array, onCreateValidation: array, onUpdateValidation: array}
+     * @return object {table: string, fields: array, onCreateValidation: array, onUpdateValidation: array, renewalFields: array, renewalTable: string}
      */
     public static function getLicenseSetting(string $license): object
     {

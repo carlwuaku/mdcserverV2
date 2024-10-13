@@ -13,9 +13,9 @@
             "children": []
         },
         {
-            "title": "Retention",
-            "url": "/relicensure",
-            "icon": "published_with_changes",
+            "title": "Search",
+            "url": "/search",
+            "icon": "search",
             "children": []
         },
         {
@@ -321,7 +321,149 @@
                 "region": "required",
                 "district": "required"
             },
-            "onUpdateValidation": {}
+            "onUpdateValidation": {},
+            "renewalFields": [
+                {
+                    "label": "Practitioner in Charge Registration Number",
+                    "name": "practitioner_in_charge",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": true
+                },
+                {
+                    "label": "Weekdays Start Time",
+                    "name": "weekdays_start_time",
+                    "hint": "",
+                    "options": [],
+                    "type": "time",
+                    "value": "",
+                    "required": true
+                },
+                {
+                    "label": "Weekdays End Time",
+                    "name": "weekdays_end_time",
+                    "hint": "",
+                    "options": [],
+                    "type": "time",
+                    "value": "",
+                    "required": false
+                },
+                {
+                    "label": "Weekend Start Time",
+                    "name": "weekend_start_time",
+                    "hint": "",
+                    "options": [],
+                    "type": "time",
+                    "value": "",
+                    "required": true
+                },
+                {
+                    "label": "Weekdays End Time",
+                    "name": "weekend_end_time",
+                    "hint": "",
+                    "options": [],
+                    "type": "time",
+                    "value": "",
+                    "required": false
+                },
+                {
+                    "label": "In charge start time",
+                    "name": "in_charge_start_time",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": true
+                },
+                {
+                    "label": "In charge closing time",
+                    "name": "in_charge_end_time",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": true
+                }
+            ],
+            "renewalTable": "facility_renewal",
+            "detailsPageHeaderTabs": [
+                {
+                    "label": "Business Type",
+                    "key": "business_type"
+                },
+                {
+                    "label": "In Good Standing",
+                    "key": "in_good_standing"
+                },
+                {
+                    "label": "Status",
+                    "key": "status"
+                }
+            ]
         }
-    }
+    },
+    "dashboardMenu": [
+        {
+            "title": "Applications",
+            "active_children": false,
+            "url": "/applications",
+            "icon": "list_alt",
+            "children": [],
+            "description": "Manage submitted applications",
+            "apiCountUrl": "/applications/count",
+            "apiCountText": "New Applications"
+        },
+        {
+            "title": "Licensing",
+            "active_children": false,
+            "url": "/licenses",
+            "icon": "person_outlined",
+            "children": []
+        },
+        {
+            "title": "License Renewal",
+            "active_children": false,
+            "url": "/licenses",
+            "icon": "person_outlined",
+            "children": [],
+            "description": "Manage License Renewals",
+            "apiCountUrl": "practitioners/renewal-count?status=Pending Approval",
+            "apiCountText": "Pending Approval"
+        },
+        {
+            "title": "Messaging",
+            "active_children": false,
+            "url": "",
+            "icon": "mail",
+            "children": [
+                {
+                    "title": "Send Email",
+                    "url": "/send_mail",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Send SMS",
+                    "url": "/send_sms",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Email Queue",
+                    "url": "/email_queue",
+                    "icon": "",
+                    "children": []
+                }
+            ]
+        }
+    ],
+    "searchTypes": [
+        {
+            "label": "All Facilities",
+            "key": "facilities",
+            "url": "licenses/details"
+        }
+    ]
 }
