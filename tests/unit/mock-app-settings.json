@@ -101,8 +101,8 @@
             "icon": "person_outlined",
             "children": [
                 {
-                    "title": "View/Search Facilities",
-                    "url": "/licenses/facilities",
+                    "title": "Dashboard/Search",
+                    "url": "/licenses",
                     "icon": "",
                     "children": []
                 },
@@ -111,42 +111,16 @@
                     "url": "/licenses/form/create/facilities",
                     "icon": "",
                     "children": []
-                }
-            ]
-        },
-        {
-            "title": "Facilities Renewal",
-            "active_children": false,
-            "url": "",
-            "icon": "list_alt",
-            "children": [
-                {
-                    "title": "Dashboard",
-                    "url": "/licenses/renewals/facilities",
-                    "icon": "",
-                    "children": []
                 },
                 {
-                    "title": "Add New Renewal",
-                    "url": "/licenses/renewal-form",
-                    "icon": "",
-                    "children": []
-                },
-                {
-                    "title": "Manage Renewals",
+                    "title": "Manage Facility Renewals",
                     "url": "/licenses/renewals/facilities",
                     "icon": "",
                     "children": []
                 },
                 {
                     "title": "Renewal History",
-                    "url": "/licenses/renewals/facilities",
-                    "icon": "",
-                    "children": []
-                },
-                {
-                    "title": "Print Renewals",
-                    "url": "/licenses/renewals/facilities",
+                    "url": "/practitioners/renewals",
                     "icon": "",
                     "children": []
                 }

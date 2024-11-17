@@ -20,12 +20,11 @@ class AssetController extends ResourceController
 
         $validationRule = [
             'uploadFile' => [
-                'label' => 'Image File',
+                'label' => 'Uploaded File',
                 'rules' => [
-                    'uploaded[uploadFile]',
-                    'is_image[uploadFile]',
-                    'mime_in[uploadFile,image/jpg,image/jpeg,image/gif,image/png,image/webp]',
-                    'max_size[uploadFile,1000]',
+                    // 'uploaded[uploadFile]',
+                    'mime_in[uploadFile,image/jpg,image/jpeg,image/gif,image/png,image/webp,image/svg+xml,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet]',
+                    'max_size[uploadFile,5000]',
                     // 'max_dims[uploadFile,1024,768]',
                 ],
             ],
@@ -33,7 +32,7 @@ class AssetController extends ResourceController
         if (!$this->validate($validationRule)) {
             return $this->respond(
                 $this->validator->getErrors(),
-                ResponseInterface::HTTP_INTERNAL_SERVER_ERROR
+                ResponseInterface::HTTP_BAD_REQUEST
             );
         }
 
@@ -79,7 +78,7 @@ class AssetController extends ResourceController
         $directory = $this->getImageDirectory($type);
         $filePath = WRITEPATH . 'uploads/' . $directory . $imageName;
         if (!file_exists($filePath)) {
-            return $this->respond(['message' => "Image not found"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->respond(['message' => "Image not found"], ResponseInterface::HTTP_BAD_REQUEST);
         }
         try {
             $image = file_get_contents($filePath);
@@ -93,7 +92,7 @@ class AssetController extends ResourceController
                 ->send();
         } catch (\Throwable $th) {
             log_message("error", $th->getMessage());
-            return $this->respond(['message' => "Invalid file"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->respond(['message' => "Invalid file"], ResponseInterface::HTTP_BAD_REQUEST);
         }
 
     }

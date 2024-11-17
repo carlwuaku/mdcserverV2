@@ -11,14 +11,14 @@ use App\Models\MyBaseModel;
 use App\Models\Licenses\LicensesModel;
 
 
-class LicenseRenewal extends MyBaseModel implements TableDisplayInterface, FormInterface
+class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, FormInterface
 {
     protected $table = 'license_renewal';
     protected $primaryKey = 'id';
     protected $useAutoIncrement = true;
     protected $returnType = 'array';
     protected $useSoftDeletes = false;
-    protected $protectFields = true;
+    protected $protectFields = false;
     protected $allowedFields = [
         'uuid',
         'license_number',
@@ -42,7 +42,9 @@ class LicenseRenewal extends MyBaseModel implements TableDisplayInterface, FormI
         'approve_online_certificate',
         'online_certificate_start_date',
         'online_certificate_end_date',
-        'picture'
+        'picture',
+        'license_type',
+        'license_uuid'
     ];
 
     protected bool $allowEmptyInserts = false;
@@ -93,17 +95,15 @@ class LicenseRenewal extends MyBaseModel implements TableDisplayInterface, FormI
         //get the fields for the selected type and merge with the default fields
         $defaultColumns = [
             'picture',
-            'type',
             'license_number',
-            'created_by',
-            'created_on',
-            'modified_on',
             'start_date',
-            'receipt',
-            'qr_code',
-            'qr_text',
             'expiry',
             'status',
+            'created_by',
+            'created_on',
+
+            'receipt',
+            'qr_code',
             'batch_number',
             'payment_date',
             'payment_file',
@@ -113,6 +113,7 @@ class LicenseRenewal extends MyBaseModel implements TableDisplayInterface, FormI
             'online_certificate_start_date',
             'online_certificate_end_date',
         ];
+
         if ($this->licenseType) {
             $licenseTypes = Utils::getAppSettings("licenseTypes");
             if (
@@ -123,12 +124,15 @@ class LicenseRenewal extends MyBaseModel implements TableDisplayInterface, FormI
             }
             $licenseDef = $licenseTypes[$this->licenseType];
             $fields = $licenseDef['renewalFields'];
+
+            $licenseTypeFields = $licenseDef['fields'];
+
             $columns = array_map(function ($field) {
                 return $field['name'];
-            }, $fields);
-            return array_merge($defaultColumns, $columns, ['deleted_at']);
+            }, array_merge($fields, $licenseTypeFields));
+            return Utils::reorderPriorityColumns(array_merge($defaultColumns, $columns, ['deleted_at']));
         }
-        return $defaultColumns;
+        return Utils::reorderPriorityColumns($defaultColumns);
     }
 
     public function getDisplayColumnLabels(): array
@@ -164,19 +168,19 @@ class LicenseRenewal extends MyBaseModel implements TableDisplayInterface, FormI
                 "name" => "type",
                 "type" => "select",
                 "hint" => "",
-                "options" => $this->getDistinctValuesAsKeyValuePairs('type'),
+                "options" => $this->getDistinctValuesAsKeyValuePairs('license_type'),
                 "value" => "",
                 "required" => false
             ],
-            [
-                "label" => "Registration Date",
-                "name" => "registration_date",
-                "type" => "date",
-                "hint" => "",
-                "options" => [],
-                "value" => "",
-                "required" => false
-            ],
+            // [
+            //     "label" => "Registration Date",
+            //     "name" => "registration_date",
+            //     "type" => "date",
+            //     "hint" => "",
+            //     "options" => [],
+            //     "value" => "",
+            //     "required" => false
+            // ],
             [
                 "label" => "Status",
                 "name" => "status",
@@ -186,24 +190,24 @@ class LicenseRenewal extends MyBaseModel implements TableDisplayInterface, FormI
                 "value" => "",
                 "required" => false
             ],
-            [
-                "label" => "Region",
-                "name" => "region",
-                "type" => "select",
-                "hint" => "",
-                "options" => $this->getDistinctValuesAsKeyValuePairs('region'),
-                "value" => "",
-                "required" => false
-            ],
-            [
-                "label" => "District",
-                "name" => "district",
-                "type" => "select",
-                "hint" => "",
-                "options" => $this->getDistinctValuesAsKeyValuePairs('district'),
-                "value" => "",
-                "required" => false
-            ],
+            // [
+            //     "label" => "Region",
+            //     "name" => "region",
+            //     "type" => "select",
+            //     "hint" => "",
+            //     "options" => $this->getDistinctValuesAsKeyValuePairs('region'),
+            //     "value" => "",
+            //     "required" => false
+            // ],
+            // [
+            //     "label" => "District",
+            //     "name" => "district",
+            //     "type" => "select",
+            //     "hint" => "",
+            //     "options" => $this->getDistinctValuesAsKeyValuePairs('district'),
+            //     "value" => "",
+            //     "required" => false
+            // ],
         ];
 
         if ($this->licenseType) {
@@ -236,14 +240,14 @@ class LicenseRenewal extends MyBaseModel implements TableDisplayInterface, FormI
             //get the sub table for that license type
             $renewalSubTable = $licenseDef->renewalTable;
             $renewalSubFields = $licenseDef->renewalFields;
-            $columns = [];
+            $extraColumns = [];
             for ($i = 0; $i < count($licenseTypeFields); $i++) {
-                $columns[] = $licenseTypeTable . $licenseTypeFields[$i]['name'];
+                $extraColumns[] = $licenseTypeTable . "." . $licenseTypeFields[$i]['name'];
             }
             for ($i = 0; $i < count($renewalSubFields); $i++) {
-                $columns[] = $renewalSubTable . $renewalSubFields[$i]['name'];
+                $extraColumns[] = $renewalSubTable . "." . $renewalSubFields[$i]['name'];
             }
-            $builder->select($columns);
+            $builder->select(array_merge(["{$this->table}.*"], $extraColumns, ["licenses.region", "licenses.district", "licenses.phone", "licenses.email", "licenses.postal_address"]));
             $builder->join("licenses", $this->table . '.license_number = licenses.license_number');
 
             $builder->join($licenseTypeTable, $this->table . ".license_number = $licenseTypeTable.license_number");
@@ -261,30 +265,45 @@ class LicenseRenewal extends MyBaseModel implements TableDisplayInterface, FormI
      * @param array $formData
      * @return void
      */
-    public function createOrUpdateSubDetails($licenseType, $formData)
+    public function createOrUpdateSubDetails($renewalId, $licenseType, $formData)
     {
         try {
             $licenseDef = Utils::getLicenseSetting($licenseType);
             $table = $licenseDef->renewalTable;
             $licenseFields = $licenseDef->renewalFields;
-            $data = new \stdClass();
+            $data = [];
+            // $protectedFields = [];
             //make sure $formdata is an array
-            if (!is_array($formData)) {
+            if (!is_array(value: $formData)) {
                 $formData = (array) $formData;
             }
 
             foreach ($licenseFields as $field) {
                 $name = $field['name'];
                 if (array_key_exists($name, $formData)) {
-                    $data->$name = $formData[$name];
+                    $data[$name] = $formData[$name];
                 }
-            }
-            $license = $this->builder($table)->where('license_number', $formData['license_number'])->get()->getFirstRow('array');
 
+            }
+            $data['license_number'] = $formData['license_number'];
+            $data['renewal_id'] = $renewalId;
+            // $this->setAllowedFields(allowedFields: $protectedFields);
+            // $this->setTable($table);
+            $license = $this->builder($table)->where('renewal_id', $renewalId)->get()->getFirstRow('array');
+            log_message('info', print_r($data, true));
             if ($license) {
-                $this->builder($table)->where('license_number', $license['license_number'])->update($data);
+                log_message('info', 'license found for' . $renewalId);
+                //in this case we're using fields not listed in the allowed fields so we need to use set method
+                $this->builder($table)->where('renewal_id', $renewalId)->set($data)->update();
             } else {
-                $this->builder($table)->insert($data);
+                log_message('info', 'no license found for' . $renewalId);
+                $db = \Config\Database::connect();
+                $db->table($table)->set($data)->insert();
+                log_message('info', 'inserted subdetails');
+                // log_message('info', 'no license found for' . $renewalId);
+                // $this->insert((object) $data);
+                // log_message('info', $this->builder()->getCompiledInsert(false));
+                // $this->builder()->insert();
             }
         } catch (\Throwable $th) {
             throw $th;
@@ -319,19 +338,31 @@ class LicenseRenewal extends MyBaseModel implements TableDisplayInterface, FormI
 
     public function getFormFields(): array
     {
+        /**
+         * 'receipt',
+        'qr_code',
+        'qr_text',
+        'expiry',
+        'status',
+        'batch_number',
+        'payment_date',
+        'payment_file',
+        'payment_file_date',
+        'payment_invoice_number',
+        'approve_online_certificate',
+        'online_certificate_start_date',
+        'online_certificate_end_date',
+         */
         return [
             [
                 "label" => "License Number",
                 "name" => "license_number",
-                "type" => "api",
+                "type" => "text",
                 "hint" => "",
                 "options" => [],
                 "value" => "",
                 "required" => true,
-                "api_url" => "licenses/licenses",
-                "apiKeyProperty" => "license_number",
-                "apiLabelProperty" => "name",
-                "apiType" => "search" | "select" | "datalist"
+                "showOnly" => true
             ],
             [
                 "label" => "Start Date",
@@ -352,49 +383,10 @@ class LicenseRenewal extends MyBaseModel implements TableDisplayInterface, FormI
                 "value" => "",
                 "required" => true
             ],
+
             [
-                "label" => "Status",
-                "name" => "status",
-                "type" => "select",
-                "hint" => "",
-                "options" => [
-                    [
-                        "key" => "Active",
-                        "value" => "active"
-                    ],
-                    [
-                        "key" => "Inactive",
-                        "value" => "inactive"
-                    ],
-                    [
-                        "key" => "Suspended",
-                        "value" => "suspended"
-                    ]
-                ],
-                "value" => "",
-                "required" => true
-            ],
-            [
-                "label" => "Email",
-                "name" => "email",
-                "type" => "email",
-                "hint" => "",
-                "options" => [],
-                "value" => "",
-                "required" => true
-            ],
-            [
-                "label" => "Picture",
-                "name" => "picture",
-                "type" => "picture",
-                "hint" => "",
-                "options" => [],
-                "value" => "",
-                "required" => false
-            ],
-            [
-                "label" => "Postal Address",
-                "name" => "postal_address",
+                "label" => "Batch Number",
+                "name" => "batch_number",
                 "type" => "text",
                 "hint" => "",
                 "options" => [],
@@ -402,8 +394,35 @@ class LicenseRenewal extends MyBaseModel implements TableDisplayInterface, FormI
                 "required" => false
             ],
             [
-                "label" => "Phone",
-                "name" => "phone",
+                "label" => "Payment Date",
+                "name" => "payment_date",
+                "type" => "date",
+                "hint" => "",
+                "options" => [],
+                "value" => "",
+                "required" => false
+            ],
+            [
+                "label" => "Payment File",
+                "name" => "payment_file",
+                "type" => "file",
+                "hint" => "",
+                "options" => [],
+                "value" => "",
+                "required" => false
+            ],
+            [
+                "label" => "Payment File Date",
+                "name" => "payment_file_date",
+                "type" => "date",
+                "hint" => "",
+                "options" => [],
+                "value" => "",
+                "required" => false
+            ],
+            [
+                "label" => "Payment Invoice Number",
+                "name" => "payment_invoice_number",
                 "type" => "text",
                 "hint" => "",
                 "options" => [],
@@ -411,34 +430,8 @@ class LicenseRenewal extends MyBaseModel implements TableDisplayInterface, FormI
                 "required" => false
             ],
             [
-                "label" => "Region",
-                "name" => "region",
-                "type" => "api",
-                "hint" => "",
-                "options" => [],
-                "value" => "",
-                "required" => false,
-                "api_url" => "regions/regions",
-                "apiKeyProperty" => "name",
-                "apiLabelProperty" => "name",
-                "apiType" => "select",
-            ],
-            [
-                "label" => "District",
-                "name" => "district",
-                "type" => "api",
-                "hint" => "",
-                "options" => [],
-                "value" => "",
-                "required" => false,
-                "api_url" => "regions/districts",
-                "apiKeyProperty" => "district",
-                "apiLabelProperty" => "district",
-                "apiType" => "select",
-            ],
-            [
-                "label" => "Portal Access",
-                "name" => "portal_access",
+                "label" => "Approve Online Certificate",
+                "name" => "approve_online_certificate",
                 "type" => "select",
                 "hint" => "",
                 "options" => [
@@ -454,6 +447,33 @@ class LicenseRenewal extends MyBaseModel implements TableDisplayInterface, FormI
                 "value" => "",
                 "required" => false
             ],
+            [
+                "label" => "Online Certificate Start Date",
+                "name" => "online_certificate_start_date",
+                "type" => "date",
+                "hint" => "",
+                "options" => [],
+                "value" => "",
+            ],
+            [
+                "label" => "Online Certificate End Date",
+                "name" => "online_certificate_end_date",
+                "type" => "date",
+                "hint" => "",
+                "options" => [],
+                "value" => "",
+            ],
+
+            [
+                "label" => "Picture",
+                "name" => "picture",
+                "type" => "picture",
+                "hint" => "",
+                "options" => [],
+                "value" => "",
+                "required" => false
+            ],
+
         ];
     }
 }

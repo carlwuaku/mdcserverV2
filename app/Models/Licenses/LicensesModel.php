@@ -119,9 +119,9 @@ class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormIn
             $columns = array_map(function ($field) {
                 return $field['name'];
             }, $fields);
-            return array_merge($defaultColumns, $columns, ['deleted_at']);
+            return Utils::reorderPriorityColumns(array_merge($defaultColumns, $columns, ['deleted_at']));
         }
-        return $defaultColumns;
+        return Utils::reorderPriorityColumns($defaultColumns);
     }
 
     public function getDisplayColumnLabels(): array
@@ -345,7 +345,7 @@ class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormIn
         $renewalTable = "license_renewal";
         $builder->select("(SELECT $renewalTable.uuid 
              FROM $renewalTable 
-             WHERE $renewalTable.practitioner_uuid = $licensesTable.uuid AND '$this->renewalDate' BETWEEN $renewalTable.year AND $renewalTable.expiry 
+             WHERE $renewalTable.license_uuid = $licensesTable.uuid AND '$this->renewalDate' BETWEEN $renewalTable.start_date AND $renewalTable.expiry 
              LIMIT 1) AS last_renewal_uuid");
         return $builder;
     }

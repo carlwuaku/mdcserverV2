@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Helpers\LicenseUtils;
+use App\Models\Licenses\LicenseRenewalModel;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 
@@ -248,296 +249,298 @@ class LicensesController extends ResourceController
         }
     }
 
-    public function getPractitionerQualifications()
-    {
-        try {
-            $per_page = $this->request->getVar('limit') ? (int) $this->request->getVar('limit') : 100;
-            $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
-            $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted') === "yes";
-            $param = $this->request->getVar('param');
-            $sortBy = $this->request->getVar('sortBy') ?? "id";
-            $sortOrder = $this->request->getVar('sortOrder') ?? "asc";
-
-            $model = new PractitionerAdditionalQualificationsModel();
-            $registration_number = $this->request->getGet('registration_number');
-            $builder = $param ? $model->search($param) : $model->builder();
-            if ($registration_number !== null) {
-                $builder->where(["registration_number" => $registration_number]);
-            }
-            if ($withDeleted) {
-                $model->withDeleted();
-            }
-            $builder->orderBy("$sortBy", $sortOrder);
-            $totalBuilder = clone $builder;
-            $total = $totalBuilder->countAllResults();
-            $result = $builder->get($per_page, $page)->getResult();
-            return $this->respond([
-                'data' => $result,
-                'total' => $total,
-                'displayColumns' => $model->getDisplayColumns()
-            ], ResponseInterface::HTTP_OK);
-        } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
-            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
-        }
-    }
-
-    public function getPractitionerQualification($uuid)
-    {
-        $model = new PractitionerAdditionalQualificationsModel();
-        $builder = $model->builder();
-        $builder->where($model->getTableName() . '.uuid', $uuid);
-        $data = $model->first();
-        if (!$data) {
-            return $this->respond("Practitioner qualification not found", ResponseInterface::HTTP_BAD_REQUEST);
-        }
-        return $this->respond(['data' => $data, 'displayColumns' => $model->getDisplayColumns()], ResponseInterface::HTTP_OK);
-    }
-
-    public function createPractitionerQualification()
-    {
-        $rules = [
-            "registration_number" => "required",
-            "institution" => "required",
-            "qualification" => "required"
-
-        ];
-
-        if (!$this->validate($rules)) {
-            return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
-        }
-        $data = $this->request->getPost();
-        $model = new PractitionerAdditionalQualificationsModel();
-
-        if (!$model->insert($data)) {
-            return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
-        }
-        $id = $model->getInsertID();
-
-        /** @var ActivitiesModel $activitiesModel */
-        $activitiesModel = new ActivitiesModel();
-        $activitiesModel->logActivity("Added additional qualification {$data['qualification']} to practitioner {$data['registration_number']}");
-
-        //if registered this year, retain the person
-        return $this->respond(['message' => 'Additional qualification created successfully', 'data' => $id], ResponseInterface::HTTP_OK);
-    }
-
-    public function updatePractitionerQualification($uuid)
-    {
-        $rules = [
-            "registration_number" => "required",
-            "institution" => "required",
-            "qualification" => "required"
-
-        ];
-
-        if (!$this->validate($rules)) {
-            return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
-        }
-        $data = $this->request->getVar();
-        $data->uuid = $uuid;
-        if (property_exists($data, "id")) {
-            unset($data->id);
-        }
-        //get only the last part of the picture path
-        if (property_exists($data, "picture")) {
-            $splitPicturePath = explode("/", $data->picture);
-            $data->picture = array_pop($splitPicturePath);
-        }
-        $model = new PractitionerAdditionalQualificationsModel();
-
-        $oldData = $model->where(["uuid" => $uuid])->first();
-        $changes = implode(", ", Utils::compareObjects($oldData, $data));
-
-        if (!$model->builder()->where(['uuid' => $uuid])->update($data)) {
-            return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
-        }
-
-        /** @var ActivitiesModel $activitiesModel */
-        $activitiesModel = new ActivitiesModel();
-        $activitiesModel->logActivity("updated additional qualification for practitioner {$data['registration_number']}. Changes: $changes");
-
-        return $this->respond(['message' => 'Practitioner additional qualification updated successfully'], ResponseInterface::HTTP_OK);
-    }
-
-    public function deletePractitionerQualification($uuid)
-    {
-        $model = new PractitionerAdditionalQualificationsModel();
-        $data = $model->where(["uuid" => $uuid])->first();
-
-        if (!$model->where('uuid', $uuid)->delete()) {
-            return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
-        }
-
-        /** @var ActivitiesModel $activitiesModel */
-        $activitiesModel = new ActivitiesModel();
-        $activitiesModel->logActivity("Deleted additional qualification {$data['qualification']} for practitioner {$data['registration_number']}. ");
-
-        return $this->respond(['message' => 'Practitioner additional qualification deleted successfully'], ResponseInterface::HTTP_OK);
-    }
-
-    public function restorePractitionerQualification($uuid)
-    {
-        $model = new PractitionerAdditionalQualificationsModel();
-
-        if (!$model->builder()->where(['uuid' => $uuid])->update(['deleted_at' => null])) {
-            return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
-        }
-        $data = $model->where(["uuid" => $uuid])->first();
-
-        /** @var ActivitiesModel $activitiesModel */
-        $activitiesModel = new ActivitiesModel();
-        $activitiesModel->logActivity("Restored additional qualification {$data['qualification']} for practitioner {$data['registration_number']}. ");
-
-        return $this->respond(['message' => 'Practitioner additional qualification restored successfully'], ResponseInterface::HTTP_OK);
-    }
 
 
-    public function createPractitionerWorkHistory()
-    {
-        $rules = [
-            "registration_number" => "required",
-            "institution" => "required",
-            "position" => "required",
-            "institution_type" => "required"
+    // public function getPractitionerQualifications()
+    // {
+    //     try {
+    //         $per_page = $this->request->getVar('limit') ? (int) $this->request->getVar('limit') : 100;
+    //         $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
+    //         $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted') === "yes";
+    //         $param = $this->request->getVar('param');
+    //         $sortBy = $this->request->getVar('sortBy') ?? "id";
+    //         $sortOrder = $this->request->getVar('sortOrder') ?? "asc";
 
-        ];
+    //         $model = new PractitionerAdditionalQualificationsModel();
+    //         $registration_number = $this->request->getGet('registration_number');
+    //         $builder = $param ? $model->search($param) : $model->builder();
+    //         if ($registration_number !== null) {
+    //             $builder->where(["registration_number" => $registration_number]);
+    //         }
+    //         if ($withDeleted) {
+    //             $model->withDeleted();
+    //         }
+    //         $builder->orderBy("$sortBy", $sortOrder);
+    //         $totalBuilder = clone $builder;
+    //         $total = $totalBuilder->countAllResults();
+    //         $result = $builder->get($per_page, $page)->getResult();
+    //         return $this->respond([
+    //             'data' => $result,
+    //             'total' => $total,
+    //             'displayColumns' => $model->getDisplayColumns()
+    //         ], ResponseInterface::HTTP_OK);
+    //     } catch (\Throwable $th) {
+    //         log_message("error", $th->getMessage());
+    //         return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
+    //     }
+    // }
 
-        if (!$this->validate($rules)) {
-            return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
-        }
-        $data = $this->request->getPost();
-        $model = new PractitionerWorkHistoryModel();
+    // public function getPractitionerQualification($uuid)
+    // {
+    //     $model = new PractitionerAdditionalQualificationsModel();
+    //     $builder = $model->builder();
+    //     $builder->where($model->getTableName() . '.uuid', $uuid);
+    //     $data = $model->first();
+    //     if (!$data) {
+    //         return $this->respond("Practitioner qualification not found", ResponseInterface::HTTP_BAD_REQUEST);
+    //     }
+    //     return $this->respond(['data' => $data, 'displayColumns' => $model->getDisplayColumns()], ResponseInterface::HTTP_OK);
+    // }
 
-        if (!$model->insert($data)) {
-            return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
-        }
-        $id = $model->getInsertID();
+    // public function createPractitionerQualification()
+    // {
+    //     $rules = [
+    //         "registration_number" => "required",
+    //         "institution" => "required",
+    //         "qualification" => "required"
 
-        /** @var ActivitiesModel $activitiesModel */
-        $activitiesModel = new ActivitiesModel();
-        $activitiesModel->logActivity("Added work history position {$data['position']} at {$data['institution']} to practitioner {$data['registration_number']}");
+    //     ];
 
-        return $this->respond(['message' => 'Work history qualification created successfully', 'data' => $id], ResponseInterface::HTTP_OK);
-    }
+    //     if (!$this->validate($rules)) {
+    //         return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
+    //     }
+    //     $data = $this->request->getPost();
+    //     $model = new PractitionerAdditionalQualificationsModel();
 
-    public function getPractitionerWorkHistory($uuid)
-    {
-        $model = new PractitionerWorkHistoryModel();
-        $builder = $model->builder();
-        $builder->where($model->getTableName() . '.uuid', $uuid);
-        $data = $model->first();
-        if (!$data) {
-            return $this->respond("Practitioner work history not found", ResponseInterface::HTTP_BAD_REQUEST);
-        }
-        return $this->respond(['data' => $data, 'displayColumns' => $model->getDisplayColumns()], ResponseInterface::HTTP_OK);
-    }
+    //     if (!$model->insert($data)) {
+    //         return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
+    //     }
+    //     $id = $model->getInsertID();
+
+    //     /** @var ActivitiesModel $activitiesModel */
+    //     $activitiesModel = new ActivitiesModel();
+    //     $activitiesModel->logActivity("Added additional qualification {$data['qualification']} to practitioner {$data['registration_number']}");
+
+    //     //if registered this year, retain the person
+    //     return $this->respond(['message' => 'Additional qualification created successfully', 'data' => $id], ResponseInterface::HTTP_OK);
+    // }
+
+    // public function updatePractitionerQualification($uuid)
+    // {
+    //     $rules = [
+    //         "registration_number" => "required",
+    //         "institution" => "required",
+    //         "qualification" => "required"
+
+    //     ];
+
+    //     if (!$this->validate($rules)) {
+    //         return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
+    //     }
+    //     $data = $this->request->getVar();
+    //     $data->uuid = $uuid;
+    //     if (property_exists($data, "id")) {
+    //         unset($data->id);
+    //     }
+    //     //get only the last part of the picture path
+    //     if (property_exists($data, "picture")) {
+    //         $splitPicturePath = explode("/", $data->picture);
+    //         $data->picture = array_pop($splitPicturePath);
+    //     }
+    //     $model = new PractitionerAdditionalQualificationsModel();
+
+    //     $oldData = $model->where(["uuid" => $uuid])->first();
+    //     $changes = implode(", ", Utils::compareObjects($oldData, $data));
+
+    //     if (!$model->builder()->where(['uuid' => $uuid])->update($data)) {
+    //         return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
+    //     }
+
+    //     /** @var ActivitiesModel $activitiesModel */
+    //     $activitiesModel = new ActivitiesModel();
+    //     $activitiesModel->logActivity("updated additional qualification for practitioner {$data['registration_number']}. Changes: $changes");
+
+    //     return $this->respond(['message' => 'Practitioner additional qualification updated successfully'], ResponseInterface::HTTP_OK);
+    // }
+
+    // public function deletePractitionerQualification($uuid)
+    // {
+    //     $model = new PractitionerAdditionalQualificationsModel();
+    //     $data = $model->where(["uuid" => $uuid])->first();
+
+    //     if (!$model->where('uuid', $uuid)->delete()) {
+    //         return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
+    //     }
+
+    //     /** @var ActivitiesModel $activitiesModel */
+    //     $activitiesModel = new ActivitiesModel();
+    //     $activitiesModel->logActivity("Deleted additional qualification {$data['qualification']} for practitioner {$data['registration_number']}. ");
+
+    //     return $this->respond(['message' => 'Practitioner additional qualification deleted successfully'], ResponseInterface::HTTP_OK);
+    // }
+
+    // public function restorePractitionerQualification($uuid)
+    // {
+    //     $model = new PractitionerAdditionalQualificationsModel();
+
+    //     if (!$model->builder()->where(['uuid' => $uuid])->update(['deleted_at' => null])) {
+    //         return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
+    //     }
+    //     $data = $model->where(["uuid" => $uuid])->first();
+
+    //     /** @var ActivitiesModel $activitiesModel */
+    //     $activitiesModel = new ActivitiesModel();
+    //     $activitiesModel->logActivity("Restored additional qualification {$data['qualification']} for practitioner {$data['registration_number']}. ");
+
+    //     return $this->respond(['message' => 'Practitioner additional qualification restored successfully'], ResponseInterface::HTTP_OK);
+    // }
+
+
+    // public function createPractitionerWorkHistory()
+    // {
+    //     $rules = [
+    //         "registration_number" => "required",
+    //         "institution" => "required",
+    //         "position" => "required",
+    //         "institution_type" => "required"
+
+    //     ];
+
+    //     if (!$this->validate($rules)) {
+    //         return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
+    //     }
+    //     $data = $this->request->getPost();
+    //     $model = new PractitionerWorkHistoryModel();
+
+    //     if (!$model->insert($data)) {
+    //         return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
+    //     }
+    //     $id = $model->getInsertID();
+
+    //     /** @var ActivitiesModel $activitiesModel */
+    //     $activitiesModel = new ActivitiesModel();
+    //     $activitiesModel->logActivity("Added work history position {$data['position']} at {$data['institution']} to practitioner {$data['registration_number']}");
+
+    //     return $this->respond(['message' => 'Work history qualification created successfully', 'data' => $id], ResponseInterface::HTTP_OK);
+    // }
+
+    // public function getPractitionerWorkHistory($uuid)
+    // {
+    //     $model = new PractitionerWorkHistoryModel();
+    //     $builder = $model->builder();
+    //     $builder->where($model->getTableName() . '.uuid', $uuid);
+    //     $data = $model->first();
+    //     if (!$data) {
+    //         return $this->respond("Practitioner work history not found", ResponseInterface::HTTP_BAD_REQUEST);
+    //     }
+    //     return $this->respond(['data' => $data, 'displayColumns' => $model->getDisplayColumns()], ResponseInterface::HTTP_OK);
+    // }
 
 
 
-    public function updatePractitionerWorkHistory($uuid)
-    {
-        $rules = [
-            "registration_number" => "required",
-            "institution" => "required",
-            "position" => "required",
-            "institution_type" => "required"
+    // public function updatePractitionerWorkHistory($uuid)
+    // {
+    //     $rules = [
+    //         "registration_number" => "required",
+    //         "institution" => "required",
+    //         "position" => "required",
+    //         "institution_type" => "required"
 
-        ];
+    //     ];
 
-        if (!$this->validate($rules)) {
-            return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
-        }
-        $data = $this->request->getVar();
-        $data->uuid = $uuid;
-        //the uuid is set as the id, so we have to remove it so that it doesn't get updated
-        if (property_exists($data, "id")) {
-            unset($data->id);
-        }
-        $model = new PractitionerWorkHistoryModel();
+    //     if (!$this->validate($rules)) {
+    //         return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
+    //     }
+    //     $data = $this->request->getVar();
+    //     $data->uuid = $uuid;
+    //     //the uuid is set as the id, so we have to remove it so that it doesn't get updated
+    //     if (property_exists($data, "id")) {
+    //         unset($data->id);
+    //     }
+    //     $model = new PractitionerWorkHistoryModel();
 
-        $oldData = $model->where(["uuid" => $uuid])->first();
-        $changes = implode(", ", Utils::compareObjects($oldData, $data));
+    //     $oldData = $model->where(["uuid" => $uuid])->first();
+    //     $changes = implode(", ", Utils::compareObjects($oldData, $data));
 
-        if (!$model->builder()->where(['uuid' => $uuid])->update($data)) {
-            return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
-        }
+    //     if (!$model->builder()->where(['uuid' => $uuid])->update($data)) {
+    //         return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
+    //     }
 
-        /** @var ActivitiesModel $activitiesModel */
-        $activitiesModel = new ActivitiesModel();
-        $activitiesModel->logActivity("updated work history for practitioner {$data->registration_number}. Changes: $changes");
+    //     /** @var ActivitiesModel $activitiesModel */
+    //     $activitiesModel = new ActivitiesModel();
+    //     $activitiesModel->logActivity("updated work history for practitioner {$data->registration_number}. Changes: $changes");
 
-        return $this->respond(['message' => 'Practitioner additional qualification updated successfully'], ResponseInterface::HTTP_OK);
-    }
+    //     return $this->respond(['message' => 'Practitioner additional qualification updated successfully'], ResponseInterface::HTTP_OK);
+    // }
 
-    public function deletePractitionerWorkHistory($uuid)
-    {
-        $model = new PractitionerWorkHistoryModel();
-        $data = $model->where(["uuid" => $uuid])->first();
+    // public function deletePractitionerWorkHistory($uuid)
+    // {
+    //     $model = new PractitionerWorkHistoryModel();
+    //     $data = $model->where(["uuid" => $uuid])->first();
 
-        if (!$model->where('uuid', $uuid)->delete()) {
-            return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
-        }
+    //     if (!$model->where('uuid', $uuid)->delete()) {
+    //         return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
+    //     }
 
-        /** @var ActivitiesModel $activitiesModel */
-        $activitiesModel = new ActivitiesModel();
-        $activitiesModel->logActivity("Deleted work history {$data['position']}  {$data['institution']} for practitioner {$data['registration_number']}. ");
+    //     /** @var ActivitiesModel $activitiesModel */
+    //     $activitiesModel = new ActivitiesModel();
+    //     $activitiesModel->logActivity("Deleted work history {$data['position']}  {$data['institution']} for practitioner {$data['registration_number']}. ");
 
-        return $this->respond(['message' => 'Practitioner work history deleted successfully'], ResponseInterface::HTTP_OK);
-    }
+    //     return $this->respond(['message' => 'Practitioner work history deleted successfully'], ResponseInterface::HTTP_OK);
+    // }
 
-    public function restorePractitionerWorkHistory($uuid)
-    {
-        $model = new PractitionerWorkHistoryModel();
+    // public function restorePractitionerWorkHistory($uuid)
+    // {
+    //     $model = new PractitionerWorkHistoryModel();
 
-        if (!$model->builder()->where(['uuid' => $uuid])->update(['deleted_at' => null])) {
-            return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
-        }
-        $data = $model->where(["uuid" => $uuid])->first();
+    //     if (!$model->builder()->where(['uuid' => $uuid])->update(['deleted_at' => null])) {
+    //         return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
+    //     }
+    //     $data = $model->where(["uuid" => $uuid])->first();
 
-        /** @var ActivitiesModel $activitiesModel */
-        $activitiesModel = new ActivitiesModel();
-        $activitiesModel->logActivity("Restored work history {$data['position']} {$data['institution']} for practitioner {$data['registration_number']}. ");
+    //     /** @var ActivitiesModel $activitiesModel */
+    //     $activitiesModel = new ActivitiesModel();
+    //     $activitiesModel->logActivity("Restored work history {$data['position']} {$data['institution']} for practitioner {$data['registration_number']}. ");
 
-        return $this->respond(['message' => 'Practitioner additional qualification restored successfully'], ResponseInterface::HTTP_OK);
-    }
+    //     return $this->respond(['message' => 'Practitioner additional qualification restored successfully'], ResponseInterface::HTTP_OK);
+    // }
 
-    public function getPractitionerWorkHistories()
-    {
-        try {
-            $per_page = $this->request->getVar('limit') ? (int) $this->request->getVar('limit') : 100;
-            $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
-            $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted') === "yes";
-            $param = $this->request->getVar('param');
-            $sortBy = $this->request->getVar('sortBy') ?? "id";
-            $sortOrder = $this->request->getVar('sortOrder') ?? "asc";
+    // public function getPractitionerWorkHistories()
+    // {
+    //     try {
+    //         $per_page = $this->request->getVar('limit') ? (int) $this->request->getVar('limit') : 100;
+    //         $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
+    //         $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted') === "yes";
+    //         $param = $this->request->getVar('param');
+    //         $sortBy = $this->request->getVar('sortBy') ?? "id";
+    //         $sortOrder = $this->request->getVar('sortOrder') ?? "asc";
 
-            $model = new PractitionerWorkHistoryModel();
-            $registration_number = $this->request->getGet('registration_number');
-            $builder = $param ? $model->search($param) : $model->builder();
-            if ($registration_number !== null) {
-                $builder->where(["registration_number" => $registration_number]);
-            }
-            if ($withDeleted) {
-                $model->withDeleted();
-            }
-            $builder->orderBy("$sortBy", $sortOrder);
-            $totalBuilder = clone $builder;
-            $total = $totalBuilder->countAllResults();
-            $result = $builder->get($per_page, $page)->getResult();
-            return $this->respond([
-                'data' => $result,
-                'total' => $total,
-                'displayColumns' => $model->getDisplayColumns()
-            ], ResponseInterface::HTTP_OK);
-        } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
-            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
-        }
-    }
+    //         $model = new PractitionerWorkHistoryModel();
+    //         $registration_number = $this->request->getGet('registration_number');
+    //         $builder = $param ? $model->search($param) : $model->builder();
+    //         if ($registration_number !== null) {
+    //             $builder->where(["registration_number" => $registration_number]);
+    //         }
+    //         if ($withDeleted) {
+    //             $model->withDeleted();
+    //         }
+    //         $builder->orderBy("$sortBy", $sortOrder);
+    //         $totalBuilder = clone $builder;
+    //         $total = $totalBuilder->countAllResults();
+    //         $result = $builder->get($per_page, $page)->getResult();
+    //         return $this->respond([
+    //             'data' => $result,
+    //             'total' => $total,
+    //             'displayColumns' => $model->getDisplayColumns()
+    //         ], ResponseInterface::HTTP_OK);
+    //     } catch (\Throwable $th) {
+    //         log_message("error", $th->getMessage());
+    //         return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
+    //     }
+    // }
     //renewal
 
-    public function getPractitionerRenewals($practitioner_uuid = null)
+    public function getRenewals($license_uuid = null)
     {
         try {
             $rules = [
@@ -554,25 +557,30 @@ class LicensesController extends ResourceController
             $sortBy = $this->request->getVar('sortBy') ?? "id";
             $sortOrder = $this->request->getVar('sortOrder') ?? "asc";
 
-            $model = new PractitionerRenewalModel();
+            $model = new LicenseRenewalModel();
 
-            $registration_number = $this->request->getGet('registration_number');
+            $license_number = $this->request->getGet('license_number');
             $status = $this->request->getGet('status');
             $start_date = $this->request->getGet('start_date');
             $expiry = $this->request->getGet('expiry');
-            $practitioner_type = $this->request->getGet('practitioner_type');
+            $license_type = $this->request->getGet('license_type');
             $created_on = $this->request->getGet('created_on');
 
             $builder = $param ? $model->search($param) : $model->builder();
-            $builder = $model->addCustomFields($builder);
-            if ($registration_number !== null) {
-                $builder->where("registration_number", $registration_number);
+            // $builder = $model->addCustomFields($builder);
+
+            if ($license_number !== null) {
+                $builder->where("license_number", $license_number);
             }
-            if ($practitioner_uuid !== null) {
-                $builder->where("practitioner_uuid", $practitioner_uuid);
+            if ($license_uuid !== null) {
+                $builder->where("license_uuid", $license_uuid);
+                $licenseModel = new LicensesModel();
+                if ($license_type === null) {
+                    $license_type = $licenseModel->builder()->select("type")->where("uuid", $license_uuid)->get()->getRow()->type;
+                }
             }
             if ($status !== null) {
-                $builder->where('status', $status);
+                $builder->where($model->getTableName() . '.status', $status);
             }
             if ($start_date !== null) {
                 $builder->where('year >=', $start_date);
@@ -580,11 +588,9 @@ class LicensesController extends ResourceController
             if ($expiry !== null) {
                 $builder->where('expiry <=', $expiry);
             }
-            if ($practitioner_type !== null) {
-                $builder->where('practitioner_type', $practitioner_type);
-            }
-            if ($practitioner_type !== null) {
-                $builder->where('practitioner_type', $practitioner_type);
+            if ($license_type !== null) {
+                $builder->where('license_type', $license_type);
+                $model->licenseType = $license_type;//this retrieves the correct display columns 
             }
             if ($created_on !== null) {
                 $builder->where('date(created_on)  = ', $created_on);
@@ -592,7 +598,9 @@ class LicensesController extends ResourceController
             if ($withDeleted) {
                 $model->withDeleted();
             }
-            $builder->orderBy("$sortBy", $sortOrder);
+            //get the license details and the subdetails
+            $builder = $model->addLicenseDetails($builder, $license_type);
+            $builder->orderBy($model->getTableName() . ".$sortBy", $sortOrder);
 
             $totalBuilder = clone $builder;
             $total = $totalBuilder->countAllResults();
@@ -611,63 +619,48 @@ class LicensesController extends ResourceController
         }
     }
 
-    public function getPractitionerRenewal($uuid)
+    public function getRenewal($uuid)
     {
-        $model = new PractitionerRenewalModel();
+        $model = new LicenseRenewalModel();
         $builder = $model->builder();
-        $builder = $model->addCustomFields($builder);
         $builder->where($model->getTableName() . '.uuid', $uuid);
         $data = $model->first();
+        $model2 = new LicenseRenewalModel();
+        $builder2 = $model2->builder();
+        $builder2->where($model2->getTableName() . '.uuid', $uuid);
+        $builder2 = $model->addLicenseDetails($builder2, $data['license_type']);
+        $finalData = $model2->first();
         if (!$data) {
-            return $this->respond("Practitioner renewal not found", ResponseInterface::HTTP_BAD_REQUEST);
+            return $this->respond("License renewal not found", ResponseInterface::HTTP_BAD_REQUEST);
         }
-        return $this->respond(['data' => $data, 'displayColumns' => $model->getDisplayColumns()], ResponseInterface::HTTP_OK);
+        return $this->respond(['data' => $finalData, 'displayColumns' => $model->getDisplayColumns()], ResponseInterface::HTTP_OK);
     }
 
-    public function createPractitionerRenewal()
+    public function createRenewal()
     {
         try {
             $rules = [
-                "registration_number" => "required",
-                "year" => "required",
-                "practitioner_uuid" => "required",
+                "license_number" => "required",
+                "start_date" => "required",
+                "license_uuid" => "required",
                 "status" => "required",
+                "license_type" => "required"
             ];
 
 
             if (!$this->validate($rules)) {
                 return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
             }
-            $practitioner_uuid = $this->request->getPost('practitioner_uuid');
-            $startDate = $this->request->getPost('year') ?? date("Y-m-d");
-            $year = date('Y', strtotime($startDate));
+            $license_uuid = $this->request->getPost('license_uuid');
+            $license_type = $this->request->getPost('license_type');
             $data = $this->request->getPost();
-            $model = new PractitionerRenewalModel();
-            $expiry = $this->request->getPost('expiry');
-            $today = date("Y-m-d");
+            $model = new LicenseRenewalModel($license_type);
             //start a transaction
             $model->db->transException(true)->transStart();
 
-            $place_of_work = $this->request->getPost('place_of_work');
-            $region = $this->request->getPost('region');
-            $district = $this->request->getPost('district');
-            $institution_type = $this->request->getPost('institution_type');
-            $specialty = $this->request->getPost('specialty');
-            $subspecialty = $this->request->getPost('subspecialty');
-            $college_membership = $this->request->getPost('college_membership');
-
-            PractitionerUtils::retainPractitioner(
-                $practitioner_uuid,
-                $expiry,
-                $data,
-                $year,
-                $place_of_work,
-                $region,
-                $district,
-                $institution_type,
-                $specialty,
-                $subspecialty,
-                $college_membership
+            LicenseUtils::retainLicense(
+                $license_uuid,
+                $data
             );
 
             $model->db->transComplete();
@@ -680,95 +673,39 @@ class LicensesController extends ResourceController
         }
     }
 
-    public function updatePractitionerRenewal($uuid)
+    public function updateRenewal($uuid)
     {
         try {
             $rules = [
-                "registration_number" => "required",
-                "practitioner_uuid" => "required"
+                "license_number" => "required",
+                "license_uuid" => "required",
+                "id" => "required",
             ];
-            $practitioner_uuid = $this->request->getVar('practitioner_uuid');
+            $renewalUuid = $this->request->getVar('id');
 
             if (!$this->validate($rules)) {
                 return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
             }
-            $data = $this->request->getVar();
-            $data->uuid = $uuid;
-            if (property_exists($data, "id")) {
-                unset($data->id);
+            $data = (array) $this->request->getVar();
+            $data['uuid'] = $uuid;
+            if (array_key_exists("id", $data)) {
+                unset($data['id']);
             }
 
-            $registration_number = $this->request->getVar('registration_number');
-            $startDate = $this->request->getVar('year') ?? date("Y-m-d");
-            $year = date('Y', strtotime($startDate));
-            $expiry = $this->request->getVar('expiry');
-            log_message("info", $practitioner_uuid);
-            $practitioner = $this->practitionerUtils->getPractitionerDetails($practitioner_uuid);
-            if (empty($expiry)) {
-                $data->expiry = PractitionerUtils::generateRenewalExpiryDate($practitioner, $startDate);
-            }
-            //get only the last part of the picture path
-            if (property_exists($data, "picture")) {
-                $splitPicturePath = explode("/", $data->picture);
-                $data->picture = array_pop($splitPicturePath);
-            }
+            $licenseType = $this->request->getVar('license_type');
 
-            //if the status is approved, generate a qr code. else remove it if it exists
-            if ($data->status === "Approved") {
-                $code = md5($registration_number . "%%" . $year);
-                $qrText = "manager.mdcghana.org/api/verifyRelicensure/$code";
-                $qrCodeGenerator = new Generator;
-                $qrCode = $qrCodeGenerator
-                    ->size(200)
-                    ->margin(10)
-                    ->generate($qrText);
-                $data->qr_code = $qrCode;
-                $data->qr_text = $qrText;
-            } else {
-                $data->qr_code = null;
-                $data->qr_text = null;
-            }
+            $model = new LicenseRenewalModel($licenseType);
+            //start a transaction
+            $model->db->transException(true)->transStart();
 
-            $model = new PractitionerRenewalModel();
-            $model->db->transStart();
-            $oldData = $model->where(["uuid" => $uuid])->first();
-            $changes = implode(", ", Utils::compareObjects($oldData, $data));
+            LicenseUtils::updateRenewal(
+                $renewalUuid,
+                $data
+            );
 
-            $model->builder()->where(['uuid' => $uuid])->update($data);
-            $LicensesModel = new LicensesModel();
-
-            $place_of_work = $this->request->getVar('place_of_work');
-            $region = $this->request->getVar('region');
-            $district = $this->request->getVar('district');
-            $institution_type = $this->request->getVar('institution_type');
-            $specialty = $this->request->getVar('specialty');
-            $subspecialty = $this->request->getVar('subspecialty');
-            $college_membership = $this->request->getVar('college_membership');
-
-            $practitionerUpdate = [
-                "place_of_work" => $place_of_work,
-                "region" => $region,
-                "district" => $district,
-                "institution_type" => $institution_type,
-                "specialty" => $specialty,
-                "subspecialty" => $subspecialty,
-                "college_membership" => $college_membership,
-                "last_renewal_start" => $startDate,
-                "last_renewal_expiry" => $data->expiry,
-                "last_renewal_status" => $data->status,
-            ];
-            $LicensesModel->builder()->where(['uuid' => $practitioner_uuid])->update($practitionerUpdate);
             $model->db->transComplete();
-            if ($model->db->transStatus() === false) {
-                log_message("error", $model->getError());
-                return $this->respond(['message' => "Error updating data. Please make sure all fields are filled correctly and try again"], ResponseInterface::HTTP_BAD_REQUEST);
-            }
 
-            /** @var ActivitiesModel $activitiesModel */
-            $activitiesModel = new ActivitiesModel();
-            $activitiesModel->logActivity("updated renewal for practitioner {$data->registration_number}. Changes: $changes");
-
-            return $this->respond(['message' => 'Practitioner renewal updated successfully'], ResponseInterface::HTTP_OK);
+            return $this->respond(['message' => 'Renewal updated successfully'], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
             log_message("error", $th->getMessage());
             return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_BAD_REQUEST);
@@ -776,10 +713,59 @@ class LicensesController extends ResourceController
         }
     }
 
-    public function deletePractitionerRenewal($uuid)
+    public function updateBulkRenewals()
     {
         try {
-            $model = new PractitionerRenewalModel();
+
+            $data = json_decode($this->request->getVar('data'), true);//an array of renewals
+            $status = $this->request->getVar('status');
+            $results = [];
+            foreach ($data as $renewal) {
+                $renewalUuid = $renewal['uuid'];
+                try {
+                    //get the license type renewal stage required data
+                    $licenseType = $renewal['license_type'];
+                    log_message("info", "Renewal data: ");
+                    $rules = Utils::getLicenseRenewalStageValidation($licenseType, $status);
+                    $validation = \Config\Services::validation();
+
+                    if (!$validation->setRules($rules)->run($renewal)) {
+                        // Validation passed
+                        throw new Exception("Validation failed");
+                    }
+
+                    unset($renewal['uuid']);
+                    $renewal['status'] = $status;
+                    $model = new LicenseRenewalModel($licenseType);
+                    //start a transaction
+                    $model->db->transException(true)->transStart();
+
+                    LicenseUtils::updateRenewal(
+                        $renewalUuid,
+                        $renewal
+                    );
+
+                    $model->db->transComplete();
+                    $results[] = ['id' => $renewalUuid, 'successful' => true, 'message' => 'Renewal updated successfully'];
+                } catch (\Throwable $th) {
+                    $results[] = ['id' => $renewalUuid, 'successful' => false, 'message' => $th->getMessage()];
+                }
+            }
+
+
+
+            return $this->respond(['message' => 'Renewal updated successfully', 'data' => $results], ResponseInterface::HTTP_OK);
+        } catch (\Throwable $th) {
+            log_message("error", $th->getMessage());
+            return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_BAD_REQUEST);
+
+        }
+    }
+
+    public function deleteRenewal($uuid)
+    {
+        try {
+            $model = new LicenseRenewalModel();
             $data = $model->where(["uuid" => $uuid])->first();
 
             if (!$model->where('uuid', $uuid)->delete()) {
@@ -788,9 +774,9 @@ class LicensesController extends ResourceController
 
             /** @var ActivitiesModel $activitiesModel */
             $activitiesModel = new ActivitiesModel();
-            $activitiesModel->logActivity("Deleted renewal for practitioner {$data['registration_number']}. ");
+            $activitiesModel->logActivity("Deleted renewal for license number {$data['license_number']}. ");
 
-            return $this->respond(['message' => 'Practitioner renewal deleted successfully'], ResponseInterface::HTTP_OK);
+            return $this->respond(['message' => 'License renewal deleted successfully'], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
             log_message("error", $th->getMessage());
             return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_BAD_REQUEST);
@@ -808,19 +794,22 @@ class LicensesController extends ResourceController
             if (!$this->validate($rules)) {
                 return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
             }
-            $param = $this->request->getVar('param');
-            $model = new PractitionerRenewalModel();
-            $registration_number = $this->request->getGet('registration_number');
+            $license_number = $this->request->getGet('license_number');
             $status = $this->request->getGet('status');
             $start_date = $this->request->getGet('start_date');
             $expiry = $this->request->getGet('expiry');
-            $practitioner_type = $this->request->getGet('practitioner_type');
+            $license_type = $this->request->getGet('license_type');
+            $created_on = $this->request->getGet('created_on');
+
+            $param = $this->request->getVar('param');
+            $model = new LicenseRenewalModel();
+
 
             // Validate inputs here
 
             $builder = $param ? $model->search($param) : $model->builder();
-            if ($registration_number !== null) {
-                $builder->where('registration_number', $registration_number);
+            if ($license_number !== null) {
+                $builder->where('license_number', $license_number);
             }
             if ($status !== null) {
                 $builder->where('status', $status);
@@ -831,8 +820,8 @@ class LicensesController extends ResourceController
             if ($expiry !== null) {
                 $builder->where('expiry <=', $expiry);
             }
-            if ($practitioner_type !== null) {
-                $builder->where('practitioner_type', $practitioner_type);
+            if ($license_type !== null) {
+                $builder->where('license_type', $license_type);
             }
             $total = $builder->countAllResults();
             return $this->respond([
@@ -851,6 +840,42 @@ class LicensesController extends ResourceController
             $licenseDef = Utils::getLicenseSetting($licenseType);
             //add the general license fields
             $licenseFields = array_merge($licenseModel->getFormFields(), $licenseDef->fields);
+            return $this->respond([
+                'data' => $licenseFields
+            ], ResponseInterface::HTTP_OK);
+        } catch (\Throwable $th) {
+            log_message("error", $th->getMessage());
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+    }
+
+    public function getLicenseRenewalFormFields($licenseType)
+    {
+        $licenseModel = new LicenseRenewalModel();
+        try {
+            $licenseDef = Utils::getLicenseSetting($licenseType);
+            $renewalStages = (array) $licenseDef->renewalStages;
+            //get the keys of the renewal stages
+            $renewalStagesKeys = array_keys($renewalStages);
+            $status = [
+                "label" => "Status",
+                "name" => "status",
+                "type" => "select",
+                "hint" => "",
+                "options" => [],
+                "value" => "",
+                "required" => true
+            ];
+            foreach ($renewalStagesKeys as $key) {
+                $status["options"][] = [
+                    "key" => $key,
+                    "value" => $key
+                ];
+            }
+            $modelFields = $licenseModel->getFormFields();
+            $modelFields[] = $status;
+            //add the general license fields
+            $licenseFields = array_merge($modelFields, $licenseDef->renewalFields);
             return $this->respond([
                 'data' => $licenseFields
             ], ResponseInterface::HTTP_OK);
