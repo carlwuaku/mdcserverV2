@@ -154,13 +154,15 @@ $routes->group("licenses", ["namespace" => "App\Controllers", "filter" => "apiau
 
     $routes->get("config/(:segment)", [LicensesController::class, "getLicenseFormFields/$1"]);
 
-    $routes->put("renewal/(:segment)", [PractitionerController::class, "updatePractitionerRenewal/$1"]);
-    $routes->delete("renewal/(:segment)", [PractitionerController::class, "deletePractitionerRenewal/$1"]);
-    $routes->get("renewal", [PractitionerController::class, "getPractitionerRenewals"], ["filter" => ["hasPermission:Site.Content.View"]], );
-    $routes->get("renewal-count", [PractitionerController::class, "countRenewals"], ["filter" => ["hasPermission:Site.Content.View"]], );
-    $routes->get("renewal/practitioner/(:segment)", [PractitionerController::class, "getPractitionerRenewals/$1"], ["filter" => ["hasPermission:Site.Content.View"]], );
-    $routes->get("renewal/(:segment)", [PractitionerController::class, "getPractitionerRenewal/$1"], ["filter" => ["hasPermission:Site.Content.View"]], );
-    $routes->post("renewal", [PractitionerController::class, "createPractitionerRenewal"]);
+    $routes->put("renewal/(:segment)", [LicensesController::class, "updateRenewal/$1"]);
+    $routes->put("renewalStage", [LicensesController::class, "updateBulkRenewals"]);
+    $routes->delete("renewal/(:segment)", [LicensesController::class, "deleteRenewal/$1"]);
+    $routes->get("renewal", [LicensesController::class, "getRenewals"], ["filter" => ["hasPermission:Site.Content.View"]], );
+    $routes->get("renewal-form-fields/(:segment)", [LicensesController::class, "getLicenseRenewalFormFields"], ["filter" => ["hasPermission:Site.Content.View"]], );
+    $routes->get("renewal-count", [LicensesController::class, "countRenewals"], ["filter" => ["hasPermission:Site.Content.View"]], );
+    $routes->get("renewal/license/(:segment)", [LicensesController::class, "getRenewals/$1"], ["filter" => ["hasPermission:Site.Content.View"]], );
+    $routes->get("renewal/(:segment)", [LicensesController::class, "getRenewal/$1"], ["filter" => ["hasPermission:Site.Content.View"]], );
+    $routes->post("renewal", [LicensesController::class, "createRenewal"]);
 
 });
 

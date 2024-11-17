@@ -1,6 +1,7 @@
 <?php
 namespace App\Helpers;
 
+use App\Models\Licenses\LicenseRenewalModel;
 use App\Models\Licenses\LicensesModel;
 use App\Models\Practitioners\PractitionerRenewalModel;
 use Exception;
@@ -43,93 +44,163 @@ class LicenseUtils
         return $data;
     }
 
-    // /**
-    //  * Retain a license.
-    //  *
-    //  * @param string $license_uuid The UUID of the license
-    //  * @param string $expiry The expiry date of the retention
-    //  * @param string $startDate The start date of the retention
-    //  * @param array|object $data The data to insert
-    //  * @param string $year The year of the retention
-    //  * @param string|null $place_of_work The place of work of the license
-    //  * @param string|null $region The region of the license
-    //  * @param string|null $district The district of the license
-    //  * @param string|null $institution_type The institution type of the license
-    //  * @param string|null $specialty The specialty of the license
-    //  * @param string|null $subspecialty The subspecialty of the license
-    //  * @param string|null $college_membership The college membership of the license
-    //  */
-    // public static function retainLicense(
-    //     string $license_uuid,
-    //     string|null $expiry,
-    //     array|object $data,
-    //     string $year,
-    //     string|null $place_of_work = null,
-    //     string|null $region = null,
-    //     string|null $district = null,
-    //     string|null $institution_type = null,
-    //     string|null $specialty = null,
-    //     string|null $subspecialty = null,
-    //     string|null $college_membership = null
-    // ) {
+    /**
+     * Retain a license.
+     *
+     * @param string $license_uuid The UUID of the license
+     * @param array $data The data to insert
+     */
+    public static function retainLicense(
+        string $license_uuid,
+        array $data,
+    ) {
 
-    //     try {
-    //         $model = new PractitionerRenewalModel();
-    //         $license = self::getLicenseDetails($license_uuid);
-    //         $license_number = $license['license_number'];
-    //         if ($license['in_good_standing'] === "yes") {
-    //             throw new Exception("License is already in good standing");
-    //         }
-    //         $startDate = self::generateRenewalStartDate($license);
+        try {
+            $model = new LicenseRenewalModel();
+            $license = self::getLicenseDetails($license_uuid);
+            $licenseType = $license['type'];
+            $license_number = $license['license_number'];
+            $startDate = $data['start_date'];
 
-    //         $data['year'] = $startDate;
-    //         if (empty($expiry)) {
-    //             $data['expiry'] = self::generateRenewalExpiryDate($license, $startDate);
-    //         }
-    //         if ($data['status'] === "Approved") {
-    //             $code = md5($license['license_number'] . "%%" . $year);
-    //             $qrText = "manager.mdcghana.org/api/verifyRelicensure/$code";
-    //             $qrCodeGenerator = new Generator;
-    //             $qrCode = $qrCodeGenerator
-    //                 ->size(200)
-    //                 ->margin(10)
-    //                 ->generate($qrText);
-    //             $data['qr_code'] = $qrCode;
-    //             $data['qr_text'] = $qrText;
-    //         }
-    //         $data['type'] = $license['type'];
+            if (empty($startDate)) {
+                $startDate = self::generateRenewalStartDate($license);
+                $data['start_date'] = $startDate;
+            } else {
+                $data['start_date'] = date('Y-m-d', strtotime($startDate));
+            }
+            $expiry = $data['expiry'];
+            if (empty($expiry)) {
+                $data['expiry'] = self::generateRenewalExpiryDate($license, $startDate);
+            } else {
+                $data['expiry'] = date('Y-m-d', strtotime($expiry));
+            }
+            $year = date('Y', strtotime($startDate));
+            if ($data['status'] === "Approved") {//check for the terminal status from the app settings for that license type
+                $code = md5($license['license_number'] . "%%" . $year);
+                $qrText = "manager.mdcghana.org/api/verifyRelicensure/$code";
+                $qrCodeGenerator = new Generator();
+                $qrCode = $qrCodeGenerator
+                    ->size(200)
+                    ->margin(10)
+                    ->generate($qrText);
+                $data['qr_code'] = $qrCode;
+                $data['qr_text'] = $qrText;
+            }
+            $data['license_type'] = $licenseType;
+            $formData = $model->createArrayFromAllowedFields($data, true);
+            log_message('info', print_r($formData, true));
+            log_message('info', $model->builder()->set($formData)->getCompiledInsert());
 
-    //         $model->insert($data);
+            $model->set($formData)->insert();
+            $id = $model->getInsertID();
+            // log_message('info', 'Renewal created successfully');
 
-    //         $LicensesModel = new LicensesModel();
-    //         $licenseUpdate = [
-    //             "place_of_work" => $place_of_work,
-    //             "region" => $region,
-    //             "district" => $district,
-    //             "institution_type" => $institution_type,
-    //             "specialty" => $specialty,
-    //             "subspecialty" => $subspecialty,
-    //             "college_membership" => $college_membership,
-    //             "last_renewal_start" => $startDate,
-    //             "last_renewal_expiry" => $data['expiry'],
-    //             "last_renewal_status" => $data['status'],
+            $LicensesModel = new LicensesModel();
+            $subModel = new LicenseRenewalModel();
+            $subModel->createOrUpdateSubDetails($id, $licenseType, $data);
+            // log_message('info', 'subRenewal created successfully');
+            //a trigger in the database will update the license table with the renewal date, expiry and status
+            //get the fields to update based on the renewal type
+            $licenseDef = Utils::getLicenseSetting($licenseType);
+            $fieldsToUpdate = $licenseDef->fieldsToUpdateOnRenewal;
 
-    //         ];
-    //         $LicensesModel->builder()->where(['uuid' => $license_uuid])->update($licenseUpdate);
-    //         //send email to the user from here if the setting RENEWAL_EMAIL_TO is set to true
-    //         /** @var ActivitiesModel $activitiesModel */
-    //         $activitiesModel = new ActivitiesModel();
-    //         $activitiesModel->logActivity("added retention record for $license_number ");
+            $licenseUpdate = [
+            ];
+            foreach ($fieldsToUpdate as $key => $value) {
+                $licenseUpdate[$value] = $data[$value];
+            }
+            if (!empty($licenseUpdate)) {
+                $LicensesModel->builder()->where(['uuid' => $license_uuid])->set($licenseUpdate)->update();
+            }
+
+            //send email to the user from here if the setting RENEWAL_EMAIL_TO is set to true
+            /** @var ActivitiesModel $activitiesModel */
+            $activitiesModel = new ActivitiesModel();
+            $activitiesModel->logActivity("added renewal record for $license_number ");
 
 
 
 
-    //     } catch (\Throwable $th) {
-    //         log_message("error", $th->getMessage());
-    //         throw new Exception("Error inserting data." . $th->getMessage());
-    //     }
+        } catch (\Throwable $th) {
+            log_message("error", $th->getMessage());
+            throw new Exception("Error inserting data." . $th->getMessage());
+        }
 
-    // }
+    }
+
+    /**
+     * update a license renewal.
+     *
+     * @param string $renewal_uuid The UUID of the renewal
+     * @param array $data The data to update
+     */
+    public static function updateRenewal(
+        string $renewal_uuid,
+        array $data,
+    ) {
+
+        try {
+            $model = new LicenseRenewalModel();
+            $renewal = $model->builder()->where('uuid', $renewal_uuid)->get()->getFirstRow('array');
+            log_message("info", print_r($renewal, true));
+
+            $licenseType = $renewal['license_type'];
+            $license_number = $renewal['license_number'];
+
+
+
+            $year = date('Y', strtotime($renewal['start_date']));
+            if ($data['status'] === "Approved") {//check for the terminal status from the app settings for that license type
+                $code = md5($renewal['license_number'] . "%%" . $year);
+                $qrText = "manager.mdcghana.org/api/verifyRelicensure/$code";
+                $qrCodeGenerator = new Generator();
+                $qrCode = $qrCodeGenerator
+                    ->size(200)
+                    ->margin(10)
+                    ->generate($qrText);
+                $data['qr_code'] = $qrCode;
+                $data['qr_text'] = $qrText;
+            }
+            $formData = $model->createArrayFromAllowedFields($data, false);
+            // log_message('info', print_r($formData, true));
+            log_message('info', print_r($formData, true));
+
+            $model->where("uuid", $renewal_uuid)->set($formData)->update();
+            $id = $renewal['id'];
+            log_message('info', 'Renewal updated successfully');
+
+            $LicensesModel = new LicensesModel();
+            $subModel = new LicenseRenewalModel();
+            $subModel->createOrUpdateSubDetails($id, $licenseType, $data);
+            // log_message('info', 'subRenewal created successfully');
+            //a trigger in the database will update the license table with the renewal date, expiry and status
+            //get the fields to update based on the renewal type
+            $licenseDef = Utils::getLicenseSetting($licenseType);
+            $fieldsToUpdate = $licenseDef->fieldsToUpdateOnRenewal;
+
+            $licenseUpdate = [
+            ];
+            foreach ($fieldsToUpdate as $key => $value) {
+                $licenseUpdate[$value] = $data[$value];
+            }
+            if (!empty($licenseUpdate)) {
+                $LicensesModel->builder()->where(['uuid' => $renewal['license_uuid']])->set($licenseUpdate)->update();
+            }
+
+            //send email to the user from here if the setting RENEWAL_EMAIL_TO is set to true
+            /** @var ActivitiesModel $activitiesModel */
+            $activitiesModel = new ActivitiesModel();
+            $activitiesModel->logActivity("updated renewal record for $license_number.  ");
+
+
+
+
+        } catch (\Throwable $th) {
+            log_message("error", $th->getMessage());
+            throw new Exception("Error updating data." . $th->getMessage());
+        }
+
+    }
 
     /**
      * Generate renewal expiry date based on license and start date.
