@@ -75,7 +75,6 @@ class AddDocumentVerification extends Migration
             ]
         ]);
 
-        $this->forge->addKey('verification_token');
 
         $this->forge->createTable('documents', true, [
             'ENGINE' => 'InnoDB',
