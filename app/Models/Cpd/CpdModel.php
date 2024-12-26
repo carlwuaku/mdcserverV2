@@ -1,42 +1,34 @@
 <?php
 
-namespace App\Models\Applications;
+namespace App\Models\Cpd;
 
 use App\Helpers\Interfaces\TableDisplayInterface;
-use CodeIgniter\Database\BaseBuilder;
 use App\Models\MyBaseModel;
+use CodeIgniter\Database\BaseBuilder;
 
-class ApplicationTemplateModel extends MyBaseModel implements TableDisplayInterface
+class CpdModel extends MyBaseModel implements TableDisplayInterface
 {
-    protected $table = 'application_form_templates';
+    protected $table = 'cpd_topics';
     protected $primaryKey = 'id';
     protected $useAutoIncrement = true;
     protected $returnType = 'array';
     protected $useSoftDeletes = false;
     protected $protectFields = true;
     protected $allowedFields = [
-        'uuid',
-        'form_name',
-        'description',
-        'guidelines',
-        'header',
-        'footer',
-        'data',
-        'open_date',
-        'close_date',
-        'on_submit_email',
-        'on_submit_message',
-        'on_approve_email_template',
-        'on_deny_email_template',
-        'approve_url',
-        'deny_url',
-        'stages',
-        'initialStage',
-        'finalStage',
+        'topic',
+        'date',
         'created_on',
-        'updated_at',
-        'deleted_at',
-
+        'created_by',
+        'modified_on',
+        'provider_id',
+        'venue',
+        'group',
+        'credits',
+        'category',
+        'online',
+        'url',
+        'start_month',
+        'end_month',
     ];
 
     protected bool $allowEmptyInserts = false;
@@ -44,7 +36,7 @@ class ApplicationTemplateModel extends MyBaseModel implements TableDisplayInterf
     // Dates
     protected $useTimestamps = false;
     protected $dateFormat = 'datetime';
-    protected $createdField = 'created_on';
+    protected $createdField = 'created_at';
     protected $updatedField = 'updated_at';
     protected $deletedField = 'deleted_at';
 
@@ -66,36 +58,21 @@ class ApplicationTemplateModel extends MyBaseModel implements TableDisplayInterf
     protected $afterDelete = [];
 
     public $searchFields = [
-        'form_name',
-        'status',
-        'form_type',
-        'first_name',
-        'middle_name',
-        'last_name',
-        'email',
-        'phone',
-        'application_code',
+        'topic'
     ];
 
     public function getDisplayColumns(): array
     {
-        //return the $allowedFields without the uuid, created_on, updated_at, deleted_at
         return [
-            'form_name',
-            'open_date',
-            'close_date',
-            'on_submit_email',
-            'on_submit_message',
-            'on_approve_email_template',
-            'on_deny_email_template',
-            'approve_url',
-            'deny_url',
-            'initialStage',
-            'finalStage',
+            'topic',
+            'date',
+            'provider_name',
+            'credits',
+            'category',
+            'online',
             'created_on',
-            'updated_at',
-            'deleted_at',
-
+            'created_by',
+            'url',
         ];
     }
 
@@ -104,15 +81,6 @@ class ApplicationTemplateModel extends MyBaseModel implements TableDisplayInterf
         return [];
     }
 
-
-
-    public function getTableName(): string
-    {
-        return $this->table;
-    }
-
-
-
     public function getDisplayColumnFilters(): array
     {
         return [];
@@ -120,6 +88,12 @@ class ApplicationTemplateModel extends MyBaseModel implements TableDisplayInterf
 
     public function addCustomFields(BaseBuilder $builder): BaseBuilder
     {
+        $providerModel = new CpdProviderModel();
+        $builder->select("{$this->table}.*, {$providerModel->table}.name as provider_name")->
+            join($providerModel->table, "{$this->table}.provider_id = {$providerModel->table}.id");
+        ;
         return $builder;
     }
+
+
 }

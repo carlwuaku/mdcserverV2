@@ -28,20 +28,20 @@ class PermissionFilter implements FilterInterface
     {
         helper("auth");
         $response = service('response');
-        if(!auth("tokens")->loggedIn()){            
-         $response->setStatusCode(401)->setBody('you are not logged in')->send();
-        exit();
+        if (!auth("tokens")->loggedIn()) {
+            $response->setStatusCode(ResponseInterface::HTTP_UNAUTHORIZED)->setBody('you are not logged in')->send();
+            exit();
         }
-        if($arguments){
+        if ($arguments) {
             //the arguments would be permissions the user needs to have
             $rpModel = new RolePermissionsModel();
             foreach ($arguments as $permission) {
-                if(!$rpModel->hasPermission(auth()->getUser()->role_id, $permission)){
-                   $response->setStatusCode(ResponseInterface::HTTP_UNAUTHORIZED)->setBody('you are not permitted to perform this action')->send();
+                if (!$rpModel->hasPermission(auth()->getUser()->role_id, $permission)) {
+                    $response->setStatusCode(ResponseInterface::HTTP_UNAUTHORIZED)->setBody('you are not permitted to perform this action')->send();
                     exit();
                 }
             }
-            
+
         }
     }
 

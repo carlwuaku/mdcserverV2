@@ -21,7 +21,8 @@
         "guzzlehttp/guzzle": "^7.9",
         "khanamiryan/qrcode-detector-decoder": "^2.0",
         "ramsey/uuid": "^4.7",
-        "simplesoftwareio/simple-qrcode": "^4.2"
+        "simplesoftwareio/simple-qrcode": "^4.2",
+        "zircote/swagger-php": "^4.11"
     },
     "require-dev": {
         "fakerphp/faker": "^1.9",

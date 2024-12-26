@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\DocumentVerification;
 
 use App\Helpers\Utils;
-use CodeIgniter\Model;
+use App\Models\MyBaseModel;
 
 class DocumentVerificationModel extends MyBaseModel
 {
@@ -80,7 +80,7 @@ class DocumentVerificationModel extends MyBaseModel
         $this->insert((object) $documentRecord);
 
         $verificationUrl = site_url("verify/{$token}");
-        $qrPath = Utils::generateQRCode($verificationUrl, true);
+        $qrPath = Utils::generateQRCode($verificationUrl, true, "");
 
         return [
             'document_id' => $documentId,

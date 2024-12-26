@@ -26,13 +26,13 @@
             "children": [
                 {
                     "title": "Dashboard/Search",
-                    "url": "/cpd_dashboard",
+                    "url": "/cpd",
                     "icon": "",
                     "children": []
                 },
                 {
                     "title": "Add New CPD",
-                    "url": "/add_cpd",
+                    "url": "/cpd/add",
                     "icon": "",
                     "children": []
                 },
@@ -44,7 +44,7 @@
                 },
                 {
                     "title": "CDP Organizers",
-                    "url": "/list_cpd_facilities",
+                    "url": "/cpd/providers",
                     "icon": "",
                     "children": []
                 },
@@ -77,6 +77,12 @@
                 {
                     "title": "All Applications",
                     "url": "/applications",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Select Applications",
+                    "url": "/applications/application-types",
                     "icon": "",
                     "children": []
                 },
@@ -553,7 +559,8 @@
                     "key": "status"
                 }
             ]
-        }
+        },
+        "practitioners": {}
     },
     "dashboardMenu": [
         {
@@ -580,7 +587,7 @@
             "icon": "person_outlined",
             "children": [],
             "description": "Manage License Renewals",
-            "apiCountUrl": "practitioners/renewal-count?status=Pending Approval",
+            "apiCountUrl": "licenses/renewal-count?status=Pending Approval",
             "apiCountText": "Pending Approval"
         },
         {

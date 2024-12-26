@@ -41,7 +41,7 @@ class MyBaseModel extends Model
             $fields = [];
             $orginalFields = $this->searchFields ?? $this->allowedFields;
             foreach ($orginalFields as $orginalField) {
-                $fields[] = "'$this->table.$orginalField'";
+                $fields[] = "$this->table.$orginalField";
             }
             if (!empty($this->joinSearchFields)) {
 
@@ -170,9 +170,6 @@ class MyBaseModel extends Model
             $oneDimensionalArray[] = $result[$column];
         }
         //convert the results to a one-dimensional array of key-value pairs
-
-
-
         return $this->prepResultsAsValuesArray($oneDimensionalArray);
     }
 
@@ -192,5 +189,25 @@ class MyBaseModel extends Model
             }
         }
         return $array;
+    }
+
+    /**
+     * A function to get the counts of rows based on some grouped colums
+     *
+     * @param array $columns The columns to retrieve counts for.
+     * @param string $where The where clause to apply to the query.
+     * @return array{form_type:string, count:int, status: string}
+     */
+    public function getGroupedCounts($columns, $where = ""): array
+    {
+        //sanitise the columns
+        $builder = $this->builder();
+        $builder->select(["form_type", ...$columns, "count(*) as count"]);
+        if (!empty($where)) {
+            $builder->where($where);
+        }
+        $builder->groupBy($columns);
+        return $builder->get()->getResultArray();
+
     }
 }

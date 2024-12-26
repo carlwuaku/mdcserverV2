@@ -46,7 +46,7 @@ class Utils
     }
 
 
-    public static function generateQRCode(string $qrText, bool $saveFile = true, string $filename): string
+    public static function generateQRCode(string $qrText, bool $saveFile, string $filename): string
     {
         $writer = new PngWriter();
 

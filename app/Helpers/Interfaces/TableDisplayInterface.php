@@ -20,6 +20,9 @@ interface TableDisplayInterface
     /** 
      * this should return an array of the columns that should be filtered. each column would have it's type
      * and options
-    */
+     * 
+     * @return array {label:string, name:string, type:string, hint:string, options:array, value:string, required:bool}
+     */
+
     public function getDisplayColumnFilters(): array;
 }
