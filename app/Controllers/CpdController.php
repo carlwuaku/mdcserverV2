@@ -6,6 +6,7 @@ use App\Models\Cpd\CpdProviderModel;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 use App\Models\Cpd\CpdModel;
+use App\Models\Cpd\CpdAttendanceModel;
 use App\Models\ActivitiesModel;
 use \Exception;
 use App\Helpers\Utils;
@@ -361,6 +362,203 @@ class CpdController extends ResourceController
 
             $builder = $param ? $model->search($param) : $model->builder();
             // $builder = $model->addCustomFields($builder);
+
+            $tableName = $model->table;
+            $builder->orderBy("$tableName.$sortBy", $sortOrder);
+
+            if ($withDeleted) {
+                $model->withDeleted();
+            }
+            $totalBuilder = clone $builder;
+            $total = $totalBuilder->countAllResults();
+            $result = $builder->get($per_page, $page)->getResult();
+            return $this->respond([
+                'data' => $result,
+                'total' => $total,
+                'displayColumns' => $model->getDisplayColumns(),
+                'columnFilters' => $model->getDisplayColumnFilters()
+            ], ResponseInterface::HTTP_OK);
+        } catch (\Throwable $th) {
+            log_message("error", $th->getMessage());
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+    }
+
+    public function createCpdAttendance()
+    {
+        try {
+            $rules = [
+                "cpd_id" => "required|is_not_unique[cpd_topics.id]",
+                "license_number" => "required|is_not_unique[license_numbers.license_number]",
+                "attendance_date" => "required|valid_date"
+            ];
+
+            if (!$this->validate($rules)) {
+                return $this->respond(['message' => $this->validator->getErrors()], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+            $cpdModel = new CpdModel();
+            $cpd = $cpdModel->where(["id" => $this->request->getPost('cpd_id')])->first();
+            $data = $this->request->getPost();
+            // $data['created_by'] = $userId;
+            $model = new CpdAttendanceModel();
+            if (!$model->insert($data)) {
+                return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+            }
+            $id = $model->getInsertID();
+            /** @var ActivitiesModel $activitiesModel */
+            $activitiesModel = new ActivitiesModel();
+            $activitiesModel->logActivity("Created cpd attendance for {$data['license_number']} {$cpd->topic}.", null, "cpd");
+
+            return $this->respond(['message' => 'Cpd attendance created successfully', 'data' => $id], ResponseInterface::HTTP_OK);
+        } catch (Exception $th) {
+            log_message("error", $th->getMessage());
+            return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function updateCpdAttendance($uuid)
+    {
+        try {
+            $rules = [
+                "cpd_id" => "permit_empty|is_not_unique[cpd_topics.id]",
+                "license_number" => "permit_empty|is_not_unique[license_numbers.license_number]",
+                "attendance_date" => "permit_empty|valid_date",
+            ];
+
+            if (!$this->validate($rules)) {
+                return $this->respond(['message' => $this->validator->getErrors()], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+
+            $data = $this->request->getVar();
+            $cpdModel = new CpdModel();
+            $cpd = $cpdModel->where(["id" => $this->request->getPost('cpd_id')])->first();
+
+            $model = new CpdAttendanceModel();
+            $oldData = $model->where(["uuid" => $uuid])->first();
+            if (!$oldData) {
+                throw new Exception("Cpd attendance not found");
+            }
+
+            $changes = implode(", ", Utils::compareObjects($oldData, $data));
+
+            $update = $model->builder()->where(['uuid' => $uuid])->update($data);
+            if (!$update) {
+                return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+            /** @var ActivitiesModel $activitiesModel */
+            $activitiesModel = new ActivitiesModel();
+            $activitiesModel->logActivity("Updated cpd attendance for {$oldData['license_number']} {$cpd->topic}. Changes: $changes", null, "cpd");
+
+            return $this->respond(['message' => 'CPD attendance updated successfully'], ResponseInterface::HTTP_OK);
+        } catch (Exception $th) {
+            log_message("error", $th->getMessage());
+            return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function deleteCpdAttendance($uuid)
+    {
+        try {
+            $model = new CpdAttendanceModel();
+            $data = $model->where(["uuid" => $uuid])->first();
+
+            if (!$model->where('uuid', $uuid)->delete()) {
+                return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+            }
+            /** @var ActivitiesModel $activitiesModel */
+            $activitiesModel = new ActivitiesModel();
+            $activitiesModel->logActivity("Deleted cpd attendance for {$data['license_number']}.", null, "cpd");
+
+            return $this->respond(['message' => 'CPD attendance deleted successfully'], ResponseInterface::HTTP_OK);
+        } catch (Exception $th) {
+            log_message("error", $th->getMessage());
+            return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+
+    }
+
+    public function countCpdAttendances()
+    {
+        try {
+
+            $param = $this->request->getVar('param');
+            $model = new CpdAttendanceModel();
+            $filterArray = $model->createArrayFromAllowedFields((array) $this->request->getGet());
+            // Validate inputs here
+
+            $builder = $param ? $model->search($param) : $model->builder();
+            array_map(function ($value, $key) use ($builder) {
+                $builder->where($key, $value);
+            }, $filterArray, array_keys($filterArray));
+
+            $total = $builder->countAllResults();
+            return $this->respond([
+                'data' => $total
+            ], ResponseInterface::HTTP_OK);
+        } catch (\Throwable $th) {
+            log_message("error", $th->getMessage());
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function restoreCpdAttendance($uuid)
+    {
+        try {
+            $model = new CpdAttendanceModel();
+            if (!$model->builder()->where(['uuid' => $uuid])->update(['deleted_at' => null])) {
+                return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+            $data = $model->where(["uuid" => $uuid])->first();
+            /** @var ActivitiesModel $activitiesModel */
+            $activitiesModel = new ActivitiesModel();
+            $activitiesModel->logActivity("Restored cpd attendance for {$data['license_number']} from recycle bin");
+
+            return $this->respond(['message' => 'Cpd attendance restored successfully'], ResponseInterface::HTTP_OK);
+        } catch (\Throwable $th) {
+            log_message("error", $th->getMessage());
+            return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+
+
+    }
+
+    public function getCpdAttendance($uuid)
+    {
+        $model = new CpdAttendanceModel();
+        $builder = $model->builder();
+        $builder = $model->addCustomFields($builder);
+        $data = $builder->where(["cpd_attendance.uuid" => $uuid])->get()->getRow();
+        if (!$data) {
+            return $this->respond("CPD attendance not found", ResponseInterface::HTTP_BAD_REQUEST);
+        }
+
+        return $this->respond(['data' => $data, 'displayColumns' => $model->getDisplayColumns()], ResponseInterface::HTTP_OK);
+    }
+
+    public function getCpdAttendances()
+    {
+        try {
+            $per_page = $this->request->getVar('limit') ? (int) $this->request->getVar('limit') : 100;
+            $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
+            $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted') === "yes";
+            $param = $this->request->getVar('param');
+            $sortBy = $this->request->getVar('sortBy') ?? "id";
+            $sortOrder = $this->request->getVar('sortOrder') ?? "asc";
+            $cpdId = $this->request->getVar('cpd_id') ?? null;
+            $licenseNumber = $this->request->getVar('license_number') ?? null;
+
+
+            $model = new CpdModel();
+
+
+            $builder = $param ? $model->search($param) : $model->builder();
+            $builder = $model->addCustomFields($builder);
+            if ($cpdId) {
+                $builder->where("cpd_id", $cpdId);
+            }
+            if ($licenseNumber) {
+                $builder->where("license_number", $licenseNumber);
+            }
 
             $tableName = $model->table;
             $builder->orderBy("$tableName.$sortBy", $sortOrder);

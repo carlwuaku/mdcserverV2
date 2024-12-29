@@ -13,7 +13,7 @@ class RolePermissionsModel extends Model
     protected $returnType = 'array';
     protected $useSoftDeletes = false;
     protected $protectFields = true;
-    protected $allowedFields = ['permission_id', 'role_id'];
+    protected $allowedFields = ['permission', 'role'];
 
     // Dates
     protected $useTimestamps = false;
@@ -24,8 +24,8 @@ class RolePermissionsModel extends Model
 
     // Validation
     protected $validationRules = [
-        'role_id' => 'required',
-        'permission_id' => 'required',
+        'role' => 'required',
+        'permission' => 'required',
     ];
     protected $validationMessages = [];
     protected $skipValidation = false;
@@ -42,23 +42,25 @@ class RolePermissionsModel extends Model
     protected $beforeDelete = [];
     protected $afterDelete = [];
 
-    
+
 
     /**
      * return the table name
      */
-    public function getTableName():string{
+    public function getTableName(): string
+    {
         return $this->table;
     }
 
     /**
      * return true if a role_id has a permission_id/name in the role_permissions table.
-     * @var string $role_id 
+     * @var string $role_name 
      * @var string $permission the name or id of the permission
      * @return boolean
      */
-    public function hasPermission(string $role_id, string $permission):bool{
-        $rows = $this->where('role_id', $role_id)->where("permission_id in (select permission_id from permissions where name = '$permission' or permission_id = '$permission' )")->findAll();
+    public function hasPermission(string $role_name, string $permission): bool
+    {
+        $rows = $this->where('role', $role_name)->where("permission", $permission)->findAll();
         return count($rows) > 0;
     }
 }

@@ -51,7 +51,8 @@ class AuthController extends ResourceController
             "email" => "required|valid_email|is_unique[auth_identities.secret]",
         ];
         if (!$this->validate($rules)) {
-            return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
+            $message = implode(" ", array_values($this->validator->getErrors()));
+            return $this->respond(['message' => $message], ResponseInterface::HTTP_BAD_REQUEST);
 
         }
         $userObject = new UsersModel();
@@ -82,7 +83,8 @@ class AuthController extends ResourceController
             "password" => "required"
         ];
         if (!$this->validate($rules)) {
-            return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
+            $message = implode(" ", array_values($this->validator->getErrors()));
+            return $this->respond(['message' => $message], ResponseInterface::HTTP_BAD_REQUEST);
         }
         // success
         $credentials = [
@@ -99,9 +101,9 @@ class AuthController extends ResourceController
         $userObject = new UsersModel();
         $userData = $userObject->findById(auth()->id());
         $token = $userData->generateAccessToken("somesecretkey");
-        $permissionsObject = new PermissionsModel();
-        $permissions = $permissionsObject->getRolePermissions($userData->role_id, true);
-        $userData->permissions = $permissions;
+        // $permissionsObject = new PermissionsModel();
+        // $permissions = $permissionsObject->getRolePermissions($userData->role_id, true);
+        // $userData->permissions = $permissions;
         $response = [
             "token" => $token->raw_token,
             "user" => $userData,
@@ -125,14 +127,18 @@ class AuthController extends ResourceController
         $userObject = new UsersModel();
         $userData = $userObject->findById($userId);
         if (!$userData) {
-            return $this->respond("User not found", ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->respond(["message" => "User not found"], ResponseInterface::HTTP_BAD_REQUEST);
         }
-        $permissionsObject = new PermissionsModel();
-        $permissions = $permissionsObject->getRolePermissions($userData->role_id, true);
-        $userData->permissions = $permissions;
+        $rpObject = new RolePermissionsModel();
+        $permissions = $rpObject->where("role", $userData->role_name)->findAll();
+        $permissionsList = [];
+        foreach ($permissions as $permission) {
+            $permissionsList[] = $permission['permission'];
+        }
+        $userData->permissions = $permissionsList;
         return $this->respondCreated([
             "user" => $userData,
-            "permissions" => $permissions
+            "permissions" => $permissionsList
         ]);
     }
 
@@ -207,7 +213,8 @@ class AuthController extends ResourceController
         ];
 
         if (!$this->validate($rules)) {
-            return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
+            $message = implode(" ", array_values($this->validator->getErrors()));
+            return $this->respond(['message' => $message], ResponseInterface::HTTP_BAD_REQUEST);
         }
         $credentials = [
             'email' => $this->request->getPost('username'),
@@ -227,7 +234,7 @@ class AuthController extends ResourceController
             ->setJSON(['token' => $token->raw_token]);
     }
 
-    //add permissions to role_id, remove permission from role_id, create a role, edit a role,
+    //add permissions to role_name, remove permission from role_name, create a role, edit a role,
 
     public function createRole()
     {
@@ -236,12 +243,13 @@ class AuthController extends ResourceController
         ];
 
         if (!$this->validate($rules)) {
-            return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
+            $message = implode(" ", array_values($this->validator->getErrors()));
+            return $this->respond(['message' => $message], ResponseInterface::HTTP_BAD_REQUEST);
         }
         $data = $this->request->getPost();
         $model = new RolesModel();
         if (!$model->insert($data)) {
-            return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
         }
         $id = $model->getInsertID();
         return $this->respond(['message' => 'Role created successfully', 'data' => $id], ResponseInterface::HTTP_OK);
@@ -254,7 +262,8 @@ class AuthController extends ResourceController
         ];
 
         if (!$this->validate($rules)) {
-            return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
+            $message = implode(" ", array_values($this->validator->getErrors()));
+            return $this->respond(['message' => $message], ResponseInterface::HTTP_BAD_REQUEST);
         }
         $data = $this->request->getVar();
         //restore it if it had been deleted
@@ -262,7 +271,7 @@ class AuthController extends ResourceController
         $data->role_id = $role_id;
         $model = new RolesModel();
         if (!$model->update($role_id, $data)) {
-            return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
         }
         return $this->respond(['message' => 'Role updated successfully'], ResponseInterface::HTTP_OK);
     }
@@ -271,7 +280,7 @@ class AuthController extends ResourceController
     {
         $model = new RolesModel();
         if (!$model->delete($role_id)) {
-            return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
         }
         return $this->respond(['message' => 'Role deleted successfully'], ResponseInterface::HTTP_OK);
     }
@@ -280,7 +289,7 @@ class AuthController extends ResourceController
     {
         $model = new RolesModel();
         if (!$model->update($role_id, (object) ['deleted_at' => null])) {
-            return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
         }
         return $this->respond(['message' => 'Role restored successfully'], ResponseInterface::HTTP_OK);
     }
@@ -290,11 +299,11 @@ class AuthController extends ResourceController
         $model = new RolesModel();
         $data = $model->find($role_id);
         if (!$data) {
-            return $this->respond("Role not found", ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->respond(["message" => "Role not found"], ResponseInterface::HTTP_BAD_REQUEST);
         }
         $permissionsModel = new PermissionsModel();
-        $permissions = $permissionsModel->getRolePermissions($role_id);
-        $excludedPermissions = $permissionsModel->getRoleExcludedPermissions($role_id);
+        $permissions = $permissionsModel->getRolePermissions($data['role_name']);
+        $excludedPermissions = $permissionsModel->getRoleExcludedPermissions($data['role_name']);
         return $this->respond(['data' => $data, 'permissions' => $permissions, 'excludedPermissions' => $excludedPermissions], ResponseInterface::HTTP_OK);
     }
 
@@ -308,9 +317,9 @@ class AuthController extends ResourceController
         $sortOrder = $this->request->getVar('sortOrder') ?? "asc";
         $model = new RolesModel();
         $builder = $param ? $model->search($param) : $model->builder();
-        $builder->join('users', "roles.role_id = users.role_id", "left")
+        $builder->join('users', "roles.role_name = users.role_name", "left")
             ->select("roles.*, count(users.id) as number_of_users")
-            ->groupBy('roles.role_id');
+            ->groupBy('roles.role_name');
         if ($withDeleted) {
             $model->withDeleted();
         }
@@ -335,10 +344,19 @@ class AuthController extends ResourceController
      */
     public function addRolePermission()
     {
+        $rules = [
+            "role" => "required|is_not_unique[roles.role_name]",
+            "permission" => "required|is_not_unique[permissions.name]"
+        ];
+
+        if (!$this->validate($rules)) {
+            $message = implode(" ", array_values($this->validator->getErrors()));
+            return $this->respond(['message' => $message], ResponseInterface::HTTP_BAD_REQUEST);
+        }
         $data = $this->request->getPost();
         $model = new RolePermissionsModel();
         if (!$model->insert($data)) {
-            return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
         }
         return $this->respond(['message' => 'Permission added to role successfully'], ResponseInterface::HTTP_OK);
     }
@@ -352,11 +370,13 @@ class AuthController extends ResourceController
      *
      * @apiSuccess {String} message Role deleted successfully.
      */
-    public function deleteRolePermission($roleId, $permissionId)
+    public function deleteRolePermission($role, $permission)
     {
+
+
         $model = new RolePermissionsModel();
-        if (!$model->where("role_id = $roleId and permission_id = $permissionId")->delete(null, true)) {
-            return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        if (!$model->where("role", $role)->where("permission", $permission)->delete(null, true)) {
+            return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
         }
         return $this->respond(['message' => 'Permission deleted from role successfully'], ResponseInterface::HTTP_OK);
     }
@@ -369,12 +389,13 @@ class AuthController extends ResourceController
             "username" => "required|is_unique[users.username]",
             "email" => "required|valid_email|is_unique[auth_identities.secret]",
             "phone" => "required|min_length[10]",
-            "role_id" => "required|is_natural_no_zero|is_not_unique[roles.role_id]",
+            "role_name" => "required|is_not_unique[roles.role_name]",
             "password" => "required|min_length[8]|strong_password[]",
             "password_confirm" => "required|matches[password]",
         ];
         if (!$this->validate($rules)) {
-            return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
+            $message = implode(" ", array_values($this->validator->getErrors()));
+            return $this->respond(['message' => $message], ResponseInterface::HTTP_BAD_REQUEST);
         }
         $userObject = auth()->getProvider();
         $data = $this->request->getVar();
@@ -407,7 +428,7 @@ class AuthController extends ResourceController
     //     // log_message('info',$data);
     //     $model = new UsersModel();
     //     if (!$model->update($userId, $data)) {
-    //         return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+    //         return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
     //     }
     //     return $this->respond(['message' => 'User updated successfully'], ResponseInterface::HTTP_OK);
     // }
@@ -429,13 +450,14 @@ class AuthController extends ResourceController
                 "username" => "permit_empty|is_unique[users.username,id,$userId]",
                 "email" => "permit_empty|valid_email|is_unique[auth_identities.secret,user_id,$userId]",
                 "phone" => "permit_empty|min_length[10]",
-                "role_id" => "permit_empty|is_natural_no_zero|is_not_unique[roles.role_id]",
+                "role_name" => "permit_empty|is_not_unique[roles.role_name]",
                 "password" => "permit_empty|min_length[8]|strong_password[]",
                 "password_confirm" => "permit_empty|matches[password]",
             ];
 
             if (!$this->validate($rules)) {
-                return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
+                $message = implode(" ", array_values($this->validator->getErrors()));
+                return $this->respond(['message' => $message], ResponseInterface::HTTP_BAD_REQUEST);
             }
 
             // Update the user details
@@ -456,7 +478,7 @@ class AuthController extends ResourceController
             return $this->respond(['message' => 'User updated successfully'], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
             log_message('error', $th->getMessage());
-            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
 
@@ -464,7 +486,7 @@ class AuthController extends ResourceController
     {
         $model = new UsersModel();
         if (!$model->delete($userId)) {
-            return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
         }
         return $this->respond(['message' => 'User deleted successfully'], ResponseInterface::HTTP_OK);
     }
@@ -474,7 +496,7 @@ class AuthController extends ResourceController
         $model = new UsersModel();
         $data = $model->find($userId);
         if (!$data) {
-            return $this->respond("User not found", ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->respond("User not found", ResponseInterface::HTTP_BAD_REQUEST);
         }
 
         return $this->respond(['data' => $data,], ResponseInterface::HTTP_OK);
@@ -486,8 +508,6 @@ class AuthController extends ResourceController
             $per_page = $this->request->getVar('limit') ? (int) $this->request->getVar('limit') : 100;
             $model = new UsersModel();
             $builder = $model->builder();
-            $builder->join('roles', "roles.role_id = {$model->tableName}.role_id")
-                ->select("$model->tableName.*, roles.role_name");
 
             return $this->respond([
                 'data' => $model->withDeleted()->paginate($per_page),
@@ -496,7 +516,7 @@ class AuthController extends ResourceController
             ], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
             log_message('error', $th->getMessage());
-            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
 
@@ -515,7 +535,7 @@ class AuthController extends ResourceController
             return $this->respond(['message' => 'User banned successfully'], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
             log_message('error', $th->getMessage());
-            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
 
@@ -533,7 +553,7 @@ class AuthController extends ResourceController
             return $this->respond(['message' => 'User unbanned successfully'], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
             log_message('error', $th->getMessage());
-            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
 
