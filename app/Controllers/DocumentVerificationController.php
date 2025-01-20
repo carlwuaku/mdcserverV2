@@ -5,8 +5,9 @@ namespace App\Controllers;
 use App\Helpers\Utils;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
+use \App\Models\DocumentVerification\DocumentVerificationModel;
 
-class DocumentVerification extends ResourceController
+class DocumentVerificationController extends ResourceController
 {
     protected $db;
     protected $privateKeyPath;
@@ -17,7 +18,7 @@ class DocumentVerification extends ResourceController
     public function __construct()
     {
         $this->db = \Config\Database::connect();
-        $this->documentVerificationModel = new \App\Models\DocumentVerificationModel();
+        $this->documentVerificationModel = new DocumentVerificationModel();
 
     }
 

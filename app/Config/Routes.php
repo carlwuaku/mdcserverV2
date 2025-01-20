@@ -67,39 +67,39 @@ $routes->group("admin", ["namespace" => "App\Controllers", "filter" => "apiauth"
 
 });
 
-// $routes->group("practitioners", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
-//     $routes->put("details/(:segment)", [PractitionerController::class, "updatePractitioner/$1"], ["filter" => ["hasPermission:Create_Or_Edit_Practitioners"]]);
-//     $routes->delete("details/(:segment)", [PractitionerController::class, "deletePractitioner/$1"], ["filter" => ["hasPermission:Delete_Practitioners"]]);
-//     $routes->get("details/(:segment)", [PractitionerController::class, "getPractitioner/$1"], ["filter" => ["hasPermission:View_Practitioners"]]);
-//     $routes->get("details", [PractitionerController::class, "getPractitioners"], ["filter" => ["hasPermission:View_Practitioners"]]);
-//     $routes->post("details", [PractitionerController::class, "createPractitioner"], ["filter" => ["hasPermission:Create_Or_Edit_Practitioners"]]);
-//     $routes->put("details/(:segment)/restore", [PractitionerController::class, "restorePractitioner/$1"], ["filter" => ["hasPermission:Delete_Practitioners"]]);
+$routes->group("practitioners", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
+    // $routes->put("details/(:segment)", [PractitionerController::class, "updatePractitioner/$1"], ["filter" => ["hasPermission:Create_Or_Edit_Practitioners"]]);
+    // $routes->delete("details/(:segment)", [PractitionerController::class, "deletePractitioner/$1"], ["filter" => ["hasPermission:Delete_Practitioners"]]);
+    // $routes->get("details/(:segment)", [PractitionerController::class, "getPractitioner/$1"], ["filter" => ["hasPermission:View_Practitioners"]]);
+    // $routes->get("details", [PractitionerController::class, "getPractitioners"], ["filter" => ["hasPermission:View_Practitioners"]]);
+    // $routes->post("details", [PractitionerController::class, "createPractitioner"], ["filter" => ["hasPermission:Create_Or_Edit_Practitioners"]]);
+    // $routes->put("details/(:segment)/restore", [PractitionerController::class, "restorePractitioner/$1"], ["filter" => ["hasPermission:Delete_Practitioners"]]);
 
-//     $routes->put("qualifications/(:segment)", [PractitionerController::class, "updatePractitionerQualification/$1"], ["filter" => ["hasPermission:Create_Or_Update_Practitioners_Qualifications"]]);
-//     $routes->delete("qualifications/(:segment)", [PractitionerController::class, "deletePractitionerQualification/$1"], ["filter" => ["hasPermission:Delete_Practitioner_Qualifications"]]);
-//     $routes->get("qualifications", [PractitionerController::class, "getPractitionerQualifications"], ["filter" => ["hasPermission:View_Practitioner_Qualifications"]]);
-//     $routes->get("qualifications/(:segment)", [PractitionerController::class, "getPractitionerQualification/$1"], ["filter" => ["hasPermission:View_Practitioner_Qualifications"]], );
-//     $routes->post("qualifications", [PractitionerController::class, "createPractitionerQualification"], ["filter" => ["hasPermission:Create_Or_Update_Practitioners_Qualifications"]]);
-//     $routes->put("qualifications/(:segment)/restore", [PractitionerController::class, "restorePractitionerQualification/$1"], ["filter" => ["hasPermission:Delete_Practitioners_Qualifications"]]);
-
-
-//     $routes->put("workhistory/(:segment)", [PractitionerController::class, "updatePractitionerWorkHistory/$1"], ["filter" => ["hasPermission:Delete_Practitioners"]]);
-//     $routes->delete("workhistory/(:segment)", [PractitionerController::class, "deletePractitionerWorkHistory/$1"], ["filter" => ["hasPermission:Delete_Practitioners"]]);
-//     $routes->get("workhistory", [PractitionerController::class, "getPractitionerWorkHistories"], ["filter" => ["hasPermission:View_Practitioners_Work_History"]]);
-//     $routes->get("workhistory/(:segment)", [PractitionerController::class, "getPractitionerWorkHistory/$1"], ["filter" => ["hasPermission:View_Practitioners_Work_History"]], );
-//     $routes->post("workhistory", [PractitionerController::class, "createPractitionerWorkHistory"], ["filter" => ["hasPermission:Create_Or_Update_Practitioners_Work_History"]]);
-//     $routes->put("workhistory/(:segment)/restore", [PractitionerController::class, "restorePractitionerWorkHistory/$1"], ["filter" => ["hasPermission:Delete_Practitioners_Work_History"]]);
+    $routes->put("qualifications/(:segment)", [PractitionerController::class, "updatePractitionerQualification/$1"], ["filter" => ["hasPermission:Create_Or_Update_Practitioners_Qualifications"]]);
+    $routes->delete("qualifications/(:segment)", [PractitionerController::class, "deletePractitionerQualification/$1"], ["filter" => ["hasPermission:Delete_Practitioners_Qualifications"]]);
+    $routes->get("qualifications", [PractitionerController::class, "getPractitionerQualifications"], ["filter" => ["hasPermission:View_Practitioner_Qualifications"]]);
+    $routes->get("qualifications/(:segment)", [PractitionerController::class, "getPractitionerQualification/$1"], ["filter" => ["hasPermission:View_Practitioner_Qualifications"]], );
+    $routes->post("qualifications", [PractitionerController::class, "createPractitionerQualification"], ["filter" => ["hasPermission:Create_Or_Update_Practitioners_Qualifications"]]);
+    $routes->put("qualifications/(:segment)/restore", [PractitionerController::class, "restorePractitionerQualification/$1"], ["filter" => ["hasPermission:Delete_Practitioners_Qualifications"]]);
 
 
-//     $routes->put("renewal/(:segment)", [PractitionerController::class, "updatePractitionerRenewal/$1"]);
-//     $routes->delete("renewal/(:segment)", [PractitionerController::class, "deletePractitionerRenewal/$1"]);
-//     $routes->get("renewal", [PractitionerController::class, "getPractitionerRenewals"], ["filter" => ["hasPermission:Site.Content.View"]], );
-//     $routes->get("renewal-count", [PractitionerController::class, "countRenewals"], ["filter" => ["hasPermission:Site.Content.View"]], );
-//     $routes->get("renewal/practitioner/(:segment)", [PractitionerController::class, "getPractitionerRenewals/$1"], ["filter" => ["hasPermission:Site.Content.View"]], );
-//     $routes->get("renewal/(:segment)", [PractitionerController::class, "getPractitionerRenewal/$1"], ["filter" => ["hasPermission:Site.Content.View"]], );
-//     $routes->post("renewal", [PractitionerController::class, "createPractitionerRenewal"]);
+    $routes->put("workhistory/(:segment)", [PractitionerController::class, "updatePractitionerWorkHistory/$1"], ["filter" => ["hasPermission:Create_Or_Update_Practitioners_Work_History"]]);
+    $routes->delete("workhistory/(:segment)", [PractitionerController::class, "deletePractitionerWorkHistory/$1"], ["filter" => ["hasPermission:Delete_Practitioners_Work_History"]]);
+    $routes->get("workhistory", [PractitionerController::class, "getPractitionerWorkHistories"], ["filter" => ["hasPermission:View_Practitioners_Work_History"]]);
+    $routes->get("workhistory/(:segment)", [PractitionerController::class, "getPractitionerWorkHistory/$1"], ["filter" => ["hasPermission:View_Practitioners_Work_History"]], );
+    $routes->post("workhistory", [PractitionerController::class, "createPractitionerWorkHistory"], ["filter" => ["hasPermission:Create_Or_Update_Practitioners_Work_History"]]);
+    $routes->put("workhistory/(:segment)/restore", [PractitionerController::class, "restorePractitionerWorkHistory/$1"], ["filter" => ["hasPermission:Delete_Practitioners_Work_History"]]);
 
-// });
+
+    // $routes->put("renewal/(:segment)", [PractitionerController::class, "updatePractitionerRenewal/$1"]);
+    // $routes->delete("renewal/(:segment)", [PractitionerController::class, "deletePractitionerRenewal/$1"]);
+    // $routes->get("renewal", [PractitionerController::class, "getPractitionerRenewals"], ["filter" => ["hasPermission:Site.Content.View"]], );
+    // $routes->get("renewal-count", [PractitionerController::class, "countRenewals"], ["filter" => ["hasPermission:Site.Content.View"]], );
+    // $routes->get("renewal/practitioner/(:segment)", [PractitionerController::class, "getPractitionerRenewals/$1"], ["filter" => ["hasPermission:Site.Content.View"]], );
+    // $routes->get("renewal/(:segment)", [PractitionerController::class, "getPractitionerRenewal/$1"], ["filter" => ["hasPermission:Site.Content.View"]], );
+    // $routes->post("renewal", [PractitionerController::class, "createPractitionerRenewal"]);
+
+});
 
 $routes->group("regions", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
     $routes->get("regions", [RegionController::class, "getRegions"]);
@@ -192,7 +192,7 @@ $routes->group("cpd", ["namespace" => "App\Controllers", "filter" => "apiauth"],
     $routes->put("attendance/(:segment)/restore", [CpdController::class, "restoreCpdAttendance/$1"], ["filter" => ["hasPermission:Restore_CPD_Attendance"]]);
     $routes->get("attendance-count", [CpdController::class, "countCpdAttendances"], ["filter" => ["hasPermission:View_CPD_Attendance"]], );
 
-
+    $routes->get("license-attendance", [CpdController::class, "getLicenseCpdAttendances"], ["filter" => ["hasPermission:View_CPD_Attendance"]], );
 });
 
 service('auth')->routes($routes);

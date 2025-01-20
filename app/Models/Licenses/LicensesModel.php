@@ -78,6 +78,7 @@ class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormIn
 
     public $searchFields = [
         'type',
+        'name',
         'license_number',
         'email',
         'phone',
@@ -264,7 +265,14 @@ class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormIn
         return $builder;
     }
 
-    public function addLicenseDetails(BaseBuilder $builder, string $licenseType): BaseBuilder
+    /**
+     * add license details to the builder
+     * @param BaseBuilder $builder
+     * @param string $licenseType
+     * @param bool $addJoin in some cases a join may have been added already, particularly if there is a search operation
+     * @return BaseBuilder
+     */
+    public function addLicenseDetails(BaseBuilder $builder, string $licenseType, bool $addJoin): BaseBuilder
     {
         try {
             $licenseDef = Utils::getLicenseSetting($licenseType);
@@ -272,10 +280,13 @@ class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormIn
             $table = $licenseDef->table;
             $columns = [];
             for ($i = 0; $i < count($fields); $i++) {
-                $columns[] = $table . $fields[$i]['name'];
+                $columns[] = $table . "." . $fields[$i]['name'];
             }
             $builder->select($columns);
-            $builder->join($table, $table . '.license_number = licenses.license_number');
+            if ($addJoin) {
+                $builder->join($table, $table . '.license_number = licenses.license_number');
+            }
+
             return $builder;
         } catch (\Throwable $th) {
             log_message('error', $th->getMessage());
@@ -303,16 +314,20 @@ class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormIn
 
             foreach ($licenseFields as $field) {
                 $name = $field['name'];
-                if (array_key_exists($name, $formData)) {
+                if (array_key_exists($name, $formData) && $name !== 'license_number') {
                     $data->$name = $formData[$name];
                 }
             }
+            log_message('info', print_r($data, true));
             $license = $this->builder($table)->where('license_number', $formData['license_number'])->get()->getFirstRow('array');
 
-            if ($license) {
-                $this->builder($table)->where('license_number', $license['license_number'])->update($data);
-            } else {
-                $this->builder($table)->insert($data);
+            if (count(get_object_vars($data)) > 0) {
+                if ($license) {
+                    $this->builder($table)->set((array) $data)->where(['license_number' => $formData['license_number']])->update();
+                    log_message('info', print_r($this->db->getLastQuery(), true));
+                } else {
+                    $this->builder($table)->insert($data);
+                }
             }
         } catch (\Throwable $th) {
             throw $th;

@@ -9,10 +9,9 @@ class MyBaseModel extends Model
     protected $table = "";
     protected $allowedFields = [];
     /**
-     * [[table_name=>['fields'=>[], 'joinCondition'=>'']]]
      * a list of tables to join with the model when getting details/searching. the key is the table name and the value is an array
      * specifying the fields and join condition
-     * @var array
+     * @var array{fields:string[], joinCondition:string, table:string}
      */
     public $joinSearchFields = [];
     protected $searchFields = [];
@@ -44,16 +43,15 @@ class MyBaseModel extends Model
                 $fields[] = "$this->table.$orginalField";
             }
             if (!empty($this->joinSearchFields)) {
-
-                foreach ($this->joinSearchFields as $table => $tableFields) {
-                    foreach ($tableFields['fields'] as $field) {
-                        $fields[] = "$table.$field";
-                    }
-                    $builder->join($table, $tableFields['joinCondition'], 'left');
+                log_message("info", "Join search fields: " . print_r($this->joinSearchFields, true));
+                foreach ($this->joinSearchFields['fields'] as $field) {
+                    $table = $this->joinSearchFields['table'];
+                    $fields[] = "$table.$field";
                 }
+                $builder->join($table, $this->joinSearchFields['joinCondition'], 'left');
+
             }
             $conditions = [];
-            log_message("info", print_r($fields, true));
             foreach ($words as $word) {
                 if (!empty($word)) {
                     $wordlikeConditions = [];

@@ -18,7 +18,7 @@ class LicenseUtils
     /**
      * Get license details by UUID.
      *
-     * @param string $uuid The UUID of the license
+     * @param string $uuid The UUID/license number of the license
      * @return array The license data if found, 
      * @throws Exception If license is not found
      */
@@ -28,6 +28,7 @@ class LicenseUtils
         $builder = $model->builder();
         $builder = $model->addCustomFields($builder);
         $builder->where($model->getTableName() . '.uuid', $uuid);
+        $builder->orWhere($model->getTableName() . '.license_number', $uuid);
         $data = $model->first();
 
         if (!$data) {
@@ -75,21 +76,19 @@ class LicenseUtils
                 $data['expiry'] = date('Y-m-d', strtotime($expiry));
             }
             $year = date('Y', strtotime($startDate));
-            if ($data['status'] === "Approved") {//check for the terminal status from the app settings for that license type
-                $code = md5($license['license_number'] . "%%" . $year);
-                $qrText = "manager.mdcghana.org/api/verifyRelicensure/$code";
-                $qrCodeGenerator = new Generator();
-                $qrCode = $qrCodeGenerator
-                    ->size(200)
-                    ->margin(10)
-                    ->generate($qrText);
-                $data['qr_code'] = $qrCode;
-                $data['qr_text'] = $qrText;
-            }
+            $code = md5($license['license_number'] . "%%" . $year);
+            $qrText = site_url("api/verify/renewal/$code");// "manager.mdcghana.org/api/verifyRelicensure/$code";
+
+
+
+            $qrCode = Utils::generateQRCode($qrText, false);
+            $data['qr_code'] = $qrCode;
+            $data['qr_text'] = $qrText;
+
             $data['license_type'] = $licenseType;
             $formData = $model->createArrayFromAllowedFields($data, true);
-            log_message('info', print_r($formData, true));
-            log_message('info', $model->builder()->set($formData)->getCompiledInsert());
+            // log_message('info', print_r($formData, true));
+            // log_message('info', $model->builder()->set($formData)->getCompiledInsert());
 
             $model->set($formData)->insert();
             $id = $model->getInsertID();

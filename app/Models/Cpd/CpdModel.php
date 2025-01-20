@@ -20,7 +20,7 @@ class CpdModel extends MyBaseModel implements TableDisplayInterface
         'created_on',
         'created_by',
         'modified_on',
-        'provider_id',
+        'provider_uuid',
         'venue',
         'group',
         'credits',
@@ -69,6 +69,7 @@ class CpdModel extends MyBaseModel implements TableDisplayInterface
             'provider_name',
             'credits',
             'category',
+            'number_of_attendants',
             'online',
             'created_on',
             'created_by',
@@ -89,8 +90,12 @@ class CpdModel extends MyBaseModel implements TableDisplayInterface
     public function addCustomFields(BaseBuilder $builder): BaseBuilder
     {
         $providerModel = new CpdProviderModel();
-        $builder->select("{$this->table}.*, {$providerModel->table}.name as provider_name")->
-            join($providerModel->table, "{$this->table}.provider_id = {$providerModel->table}.id");
+        $attendanceModel = new CpdAttendanceModel();
+
+        $builder->select("{$this->table}.*, {$providerModel->table}.name as provider_name, count({$attendanceModel->table}.id) as number_of_attendants")->
+            join($providerModel->table, "{$this->table}.provider_uuid = {$providerModel->table}.uuid", "left")->
+            join($attendanceModel->table, "{$this->table}.uuid = {$attendanceModel->table}.cpd_uuid", "left")
+            ->groupBy("{$this->table}.id");
         ;
         return $builder;
     }

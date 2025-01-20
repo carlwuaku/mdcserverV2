@@ -46,7 +46,14 @@ class Utils
     }
 
 
-    public static function generateQRCode(string $qrText, bool $saveFile, string $filename): string
+    /**
+     * Generate QR code
+     * @param string $qrText
+     * @param bool $saveFile
+     * @param string $filename
+     * @return string The path to the generated QR code image if $saveFile is true, otherwise the data URI
+     */
+    public static function generateQRCode(string $qrText, bool $saveFile, string $filename = ""): string
     {
         $writer = new PngWriter();
 
@@ -82,7 +89,7 @@ class Utils
         $writer->validateResult($result, $qrText);
         // Save it to a file
         $mimetype = "png";
-        $file_name = $filename == "" ? uniqid() . ".$mimetype" : $filename . ".$mimetype";
+        $file_name = empty($filename) ? uniqid() . ".$mimetype" : $filename . ".$mimetype";
 
         $writer->validateResult($result, $qrText);
         if ($saveFile) {
@@ -90,8 +97,9 @@ class Utils
             if (!file_exists(WRITEPATH . QRCODES_ASSETS_FOLDER)) {
                 mkdir(WRITEPATH . QRCODES_ASSETS_FOLDER);
             }
-            $result->saveToFile(WRITEPATH . QRCODES_ASSETS_FOLDER . DIRECTORY_SEPARATOR . "$file_name");
-            return $file_name;
+            $path = WRITEPATH . QRCODES_ASSETS_FOLDER . DIRECTORY_SEPARATOR . "$file_name";
+            $result->saveToFile($path);
+            return $path;
         }
         // Generate a data URI to include image data inline (i.e. inside an <img> tag)
         $dataUri = $result->getDataUri();
@@ -139,7 +147,8 @@ class Utils
      * get the table name, fields, other settings for a license type
      * @param string $license
      * @return object {table: string, fields: array, onCreateValidation: array, 
-     * onUpdateValidation: array, renewalFields: array, renewalTable: string, renewalStages: object, fieldsToUpdateOnRenewal: array}
+     * onUpdateValidation: array, renewalFields: array, renewalTable: string, renewalStages: object, 
+     * fieldsToUpdateOnRenewal: array}
      */
     public static function getLicenseSetting(string $license): object
     {
@@ -289,6 +298,25 @@ class Utils
         return array_merge($priorityColumns, $otherColumns);
     }
 
+    /**
+     * get the validation rules defined in app.settings.json for a license type when creating a license.
+     * @param string $license
+     * @return array
+     */
+    public static function getLicenseSearchFields(string $license): array
+    {
+        try {
+            $licenseDef = self::getLicenseSetting($license);
+            if (property_exists($licenseDef, 'searchFields')) {
+                return $licenseDef->searchFields;
+            }
+            throw new \Exception("Search fields not defined for $license");
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+
+    }
+
     public static function generateSecureDocument($documentData)
     {
 
@@ -307,7 +335,7 @@ class Utils
     /**
      * Generate verification token
      */
-    private static function generateVerificationToken($documentId): string
+    public static function generateVerificationToken($documentId): string
     {
         return bin2hex(random_bytes(32));
     }
@@ -315,7 +343,7 @@ class Utils
     /**
      * Sign document data using private key
      */
-    private static function signDocument($data): string
+    public static function signDocument($data): string
     {
         $privateKey = openssl_pkey_get_private(file_get_contents(self::$privateKeyPath));
         $signature = '';

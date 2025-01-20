@@ -57,6 +57,7 @@ class CpdProviderModel extends MyBaseModel implements TableDisplayInterface
     {
         return [
             'name',
+            'number_of_cpd',
             'created_on',
             'location',
             'phone',
@@ -77,8 +78,9 @@ class CpdProviderModel extends MyBaseModel implements TableDisplayInterface
     public function addCustomFields(BaseBuilder $builder): BaseBuilder
     {
         $providerModel = new CpdProviderModel();
-        $builder->select("{$this->table}.*, count(topic) as number_of_cpd")->
-            join("cpd_topics", "cpd_topics.provider_id = {$this->table}.id");
+        $builder->select("{$this->table}.*, count(cpd_topics.id) as number_of_cpd")->
+            join("cpd_topics", "cpd_topics.provider_uuid = {$this->table}.uuid", "left")->
+            groupBy("{$this->table}.id");
         ;
         return $builder;
     }

@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Helpers\CpdUtils;
 use App\Models\Cpd\CpdProviderModel;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
@@ -17,7 +18,7 @@ class CpdController extends ResourceController
         try {
             $rules = [
                 "topic" => "required|is_unique[cpd_topics.topic]",
-                "provider_id" => "required|is_natural_no_zero|is_not_unique[cpd_providers.id]",
+                "provider_uuid" => "required|is_not_unique[cpd_providers.uuid]",
                 "credits" => "required|is_natural_no_zero",
                 "category" => "required",
                 "date" => "required|valid_date",
@@ -50,7 +51,7 @@ class CpdController extends ResourceController
         try {
             $rules = [
                 "topic" => "permit_empty|is_unique[cpd_topics.topic,uuid,$uuid]",
-                "provider_id" => "permit_empty|is_natural_no_zero|is_not_unique[cpd_providers.id]",
+                "provider_uuid" => "permit_empty|is_not_unique[cpd_providers.uuid]",
                 "credits" => "permit_empty|is_natural_no_zero",
             ];
 
@@ -172,14 +173,20 @@ class CpdController extends ResourceController
             $param = $this->request->getVar('param');
             $sortBy = $this->request->getVar('sortBy') ?? "id";
             $sortOrder = $this->request->getVar('sortOrder') ?? "asc";
-            $year = $this->request->getVar('year') ?? date("Y");
+            $year = $this->request->getVar('year') ?? null;
+            $providerUuid = $this->request->getVar('provider_uuid') ?? null;
 
             $model = new CpdModel();
 
 
             $builder = $param ? $model->search($param) : $model->builder();
             $builder = $model->addCustomFields($builder);
-            $builder->where("YEAR(date)", $year);
+            if ($year) {
+                $builder->where("YEAR(date)", $year);
+            }
+            if ($providerUuid) {
+                $builder->where("provider_uuid", $providerUuid);
+            }
 
             $tableName = $model->table;
             $builder->orderBy("$tableName.$sortBy", $sortOrder);
@@ -275,6 +282,9 @@ class CpdController extends ResourceController
         try {
             $model = new CpdProviderModel();
             $data = $model->where(["uuid" => $uuid])->first();
+            if (!$data) {
+                return $this->respond(['message' => "CPD provider not found"], ResponseInterface::HTTP_BAD_REQUEST);
+            }
 
             if (!$model->where('uuid', $uuid)->delete()) {
                 return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
@@ -361,7 +371,7 @@ class CpdController extends ResourceController
 
 
             $builder = $param ? $model->search($param) : $model->builder();
-            // $builder = $model->addCustomFields($builder);
+            $builder = $model->addCustomFields($builder);
 
             $tableName = $model->table;
             $builder->orderBy("$tableName.$sortBy", $sortOrder);
@@ -369,6 +379,7 @@ class CpdController extends ResourceController
             if ($withDeleted) {
                 $model->withDeleted();
             }
+            log_message("error", $builder->getCompiledSelect(false));
             $totalBuilder = clone $builder;
             $total = $totalBuilder->countAllResults();
             $result = $builder->get($per_page, $page)->getResult();
@@ -388,28 +399,48 @@ class CpdController extends ResourceController
     {
         try {
             $rules = [
-                "cpd_id" => "required|is_not_unique[cpd_topics.id]",
-                "license_number" => "required|is_not_unique[license_numbers.license_number]",
+                "cpd_uuid" => "required|is_not_unique[cpd_topics.uuid]",
+                "license_number.*" => "required|is_not_unique[licenses.license_number]",
                 "attendance_date" => "required|valid_date"
             ];
 
             if (!$this->validate($rules)) {
                 return $this->respond(['message' => $this->validator->getErrors()], ResponseInterface::HTTP_BAD_REQUEST);
             }
+            $data = $this->request->getJSON(true);
             $cpdModel = new CpdModel();
-            $cpd = $cpdModel->where(["id" => $this->request->getPost('cpd_id')])->first();
-            $data = $this->request->getPost();
+            $cpd = $cpdModel->where(["uuid" => $data['cpd_uuid']])->first();
+            if (!$cpd) {
+                return $this->respond(['message' => "CPD topic not found"], ResponseInterface::HTTP_BAD_REQUEST);
+            }
             // $data['created_by'] = $userId;
             $model = new CpdAttendanceModel();
-            if (!$model->insert($data)) {
-                return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+            $failed = [];
+            foreach ($data['license_number'] as $license) {
+                $licenseData = [
+                    "cpd_uuid" => $data['cpd_uuid'],
+                    "license_number" => $license,
+                    "attendance_date" => $data['attendance_date'],
+                    "venue" => $data['venue']
+                ];
+                if (!$model->insert($licenseData)) {
+                    $failed[] = $license;
+                } else {
+                    try {
+                        /** @var ActivitiesModel $activitiesModel */
+                        $activitiesModel = new ActivitiesModel();
+                        $activitiesModel->logActivity("Created cpd attendance for {$license} {$cpd['topic']}.", null, "cpd");
+                    } catch (Exception $e) {
+                        log_message("error", $e->getMessage());
+                    }
+                }
             }
-            $id = $model->getInsertID();
-            /** @var ActivitiesModel $activitiesModel */
-            $activitiesModel = new ActivitiesModel();
-            $activitiesModel->logActivity("Created cpd attendance for {$data['license_number']} {$cpd->topic}.", null, "cpd");
 
-            return $this->respond(['message' => 'Cpd attendance created successfully', 'data' => $id], ResponseInterface::HTTP_OK);
+            $id = $model->getInsertID();
+            $failedList = implode(", ", $failed);
+            $message = count($failed) > 0 ? count($failed) . " records for ($failedList) failed to save. Please try those ones again" : "Cpd attendance created successfully";
+
+            return $this->respond(['message' => $message, 'data' => $id], ResponseInterface::HTTP_OK);
         } catch (Exception $th) {
             log_message("error", $th->getMessage());
             return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
@@ -544,20 +575,20 @@ class CpdController extends ResourceController
             $param = $this->request->getVar('param');
             $sortBy = $this->request->getVar('sortBy') ?? "id";
             $sortOrder = $this->request->getVar('sortOrder') ?? "asc";
-            $cpdId = $this->request->getVar('cpd_id') ?? null;
+            $cpdId = $this->request->getVar('cpdUuid') ?? null;
             $licenseNumber = $this->request->getVar('license_number') ?? null;
 
 
-            $model = new CpdModel();
+            $model = new CpdAttendanceModel();
 
 
             $builder = $param ? $model->search($param) : $model->builder();
             $builder = $model->addCustomFields($builder);
             if ($cpdId) {
-                $builder->where("cpd_id", $cpdId);
+                $builder->where("cpd_uuid", $cpdId);
             }
             if ($licenseNumber) {
-                $builder->where("license_number", $licenseNumber);
+                $builder->where("{$model->table}.license_number", $licenseNumber);
             }
 
             $tableName = $model->table;
@@ -572,6 +603,33 @@ class CpdController extends ResourceController
             return $this->respond([
                 'data' => $result,
                 'total' => $total,
+                'displayColumns' => $model->getDisplayColumns(),
+                'columnFilters' => $model->getDisplayColumnFilters()
+            ], ResponseInterface::HTTP_OK);
+        } catch (\Throwable $th) {
+            log_message("error", $th->getMessage());
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+    }
+
+    public function getLicenseCpdAttendances()
+    {
+        try {
+
+            $model = new CpdAttendanceModel();
+            $licenseNumber = $this->request->getVar('license_number');
+            if (empty($licenseNumber)) {
+                return $this->respond(['message' => "License number is required"], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+            $year = $this->request->getVar('year');
+            if (empty($year)) {
+                return $this->respond(['message' => "Year is required"], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+
+            $result = CpdUtils::getCPDAttendanceAndScores($licenseNumber, $year);
+            return $this->respond([
+                'data' => $result,
+                'total' => count($result['attendance']),
                 'displayColumns' => $model->getDisplayColumns(),
                 'columnFilters' => $model->getDisplayColumnFilters()
             ], ResponseInterface::HTTP_OK);

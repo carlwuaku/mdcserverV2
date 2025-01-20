@@ -7,16 +7,6 @@ use CodeIgniter\Database\Migration;
 class CpdAttendance extends Migration
 {
     public function up()
-    /**
-     * CREATE TABLE `bf_cpd_attendance` (
-  `lic_num` varchar(50) NOT NULL,
-  `cpd_id` int(11) NOT NULL,
-  `id` int(9) NOT NULL,
-  `attendance_date` date DEFAULT '0000-00-00',
-  `cpd_session_id` int(11) DEFAULT NULL,
-  `venue` varchar(255) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
-     */
     {
         $this->forge->addField('id');
         $this->forge->addField([
