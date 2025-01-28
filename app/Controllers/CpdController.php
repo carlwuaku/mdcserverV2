@@ -13,6 +13,7 @@ use \Exception;
 use App\Helpers\Utils;
 class CpdController extends ResourceController
 {
+
     public function createCpd()
     {
         try {

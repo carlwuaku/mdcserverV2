@@ -130,6 +130,9 @@ class TemplateEngine
 
     /**
      * Main template processing method
+     * @param string $template
+     * @param array|object $data
+     * @return string
      */
     public function process(string $template, array|object $data): string
     {
