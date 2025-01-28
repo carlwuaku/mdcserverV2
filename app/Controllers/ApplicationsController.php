@@ -264,7 +264,90 @@ class ApplicationsController extends ResourceController
     {
         $model = new ApplicationsModel();
         $formTypes = $model->getDistinctValuesAsKeyValuePairs($field);
-        return $this->respond(['data' => $formTypes], ResponseInterface::HTTP_OK);
+        $applicationTemplateModel = new ApplicationTemplateModel();
+        $templates = $applicationTemplateModel->builder()->select(['form_name'])->distinct()->get()->getResult();
+        //for each formTypes, check if it is in the templates
+        foreach ($formTypes as $formType) {
+            if (!in_array($formType['key'], array_column($templates, 'form_name'))) {
+                $templates[] = (object) ['form_name' => $formType['key']];
+            }
+        }
+        return $this->respond(['data' => $templates], ResponseInterface::HTTP_OK);
+    }
+
+    public function getApplicationStatuses($form)
+    {
+
+        if (empty(trim($form))) {
+            return $this->respond(['message' => "Please provide a form type", 'displayColumns' => ["form_type", "status", "count"]], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+
+
+        $model = new ApplicationsModel();
+        $builder = $model->builder();
+        $builder->select(["form_type", "status", "count(*) as count"]);
+        $builder->where("form_type", $form);
+        $builder->groupBy(["form_type", "status"]);
+        $statuses = $builder->get()->getResultArray();
+
+        //make the statuses an associative array with the status as the key
+        $statusesArray = array_column($statuses, null, 'status');
+
+
+        //if a form type is provided, get all its stages and add them to the statuses
+
+        $applicationTemplateModel = new ApplicationTemplateModel();
+        /**
+         * @var object|null $template
+         */
+        $template = $applicationTemplateModel->builder()->select(['form_name', 'stages', 'initialStage', 'finalStage'])->where('form_name', $form)->get()->getFirstRow();
+
+        /**
+         * @var array{id: int, name:string, description:string, allowedTransitions: array} $stages
+         */
+        if (!$template) {
+            $data = $statuses;
+        } else {
+            $stages = json_decode($template->stages, true);
+            //TODO: are we using the names or ids of the stages to save application status?
+            $stagesArray = array_column($stages, null, 'name');
+            $initialStage = $template->initialStage;
+            $finalStage = $template->finalStage;
+            //get the count of each stage from the statuses
+
+            foreach ($stagesArray as $stage => $stageData) {
+                if (!array_key_exists($stage, $statusesArray)) {
+                    $statusesArray[$stage] = [
+                        "form_type" => $template->form_name,
+                        "status" => $stage,
+                        "count" => 0
+                    ];
+                }
+            }
+
+            //move the initial and final stages to the beginning and end of the array
+            $initialStageData = null;
+            $finalStageData = null;
+            if (array_key_exists($initialStage, $statusesArray)) {
+                $initialStageData = $statusesArray[$initialStage];
+                unset($statusesArray[$initialStage]);
+            }
+            if (array_key_exists($finalStage, $statusesArray)) {
+                $finalStageData = $statusesArray[$finalStage];
+                unset($statusesArray[$finalStage]);
+            }
+            $data = [];
+            if ($initialStageData) {
+                $data[] = $initialStageData;
+            }
+            $data = array_merge($data, array_values($statusesArray));
+
+
+            if ($finalStageData) {
+                $data[] = $finalStageData;
+            }
+        }
+        return $this->respond(['data' => $data, 'displayColumns' => ["form_type", "status", "count"]], ResponseInterface::HTTP_OK);
     }
 
     public function countApplications()
@@ -763,6 +846,9 @@ class ApplicationsController extends ResourceController
                 "data" => "required",
                 "open_date" => "permit_empty|valid_date",
                 'close_date' => "permit_empty|valid_date",
+                'stages' => "required|valid_json",
+                'initial_stage' => "required",
+                'final_stage' => "required",
 
             ];
 
@@ -793,6 +879,10 @@ class ApplicationsController extends ResourceController
         try {
             $rules = [
                 "id" => "required",
+                "data" => "permit_empty|valid_json",
+                "open_date" => "permit_empty|valid_date",
+                'close_date' => "permit_empty|valid_date",
+                'stages' => "required|valid_json"
             ];
 
             if (!$this->validate($rules)) {

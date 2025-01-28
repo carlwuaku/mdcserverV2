@@ -17,23 +17,33 @@ class AssetController extends ResourceController
      */
     public function upload(string $type)
     {
-
+        $allowedTypes = [
+            'practitioners_images',
+            'documents',
+            'applications'
+        ];
+        if (!in_array($type, $allowedTypes)) {
+            return $this->respond(['message' => "Invalid file type"], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+        $mimes = "image/jpg,image/jpeg,image/gif,image/png,image/webp,image/svg+xml,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+        if ($type === "practitioners_images") {
+            $mimes = "image/jpg,image/jpeg,image/png";
+        }
         $validationRule = [
             'uploadFile' => [
                 'label' => 'Uploaded File',
                 'rules' => [
                     // 'uploaded[uploadFile]',
-                    'mime_in[uploadFile,image/jpg,image/jpeg,image/gif,image/png,image/webp,image/svg+xml,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet]',
-                    'max_size[uploadFile,5000]',
+                    "mime_in[uploadFile,$mimes]",
+                    "max_size[uploadFile,5000]",
                     // 'max_dims[uploadFile,1024,768]',
                 ],
             ],
         ];
         if (!$this->validate($validationRule)) {
-            return $this->respond(
-                $this->validator->getErrors(),
-                ResponseInterface::HTTP_BAD_REQUEST
-            );
+            $message = implode(" ", array_values($this->validator->getErrors()));
+            return $this->respond(['message' => $message], ResponseInterface::HTTP_BAD_REQUEST);
+
         }
 
         $img = $this->request->getFile('uploadFile');

@@ -8,14 +8,10 @@ use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 
 use App\Models\ActivitiesModel;
-use App\Models\Practitioners\PractitionerAdditionalQualificationsModel;
-use App\Models\Practitioners\PractitionerRenewalModel;
-use App\Models\Practitioners\PractitionerWorkHistoryModel;
 
 use App\Models\Licenses\LicensesModel;
 use App\Helpers\Utils;
 use \Exception;
-use SimpleSoftwareIO\QrCode\Generator;
 class LicensesController extends ResourceController
 {
     private $licenseUtils;
@@ -104,6 +100,7 @@ class LicensesController extends ResourceController
             $changes = implode(", ", Utils::compareObjects($oldData, $data));
 
             $licenseUpdateData = $model->createArrayFromAllowedFields((array) $data);
+            log_message("info", "License update data: " . print_r($licenseUpdateData, true));
             $model->db->transException(true)->transStart();
             $model->builder()->where(['uuid' => $uuid])->update($licenseUpdateData);
             $model->createOrUpdateLicenseDetails($type, $data);
@@ -208,19 +205,23 @@ class LicensesController extends ResourceController
             $param = $this->request->getVar('param');
             $sortBy = $this->request->getVar('sortBy') ?? "id";
             $sortOrder = $this->request->getVar('sortOrder') ?? "asc";
-
+            $licenseType = $this->request->getVar('licenseType') ?? null;
             $model = new LicensesModel();
             /** if set, use this year for checking whether the license is in goodstanding */
             $renewalDate = $this->request->getVar('renewalDate');
             if ($renewalDate) {
                 $model->renewalDate = date("Y-m-d", strtotime($renewalDate));
             }
-            $model->joinSearchFields = [
-                "facilities" => [
-                    "fields" => ["name", "town", "suburb", "business_type"],
-                    "joinCondition" => "licenses.license_number = facilities.license_number"
-                ]
-            ];
+            if ($licenseType) {
+                $model->licenseType = $licenseType;
+                try {
+                    $searchFields = Utils::getLicenseSearchFields($licenseType);
+                    $searchFields['table'] = Utils::getLicenseTable($licenseType);
+                    $model->joinSearchFields = $searchFields;
+                } catch (\Throwable $th) {
+                    log_message("error", $th->getMessage());
+                }
+            }
             $builder = $param ? $model->search($param) : $model->builder();
             $builder = $model->addCustomFields($builder);
             if ($renewalDate) {
@@ -230,6 +231,11 @@ class LicensesController extends ResourceController
             }
             $tableName = $model->getTableName();
             $builder->orderBy("$tableName.$sortBy", $sortOrder);
+            if ($licenseType) {
+                $builder->where("$tableName.type", $licenseType);
+                $addJoin = $param ? false : true;
+                $builder = $model->addLicenseDetails($builder, $licenseType, $addJoin);
+            }
 
             if ($withDeleted) {
                 $model->withDeleted();
@@ -552,7 +558,6 @@ class LicensesController extends ResourceController
             }
             $per_page = $this->request->getVar('limit') ? (int) $this->request->getVar('limit') : 100;
             $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
-            $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted') === "yes";
             $param = $this->request->getVar('param');
             $sortBy = $this->request->getVar('sortBy') ?? "id";
             $sortOrder = $this->request->getVar('sortOrder') ?? "asc";
@@ -595,8 +600,8 @@ class LicensesController extends ResourceController
             if ($created_on !== null) {
                 $builder->where('date(created_on)  = ', $created_on);
             }
-            if ($withDeleted) {
-                $model->withDeleted();
+            if (empty($license_type)) {
+                return $this->respond(['message' => "License type is required"], ResponseInterface::HTTP_BAD_REQUEST);
             }
             //get the license details and the subdetails
             $builder = $model->addLicenseDetails($builder, $license_type);

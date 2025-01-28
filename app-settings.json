@@ -26,37 +26,43 @@
             "children": [
                 {
                     "title": "Dashboard/Search",
-                    "url": "/cpd_dashboard",
+                    "url": "/cpd",
                     "icon": "",
                     "children": []
                 },
                 {
                     "title": "Add New CPD",
-                    "url": "/add_cpd",
+                    "url": "/cpd/add",
                     "icon": "",
                     "children": []
                 },
                 {
                     "title": "View CPD Topics",
-                    "url": "/list_cpd",
+                    "url": "/cpd/list_cpd",
                     "icon": "",
                     "children": []
                 },
                 {
                     "title": "CDP Organizers",
-                    "url": "/list_cpd_facilities",
+                    "url": "/cpd/providers",
                     "icon": "",
                     "children": []
                 },
                 {
                     "title": "CPD Report",
-                    "url": "/cpd_attendance_report",
+                    "url": "/cpd/cpd_attendance_report",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "CDP Exemptions",
+                    "url": "/cpd/exemptions",
                     "icon": "",
                     "children": []
                 },
                 {
                     "title": "CDP Online",
-                    "url": "/cpd_online_providers",
+                    "url": "/cpd/cpd_online_providers",
                     "icon": "",
                     "children": []
                 },
@@ -81,6 +87,12 @@
                     "children": []
                 },
                 {
+                    "title": "Select Applications",
+                    "url": "/applications/application-types",
+                    "icon": "",
+                    "children": []
+                },
+                {
                     "title": "Manage Templates",
                     "url": "/application-templates",
                     "icon": "",
@@ -101,28 +113,28 @@
             "icon": "person_outlined",
             "children": [
                 {
-                    "title": "View/Search Facilities",
-                    "url": "/licenses/facilities",
+                    "title": "View/Search Licenses",
+                    "url": "/licenses/list",
                     "icon": "",
                     "children": []
                 },
                 {
                     "title": "Add New Licenses",
-                    "url": "/licenses/form/create/facilities",
+                    "url": "/licenses/form/create",
                     "icon": "",
                     "children": []
                 }
             ]
         },
         {
-            "title": "Facilities Renewal",
+            "title": "License Renewal",
             "active_children": false,
             "url": "",
             "icon": "list_alt",
             "children": [
                 {
                     "title": "Dashboard",
-                    "url": "/licenses/renewals/facilities",
+                    "url": "/licenses/renewal-dashboard",
                     "icon": "",
                     "children": []
                 },
@@ -134,51 +146,19 @@
                 },
                 {
                     "title": "Manage Renewals",
-                    "url": "/licenses/renewals/facilities",
+                    "url": "/licenses/renewals",
                     "icon": "",
                     "children": []
                 },
                 {
                     "title": "Renewal History",
-                    "url": "/licenses/renewals/facilities",
+                    "url": "/licenses/renewals",
                     "icon": "",
                     "children": []
                 },
                 {
                     "title": "Print Renewals",
-                    "url": "/licenses/renewals/facilities",
-                    "icon": "",
-                    "children": []
-                }
-            ]
-        },
-        {
-            "title": "Practitioners",
-            "active_children": false,
-            "url": "",
-            "icon": "person_outlined",
-            "children": [
-                {
-                    "title": "Dashboard/Search",
-                    "url": "/practitioners",
-                    "icon": "",
-                    "children": []
-                },
-                {
-                    "title": "Add New Practitioner/Search",
-                    "url": "/practitioners/practitioner-form",
-                    "icon": "",
-                    "children": []
-                },
-                {
-                    "title": "Start Renewal",
-                    "url": "/practitioners/renewal-form",
-                    "icon": "",
-                    "children": []
-                },
-                {
-                    "title": "Renewal History",
-                    "url": "/practitioners/renewals",
+                    "url": "/licenses/renewals",
                     "icon": "",
                     "children": []
                 }
@@ -243,12 +223,6 @@
                 {
                     "title": "System Settings",
                     "url": "/settings",
-                    "icon": "",
-                    "children": []
-                },
-                {
-                    "title": "Flags",
-                    "url": "/admin/flags",
                     "icon": "",
                     "children": []
                 },
@@ -552,7 +526,448 @@
                     "label": "Status",
                     "key": "status"
                 }
-            ]
+            ],
+            "searchFields": {
+                "fields": [
+                    "name",
+                    "town",
+                    "suburb",
+                    "business_type"
+                ],
+                "joinCondition": "licenses.license_number = facilities.license_number"
+            }
+        },
+        "practitioners": {
+            "table": "practitioners",
+            "fields": [
+                {
+                    "label": "License number",
+                    "name": "license_number",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": true
+                },
+                {
+                    "label": "First name",
+                    "name": "first_name",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": true
+                },
+                {
+                    "label": "Middle name",
+                    "name": "middle_name",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": false
+                },
+                {
+                    "label": "Last name",
+                    "name": "last_name",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": true
+                },
+                {
+                    "label": "Date of birth",
+                    "name": "date_of_birth",
+                    "hint": "",
+                    "options": [],
+                    "type": "date",
+                    "value": "",
+                    "required": true
+                },
+                {
+                    "label": "Sex",
+                    "name": "sex",
+                    "hint": "",
+                    "options": [
+                        {
+                            "key": "Male",
+                            "value": "Male"
+                        },
+                        {
+                            "key": "Female",
+                            "value": "Female"
+                        }
+                    ],
+                    "type": "select",
+                    "value": "",
+                    "required": true
+                },
+                {
+                    "label": "Title",
+                    "name": "title",
+                    "hint": "",
+                    "options": [
+                        {
+                            "key": "Dr",
+                            "value": "Dr"
+                        },
+                        {
+                            "key": "Mr",
+                            "value": "Mr"
+                        },
+                        {
+                            "key": "Mrs",
+                            "value": "Mrs"
+                        },
+                        {
+                            "key": "Miss",
+                            "value": "Miss"
+                        }
+                    ],
+                    "type": "text",
+                    "value": "",
+                    "required": true
+                },
+                {
+                    "label": "Maiden name",
+                    "name": "maiden_name",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": false
+                },
+                {
+                    "label": "Marital status",
+                    "name": "marital_status",
+                    "hint": "",
+                    "options": [
+                        {
+                            "key": "Single",
+                            "value": "Single"
+                        },
+                        {
+                            "key": "Married",
+                            "value": "Married"
+                        },
+                        {
+                            "key": "Divorced",
+                            "value": "Divorced"
+                        },
+                        {
+                            "key": "Widowed",
+                            "value": "Widowed"
+                        }
+                    ],
+                    "type": "select",
+                    "value": "",
+                    "required": false
+                },
+                {
+                    "label": "Natonality",
+                    "name": "nationality",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": false
+                },
+                {
+                    "label": "Training institution",
+                    "name": "training_institution",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": false
+                },
+                {
+                    "label": "Qualification date",
+                    "name": "qualification_date",
+                    "hint": "",
+                    "options": [],
+                    "type": "date",
+                    "value": "",
+                    "required": false
+                },
+                {
+                    "label": "Place of Work",
+                    "name": "place_of_work",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": false,
+                    "api_url": "",
+                    "apiKeyProperty": "",
+                    "apiLabelProperty": ""
+                },
+                {
+                    "label": "Institution Type",
+                    "name": "institution_type",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/settings/Doctors.work_institution_types",
+                    "apiKeyProperty": "name",
+                    "apiLabelProperty": "name",
+                    "apiType": "datalist"
+                }
+            ],
+            "onCreateValidation": {
+                "name": "required",
+                "business_type": "required",
+                "suburb": "required",
+                "house_number": "required",
+                "region": "required",
+                "district": "required"
+            },
+            "onUpdateValidation": {},
+            "renewalFields": [
+                {
+                    "label": "Place of Work",
+                    "name": "place_of_work",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": false,
+                    "api_url": "",
+                    "apiKeyProperty": "",
+                    "apiLabelProperty": ""
+                },
+                {
+                    "label": "Institution Type",
+                    "name": "institution_type",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/settings/Doctors.work_institution_types",
+                    "apiKeyProperty": "name",
+                    "apiLabelProperty": "name",
+                    "apiType": "datalist"
+                },
+                {
+                    "label": "Region",
+                    "name": "region",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "regions/regions",
+                    "apiKeyProperty": "name",
+                    "apiLabelProperty": "name",
+                    "apiType": "select"
+                },
+                {
+                    "label": "District",
+                    "name": "district",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "regions/districts",
+                    "apiKeyProperty": "district",
+                    "apiLabelProperty": "district",
+                    "apiType": "select"
+                },
+                {
+                    "label": "Specialty",
+                    "name": "specialty",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "specialties/specialties",
+                    "apiKeyProperty": "name",
+                    "apiLabelProperty": "name",
+                    "apiType": "select",
+                    "onChange": ""
+                },
+                {
+                    "label": "Subspecialty",
+                    "name": "subspecialty",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "specialties/subspecialties",
+                    "apiKeyProperty": "subspecialty",
+                    "apiLabelProperty": "subspecialty",
+                    "apiType": "select"
+                }
+            ],
+            "renewalTable": "practitioners_renewal",
+            "renewalStages": {
+                "Pending Payment": {
+                    "label": "Pending Payment",
+                    "next": "Pending Approval",
+                    "fields": [
+                        {
+                            "label": "Renewal Date",
+                            "name": "renewal_date",
+                            "hint": "",
+                            "options": [],
+                            "type": "date",
+                            "value": "",
+                            "required": true
+                        },
+                        {
+                            "label": "Renewal Fee",
+                            "name": "renewal_fee",
+                            "hint": "",
+                            "options": [],
+                            "type": "text",
+                            "value": "",
+                            "required": true
+                        }
+                    ],
+                    "canViewPermissions": [],
+                    "canEditPermissions": [],
+                    "canDeletePermissions": [],
+                    "canApprovePermissions": [],
+                    "printable": false,
+                    "title": "Pending Payment",
+                    "active_children": false,
+                    "url": "/licenses/renewal",
+                    "urlParams": {
+                        "license_type": "practitioners",
+                        "status": "Pending Payment"
+                    },
+                    "icon": "list_alt",
+                    "children": [],
+                    "description": "View/Print approved applications",
+                    "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Pending Payment",
+                    "apiCountText": "Renewals"
+                },
+                "Pending Approval": {
+                    "next": "Approved",
+                    "fields": [
+                        {
+                            "label": "Renewal Date",
+                            "name": "renewal_date",
+                            "hint": "",
+                            "options": [],
+                            "type": "date",
+                            "value": "",
+                            "required": true
+                        },
+                        {
+                            "label": "Renewal Fee",
+                            "name": "renewal_fee",
+                            "hint": "",
+                            "options": [],
+                            "type": "text",
+                            "value": "",
+                            "required": true
+                        }
+                    ],
+                    "canViewPermissions": [],
+                    "canEditPermissions": [],
+                    "canDeletePermissions": [],
+                    "canApprovePermissions": [],
+                    "printable": false,
+                    "title": "Pending Approval",
+                    "active_children": false,
+                    "url": "/licenses/renewal",
+                    "urlParams": {
+                        "license_type": "practitioners",
+                        "status": "Pending Approval"
+                    },
+                    "icon": "list_alt",
+                    "children": [],
+                    "description": "Manage submitted applications",
+                    "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Pending Approval",
+                    "apiCountText": "Renewals"
+                },
+                "Approved": {
+                    "label": "Approved",
+                    "next": "",
+                    "fields": [
+                        {
+                            "label": "Renewal Date",
+                            "name": "renewal_date",
+                            "hint": "",
+                            "options": [],
+                            "type": "date",
+                            "value": "",
+                            "required": true
+                        },
+                        {
+                            "label": "Renewal Fee",
+                            "name": "renewal_fee",
+                            "hint": "",
+                            "options": [],
+                            "type": "text",
+                            "value": "",
+                            "required": true
+                        }
+                    ],
+                    "canViewPermissions": [],
+                    "canEditPermissions": [],
+                    "canDeletePermissions": [],
+                    "canApprovePermissions": [],
+                    "printable": false,
+                    "title": "Approved",
+                    "active_children": false,
+                    "url": "/licenses/renewal",
+                    "urlParams": {
+                        "license_type": "practitioners",
+                        "status": "Approved"
+                    },
+                    "icon": "list_alt",
+                    "children": [],
+                    "description": "View/Print approved applications",
+                    "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Approved",
+                    "apiCountText": "Renewals"
+                }
+            },
+            "fieldsToUpdateOnRenewal": [],
+            "detailsPageHeaderTabs": [
+                {
+                    "label": "Register Type",
+                    "key": "register_type"
+                },
+                {
+                    "label": "Practitioner Type",
+                    "key": "practitioner_type"
+                },
+                {
+                    "label": "Category",
+                    "key": "category"
+                },
+                {
+                    "label": "In Good Standing",
+                    "key": "in_good_standing"
+                },
+                {
+                    "label": "Specialty",
+                    "key": "specialty"
+                },
+                {
+                    "label": "Status",
+                    "key": "status"
+                }
+            ],
+            "searchFields": {
+                "fields": [
+                    "first_name",
+                    "last_name",
+                    "middle_name",
+                    "maiden_name",
+                    "provisional_number"
+                ],
+                "joinCondition": "licenses.license_number = practitioners.license_number"
+            }
         }
     },
     "dashboardMenu": [
@@ -580,7 +995,7 @@
             "icon": "person_outlined",
             "children": [],
             "description": "Manage License Renewals",
-            "apiCountUrl": "practitioners/renewal-count?status=Pending Approval",
+            "apiCountUrl": "licenses/renewal-count?status=Pending Approval",
             "apiCountText": "Pending Approval"
         },
         {
@@ -612,8 +1027,13 @@
     ],
     "searchTypes": [
         {
-            "label": "All Facilities",
+            "label": "Facilities",
             "key": "facilities",
+            "url": "licenses/details"
+        },
+        {
+            "label": "Practitioners",
+            "key": "practitioners",
             "url": "licenses/details"
         }
     ]

@@ -30,6 +30,9 @@ class ApplicationTemplateModel extends MyBaseModel implements TableDisplayInterf
         'on_deny_email_template',
         'approve_url',
         'deny_url',
+        'stages',
+        'initialStage',
+        'finalStage',
         'created_on',
         'updated_at',
         'deleted_at',
@@ -79,7 +82,6 @@ class ApplicationTemplateModel extends MyBaseModel implements TableDisplayInterf
         //return the $allowedFields without the uuid, created_on, updated_at, deleted_at
         return [
             'form_name',
-
             'open_date',
             'close_date',
             'on_submit_email',
@@ -88,6 +90,8 @@ class ApplicationTemplateModel extends MyBaseModel implements TableDisplayInterf
             'on_deny_email_template',
             'approve_url',
             'deny_url',
+            'initialStage',
+            'finalStage',
             'created_on',
             'updated_at',
             'deleted_at',

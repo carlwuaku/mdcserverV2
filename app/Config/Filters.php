@@ -85,7 +85,8 @@ class Filters extends BaseConfig
                 'email/*',
                 'applications/*',
                 'activities/*',
-                'licenses/*'
+                'licenses/*',
+                'cpd/*'
             ],
             'after' => [
                 'api/*',
@@ -97,7 +98,8 @@ class Filters extends BaseConfig
                 'email/*',
                 'applications/*',
                 'activities/*',
-                'licenses/*'
+                'licenses/*',
+                'cpd/*'
             ]
         ],
     ];

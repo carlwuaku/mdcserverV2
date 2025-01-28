@@ -32,16 +32,16 @@ class AuthFilter implements FilterInterface
     {
         helper("auth");
         $response = service('response');
-        if(!auth("tokens")->loggedIn()){            
-         $response->setStatusCode(401)->setBody('you are not logged in')->send();
-        exit();
+        if (!auth("tokens")->loggedIn()) {
+            return $response->setStatusCode(401)->setJSON(["message" => 'you are not logged in']);
+
         }
-        if($arguments){
+        if ($arguments) {
             //the arguments would be permissions the user needs to have
             log_message("info", $arguments);
             $rpModel = new RolePermissionsModel();
-            if(!$rpModel->hasPermission(auth()->getUser()->role_id, $arguments)){
-                return $response->setStatusCode(401)->setBody('{"message": "you are not permitted to perform this action"}');
+            if (!$rpModel->hasPermission(auth()->getUser()->role_id, $arguments)) {
+                return $response->setStatusCode(401)->setJSON(["message" => "you are not permitted to perform this action"]);
             }
         }
     }
