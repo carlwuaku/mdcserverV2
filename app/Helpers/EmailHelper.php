@@ -32,21 +32,20 @@ class EmailHelper
         $sendSmtpEmail = new \Brevo\Client\Model\SendSmtpEmail([
             'subject' => $emailConfig->subject,
             'sender' => ['name' => $emailConfig->senderName, 'email' => $emailConfig->sender],
-            'replyTo' => ['name' => 'Sendinblue', 'email' => 'contact@sendinblue.com'],
-            'to' => [['name' => 'Max Mustermann', 'email' => 'wuakuc@gmail.com']],
-            'htmlContent' => '<html><body><h1>This is a transactional email {{params.bodyMessage}}</h1></body></html>',
-            'params' => ['bodyMessage' => 'made just for you!']
+            'replyTo' => ['name' => $emailConfig->senderName, 'email' => $emailConfig->sender],
+            'to' => [['name' => null, 'email' => $emailConfig->to]],
+            'htmlContent' => "<html><body>{$emailConfig->content}</body></html>"
         ]); // \Brevo\Client\Model\SendSmtpEmail | Values to send a transactional email
 
         try {
             $result = $apiInstance->sendTransacEmail($sendSmtpEmail);
-            print_r($result);
+            log_message('info', $result);
         } catch (Exception $e) {
             echo 'Exception when calling TransactionalEmailsApi->sendTransacEmail: ', $e->getMessage(), PHP_EOL;
         }
     }
 
-    public static function sendEmail(EmailConfig $emailConfig)
+    public static function sendSmtpEmail(EmailConfig $emailConfig)
     {
         $appSettings = json_decode(file_get_contents(ROOTPATH . 'app-settings.json'), true);
 
@@ -99,6 +98,20 @@ class EmailHelper
         } catch (Exception $e) {
             log_message('error', 'Email not sent');
             log_message('error', $e->getMessage());
+        }
+    }
+
+    public static function sendEmail(EmailConfig $emailConfig)
+    {
+        $apiKey = getenv('EMAIL_METHOD');
+        switch ($apiKey) {
+            case 'brevo':
+                self::sendBrevoEmail($emailConfig);
+                break;
+
+            default:
+                self::sendSmtpEmail($emailConfig);
+                break;
         }
     }
 }

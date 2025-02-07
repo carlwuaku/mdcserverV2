@@ -15,6 +15,7 @@ use \Exception;
 use App\Helpers\EmailHelper;
 use App\Helpers\EmailConfig;
 use App\Models\Practitioners\PractitionerRenewalModel;
+use App\Helpers\ApplicationFormActionHelper;
 
 class ApplicationsController extends ResourceController
 {
@@ -53,23 +54,61 @@ class ApplicationsController extends ResourceController
     {
         try {
             //in case of a new application, the payload is what goes into the form_data field
-            //all the other fields, first_ame, etc are generated from the form_data
+            //all the other fields, first_name, etc are generated from the form_data
             $data = $this->createFormMetaFromPayload((array) $this->request->getPost(), $form_type);
-            $data['application_code'] = Utils::generateApplicationCode($form_type);
-            $data['status'] = "Pending approval";
+            $applicationCode = $data['application_code'] = Utils::generateApplicationCode($form_type);
+            //get the form actions and initial stage
+            $applicationTemplateModel = new ApplicationTemplateModel();
+            $template = $applicationTemplateModel->builder()->select(['form_name', 'stages', 'initialStage', 'finalStage'])->where('form_name', $form_type)->get()->getFirstRow();
+            if (!$template) {
+                throw new Exception("Form template not found");
+            }
+            if (empty($template->initialStage)) {
+                //set the status to Pending approval
+                $data['status'] = "Pending approval";
+            } else {
+                $data['status'] = $template->initialStage;
+            }
+
+            log_message('info', $template->initialStage);
+
+            $stages = json_decode($template->stages, true);
+            if (!empty($stages)) {
+                //find the one with the id of the initial stage
+                try {
+                    /**
+                     * @var array {"id":string,"name":string,"description":string,"allowedTransitions":array,"actions":array{"type":string,"config":object{"template":string,"subject":string,"endpoint":string,"method":string,"recipient_field":string}}} $initialStage
+                     */
+                    $initialStage = array_filter($stages, function ($stage) use ($template) {
+                        return $stage['id'] == $template->initialStage;
+                    });
+                    if (empty($initialStage)) {
+                        throw new Exception("Initial stage not found");
+                    }
+                    $initialStage = array_values($initialStage)[0];
+                    //run the actions for the initial stage
+                    foreach ($initialStage['actions'] as $action) {
+                        ApplicationFormActionHelper::runAction($action, $data);
+                    }
+
+                } catch (\Throwable $th) {
+                    log_message('error', $th->getMessage());
+                }
+            }
+
+
 
             $model = new ApplicationsModel();
-            $model->insert((object) $data);
-            $id = $model->getInsertID();
+            $model->insert(row: (object) $data);
             /** @var ActivitiesModel $activitiesModel */
             $activitiesModel = new ActivitiesModel();
 
-            $activitiesModel->logActivity("Created application {$data['form_type']} for {$data['first_name']} {$data['last_name']}");
+            $activitiesModel->logActivity("Created application {$data['form_type']} with code $applicationCode");
             //if registered this year, retain the person
-            return $this->respond(['message' => 'Application created successfully', 'data' => null], ResponseInterface::HTTP_OK);
+            return $this->respond(['message' => 'Application created successfully', 'data' => ['applicationCode' => $applicationCode]], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
             log_message('error', $th->getMessage());
-            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->respond(['message' => $th->getMessage()], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
 
