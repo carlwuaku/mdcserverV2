@@ -9,6 +9,15 @@ use App\Helpers\Interfaces\TableDisplayInterface;
 class UsersModel extends UserModel implements TableDisplayInterface
 {
     public $tableName = "users";
+    public $role_name;
+    public $regionId;
+    public $position;
+    public $picture;
+    public $phone;
+    public $email;
+
+    public $status;
+    public $username;
 
     public function getDisplayColumns(): array
     {
@@ -40,7 +49,7 @@ class UsersModel extends UserModel implements TableDisplayInterface
         'active',
         'last_active',
         'deleted_at',
-        'role_id',
+        'role_name',
         'regionId',
         'position',
         'picture',
@@ -74,7 +83,8 @@ class UsersModel extends UserModel implements TableDisplayInterface
         ];
     }
 
-    public function getDisplayColumnFilters(): array{
+    public function getDisplayColumnFilters(): array
+    {
         return [];
     }
 
