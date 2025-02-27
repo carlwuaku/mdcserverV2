@@ -1,6 +1,6 @@
 <?php
 namespace App\Helpers;
-class TemplateEngine
+class TemplateEngineHelper
 {
     /**
      * Patterns to match common date field names

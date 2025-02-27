@@ -171,20 +171,20 @@
             "icon": "mail",
             "children": [
                 {
-                    "title": "Send Email",
-                    "url": "/send_mail",
+                    "title": "Dashboard",
+                    "url": "/messaging",
                     "icon": "",
                     "children": []
                 },
                 {
-                    "title": "Send SMS",
-                    "url": "/send_sms",
+                    "title": "Send Email",
+                    "url": "/messaging/send_email",
                     "icon": "",
                     "children": []
                 },
                 {
                     "title": "Email Queue",
-                    "url": "/email_queue",
+                    "url": "/messaging/email_queue",
                     "icon": "",
                     "children": []
                 }

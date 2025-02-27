@@ -119,6 +119,11 @@ $routes->group("file-server", ["namespace" => "App\Controllers"], function (Rout
 
 $routes->group("email", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
     $routes->post("send", [EmailController::class, "send"], ["filter" => ["hasPermission:Send_Email"]]);
+    $routes->get("queue", [EmailController::class, "getQueue"], ["filter" => ["hasPermission:Send_Email"]]);
+    $routes->get("queue-count/(:segment)", [EmailController::class, "countQueue"], ["filter" => ["hasPermission:Send_Email"]]);
+    $routes->delete("queue", [EmailController::class, "deleteQueueItem/$1"], ["filter" => ["hasPermission:Send_Email"]]);
+    $routes->put("queue/retry", [EmailController::class, "retry"], ["filter" => ["hasPermission:Send_Email"]]);
+
 });
 
 $routes->group("applications", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
@@ -141,6 +146,9 @@ $routes->group("applications", ["namespace" => "App\Controllers", "filter" => "a
     $routes->put("details/(:segment)/(:segment)", [ApplicationsController::class, "finishApplication/$1/$2"], ["filter" => ["hasPermission:Update_Application_Form_Templates"]]);
     $routes->get("config/(:segment)/(:segment)", [ApplicationsController::class, "getApplicationConfig/$1/$2"], ["filter" => ["hasPermission:View_Application_Form_Templates"]]);
     $routes->get("config", [ApplicationsController::class, "getApplicationConfig"], ["filter" => ["hasPermission:View_Application_Form_Templates"]]);
+    $routes->get("status/(:segment)", [ApplicationsController::class, "getApplicationStatusTransitions"], ["filter" => ["hasPermission:View_Application_Form_Templates"]], );
+    $routes->put("status", [ApplicationsController::class, "updateApplicationStatus"], ["filter" => ["hasPermission:Update_Application_Forms"]]);
+
 });
 
 $routes->group("licenses", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {

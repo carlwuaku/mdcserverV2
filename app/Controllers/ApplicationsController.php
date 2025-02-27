@@ -16,10 +16,13 @@ use App\Helpers\EmailHelper;
 use App\Helpers\EmailConfig;
 use App\Models\Practitioners\PractitionerRenewalModel;
 use App\Helpers\ApplicationFormActionHelper;
+use App\Models\Applications\ApplicationTemplateStage;
+
+
 
 class ApplicationsController extends ResourceController
 {
-
+    private $primaryColumns = ['first_name', 'picture', 'last_name', 'middle_name', 'email', 'phone'];
     private function createFormMetaFromPayload(array $payload, string $form_type): array
     {
         try {
@@ -77,7 +80,7 @@ class ApplicationsController extends ResourceController
                 //find the one with the id of the initial stage
                 try {
                     /**
-                     * @var array {"id":string,"name":string,"description":string,"allowedTransitions":array,"actions":array{"type":string,"config":object{"template":string,"subject":string,"endpoint":string,"method":string,"recipient_field":string}}} $initialStage
+                     * @var ApplicationTemplateStage[]  $initialStage
                      */
                     $initialStage = array_filter($stages, function ($stage) use ($template) {
                         return $stage['id'] == $template->initialStage;
@@ -122,16 +125,24 @@ class ApplicationsController extends ResourceController
                 return $this->respond(['message' => 'Application not found'], ResponseInterface::HTTP_NOT_FOUND);
             }
 
+
             $form_type = $application['form_type'];
             $data = (object) ["form_data" => json_encode($this->request->getVar())];
             $data->uuid = $uuid;
             if (property_exists($data, "id")) {
                 unset($data->id);
             }
+            $formData = json_decode($data->form_data, true);
+            //the first_name, picture, last_name, middle_name, email, phone,  are generated from the form_data and saved in their own columns. update these if needed
+            foreach ($this->primaryColumns as $column) {
+                if (array_key_exists($column, $formData)) {
+                    $data->$column = $formData[$column];
+                }
+            }
             $oldData = $application;
             $changes = implode(", ", Utils::compareObjects($oldData, $data));
             log_message('info', print_r($data, true));
-            if (!$model->builder()->where(['uuid' => $uuid])->update($data)) {
+            if (!$model->builder()->where(key: ['uuid' => $uuid])->update($data)) {
                 return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
             }
             /** @var ActivitiesModel $activitiesModel */
@@ -142,6 +153,79 @@ class ApplicationsController extends ResourceController
         } catch (\Throwable $th) {
             log_message('error', $th->getMessage());
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+    }
+
+    public function updateApplicationStatus()
+    {
+        try {
+            $model = new ApplicationsModel();
+            $status = $this->request->getVar('status');
+            $applicationType = $this->request->getVar('form_type');
+            $applicationIds = $this->request->getVar('applicationIds');
+            if (!$applicationType) {
+                return $this->respond(['message' => "Please provide an application type"], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+            if (!$status) {
+                return $this->respond(['message' => "Please provide a status"], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+            if (!$applicationIds) {
+                return $this->respond(['message' => "Please provide applications to update"], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+            //get the application template details to get the stages
+            $applicationTemplateModel = new ApplicationTemplateModel();
+            $template = $applicationTemplateModel->builder()->select(['form_name', 'stages', 'initialStage', 'finalStage'])->where('form_name', $applicationType)->get()->getFirstRow();
+            if (!$template) {
+                return $this->respond(['message' => "Application template not found"], ResponseInterface::HTTP_NOT_FOUND);
+            }
+            $stages = json_decode($template->stages, true);
+            if (empty($stages)) {
+                return $this->respond(['message' => "Application stages not found"], ResponseInterface::HTTP_NOT_FOUND);
+            }
+
+            //get the stage matching the status
+            /**
+             * @var array {"id":string,"name":string,"description":string,"allowedTransitions":string[], "allowedUserRoles":string[],"actions":array{"type":string,"config":object{"template":string,"subject":string,"endpoint":string,"method":string,"recipient_field":string}}} 
+             */
+            $stage = current(array_filter($stages, function ($stage) use ($status) {
+                return $stage['name'] == $status;
+            }));
+            if (!$stage) {
+                return $this->respond(['message' => "Stage not found"], ResponseInterface::HTTP_NOT_FOUND);
+            }
+            log_message('info', print_r($stage, true));
+            $userObject = new \App\Models\UsersModel();
+            $userData = $userObject->findById(auth()->id());
+            if (!in_array($userData->role_name, $stage['allowedUserRoles'])) {
+                return $this->respond(['message' => "You are not allowed to update applications to this stage"], ResponseInterface::HTTP_FORBIDDEN);
+            }
+            $applications = $model->builder()->whereIn('uuid', $applicationIds)->get()->getResult('array');
+            $applicationCodesArray = [];
+            foreach ($applications as $application) {
+                $applicationCodesArray[] = $application['application_code'];
+                if (!empty($stage['actions'])) {
+                    foreach ($stage['actions'] as $action) {
+                        try {
+                            ApplicationFormActionHelper::runAction((object) $action, $application);
+                        } catch (\Throwable $th) {
+                            //possibly log the error for a retry
+                            log_message('error', $th->getMessage());
+                        }
+                    }
+                }
+            }
+            $model->builder()->whereIn('uuid', $applicationIds)->update(['status' => $status]);
+            $applicationCodes = implode(", ", $applicationCodesArray);
+
+
+            /** @var ActivitiesModel $activitiesModel */
+            $activitiesModel = new ActivitiesModel();
+            $activitiesModel->logActivity("Updated applications {$applicationCodes} status to $status. See the logs for more details");
+
+            return $this->respond(['message' => 'Applications updated successfully. See logs for more details'], ResponseInterface::HTTP_OK);
+        } catch (\Throwable $th) {
+            log_message('error', $th->getMessage());
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -211,6 +295,7 @@ class ApplicationsController extends ResourceController
 
     public function getApplications()
     {
+
         try {
             $per_page = $this->request->getVar('limit') ? (int) $this->request->getVar('limit') : 100;
             $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
@@ -256,41 +341,41 @@ class ApplicationsController extends ResourceController
             $total = $totalBuilder->countAllResults();
             $result = $builder->get($per_page, $page)->getResult();
             $final = [];
-            $displayColumns = [];//try to get the display columns from the form data if available. else fallback to models display columns
+            $displayColumns = $model->getDisplayColumns();
+            $excludedDisplayColumns = ['id', 'uuid'];
+            //try to get the display columns from the form data if available. 
+            /**
+             * @var string[]
+             */
+            $allFormColumns = [];//a unique list of columns from the form data
             foreach ($result as $value) {
                 //convert json string in form_data to json object
                 $form_data = json_decode($value->form_data, true);
-                $form_data['picture'] = $value->picture;
 
                 $form_data['uuid'] = $value->uuid;
                 $form_data['status'] = $value->status;
                 $form_data['created_on'] = $value->created_on;
                 $form_data['form_type'] = $value->form_type;
-                $form_data['practitioner_type'] = $value->practitioner_type;
-                if (empty($displayColumns)) {
-                    $displayColumns = array_keys($form_data);
-                    $primaryColumns = ['picture', 'practitioner_type', 'status', 'form_type', 'created_on'];
-                    foreach ($primaryColumns as $col) {
-                        if (array_key_exists($col, $form_data)) {
-                            //if the picture key exists, move it to the first position
-                            //move it to the first position
-                            $pictureIndex = array_search($col, $displayColumns);
-                            unset($displayColumns[$pictureIndex]);
-                            array_unshift($displayColumns, $col);
-                        }
-                    }
+                $form_data['application_code'] = $value->application_code;
 
+                $formColumns = array_keys($form_data);
+                foreach ($formColumns as $col) {
+                    if (
+                        !in_array($col, $allFormColumns) &&
+                        !in_array($col, $displayColumns) && !in_array($col, $excludedDisplayColumns)
+                    ) {
+                        $allFormColumns[] = $col;
+                    }
                 }
-                // $value = array_replace((array) $value, $form_data);
-                //convert json object in form_data to array
                 $final[] = $form_data;
             }
-
-
+            //insert the form columns into the display columns where we have the form_data column. if for some reason it's not there, add it to the end of the display columns
+            $formDataIndex = array_search('form_data', $displayColumns) ?? count($displayColumns);
+            array_splice($displayColumns, $formDataIndex, 1, $allFormColumns);
             return $this->respond([
                 'data' => $final,
                 'total' => $total,
-                'displayColumns' => $displayColumns ?? $model->getDisplayColumns(),
+                'displayColumns' => $displayColumns,
                 'columnFilters' => $model->getDisplayColumnFilters()
             ], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
@@ -967,5 +1052,29 @@ class ApplicationsController extends ResourceController
             log_message('error', $th->getMessage());
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    public function getApplicationStatusTransitions($form)
+    {
+        if (empty(trim($form))) {
+            return $this->respond(['message' => "Please provide a form type", 'displayColumns' => ["form_type", "status", "count"]], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+
+
+        $applicationTemplateModel = new ApplicationTemplateModel();
+        /**
+         * @var object|null $template
+         */
+        $template = $applicationTemplateModel->builder()->select(['form_name', 'stages', 'initialStage', 'finalStage'])->where('form_name', $form)->get()->getFirstRow();
+
+        /**
+         * @var array{id: int, name:string, description:string, allowedTransitions: array} $stages
+         */
+        if (!$template) {
+            return $this->respond(['message' => "The selected form is not configured properly", 'displayColumns' => []], ResponseInterface::HTTP_BAD_REQUEST);
+        } else {
+            $stages = json_decode($template->stages, true);
+        }
+        return $this->respond(['data' => $stages, 'displayColumns' => ["form_type", "status", "count"]], ResponseInterface::HTTP_OK);
     }
 }

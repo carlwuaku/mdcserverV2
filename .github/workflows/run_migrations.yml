@@ -1,0 +1,18 @@
+name: Post-deployment Check
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["Deploy via FTP"]
+    types:
+      - completed
+
+jobs:
+  call-migration-url:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - name: Call URL
+        run: |
+          response=$(curl -s https://licensing.druglanepms.com/api/migrate)
+          echo "Response from URL:"
+          echo "$response"

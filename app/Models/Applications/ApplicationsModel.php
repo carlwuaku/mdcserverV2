@@ -13,7 +13,7 @@ class ApplicationsModel extends MyBaseModel implements TableDisplayInterface
     protected $primaryKey = 'id';
     protected $useAutoIncrement = true;
     protected $returnType = 'array';
-    protected $useSoftDeletes = true;
+    protected $useSoftDeletes = false;
     protected $protectFields = true;
     protected $allowedFields = [
         'uuid',
@@ -76,7 +76,6 @@ class ApplicationsModel extends MyBaseModel implements TableDisplayInterface
     {
         return [
             'picture',
-            'practitioner_type',
             'status',
             'form_type',
             'first_name',
@@ -85,7 +84,7 @@ class ApplicationsModel extends MyBaseModel implements TableDisplayInterface
             'email',
             'phone',
             'application_code',
-            'form_data',
+            'form_data',//this is a placeholder. if there are form fields they will be displayed here
             'created_on',
             'deleted_at',
 
@@ -98,14 +97,14 @@ class ApplicationsModel extends MyBaseModel implements TableDisplayInterface
         ];
     }
 
-    
+
 
     public function getTableName(): string
     {
         return $this->table;
     }
 
-    
+
 
     public function getDisplayColumnFilters(): array
     {
@@ -167,7 +166,7 @@ class ApplicationsModel extends MyBaseModel implements TableDisplayInterface
             'deleted_at',
         ];
         $builder->select("*")->
-        select("CONCAT('" . base_url("file-server/image-render") . "','/applications/'," . "picture) as picture");
+            select("CONCAT('" . base_url("file-server/image-render") . "','/applications/'," . "picture) as picture");
         ;
         return $builder;
     }

@@ -6,14 +6,14 @@ namespace App\Helpers;
 class ApplicationFormActionHelper extends Utils
 {
     /**
-     * this method runs a provided action on the application form`1
+     * this method runs a provided action on the application form
      * @param object{type:string, config:object} $action
      * @param array $data
      * @return array
      */
     public static function runAction($action, $data)
     {
-        switch ($action) {
+        switch ($action->type) {
             case 'email':
                 return self::sendEmailToApplicant($action, $data);
             case 'admin_email':
@@ -33,9 +33,10 @@ class ApplicationFormActionHelper extends Utils
      */
     private static function sendEmailToApplicant($action, $data)
     {
-        $templateModel = new TemplateEngine();
-        $content = $templateModel->process($action->config->template, $data);
-        $subject = $templateModel->process($action->config->subject, $data);
+        log_message('info', 'Sending email to applicant');
+        $templateModel = new TemplateEngineHelper();
+        $content = $templateModel->process($action->config['template'], $data);
+        $subject = $templateModel->process($action->config['subject'], $data);
         $emailConfig = new EmailConfig($content, $subject, $data['email']);
 
         EmailHelper::sendEmail($emailConfig);
@@ -50,10 +51,11 @@ class ApplicationFormActionHelper extends Utils
      */
     private static function sendEmailToAdmin($action, $data)
     {
-        $templateModel = new TemplateEngine();
-        $content = $templateModel->process($action->config->template, $data);
-        $subject = $templateModel->process($action->config->subject, $data);
-        $emailConfig = new EmailConfig($content, $subject, $action->config->admin_email);
+        log_message('info', 'Sending email to admin');
+        $templateModel = new TemplateEngineHelper();
+        $content = $templateModel->process($action->config['template'], $data);
+        $subject = $templateModel->process($action->config['subject'], $data);
+        $emailConfig = new EmailConfig($content, $subject, $action->config['admin_email']);
 
         EmailHelper::sendEmail($emailConfig);
         return $data;

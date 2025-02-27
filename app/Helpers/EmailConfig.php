@@ -2,7 +2,7 @@
 namespace App\Helpers;
 class EmailConfig
 {
-    public $content;
+    public $message;
     public $subject;
     public $to;
     public $sender;
@@ -11,7 +11,7 @@ class EmailConfig
     public $attachments;
     public $senderName;
 
-    public function __construct($content, $subject, $to, $sender = null, $cc = null, $bcc = null, $attachments = null, $senderName = null)
+    public function __construct($message, $subject, $to, $sender = null, $cc = null, $bcc = null, $attachments = null, $senderName = null)
     {
         $appSettings = json_decode(file_get_contents(ROOTPATH . 'app-settings.json'), true);
         if ($sender == null) {
@@ -20,7 +20,7 @@ class EmailConfig
         if ($senderName == null) {
             $senderName = $appSettings['defaultEmailSenderName'];
         }
-        $this->content = $content;
+        $this->message = $message;
         $this->subject = $subject;
         $this->to = $to;
         $this->sender = $sender;
