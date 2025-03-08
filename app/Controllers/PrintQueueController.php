@@ -1,0 +1,399 @@
+<?php
+
+namespace App\Controllers;
+
+use App\Controllers\BaseController;
+use App\Helpers\TemplateEngineHelper;
+use App\Models\PrintQueueItemModel;
+use App\Models\PrintQueueModel;
+use App\Models\PrintHistoryModel;
+use App\Models\PrintTemplateModel;
+use CodeIgniter\HTTP\ResponseInterface;
+use CodeIgniter\RESTful\ResourceController;
+use App\Models\ActivitiesModel;
+use PhpOffice\PhpWord\IOFactory;
+use PhpOffice\PhpWord\Settings;
+class PrintQueueController extends ResourceController
+{
+
+    protected $printQueueModel;
+    protected $printQueueItemModel;
+    protected $printHistoryModel;
+    protected $printTemplateModel;
+    protected $printTemplateRolesModel;
+
+    public function __construct()
+    {
+        helper("auth");
+        $this->printQueueModel = new PrintQueueModel();
+        $this->printQueueItemModel = new PrintQueueItemModel();
+        $this->printHistoryModel = new PrintHistoryModel();
+        $this->printTemplateModel = new PrintTemplateModel();
+        $this->printTemplateRolesModel = new \App\Models\PrintTemplateRolesModel();
+    }
+
+    public function createPrintTemplate()
+    {
+        try {
+            $rules = [
+                "template_name" => "required|is_unique[print_templates.template_name]",
+                "template_content" => "required",
+                "allowed_roles" => "required",
+            ];
+
+            if (!$this->validate($rules)) {
+                return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
+            }
+            $userId = auth("tokens")->id();
+            $data = $this->request->getVar();
+            $allowedRoles = $data->allowed_roles;
+            unset($data->allowed_roles);
+            $data->created_by = $userId;
+          
+            $compiledQuery = $this->printTemplateModel->builder()->set($data)->getCompiledInsert();
+            
+            $this->printTemplateModel->db->transStart();
+            
+            if (!$this->printTemplateModel->insert($data)) {
+                return $this->respond(['message' => $this->printTemplateModel->errors()], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+            $templateUuid = $this->printTemplateModel->where('id', $this->printTemplateModel->getInsertID())->first()['uuid'];
+
+            // Insert role permissions
+            foreach ($allowedRoles as $role) {
+                $this->printTemplateRolesModel->insert([
+                    'template_uuid' => $templateUuid,
+                    'role_name' => $role
+                ]);
+            }
+
+            $this->printTemplateModel->db->transComplete();
+
+            if ($this->printTemplateModel->db->transStatus() === false) {
+                return $this->respond(['message' => 'Failed to create template with roles'], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+
+            /** @var ActivitiesModel $activitiesModel */
+            $activitiesModel = new ActivitiesModel();
+            $activitiesModel->logActivity("Created template {$data->template_name}.", $userId, "printQueue");
+
+            return $this->respond(['message' => 'Template created successfully', 'data' => $templateUuid], ResponseInterface::HTTP_OK);
+        } catch (\Exception $th) {
+            log_message("error", $th);
+            return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+    }
+
+    public function updatePrintTemplate($uuid)
+    {
+        try {
+            $rules = [
+                "template_name" => "required|is_unique[print_templates.template_name,uuid,$uuid]",
+                "template_content" => "required",
+                "allowed_roles" => "required",
+            ];
+
+            if (!$this->validate($rules)) {
+                return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
+            }
+
+            // Get the template
+            $template = $this->printTemplateModel->builder()->where(['uuid' => $uuid])->get()->getRow();
+            if (!$template) {
+                return $this->respond(['message' => 'Template not found'], ResponseInterface::HTTP_NOT_FOUND);
+            }
+
+            // Check if user has access to this template
+            $userRole = auth("tokens")->user()->role_name;
+            if (!$this->printTemplateRolesModel->hasAccess($template->uuid, $userRole)) {
+                return $this->respond(['message' => "Access denied"], ResponseInterface::HTTP_FORBIDDEN);
+            }
+
+            $userId = auth("tokens")->id();
+            $data = $this->request->getVar();
+            $allowedRoles = $data->allowed_roles;
+            unset($data->allowed_roles);
+            if (property_exists($data, "id")) {
+                unset($data->id);
+            }
+
+            $this->printTemplateModel->db->transStart();
+
+            // Update template
+            $update = $this->printTemplateModel->builder()->where(['uuid' => $uuid])->update($data);
+            if (!$update) {
+                return $this->respond(['message' => $this->printTemplateModel->errors()], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+
+            // Update roles
+            $this->printTemplateRolesModel->where('template_uuid', $template->uuid)->delete();
+            foreach ($allowedRoles as $role) {
+                $this->printTemplateRolesModel->insert([
+                    'template_uuid' => $template->uuid,
+                    'role_name' => $role
+                ]);
+            }
+
+            $this->printTemplateModel->db->transComplete();
+
+            if ($this->printTemplateModel->db->transStatus() === false) {
+                return $this->respond(['message' => 'Failed to update template roles'], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+
+            /** @var ActivitiesModel $activitiesModel */
+            $activitiesModel = new ActivitiesModel();
+            $activitiesModel->logActivity("Updated template {$data->template_name}.", $userId, "printQueue");
+
+            return $this->respond(['message' => 'Template updated successfully'], ResponseInterface::HTTP_OK);
+        } catch (\Exception $th) {
+            log_message("error", $th->getMessage());
+            return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+    }
+
+    public function deletePrintTemplate($uuid)
+    {
+        try {
+            // Get the template
+            $template = $this->printTemplateModel->builder()->where(['uuid' => $uuid])->get()->getRow();
+            if (!$template) {
+                return $this->respond(['message' => 'Template not found'], ResponseInterface::HTTP_NOT_FOUND);
+            }
+
+            // Check if user has access to this template
+            $userRole = auth("tokens")->user()->role_name;
+            if (!$this->printTemplateRolesModel->hasAccess($template->uuid, $userRole)) {
+                return $this->respond(['message' => "Access denied"], ResponseInterface::HTTP_FORBIDDEN);
+            }
+
+            $userId = auth("tokens")->id();
+            
+            $this->printTemplateModel->db->transStart();
+
+            // Delete template roles first
+            $this->printTemplateRolesModel->where('template_uuid', $template->uuid)->delete();
+
+            // Delete the template
+            $delete = $this->printTemplateModel->builder()->where(['uuid' => $uuid])->delete();
+            if (!$delete) {
+                return $this->respond(['message' => $this->printTemplateModel->errors()], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+
+            $this->printTemplateModel->db->transComplete();
+
+            if ($this->printTemplateModel->db->transStatus() === false) {
+                return $this->respond(['message' => 'Failed to delete template'], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+
+            /** @var ActivitiesModel $activitiesModel */
+            $activitiesModel = new ActivitiesModel();
+            $activitiesModel->logActivity("Deleted template {$uuid}.", $userId, "printQueue");
+
+            return $this->respond(['message' => 'Template deleted successfully'], ResponseInterface::HTTP_OK);
+        } catch (\Exception $th) {
+            log_message("error", $th->getMessage());
+            return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+    }
+
+    public function getTemplate($uuid)
+    {
+        try {
+            $model = new PrintTemplateModel();
+            $builder = $model->builder();
+            $template = $builder->where(["uuid" => $uuid])->get()->getRow();
+            if (!$template) {
+                return $this->respond("Template not found", ResponseInterface::HTTP_BAD_REQUEST);
+            }
+
+            // Check if user has access to this template
+            $userRole = auth("tokens")->user()->role_name;
+            if (!$this->printTemplateRolesModel->hasAccess($template->uuid, $userRole)) {
+                return $this->respond(['message' => "Access denied"], ResponseInterface::HTTP_FORBIDDEN);
+            }
+
+            // Get template roles
+            $template->allowed_roles = array_column(
+                $this->printTemplateRolesModel->where('template_uuid', $template->uuid)->findAll(),
+                'role_name'
+            );
+
+            return $this->respond(['data' => $template, 'displayColumns' => $model->getDisplayColumns()], ResponseInterface::HTTP_OK);
+        } catch (\Exception $th) {
+            log_message("error", $th->getMessage());
+            return $this->respond(['message' => "An error occurred"], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+    }
+
+    public function getTemplates()
+    {
+        try {
+            if (!auth("tokens")->loggedIn()) {
+                return $this->respond(['message' => 'You are not logged in'], ResponseInterface::HTTP_UNAUTHORIZED);
+            }
+
+            $user = auth("tokens")->getUser();
+            if (!$user) {
+                return $this->respond(['message' => 'User not found'], ResponseInterface::HTTP_UNAUTHORIZED);
+            }
+
+            $per_page = $this->request->getVar('limit') ? (int) $this->request->getVar('limit') : 100;
+            $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
+            $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted') === "yes";
+            $param = $this->request->getVar('param');
+            $sortBy = $this->request->getVar('sortBy') ?? "id";
+            $sortOrder = $this->request->getVar('sortOrder') ?? "asc";
+            $model = $this->printTemplateModel;
+
+            $userRole = $user->role_name;
+            if (!$userRole) {
+                return $this->respond(['message' => 'User role not found'], ResponseInterface::HTTP_FORBIDDEN);
+            }
+            
+            $accessibleTemplateUuids = $this->printTemplateRolesModel->getAccessibleTemplateUuids($userRole);
+
+            $builder = $param ? $model->search($param) : $model->builder();
+            
+            // Filter by accessible templates
+            if (empty($accessibleTemplateUuids)) {
+                // If user has no accessible templates, return empty result
+                return $this->respond([
+                    'data' => [],
+                    'total' => 0,
+                    'displayColumns' => $model->getDisplayColumns(),
+                    'columnFilters' => $model->getDisplayColumnFilters()
+                ], ResponseInterface::HTTP_OK);
+            }
+
+            $builder->whereIn('uuid', $accessibleTemplateUuids);
+            $builder->orderBy("$sortBy", $sortOrder);
+
+            if ($withDeleted) {
+                $model->withDeleted();
+            }
+            
+            $totalBuilder = clone $builder;
+            $total = $totalBuilder->countAllResults();
+            $result = $builder->get($per_page, $page)->getResult();
+
+            // Get roles for each template
+            foreach ($result as $template) {
+                $template->allowed_roles = array_column(
+                    $this->printTemplateRolesModel->where('template_uuid', $template->uuid)->findAll(),
+                    'role_name'
+                );
+            }
+
+            return $this->respond([
+                'data' => $result,
+                'total' => $total,
+                'displayColumns' => $model->getDisplayColumns(),
+                'columnFilters' => $model->getDisplayColumnFilters()
+            ], ResponseInterface::HTTP_OK);
+        } catch (\Throwable $th) {
+            log_message("error", $th->getMessage());
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+    }
+
+    public function docxToHtml()
+    {
+        $file = $this->request->getFile('docxFile');
+
+        if (!$file || !$file->isValid()) {
+            return $this->respond(['message' => 'No valid DOCX file was uploaded'], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+
+        // Check file type
+        if ($file->getClientMimeType() !== 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+            return $this->respond(['message' => 'Uploaded file is not a DOCX document'], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+
+        try {
+            // Move the uploaded file to a temporary location
+            $tempPath = $file->getTempName();
+
+            // Load the Word document
+            $phpWord = IOFactory::load($tempPath);
+
+            // Create a temporary file for the HTML output
+            $htmlPath = WRITEPATH . 'uploads/' . $file->getRandomName() . '.html';
+
+            // Make sure the directory exists
+            if (!is_dir(dirname($htmlPath))) {
+                mkdir(dirname($htmlPath), 0777, true);
+            }
+
+            // Convert to HTML
+            $htmlWriter = IOFactory::createWriter($phpWord, 'HTML');
+            $htmlWriter->save($htmlPath);
+
+            // Read the generated HTML file
+            $htmlContent = file_get_contents($htmlPath);
+
+            // Remove the temporary HTML file
+            unlink($htmlPath);
+            return $this->respond([
+                'data' => $htmlContent,
+                
+            ], ResponseInterface::HTTP_OK);
+
+            
+
+        } catch (\Exception $e) {
+            log_message('error', 'DOCX to HTML conversion error: ' . $e->getMessage());
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
+
+            
+        }
+    }
+    /**
+     * receive the list of objects, and the template. substitute the variables in the template with the values in the objects
+     * and send back the html
+     */
+
+    public function execute($uuid)
+    {
+        try {
+            $template = $this->printTemplateModel->builder()->where(["uuid" => $uuid])->get()->getRow();
+            if (!$template) {
+                return $this->respond(['message' => "Template not found"], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+
+            // Check if user has access to this template
+            $userRole = auth("tokens")->user()->role_name;
+            if (!$this->printTemplateRolesModel->hasAccess($template->uuid, $userRole)) {
+                return $this->respond(['message' => "Access denied"], ResponseInterface::HTTP_FORBIDDEN);
+            }
+
+            $finishedTemplates = [];
+            $data = $this->request->getVar();
+
+            foreach ($data->objects as $object) {
+                $templateEngine = new TemplateEngineHelper();
+                $html = $templateEngine->process($template->template_content, $object);
+                $finishedTemplates[] = '<div style="page-break-after: always;">' . $html . '</div>';
+            }
+
+            return $this->respond(['data' => implode("", $finishedTemplates)], ResponseInterface::HTTP_OK);
+        } catch (\Throwable $th) {
+            log_message('error', $th->getMessage());
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+    }
+
+    public function createPrintQueue(){
+        try {   
+            
+            $data = $this->request->getVar();
+            $this->printQueueModel->insert($data);
+            return $this->respond(['message' => "Print queue created successfully"], ResponseInterface::HTTP_OK);
+        } catch (\Throwable $th) {
+            log_message('error',   $th->getMessage());
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
+
+        }
+    }
+
+
+}

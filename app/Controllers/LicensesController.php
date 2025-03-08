@@ -100,7 +100,6 @@ class LicensesController extends ResourceController
             $changes = implode(", ", Utils::compareObjects($oldData, $data));
 
             $licenseUpdateData = $model->createArrayFromAllowedFields((array) $data);
-            log_message("info", "License update data: " . print_r($licenseUpdateData, true));
             $model->db->transException(true)->transStart();
             $model->builder()->where(['uuid' => $uuid])->update($licenseUpdateData);
             $model->createOrUpdateLicenseDetails($type, $data);
