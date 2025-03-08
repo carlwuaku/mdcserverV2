@@ -13,20 +13,23 @@ use App\Models\UsersModel;
 use CodeIgniter\Database\MigrationRunner;
 use Google\ReCaptcha\ReCaptcha;
 use ReCaptcha\ReCaptcha as ReCaptchaReCaptcha;
+use App\Helpers\CacheHelper;
 
 class AuthController extends ResourceController
 {
 
     public function appSettings()
     {
-        //read the data from app-settings.json at the root of the project
-        $data = json_decode(file_get_contents(ROOTPATH . 'app-settings.json'), true);
-        //if logo is set, append the base url to it
-        if (isset($data['logo'])) {
-            $data['logo'] = base_url() . $data['logo'];
-        }
-        $data['recaptchaSiteKey'] = getenv('RECAPTCHA_PUBLIC_KEY');
-        return $this->respond($data, ResponseInterface::HTTP_OK);
+        return CacheHelper::remember('app_settings', function() {
+            //read the data from app-settings.json at the root of the project
+            $data = json_decode(file_get_contents(ROOTPATH . 'app-settings.json'), true);
+            //if logo is set, append the base url to it
+            if (isset($data['logo'])) {
+                $data['logo'] = base_url() . $data['logo'];
+            }
+            $data['recaptchaSiteKey'] = getenv('RECAPTCHA_PUBLIC_KEY');
+            return $this->respond($data, ResponseInterface::HTTP_OK);
+        }, 3600); // Cache for 1 hour
     }
 
     public function verifyRecaptcha()

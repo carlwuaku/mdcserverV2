@@ -191,6 +191,26 @@
             ]
         },
         {
+            "title": "Print Queue",
+            "active_children": false,
+            "url": "",
+            "icon": "print",
+            "children": [
+                {
+                    "title": "View Templates",
+                    "url": "/print-templates",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Create Template",
+                    "url": "/print-templates/create",
+                    "icon": "",
+                    "children": []
+                }
+            ]
+        },
+        {
             "title": "System Config",
             "active_children": false,
             "url": "",

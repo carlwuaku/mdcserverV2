@@ -10,16 +10,19 @@ class AddPrintQueueTable extends Migration
     {
         $query = "
         CREATE TABLE print_queues (
-    queue_id INT AUTO_INCREMENT PRIMARY KEY,
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    uuid CHAR(36) NOT NULL,
     queue_name VARCHAR(100) NOT NULL,
-    template_id INT NOT NULL,
+    template_uuid CHAR(36) NOT NULL,
     status ENUM('pending', 'processing', 'completed', 'failed') DEFAULT 'pending',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     created_by INT,
     priority TINYINT DEFAULT 5,
-    FOREIGN KEY (template_id) REFERENCES print_templates(template_id),
+    CONSTRAINT print_queue_uuid UNIQUE (uuid),
+    FOREIGN KEY (template_uuid) REFERENCES print_templates(uuid) ON DELETE RESTRICT ON UPDATE CASCADE,
     INDEX idx_queue_status (status)
+    
 );
         ";
         $this->db->query($query);

@@ -17,11 +17,15 @@ use App\Helpers\EmailConfig;
 use App\Models\Practitioners\PractitionerRenewalModel;
 use App\Helpers\ApplicationFormActionHelper;
 use App\Models\Applications\ApplicationTemplateStage;
+use App\Helpers\CacheHelper;
+use App\Traits\CacheInvalidatorTrait;
 
 
 
 class ApplicationsController extends ResourceController
 {
+    use CacheInvalidatorTrait;
+
     private $primaryColumns = ['first_name', 'picture', 'last_name', 'middle_name', 'email', 'phone'];
     private function createFormMetaFromPayload(array $payload, string $form_type): array
     {
@@ -884,18 +888,20 @@ class ApplicationsController extends ResourceController
     public function getApplicationConfig(string $form_name, string $type = null)
     {
         try {
-            //get the form-settings.json file and get the config for the specified form
-            $form = str_replace(" ", "-", $form_name);
-            $configContents = file_get_contents(WRITEPATH . 'config_files/form-settings.json');
-            $config = json_decode($configContents, true);
-            $formConfig = !empty($type) ? $config[$form][$type] : $config[$form];
-            return $this->respond(['data' => $formConfig], ResponseInterface::HTTP_OK);
+            $cacheKey = "app_config_" . md5($form_name . '_' . $type);
+            
+            return CacheHelper::remember($cacheKey, function() use ($form_name, $type) {
+                //get the form-settings.json file and get the config for the specified form
+                $form = str_replace(" ", "-", $form_name);
+                $configContents = file_get_contents(WRITEPATH . 'config_files/form-settings.json');
+                $config = json_decode($configContents, true);
+                $formConfig = !empty($type) ? $config[$form][$type] : $config[$form];
+                return $this->respond(['data' => $formConfig], ResponseInterface::HTTP_OK);
+            }, 3600); // Cache for 1 hour
         } catch (\Throwable $th) {
             log_message('error', $th->getMessage());
             return $this->respond(['message' => "Server error:" . $th->getMessage()], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
-
-
     }
 
     public function getApplicationTemplates()
@@ -908,29 +914,29 @@ class ApplicationsController extends ResourceController
             $sortBy = $this->request->getVar('sortBy') ?? "id";
             $sortOrder = $this->request->getVar('sortOrder') ?? "asc";
 
-            $model = new ApplicationTemplateModel();
+            // Generate cache key based on query parameters
+            $cacheKey = "app_templates_" . md5(json_encode([
+                $per_page, $page, $withDeleted, $param, $sortBy, $sortOrder
+            ]));
 
-            $builder = $param ? $model->search($param) : $model->builder();
-            $builder = $model->addCustomFields($builder);
-            $builder->orderBy("$sortBy", $sortOrder);
+            return CacheHelper::remember($cacheKey, function() use ($per_page, $page, $withDeleted, $param, $sortBy, $sortOrder) {
+                $model = new ApplicationTemplateModel();
+                $builder = $param ? $model->search($param) : $model->builder();
+                
+                if ($withDeleted) {
+                    $model->withDeleted();
+                }
 
-            if ($withDeleted) {
-                $model->withDeleted();
-            }
-            $totalBuilder = clone $builder;
-            $total = $totalBuilder->countAllResults();
-            $result = $builder->get($per_page, $page)->getResult();
-            foreach ($result as $value) {
-                //convert json string in form_data to json object
-                $value->data = json_decode($value->data, true);
-
-            }
-
-            return $this->respond([
-                'data' => $result,
-                'total' => $total,
-                'displayColumns' => $model->getDisplayColumns()
-            ], ResponseInterface::HTTP_OK);
+                $builder->orderBy($sortBy, $sortOrder);
+                $totalBuilder = clone $builder;
+                $total = $totalBuilder->countAllResults();
+                $result = $builder->get($per_page, $page)->getResult();
+                return $this->respond([
+                    'data' => $result,
+                    'total' => $total,
+                    'displayColumns' => $model->getDisplayColumns()
+                ], ResponseInterface::HTTP_OK);
+            }, 3600); // Cache for 1 hour
         } catch (\Throwable $th) {
             log_message('error', $th->getMessage());
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
@@ -966,32 +972,26 @@ class ApplicationsController extends ResourceController
     {
         try {
             $rules = [
-                "form_name" => "required",
-                "data" => "required",
-                "open_date" => "permit_empty|valid_date",
-                'close_date' => "permit_empty|valid_date",
-                'stages' => "required|valid_json",
-                'initial_stage' => "required",
-                'final_stage' => "required",
-
+                "form_name" => "required|is_unique[application_templates.form_name]",
+                "data" => "required"
             ];
 
             if (!$this->validate($rules)) {
                 return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
             }
-            $data = $this->request->getPost();
-            $model = new ApplicationTemplateModel();
-            if (!$model->insert($data)) {
-                log_message('error', $model->errors()["message"]);
-                return $this->respond(['message' => 'Server error. Please try again'], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
-            }
-            $id = $model->getInsertID();
-            /** @var ActivitiesModel $activitiesModel */
-            $activitiesModel = new ActivitiesModel();
 
-            $activitiesModel->logActivity("Created application template {$data['form_name']} ");
-            //if registered this year, retain the person
-            return $this->respond(['message' => 'Application template created successfully', 'data' => $id], ResponseInterface::HTTP_OK);
+            $model = new ApplicationTemplateModel();
+            $data = $this->request->getPost();
+
+            if (!$model->insert($data)) {
+                return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+
+            // Invalidate application templates and config cache
+            $this->invalidateCache('app_templates_');
+            $this->invalidateCache('app_config_');
+
+            return $this->respond(['message' => 'Application template created successfully'], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
             log_message('error', $th->getMessage());
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
@@ -1002,30 +1002,24 @@ class ApplicationsController extends ResourceController
     {
         try {
             $rules = [
-                "id" => "required",
-                "data" => "permit_empty|valid_json",
-                "open_date" => "permit_empty|valid_date",
-                'close_date' => "permit_empty|valid_date",
-                'stages' => "required|valid_json"
+                "form_name" => "required",
+                "data" => "required"
             ];
 
             if (!$this->validate($rules)) {
                 return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
             }
-            $data = $this->request->getVar();
-            $data->uuid = $uuid;
-            if (property_exists($data, "id")) {
-                unset($data->id);
-            }
+
             $model = new ApplicationTemplateModel();
-            $oldData = $model->where(["uuid" => $uuid])->first();
-            $changes = implode(", ", Utils::compareObjects($oldData, $data));
-            if (!$model->builder()->where(['uuid' => $uuid])->update($data)) {
+            $data = $this->request->getVar();
+
+            if (!$model->update($uuid, $data)) {
                 return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
             }
-            /** @var ActivitiesModel $activitiesModel */
-            $activitiesModel = new ActivitiesModel();
-            $activitiesModel->logActivity("Updated application template. Changes: $changes");
+
+            // Invalidate application templates and config cache
+            $this->invalidateCache('app_templates_');
+            $this->invalidateCache('app_config_');
 
             return $this->respond(['message' => 'Application template updated successfully'], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
@@ -1038,14 +1032,14 @@ class ApplicationsController extends ResourceController
     {
         try {
             $model = new ApplicationTemplateModel();
-            $data = $model->where(["uuid" => $uuid])->first();
 
-            if (!$model->where('uuid', $uuid)->delete()) {
-                return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+            if (!$model->delete($uuid)) {
+                return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
             }
-            /** @var ActivitiesModel $activitiesModel */
-            $activitiesModel = new ActivitiesModel();
-            $activitiesModel->logActivity("Deleted application template {$data['form_name']}  ");
+
+            // Invalidate application templates and config cache
+            $this->invalidateCache('app_templates_');
+            $this->invalidateCache('app_config_');
 
             return $this->respond(['message' => 'Application template deleted successfully'], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {

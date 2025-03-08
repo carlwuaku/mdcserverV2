@@ -7,6 +7,7 @@ use App\Controllers\AuthController;
 use App\Controllers\CpdController;
 use App\Controllers\EmailController;
 use App\Controllers\LicensesController;
+use App\Controllers\PrintQueueController;
 use App\Controllers\RegionController;
 use App\Controllers\SpecialtiesController;
 use CodeIgniter\Router\RouteCollection;
@@ -34,6 +35,18 @@ $routes->group("api", ["namespace" => "App\Controllers"], function (RouteCollect
     $routes->get("sqlquery", [AuthController::class, "sqlQuery"]);
     $routes->get("getPractitionerDetails", [AuthController::class, "appName"], ['filter' => 'hmac']);
     $routes->post("verify-recaptcha", [AuthController::class, "verifyRecaptcha"]);
+
+});
+
+$routes->group("print-queue", ["namespace" => "App\Controllers"], function (RouteCollection $routes) {
+    $routes->post("upload-docx", [PrintQueueController::class, "docxToHtml"]);
+    $routes->post("start-print-job", [PrintQueueController::class, "startPrintJob"]);
+    $routes->post("templates", [PrintQueueController::class, "createPrintTemplate"]);
+    $routes->get("templates/(:segment)", [PrintQueueController::class, "getTemplate/$1"]);
+    $routes->get("templates", [PrintQueueController::class, "getTemplates"]);
+    $routes->put("templates/(:segment)", [PrintQueueController::class, "updatePrintTemplate/$1"]);
+    $routes->delete("templates/(:segment)", [PrintQueueController::class, "deletePrintTemplate/$1"]);
+
 });
 
 $routes->group("activities", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
