@@ -38,15 +38,14 @@ $routes->group("api", ["namespace" => "App\Controllers"], function (RouteCollect
 
 });
 
-$routes->group("print-queue", ["namespace" => "App\Controllers"], function (RouteCollection $routes) {
-    $routes->post("upload-docx", [PrintQueueController::class, "docxToHtml"]);
-    $routes->post("start-print-job", [PrintQueueController::class, "startPrintJob"]);
-    $routes->post("templates", [PrintQueueController::class, "createPrintTemplate"]);
-    $routes->get("templates/(:segment)", [PrintQueueController::class, "getTemplate/$1"]);
-    $routes->get("templates", [PrintQueueController::class, "getTemplates"]);
-    $routes->put("templates/(:segment)", [PrintQueueController::class, "updatePrintTemplate/$1"]);
-    $routes->delete("templates/(:segment)", [PrintQueueController::class, "deletePrintTemplate/$1"]);
-
+$routes->group("print-queue", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
+    $routes->post("templates/upload-docx", [PrintQueueController::class, "docxToHtml"], ["filter" => ["hasPermission:Create_Print_Templates"]]);
+    $routes->post("templates", [PrintQueueController::class, "createPrintTemplate"], ["filter" => ["hasPermission:Create_Print_Templates"]]);
+    $routes->get("templates/(:segment)", [PrintQueueController::class, "getTemplate/$1"]);//each template has a list of allowed roles. this is used to check if the user has permission to access the template
+    $routes->get("templates", [PrintQueueController::class, "getTemplates"]);//each template has a list of allowed roles. this is used to check if the user has permission to access the template
+    $routes->put("templates/(:segment)", [PrintQueueController::class, "updatePrintTemplate/$1"], ["filter" => ["hasPermission:Edit_Print_Templates"]]);
+    $routes->delete("templates/(:segment)", [PrintQueueController::class, "deletePrintTemplate/$1"], ["filter" => ["hasPermission:Delete_Print_Templates"]]);
+    $routes->post("templates/(:segment)/print-selection", [PrintQueueController::class, "execute/$1"]);//each template has a list of allowed roles. this is used to check if the user has permission to access the template
 });
 
 $routes->group("activities", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {

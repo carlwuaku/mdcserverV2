@@ -12,7 +12,7 @@ class PrintTemplateModel extends MyBaseModel implements TableDisplayInterface
     protected $returnType = 'array';
     protected $useSoftDeletes = false;
     protected $protectFields = true;
-    protected $allowedFields = ['template_name', 'template_content', 'created_by', 'active'];
+    protected $allowedFields = ['uuid', 'template_name', 'template_content', 'created_by', 'active'];
 
     protected bool $allowEmptyInserts = false;
     protected bool $updateOnlyChanged = true;
@@ -44,6 +44,14 @@ class PrintTemplateModel extends MyBaseModel implements TableDisplayInterface
     protected $beforeDelete = [];
     protected $afterDelete = [];
 
+    protected function generateUuid(array $data)
+    {
+        if (!isset($data['data']['uuid'])) {
+            $data['data']['uuid'] = \Ramsey\Uuid\Uuid::uuid4()->toString();
+        }
+        return $data;
+    }
+
     public function getActiveTemplates()
     {
         return $this->where('active', true)->findAll();
@@ -53,7 +61,6 @@ class PrintTemplateModel extends MyBaseModel implements TableDisplayInterface
     {
         return [
             'template_name',
-            'template_content',
             'active',
             'created_at'
         ];

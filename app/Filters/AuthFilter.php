@@ -36,9 +36,9 @@ class AuthFilter implements FilterInterface
             return $response->setStatusCode(401)->setJSON(["message" => 'you are not logged in']);
 
         }
+
         if ($arguments) {
             //the arguments would be permissions the user needs to have
-            log_message("info", $arguments);
             $rpModel = new RolePermissionsModel();
             if (!$rpModel->hasPermission(auth()->getUser()->role_id, $arguments)) {
                 return $response->setStatusCode(401)->setJSON(["message" => "you are not permitted to perform this action"]);

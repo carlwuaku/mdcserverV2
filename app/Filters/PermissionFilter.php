@@ -32,7 +32,9 @@ class PermissionFilter implements FilterInterface
             $response->setStatusCode(ResponseInterface::HTTP_UNAUTHORIZED)->setJSON(["message" => 'you are not logged in'])->send();
             exit();
         }
+   
         if ($arguments) {
+           
             //the arguments would be permissions the user needs to have
             $rpModel = new RolePermissionsModel();
             foreach ($arguments as $permission) {

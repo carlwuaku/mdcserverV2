@@ -829,6 +829,7 @@ class ApplicationsController extends ResourceController
             if (!$data) {
                 return $this->respond(['message' => "Application not found"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
             }
+            $data = (array) $data;
             $result = [];
             if ($decision === "approve") {
 
