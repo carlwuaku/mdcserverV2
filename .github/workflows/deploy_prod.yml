@@ -16,7 +16,9 @@ jobs:
         php-version: '8.2'
         
     - name: Install Dependencies
-      run: composer install --no-dev --optimize-autoloader
+      run: |
+        rm -f composer.lock
+        composer install --no-dev --optimize-autoloader
 
     - name: 📂 Sync files
       uses: SamKirkland/FTP-Deploy-Action@v4.3.5
