@@ -11,7 +11,11 @@ class ChangePractitionerRegNumName extends Migration
         //delete the index for the registration_number
         try {
             $this->forge->dropForeignKey('housemanship_facility_preceptors', 'housemanship_facility_preceptors_registration_number_foreign');
-
+        } catch (\Throwable $th) {
+            //throw $th;
+        }
+        try {
+            $this->forge->dropForeignKey('practitioner_portal_edits', 'practitioner_portal_edits_registration_number_foreign');
         } catch (\Throwable $th) {
             //throw $th;
         }
