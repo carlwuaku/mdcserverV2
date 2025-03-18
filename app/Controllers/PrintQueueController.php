@@ -13,6 +13,27 @@ use CodeIgniter\RESTful\ResourceController;
 use App\Models\ActivitiesModel;
 use PhpOffice\PhpWord\IOFactory;
 use PhpOffice\PhpWord\Settings;
+
+/**
+ * @OA\Info(
+ *     version="1.0.0",
+ *     title="Print Queue API",
+ *     description="API endpoints for managing print templates and queue operations"
+ * )
+ * @OA\Tag(
+ *     name="Print Templates",
+ *     description="Operations for managing print templates"
+ * )
+ * @OA\Tag(
+ *     name="Print Queue",
+ *     description="Operations for managing print queue and execution"
+ * )
+ * @OA\SecurityScheme(
+ *     securityScheme="bearerAuth",
+ *     type="http",
+ *     scheme="bearer"
+ * )
+ */
 class PrintQueueController extends ResourceController
 {
 
@@ -32,6 +53,120 @@ class PrintQueueController extends ResourceController
         $this->printTemplateRolesModel = new \App\Models\PrintTemplateRolesModel();
     }
 
+    /**
+     * @OA\Post(
+     *     path="/print-queue/templates/upload-docx",
+     *     summary="Convert DOCX file to HTML",
+     *     tags={"Print Templates"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\MediaType(
+     *             mediaType="multipart/form-data",
+     *             @OA\Schema(
+     *                 @OA\Property(
+     *                     property="docxFile",
+     *                     type="string",
+     *                     format="binary",
+     *                     description="DOCX file to convert"
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="HTML content generated successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="data", type="string", description="Generated HTML content")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Invalid file or conversion error"
+     *     ),
+     *     security={{"bearerAuth": {}}}
+     * )
+     */
+    public function docxToHtml()
+    {
+        $file = $this->request->getFile('docxFile');
+
+        if (!$file || !$file->isValid()) {
+            return $this->respond(['message' => 'No valid DOCX file was uploaded'], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+
+        // Check file type
+        if ($file->getClientMimeType() !== 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+            return $this->respond(['message' => 'Uploaded file is not a DOCX document'], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+
+        try {
+            // Move the uploaded file to a temporary location
+            $tempPath = $file->getTempName();
+
+            // Load the Word document
+            $phpWord = IOFactory::load($tempPath);
+
+            // Create a temporary file for the HTML output
+            $htmlPath = WRITEPATH . 'uploads/' . $file->getRandomName() . '.html';
+
+            // Make sure the directory exists
+            if (!is_dir(dirname($htmlPath))) {
+                mkdir(dirname($htmlPath), 0777, true);
+            }
+
+            // Convert to HTML
+            $htmlWriter = IOFactory::createWriter($phpWord, 'HTML');
+            $htmlWriter->save($htmlPath);
+
+            // Read the generated HTML file
+            $htmlContent = file_get_contents($htmlPath);
+
+            // Remove the temporary HTML file
+            unlink($htmlPath);
+            return $this->respond([
+                'data' => $htmlContent,
+                
+            ], ResponseInterface::HTTP_OK);
+
+            
+
+        } catch (\Exception $e) {
+            log_message('error', 'DOCX to HTML conversion error: ' . $e->getMessage());
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
+
+            
+        }
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/print-queue/templates",
+     *     summary="Create a new print template",
+     *     tags={"Print Templates"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"template_name", "template_content", "allowed_roles"},
+     *             @OA\Property(property="template_name", type="string", example="Invoice Template"),
+     *             @OA\Property(property="template_content", type="string", example="<html><body>Template content</body></html>"),
+     *             @OA\Property(property="allowed_roles", type="array", @OA\Items(type="string"), example={"admin", "manager"})
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Template created successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Template created successfully"),
+     *             @OA\Property(property="data", type="string", format="uuid")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Validation error or creation failed"
+     *     ),
+     *     security={{"bearerAuth": {}}}
+     * )
+     */
     public function createPrintTemplate()
     {
         try {
@@ -84,6 +219,38 @@ class PrintQueueController extends ResourceController
         }
     }
 
+    /**
+     * @OA\Put(
+     *     path="/print-queue/templates/{uuid}",
+     *     summary="Update a print template",
+     *     tags={"Print Templates"},
+     *     @OA\Parameter(
+     *         name="uuid",
+     *         in="path",
+     *         required=true,
+     *         description="UUID of the template to update",
+     *         @OA\Schema(type="string", format="uuid")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"template_name", "template_content", "allowed_roles"},
+     *             @OA\Property(property="template_name", type="string"),
+     *             @OA\Property(property="template_content", type="string"),
+     *             @OA\Property(property="allowed_roles", type="array", @OA\Items(type="string"))
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Template updated successfully"
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Template not found"
+     *     ),
+     *     security={{"bearerAuth": {}}}
+     * )
+     */
     public function updatePrintTemplate($uuid)
     {
         try {
@@ -151,6 +318,29 @@ class PrintQueueController extends ResourceController
         }
     }
 
+    /**
+     * @OA\Delete(
+     *     path="/print-queue/templates/{uuid}",
+     *     summary="Delete a print template",
+     *     tags={"Print Templates"},
+     *     @OA\Parameter(
+     *         name="uuid",
+     *         in="path",
+     *         required=true,
+     *         description="UUID of the template to delete",
+     *         @OA\Schema(type="string", format="uuid")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Template deleted successfully"
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Template not found"
+     *     ),
+     *     security={{"bearerAuth": {}}}
+     * )
+     */
     public function deletePrintTemplate($uuid)
     {
         try {
@@ -196,6 +386,33 @@ class PrintQueueController extends ResourceController
         }
     }
 
+    /**
+     * @OA\Get(
+     *     path="/print-queue/templates/{uuid}",
+     *     summary="Get a specific print template",
+     *     tags={"Print Templates"},
+     *     @OA\Parameter(
+     *         name="uuid",
+     *         in="path",
+     *         required=true,
+     *         description="UUID of the template",
+     *         @OA\Schema(type="string", format="uuid")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Template details",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="data", type="object"),
+     *             @OA\Property(property="displayColumns", type="array", @OA\Items(type="string"))
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Template not found"
+     *     ),
+     *     security={{"bearerAuth": {}}}
+     * )
+     */
     public function getTemplate($uuid)
     {
         try {
@@ -225,6 +442,59 @@ class PrintQueueController extends ResourceController
         }
     }
 
+    /**
+     * @OA\Get(
+     *     path="/print-queue/templates",
+     *     summary="Get all accessible print templates",
+     *     tags={"Print Templates"},
+     *     @OA\Parameter(
+     *         name="limit",
+     *         in="query",
+     *         description="Number of items per page",
+     *         required=false,
+     *         @OA\Schema(type="integer", default=100)
+     *     ),
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         description="Page number",
+     *         required=false,
+     *         @OA\Schema(type="integer", default=0)
+     *     ),
+     *     @OA\Parameter(
+     *         name="param",
+     *         in="query",
+     *         description="Search parameter",
+     *         required=false,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="sortBy",
+     *         in="query",
+     *         description="Field to sort by",
+     *         required=false,
+     *         @OA\Schema(type="string", default="id")
+     *     ),
+     *     @OA\Parameter(
+     *         name="sortOrder",
+     *         in="query",
+     *         description="Sort order (asc/desc)",
+     *         required=false,
+     *         @OA\Schema(type="string", default="asc")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="List of templates",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="data", type="array", @OA\Items(type="object")),
+     *             @OA\Property(property="total", type="integer"),
+     *             @OA\Property(property="displayColumns", type="array", @OA\Items(type="string")),
+     *             @OA\Property(property="columnFilters", type="array", @OA\Items(type="object"))
+     *         )
+     *     ),
+     *     security={{"bearerAuth": {}}}
+     * )
+     */
     public function getTemplates()
     {
         try {
@@ -296,62 +566,43 @@ class PrintQueueController extends ResourceController
         }
     }
 
-    public function docxToHtml()
-    {
-        $file = $this->request->getFile('docxFile');
-
-        if (!$file || !$file->isValid()) {
-            return $this->respond(['message' => 'No valid DOCX file was uploaded'], ResponseInterface::HTTP_BAD_REQUEST);
-        }
-
-        // Check file type
-        if ($file->getClientMimeType() !== 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-            return $this->respond(['message' => 'Uploaded file is not a DOCX document'], ResponseInterface::HTTP_BAD_REQUEST);
-        }
-
-        try {
-            // Move the uploaded file to a temporary location
-            $tempPath = $file->getTempName();
-
-            // Load the Word document
-            $phpWord = IOFactory::load($tempPath);
-
-            // Create a temporary file for the HTML output
-            $htmlPath = WRITEPATH . 'uploads/' . $file->getRandomName() . '.html';
-
-            // Make sure the directory exists
-            if (!is_dir(dirname($htmlPath))) {
-                mkdir(dirname($htmlPath), 0777, true);
-            }
-
-            // Convert to HTML
-            $htmlWriter = IOFactory::createWriter($phpWord, 'HTML');
-            $htmlWriter->save($htmlPath);
-
-            // Read the generated HTML file
-            $htmlContent = file_get_contents($htmlPath);
-
-            // Remove the temporary HTML file
-            unlink($htmlPath);
-            return $this->respond([
-                'data' => $htmlContent,
-                
-            ], ResponseInterface::HTTP_OK);
-
-            
-
-        } catch (\Exception $e) {
-            log_message('error', 'DOCX to HTML conversion error: ' . $e->getMessage());
-            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
-
-            
-        }
-    }
     /**
-     * receive the list of objects, and the template. substitute the variables in the template with the values in the objects
-     * and send back the html
+     * @OA\Post(
+     *     path="/print-queue/templates/{uuid}/print-selection",
+     *     summary="Execute template with provided data",
+     *     tags={"Print Queue"},
+     *     @OA\Parameter(
+     *         name="uuid",
+     *         in="path",
+     *         required=true,
+     *         description="UUID of the template to execute",
+     *         @OA\Schema(type="string", format="uuid")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"objects"},
+     *             @OA\Property(
+     *                 property="objects",
+     *                 type="array",
+     *                 @OA\Items(type="object", description="Data objects to merge with template")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Template executed successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="data", type="string", description="Generated HTML content")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Template not found"
+     *     ),
+     *     security={{"bearerAuth": {}}}
+     * )
      */
-
     public function execute($uuid)
     {
         try {

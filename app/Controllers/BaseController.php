@@ -10,6 +10,14 @@ use CodeIgniter\HTTP\ResponseInterface;
 use Psr\Log\LoggerInterface;
 
 /**
+ * @OA\Info(title="API Name", version="1.0")
+ * @OA\Tag(name="Tag Name", description="Tag description")
+ * @OA\Tag(
+ *     name="Base",
+ *     description="Operations for managing and viewing system base"
+ * )
+ */
+/**
  * Class BaseController
  *
  * BaseController provides a convenient place for loading components

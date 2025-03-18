@@ -11,6 +11,15 @@ use App\Models\Cpd\CpdAttendanceModel;
 use App\Models\ActivitiesModel;
 use \Exception;
 use App\Helpers\Utils;
+
+/**
+ * @OA\Info(title="API Name", version="1.0")
+ * @OA\Tag(name="Tag Name", description="Tag description")
+ * @OA\Tag(
+ *     name="Cpd",
+ *     description="Operations for managing and viewing CPD"
+ * )
+ */
 class CpdController extends ResourceController
 {
 

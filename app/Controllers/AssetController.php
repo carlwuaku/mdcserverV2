@@ -6,6 +6,14 @@ use CodeIgniter\RESTful\ResourceController;
 use CodeIgniter\HTTP\ResponseInterface;
 use App\Helpers\Constants;
 
+/**
+ * @OA\Info(title="API Name", version="1.0")
+ * @OA\Tag(name="Tag Name", description="Tag description")
+ * @OA\Tag(
+ *     name="Asset",
+ *     description="Operations for managing and viewing system assets"
+ * )
+ */
 class AssetController extends ResourceController
 {
 

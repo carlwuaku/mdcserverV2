@@ -5,7 +5,6 @@ namespace App\Controllers;
 use App\Models\PermissionsModel;
 use App\Models\RolePermissionsModel;
 use App\Models\RolesModel;
-use CodeIgniter\Config\Config;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 use CodeIgniter\Shield\Entities\User;
@@ -15,21 +14,31 @@ use Google\ReCaptcha\ReCaptcha;
 use ReCaptcha\ReCaptcha as ReCaptchaReCaptcha;
 use App\Helpers\CacheHelper;
 
+/**
+ * @OA\Tag(
+ *     name="Authentication",
+ *     description="Authentication and user management operations"
+ * )
+ * @OA\Tag(
+ *     name="User Management",
+ *     description="Operations for managing users, roles, and permissions"
+ * )
+ */
 class AuthController extends ResourceController
 {
 
     public function appSettings()
     {
-        return CacheHelper::remember('app_settings', function() {
-            //read the data from app-settings.json at the root of the project
-            $data = json_decode(file_get_contents(ROOTPATH . 'app-settings.json'), true);
-            //if logo is set, append the base url to it
-            if (isset($data['logo'])) {
-                $data['logo'] = base_url() . $data['logo'];
-            }
-            $data['recaptchaSiteKey'] = getenv('RECAPTCHA_PUBLIC_KEY');
-            return $this->respond($data, ResponseInterface::HTTP_OK);
-        }, 3600); // Cache for 1 hour
+        // return CacheHelper::remember('app_settings', function() {
+        //read the data from app-settings.json at the root of the project
+        $data = json_decode(file_get_contents(ROOTPATH . 'app-settings.json'), true);
+        //if logo is set, append the base url to it
+        if (isset($data['logo'])) {
+            $data['logo'] = base_url() . $data['logo'];
+        }
+        $data['recaptchaSiteKey'] = getenv('RECAPTCHA_PUBLIC_KEY');
+        return $this->respond($data, ResponseInterface::HTTP_OK);
+        // }, 3600); // Cache for 1 hour
     }
 
     public function verifyRecaptcha()
@@ -46,6 +55,30 @@ class AuthController extends ResourceController
         }
     }
 
+    /**
+     * @OA\Post(
+     *     path="/api/register",
+     *     summary="Register new user",
+     *     tags={"Authentication"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"email", "password", "password_confirm"},
+     *             @OA\Property(property="email", type="string", format="email"),
+     *             @OA\Property(property="password", type="string", format="password"),
+     *             @OA\Property(property="password_confirm", type="string", format="password")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Registration successful"
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Validation error"
+     *     )
+     * )
+     */
     public function register()
     {
         $rules = [
@@ -56,7 +89,6 @@ class AuthController extends ResourceController
         if (!$this->validate($rules)) {
             $message = implode(" ", array_values($this->validator->getErrors()));
             return $this->respond(['message' => $message], ResponseInterface::HTTP_BAD_REQUEST);
-
         }
         $userObject = new UsersModel();
         $userEntityObject = new User(
@@ -76,6 +108,33 @@ class AuthController extends ResourceController
         return $this->respondCreated($response);
     }
 
+    /**
+     * @OA\Post(
+     *     path="/api/login",
+     *     summary="User login",
+     *     tags={"Authentication"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"email", "password"},
+     *             @OA\Property(property="email", type="string", format="email"),
+     *             @OA\Property(property="password", type="string", format="password")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Login successful",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="token", type="string"),
+     *             @OA\Property(property="user", type="object")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Invalid credentials"
+     *     )
+     * )
+     */
     public function login()
     {
         if (auth()->loggedIn()) {
@@ -98,7 +157,6 @@ class AuthController extends ResourceController
         $loginAttempt = auth()->attempt($credentials);
         if (!$loginAttempt->isOK()) {
             return $this->respond(["message" => "Wrong combination. Try again"], ResponseInterface::HTTP_NOT_FOUND);
-
         }
 
         $userObject = new UsersModel();
@@ -118,11 +176,19 @@ class AuthController extends ResourceController
     }
 
     /**
-     * @api {get} /profile get the details of the currently logged in user making the request
-     * @apiName profile
-     * @apiGroup Authentication
-     *
-     * @apiSuccess {['user' => UserObject, 'permissions' => [string array]]} Permission added to Role successfully.
+     * @OA\Get(
+     *     path="/admin/profile",
+     *     summary="Get user profile",
+     *     tags={"Authentication"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="User profile data",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="user", type="object")
+     *         )
+     *     ),
+     *     security={{"bearerAuth": {}}}
+     * )
      */
     public function profile()
     {
@@ -145,6 +211,18 @@ class AuthController extends ResourceController
         ]);
     }
 
+    /**
+     * @OA\Get(
+     *     path="/admin/logout",
+     *     summary="User logout",
+     *     tags={"Authentication"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Logout successful"
+     *     ),
+     *     security={{"bearerAuth": {}}}
+     * )
+     */
     public function logout()
     {
         auth()->logout();
@@ -162,14 +240,13 @@ class AuthController extends ResourceController
     public function accessDenied()
     {
         return $this->respond(['message' => "You're not logged in"], ResponseInterface::HTTP_UNAUTHORIZED);
-
     }
 
     public function mobileLogin()
     {
         // Validate credentials
         $rules = setting('Validation.login') ?? [
-            'email' => config('Auth')->emailValidationRules,
+            'email' => config('auth')->emailValidationRules,
             'password' => [
                 'label' => 'Auth.password',
                 'rules' => 'required',
@@ -237,8 +314,31 @@ class AuthController extends ResourceController
             ->setJSON(['token' => $token->raw_token]);
     }
 
-    //add permissions to role_name, remove permission from role_name, create a role, edit a role,
-
+    /**
+     * @OA\Post(
+     *     path="/admin/roles",
+     *     summary="Create new role",
+     *     tags={"User Management"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"role_name"},
+     *             @OA\Property(property="role_name", type="string"),
+     *             @OA\Property(property="description", type="string"),
+     *             @OA\Property(property="login_destination", type="string")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Role created successfully"
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Validation error"
+     *     ),
+     *     security={{"bearerAuth": {}}}
+     * )
+     */
     public function createRole()
     {
         $rules = [
@@ -310,6 +410,36 @@ class AuthController extends ResourceController
         return $this->respond(['data' => $data, 'permissions' => $permissions, 'excludedPermissions' => $excludedPermissions], ResponseInterface::HTTP_OK);
     }
 
+    /**
+     * @OA\Get(
+     *     path="/admin/roles",
+     *     summary="Get all roles",
+     *     tags={"User Management"},
+     *     @OA\Parameter(
+     *         name="limit",
+     *         in="query",
+     *         description="Number of items per page",
+     *         required=false,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         description="Page number",
+     *         required=false,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="List of roles",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="data", type="array", @OA\Items(type="object")),
+     *             @OA\Property(property="total", type="integer")
+     *         )
+     *     ),
+     *     security={{"bearerAuth": {}}}
+     * )
+     */
     public function getRoles()
     {
         $per_page = $this->request->getVar('limit') ? (int) $this->request->getVar('limit') : 100;
@@ -386,6 +516,31 @@ class AuthController extends ResourceController
 
 
 
+    /**
+     * @OA\Post(
+     *     path="/admin/users",
+     *     summary="Create new user",
+     *     tags={"User Management"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"email", "password", "role_id"},
+     *             @OA\Property(property="email", type="string", format="email"),
+     *             @OA\Property(property="password", type="string", format="password"),
+     *             @OA\Property(property="role_id", type="integer")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="User created successfully"
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Validation error"
+     *     ),
+     *     security={{"bearerAuth": {}}}
+     * )
+     */
     public function createUser()
     {
         $rules = [
@@ -472,9 +627,9 @@ class AuthController extends ResourceController
             }
 
             // If a new password was provided, hash it before saving
-//    if (isset($data['password']) && $data['password'] !== '') {
-//        $existingUser->password = password_hash($data['password'], PASSWORD_DEFAULT);
-//    }
+            //    if (isset($data['password']) && $data['password'] !== '') {
+            //        $existingUser->password = password_hash($data['password'], PASSWORD_DEFAULT);
+            //    }
 
             $userObject->save($existingUser);
 
@@ -505,6 +660,36 @@ class AuthController extends ResourceController
         return $this->respond(['data' => $data,], ResponseInterface::HTTP_OK);
     }
 
+    /**
+     * @OA\Get(
+     *     path="/admin/users",
+     *     summary="Get all users",
+     *     tags={"User Management"},
+     *     @OA\Parameter(
+     *         name="limit",
+     *         in="query",
+     *         description="Number of items per page",
+     *         required=false,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         description="Page number",
+     *         required=false,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="List of users",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="data", type="array", @OA\Items(type="object")),
+     *             @OA\Property(property="total", type="integer")
+     *         )
+     *     ),
+     *     security={{"bearerAuth": {}}}
+     * )
+     */
     public function getUsers()
     {
         try {

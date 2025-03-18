@@ -12,6 +12,12 @@ use CodeIgniter\API\ResponseTrait;
 use CodeIgniter\CLI\CLI;
 use App\Models\ActivitiesModel;
 
+/**
+ * @OA\Tag(
+ *     name="Email",
+ *     description="Operations for managing email queue and sending emails"
+ * )
+ */
 class EmailController extends ResourceController
 {
    use ResponseTrait;
@@ -25,7 +31,39 @@ class EmailController extends ResourceController
       $this->emailQueueLogModel = new EmailQueueLogModel();
    }
 
-
+   /**
+    * @OA\Post(
+    *     path="/email/send",
+    *     summary="Send an email",
+    *     description="Queue an email for sending with optional scheduling and attachments",
+    *     tags={"Email"},
+    *     @OA\RequestBody(
+    *         required=true,
+    *         @OA\JsonContent(
+    *             required={"subject", "message", "email", "sender", "receiver"},
+    *             @OA\Property(property="subject", type="string", description="Email subject"),
+    *             @OA\Property(property="message", type="string", description="Email body content"),
+    *             @OA\Property(property="email", type="string", format="email", description="Sender's email address"),
+    *             @OA\Property(property="sender", type="string", description="Sender's name"),
+    *             @OA\Property(property="receiver", type="string", description="Recipient's email address"),
+    *             @OA\Property(property="cc", type="string", description="CC recipients", nullable=true),
+    *             @OA\Property(property="bcc", type="string", description="BCC recipients", nullable=true),
+    *             @OA\Property(property="attachment", type="string", description="File attachment path", nullable=true),
+    *             @OA\Property(property="priority", type="integer", description="Email priority (1-5)", default=2),
+    *             @OA\Property(property="scheduled_at", type="string", format="date-time", description="Schedule time for sending", nullable=true)
+    *         )
+    *     ),
+    *     @OA\Response(
+    *         response=200,
+    *         description="Email queued successfully"
+    *     ),
+    *     @OA\Response(
+    *         response=400,
+    *         description="Validation error"
+    *     ),
+    *     security={{"bearerAuth": {}}}
+    * )
+    */
    public function send()
    {
       try {
@@ -68,7 +106,74 @@ class EmailController extends ResourceController
       }
    }
 
-   // Endpoint to view email queue
+   /**
+    * @OA\Get(
+    *     path="/email/queue",
+    *     summary="Get email queue",
+    *     description="Retrieve list of emails in the queue with optional filtering",
+    *     tags={"Email"},
+    *     @OA\Parameter(
+    *         name="status",
+    *         in="query",
+    *         description="Filter by email status",
+    *         required=false,
+    *         @OA\Schema(type="string")
+    *     ),
+    *     @OA\Parameter(
+    *         name="start_date",
+    *         in="query",
+    *         description="Filter by start date",
+    *         required=false,
+    *         @OA\Schema(type="string", format="date")
+    *     ),
+    *     @OA\Parameter(
+    *         name="end_date",
+    *         in="query",
+    *         description="Filter by end date",
+    *         required=false,
+    *         @OA\Schema(type="string", format="date")
+    *     ),
+    *     @OA\Parameter(
+    *         name="cc",
+    *         in="query",
+    *         description="Filter by CC recipient",
+    *         required=false,
+    *         @OA\Schema(type="string")
+    *     ),
+    *     @OA\Parameter(
+    *         name="bcc",
+    *         in="query",
+    *         description="Filter by BCC recipient",
+    *         required=false,
+    *         @OA\Schema(type="string")
+    *     ),
+    *     @OA\Parameter(
+    *         name="limit",
+    *         in="query",
+    *         description="Number of items per page",
+    *         required=false,
+    *         @OA\Schema(type="integer", default=100)
+    *     ),
+    *     @OA\Parameter(
+    *         name="page",
+    *         in="query",
+    *         description="Page number",
+    *         required=false,
+    *         @OA\Schema(type="integer", default=0)
+    *     ),
+    *     @OA\Response(
+    *         response=200,
+    *         description="List of queued emails",
+    *         @OA\JsonContent(
+    *             @OA\Property(property="data", type="array", @OA\Items(type="object")),
+    *             @OA\Property(property="total", type="integer"),
+    *             @OA\Property(property="displayColumns", type="array", @OA\Items(type="string")),
+    *             @OA\Property(property="columnFilters", type="object")
+    *         )
+    *     ),
+    *     security={{"bearerAuth": {}}}
+    * )
+    */
    public function getQueue($status = null)
    {
       try {
@@ -124,6 +229,29 @@ class EmailController extends ResourceController
       }
    }
 
+   /**
+    * @OA\Get(
+    *     path="/email/queue/count",
+    *     summary="Count emails in queue",
+    *     description="Get the total count of emails in queue, optionally filtered by status",
+    *     tags={"Email"},
+    *     @OA\Parameter(
+    *         name="status",
+    *         in="query",
+    *         description="Filter by email status",
+    *         required=false,
+    *         @OA\Schema(type="string")
+    *     ),
+    *     @OA\Response(
+    *         response=200,
+    *         description="Email count",
+    *         @OA\JsonContent(
+    *             @OA\Property(property="data", type="integer")
+    *         )
+    *     ),
+    *     security={{"bearerAuth": {}}}
+    * )
+    */
    public function countQueue($status = null)
    {
       try {
@@ -144,7 +272,35 @@ class EmailController extends ResourceController
       }
    }
 
-   // Endpoint to retry a failed email
+   /**
+    * @OA\Post(
+    *     path="/email/retry",
+    *     summary="Retry failed emails",
+    *     description="Attempt to resend failed emails from the queue",
+    *     tags={"Email"},
+    *     @OA\RequestBody(
+    *         required=true,
+    *         @OA\JsonContent(
+    *             required={"ids"},
+    *             @OA\Property(
+    *                 property="ids",
+    *                 type="array",
+    *                 @OA\Items(type="integer"),
+    *                 description="Array of email queue IDs to retry"
+    *             )
+    *         )
+    *     ),
+    *     @OA\Response(
+    *         response=200,
+    *         description="Emails processed successfully"
+    *     ),
+    *     @OA\Response(
+    *         response=400,
+    *         description="Invalid request"
+    *     ),
+    *     security={{"bearerAuth": {}}}
+    * )
+    */
    public function retry()
    {
       try {
@@ -165,7 +321,41 @@ class EmailController extends ResourceController
       }
    }
 
-   // Endpoint to cancel a pending email
+   /**
+    * @OA\Post(
+    *     path="/email/cancel/{id}",
+    *     summary="Cancel pending emails",
+    *     description="Cancel pending emails in the queue",
+    *     tags={"Email"},
+    *     @OA\Parameter(
+    *         name="id",
+    *         in="path",
+    *         required=true,
+    *         @OA\Schema(type="integer")
+    *     ),
+    *     @OA\RequestBody(
+    *         required=true,
+    *         @OA\JsonContent(
+    *             required={"ids"},
+    *             @OA\Property(
+    *                 property="ids",
+    *                 type="array",
+    *                 @OA\Items(type="integer"),
+    *                 description="Array of email queue IDs to cancel"
+    *             )
+    *         )
+    *     ),
+    *     @OA\Response(
+    *         response=200,
+    *         description="Emails cancelled successfully"
+    *     ),
+    *     @OA\Response(
+    *         response=400,
+    *         description="Invalid request"
+    *     ),
+    *     security={{"bearerAuth": {}}}
+    * )
+    */
    public function cancel($id)
    {
       try {
@@ -195,6 +385,35 @@ class EmailController extends ResourceController
       }
    }
 
+   /**
+    * @OA\Delete(
+    *     path="/email/queue",
+    *     summary="Delete emails from queue",
+    *     description="Permanently delete emails from the queue",
+    *     tags={"Email"},
+    *     @OA\RequestBody(
+    *         required=true,
+    *         @OA\JsonContent(
+    *             required={"ids"},
+    *             @OA\Property(
+    *                 property="ids",
+    *                 type="array",
+    *                 @OA\Items(type="integer"),
+    *                 description="Array of email queue IDs to delete"
+    *             )
+    *         )
+    *     ),
+    *     @OA\Response(
+    *         response=200,
+    *         description="Emails deleted successfully"
+    *     ),
+    *     @OA\Response(
+    *         response=400,
+    *         description="Invalid request"
+    *     ),
+    *     security={{"bearerAuth": {}}}
+    * )
+    */
    public function deleteQueueItem()
    {
       try {

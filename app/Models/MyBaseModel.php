@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use CodeIgniter\Model;
@@ -43,13 +44,11 @@ class MyBaseModel extends Model
                 $fields[] = "$this->table.$orginalField";
             }
             if (!empty($this->joinSearchFields)) {
-                log_message("info", "Join search fields: " . print_r($this->joinSearchFields, true));
                 foreach ($this->joinSearchFields['fields'] as $field) {
                     $table = $this->joinSearchFields['table'];
                     $fields[] = "$table.$field";
                 }
                 $builder->join($table, $this->joinSearchFields['joinCondition'], 'left');
-
             }
             $conditions = [];
             foreach ($words as $word) {
@@ -69,7 +68,6 @@ class MyBaseModel extends Model
                         }
                     }
                     $conditions[] = "(" . implode(" and ", $wordlikeConditions) . ")";
-
                 }
             }
 
@@ -162,7 +160,7 @@ class MyBaseModel extends Model
      */
     public function getDistinctValuesAsKeyValuePairs(string $column): array
     {
-        $results = $this->getDistinctValues($column);//[[$column=>"value1"], [$column=>"value2"]]
+        $results = $this->getDistinctValues($column); //[[$column=>"value1"], [$column=>"value2"]]
         $oneDimensionalArray = [];
         foreach ($results as $result) {
             $oneDimensionalArray[] = $result[$column];
@@ -206,6 +204,10 @@ class MyBaseModel extends Model
         }
         $builder->groupBy($columns);
         return $builder->get()->getResultArray();
+    }
 
+    public function getTableName(): string
+    {
+        return $this->table;
     }
 }

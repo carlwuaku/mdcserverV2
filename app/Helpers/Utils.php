@@ -1,5 +1,7 @@
 <?php
+
 namespace App\Helpers;
+
 use Endroid\QrCode\Color\Color;
 use Endroid\QrCode\Encoding\Encoding;
 use Endroid\QrCode\ErrorCorrectionLevel;
@@ -13,6 +15,7 @@ use \DateTime;
 use App\Models\Cpd\CpdModel;
 use App\Models\Cpd\ExternalCpdsModel;
 use App\Models\Cpd\CpdAttendanceModel;
+
 class Utils
 {
 
@@ -86,7 +89,7 @@ class Utils
             textColor: new Color(255, 0, 0)
         );
 
-        $result = $writer->write(qrCode: $qrCode, label: $label);
+        $result = $writer->write(qrCode: $qrCode);
 
         // Validate the result
         $writer->validateResult($result, $qrText);
@@ -110,9 +113,7 @@ class Utils
     }
 
 
-    public static function fillTemplate()
-    {
-    }
+    public static function fillTemplate() {}
 
     public static function generateApplicationCode($formType)
     {
@@ -151,7 +152,8 @@ class Utils
      * @param string $license
      * @return object {table: string, fields: array, onCreateValidation: array, 
      * onUpdateValidation: array, renewalFields: array, renewalTable: string, renewalStages: object, 
-     * fieldsToUpdateOnRenewal: array}
+     * fieldsToUpdateOnRenewal: array, basicStatisticsFields: array,
+     *  basicStatisticsFilterFields: array, advancedStatisticsFields: array, renewalFilterFields: array}
      */
     public static function getLicenseSetting(string $license): object
     {
@@ -175,7 +177,6 @@ class Utils
         } catch (\Throwable $th) {
             throw $th;
         }
-
     }
 
     /**
@@ -191,7 +192,6 @@ class Utils
         } catch (\Throwable $th) {
             throw $th;
         }
-
     }
 
     /**
@@ -207,7 +207,6 @@ class Utils
         } catch (\Throwable $th) {
             throw $th;
         }
-
     }
 
     /**
@@ -224,7 +223,6 @@ class Utils
         } catch (\Throwable $th) {
             throw $th;
         }
-
     }
 
     /**
@@ -245,7 +243,6 @@ class Utils
         } catch (\Throwable $th) {
             throw $th;
         }
-
     }
 
     /**
@@ -317,7 +314,6 @@ class Utils
         } catch (\Throwable $th) {
             throw $th;
         }
-
     }
 
     public static function generateSecureDocument($documentData)
@@ -541,13 +537,28 @@ class Utils
             }
 
             return ["score" => $sum_total, "attendance" => $response];
-
-
         } catch (\Throwable $th) {
             throw $th;
         }
-
-
     }
 
+    /**
+     * Get the start and end dates from a date range string.
+     * @param string $dateRange
+     * @return array{start: string, end: string}
+     */
+    public static function getDateRange($dateRange)
+    {
+        if (strpos($dateRange, ' to ') !== false) {
+            list($start, $end) = explode(' to ', $dateRange);
+            return [
+                'start' => $start,
+                'end' => $end
+            ];
+        }
+        return [
+            'start' => $dateRange,
+            'end' => $dateRange
+        ];
+    }
 }

@@ -14,6 +14,15 @@ use App\Helpers\Utils;
 use \Exception;
 use SimpleSoftwareIO\QrCode\Generator;
 
+
+/**
+ * @OA\Info(title="API Name", version="1.0")
+ * @OA\Tag(name="Tag Name", description="Tag description")
+ * @OA\Tag(
+ *     name="Practitioner",
+ *     description="Operations for managing and viewing practitioners"
+ * )
+ */
 class PractitionerController extends ResourceController
 {
     private $practitionerUtils ;

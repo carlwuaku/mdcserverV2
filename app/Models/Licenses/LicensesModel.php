@@ -127,8 +127,7 @@ class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormIn
 
     public function getDisplayColumnLabels(): array
     {
-        return [
-        ];
+        return [];
     }
 
 
@@ -272,19 +271,23 @@ class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormIn
      * @param bool $addJoin in some cases a join may have been added already, particularly if there is a search operation
      * @return BaseBuilder
      */
-    public function addLicenseDetails(BaseBuilder $builder, string $licenseType, bool $addJoin): BaseBuilder
+    public function addLicenseDetails(BaseBuilder $builder, string $licenseType, bool $addJoin, string $licenseJoinConditions = ''): BaseBuilder
     {
         try {
             $licenseDef = Utils::getLicenseSetting($licenseType);
             $fields = $licenseDef->fields;
-            $table = $licenseDef->table;
+            $licenseTypeTable = $licenseDef->table;
             $columns = [];
             for ($i = 0; $i < count($fields); $i++) {
-                $columns[] = $table . "." . $fields[$i]['name'];
+                $columns[] = $licenseTypeTable . "." . $fields[$i]['name'];
             }
             $builder->select($columns);
+            $fullLicenseJoinConditions = $this->table . ".license_number = $licenseTypeTable.license_number ";
+            if ($licenseJoinConditions) {
+                $fullLicenseJoinConditions .= ' AND ' . $licenseJoinConditions;
+            }
             if ($addJoin) {
-                $builder->join($table, $table . '.license_number = licenses.license_number');
+                $builder->join($licenseTypeTable, $fullLicenseJoinConditions);
             }
 
             return $builder;
@@ -497,6 +500,176 @@ class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormIn
                 "value" => "",
                 "required" => false
             ],
+            [
+                "label" => "Last Revalidation Date",
+                "name" => "last_revalidation_date",
+                "type" => "date",
+                "hint" => "",
+                "options" => [],
+                "value" => "",
+                "required" => false
+            ],
+            [
+                "label" => "Require Revalidation",
+                "name" => "require_revalidation",
+                "type" => "select",
+                "hint" => "",
+                "options" => [
+                    [
+                        "key" => "Yes",
+                        "value" => "yes"
+                    ],
+                    [
+                        "key" => "No",
+                        "value" => "no"
+                    ]
+                ],
+                "value" => "",
+                "required" => false
+            ],
+            [
+                "label" => "Register Type",
+                "name" => "register_type",
+                "type" => "select",
+                "hint" => "",
+                "options" => [
+                    [
+                        "key" => "Provisional",
+                        "value" => "Provisional"
+                    ],
+                    [
+                        "key" => "Permanent",
+                        "value" => "Permanent"
+                    ],
+                    [
+                        "key" => "Temporary",
+                        "value" => "Temporary"
+                    ]
+                ],
+                "value" => "",
+                "required" => true
+            ],
         ];
+    }
+
+    /**
+     * get the fields for the basic statistics
+     * @param string $licenseType
+     * @return array{default: BasicStatisticsField[], custom: BasicStatisticsField[]}
+     */
+    public function getBasicStatisticsFields($licenseType = '')
+    {
+        if (!empty($licenseType)) {
+            $licenseDef = Utils::getLicenseSetting($licenseType);
+            $fields = $licenseDef->basicStatisticsFields ?? [];
+            $fields = array_map(function ($field) {
+                return new BasicStatisticsField($field['label'], $field['name'], $field['type'], $field['xAxisLabel'], $field['yAxisLabel']);
+            }, $fields);
+        } else {
+            $fields = [];
+        }
+        $defaultFields =  [
+            new BasicStatisticsField("Year of registration", "year(registration_date) as year", "bar", "Year", "Number of licenses"),
+            new BasicStatisticsField("Status", "status", "bar", "Status", "Number of licenses"),
+            new BasicStatisticsField("Region", "region", "bar", "Region", "Number of licenses"),
+            new BasicStatisticsField("District", "district", "bar", "District", "Number of licenses"),
+            new BasicStatisticsField("Country of practice", "country_of_practice", "bar", "Country of practice", "Number of licenses"),
+        ];
+
+        return [
+            "default" => $defaultFields,
+            "custom" => $fields
+        ];
+    }
+
+    public function getBasicStatisticsFilterFields($licenseType = '')
+    {
+        if (!empty($licenseType)) {
+            $licenseDef = Utils::getLicenseSetting($licenseType);
+            $fields = $licenseDef->basicStatisticsFilterFields ?? [];
+        } else {
+            $fields = [
+
+                [
+                    "label" => "Region",
+                    "name" => "region",
+                    "type" => "api",
+                    "hint" => "",
+                    "options" => [],
+                    "value" => "",
+                    "required" => false,
+                    "api_url" => "regions/regions",
+                    "apiKeyProperty" => "name",
+                    "apiLabelProperty" => "name",
+                    "apiType" => "select",
+                ],
+                [
+                    "label" => "District",
+                    "name" => "district",
+                    "type" => "api",
+                    "hint" => "",
+                    "options" => [],
+                    "value" => "",
+                    "required" => false,
+                    "api_url" => "regions/districts",
+                    "apiKeyProperty" => "district",
+                    "apiLabelProperty" => "district",
+                    "apiType" => "select",
+                ],
+
+                [
+                    "label" => "Register Type",
+                    "name" => "register_type",
+                    "type" => "select",
+                    "hint" => "",
+                    "options" => [
+                        [
+                            "key" => "Provisional",
+                            "value" => "Provisional"
+                        ],
+                        [
+                            "key" => "Permanent",
+                            "value" => "Permanent"
+                        ],
+                        [
+                            "key" => "Temporary",
+                            "value" => "Temporary"
+                        ]
+                    ],
+                    "value" => "",
+                    "required" => true
+                ]
+            ];
+        }
+        $defaultFields = [];
+        return [
+            "default" => $defaultFields,
+            "custom" => $fields
+        ];
+    }
+}
+
+class BasicStatisticsField
+{
+    public $label;
+    public $name;
+    public $type;
+    public $data;
+
+    public $xAxisLabel;
+    public $yAxisLabel;
+
+    public $valueProperty;
+    public $labelProperty;
+
+    public function __construct($label, $name, $type, $xAxisLabel = '', $yAxisLabel = '', $valueProperty = '', $labelProperty = '')
+    {
+        $this->label = $label;
+        $this->name = $name;
+        $this->type = $type;
+        $this->xAxisLabel = $xAxisLabel;
+        $this->yAxisLabel = $yAxisLabel;
+        $this->valueProperty = $valueProperty;
+        $this->labelProperty = $labelProperty;
     }
 }
