@@ -9,7 +9,7 @@ on:
 jobs:
   call-migration-url:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    
     steps:
       - name: Call URL
         run: |

@@ -747,14 +747,14 @@ class AuthController extends ResourceController
 
     public function migrate()
     {
-        $config = Config::get('Migrations');
+        $config = config('Migrations');
         $migration = new MigrationRunner(
             $config
         );
 
 
         try {
-            echo print_r($migration->findMigrations(), true);
+            // echo print_r($migration->findMigrations(), true);
             $migration->latest();
             echo "Migrations run successfully.";
         } catch (\Exception $e) {

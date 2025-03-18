@@ -10,19 +10,19 @@ class AddPrintTemplatePermissions extends Migration
     {
         $data = [
             [
-                'permission' => 'Create_Print_Templates',
+                'name' => 'Create_Print_Templates',
                 'description' => 'Permission to create new print templates',
                 'created_at' => date('Y-m-d H:i:s'),
                 'updated_at' => date('Y-m-d H:i:s')
             ],
             [
-                'permission' => 'Delete_Print_Templates',
+                'name' => 'Delete_Print_Templates',
                 'description' => 'Permission to delete existing print templates',
                 'created_at' => date('Y-m-d H:i:s'),
                 'updated_at' => date('Y-m-d H:i:s')
             ],
             [
-                'permission' => 'Edit_Print_Templates',
+                'name' => 'Edit_Print_Templates',
                 'description' => 'Permission to edit existing print templates',
                 'created_at' => date('Y-m-d H:i:s'),
                 'updated_at' => date('Y-m-d H:i:s')
@@ -44,4 +44,4 @@ class AddPrintTemplatePermissions extends Migration
             ])
             ->delete();
     }
-} 
+}
