@@ -9,10 +9,80 @@ use CodeIgniter\HTTP\ResponseInterface;
 use App\Helpers\CacheHelper;
 use App\Traits\CacheInvalidatorTrait;
 
+/**
+ * @OA\Tag(
+ *     name="Specialties",
+ *     description="Operations for managing medical specialties and subspecialties"
+ * )
+ */
 class SpecialtiesController extends ResourceController
 {
     use CacheInvalidatorTrait;
 
+    /**
+     * @OA\Get(
+     *     path="/specialties",
+     *     summary="Get all specialties",
+     *     description="Returns a list of medical specialties with optional filtering and pagination",
+     *     tags={"Specialties"},
+     *     @OA\Parameter(
+     *         name="limit",
+     *         in="query",
+     *         description="Number of items per page",
+     *         required=false,
+     *         @OA\Schema(type="integer", default=1000)
+     *     ),
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         description="Page number",
+     *         required=false,
+     *         @OA\Schema(type="integer", default=0)
+     *     ),
+     *     @OA\Parameter(
+     *         name="withDeleted",
+     *         in="query",
+     *         description="Include deleted records",
+     *         required=false,
+     *         @OA\Schema(type="string", enum={"yes", "no"})
+     *     ),
+     *     @OA\Parameter(
+     *         name="param",
+     *         in="query",
+     *         description="Search parameter",
+     *         required=false,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="sortBy",
+     *         in="query",
+     *         description="Field to sort by",
+     *         required=false,
+     *         @OA\Schema(type="string", default="id")
+     *     ),
+     *     @OA\Parameter(
+     *         name="sortOrder",
+     *         in="query",
+     *         description="Sort order (asc/desc)",
+     *         required=false,
+     *         @OA\Schema(type="string", default="asc")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="List of specialties",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="data", type="array", @OA\Items(type="object")),
+     *             @OA\Property(property="total", type="integer"),
+     *             @OA\Property(property="displayColumns", type="array", @OA\Items(type="string"))
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error"
+     *     ),
+     *     security={{"bearerAuth": {}}}
+     * )
+     */
     public function getSpecialties()
     {
         try {
@@ -50,6 +120,52 @@ class SpecialtiesController extends ResourceController
         }
     }
 
+    /**
+     * @OA\Get(
+     *     path="/subspecialties",
+     *     summary="Get subspecialties",
+     *     description="Returns a list of medical subspecialties with optional filtering and pagination",
+     *     tags={"Specialties"},
+     *     @OA\Parameter(
+     *         name="specialty",
+     *         in="query",
+     *         description="Filter by specialty name",
+     *         required=false,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="limit",
+     *         in="query",
+     *         description="Number of items per page",
+     *         required=false,
+     *         @OA\Schema(type="integer", default=1000)
+     *     ),
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         description="Page number",
+     *         required=false,
+     *         @OA\Schema(type="integer", default=0)
+     *     ),
+     *     @OA\Parameter(
+     *         name="withDeleted",
+     *         in="query",
+     *         description="Include deleted records",
+     *         required=false,
+     *         @OA\Schema(type="string", enum={"yes", "no"})
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="List of subspecialties",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="data", type="array", @OA\Items(type="object")),
+     *             @OA\Property(property="total", type="integer"),
+     *             @OA\Property(property="displayColumns", type="array", @OA\Items(type="string"))
+     *         )
+     *     ),
+     *     security={{"bearerAuth": {}}}
+     * )
+     */
     public function getSubspecialties()
     {
         try {
@@ -92,6 +208,29 @@ class SpecialtiesController extends ResourceController
         }
     }
 
+    /**
+     * @OA\Post(
+     *     path="/specialties",
+     *     summary="Create a new specialty",
+     *     tags={"Specialties"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"name"},
+     *             @OA\Property(property="name", type="string", description="Name of the specialty")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Specialty created successfully"
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Validation error"
+     *     ),
+     *     security={{"bearerAuth": {}}}
+     * )
+     */
     public function createSpecialty()
     {
         try {
@@ -119,6 +258,35 @@ class SpecialtiesController extends ResourceController
         }
     }
 
+    /**
+     * @OA\Put(
+     *     path="/specialties/{id}",
+     *     summary="Update a specialty",
+     *     tags={"Specialties"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"name"},
+     *             @OA\Property(property="name", type="string", description="New name for the specialty")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Specialty updated successfully"
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Validation error"
+     *     ),
+     *     security={{"bearerAuth": {}}}
+     * )
+     */
     public function updateSpecialty($id)
     {
         try {
@@ -146,6 +314,28 @@ class SpecialtiesController extends ResourceController
         }
     }
 
+    /**
+     * @OA\Delete(
+     *     path="/specialties/{id}",
+     *     summary="Delete a specialty",
+     *     tags={"Specialties"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Specialty deleted successfully"
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Deletion failed"
+     *     ),
+     *     security={{"bearerAuth": {}}}
+     * )
+     */
     public function deleteSpecialty($id)
     {
         try {
@@ -164,6 +354,30 @@ class SpecialtiesController extends ResourceController
         }
     }
 
+    /**
+     * @OA\Post(
+     *     path="/subspecialties",
+     *     summary="Create a new subspecialty",
+     *     tags={"Specialties"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"name", "specialty"},
+     *             @OA\Property(property="name", type="string", description="Name of the subspecialty"),
+     *             @OA\Property(property="specialty", type="string", description="Name of the parent specialty")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Subspecialty created successfully"
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Validation error"
+     *     ),
+     *     security={{"bearerAuth": {}}}
+     * )
+     */
     public function createSubspecialty()
     {
         try {
@@ -192,6 +406,36 @@ class SpecialtiesController extends ResourceController
         }
     }
 
+    /**
+     * @OA\Put(
+     *     path="/subspecialties/{id}",
+     *     summary="Update a subspecialty",
+     *     tags={"Specialties"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"name", "specialty"},
+     *             @OA\Property(property="name", type="string", description="New name for the subspecialty"),
+     *             @OA\Property(property="specialty", type="string", description="Name of the parent specialty")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Subspecialty updated successfully"
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Validation error"
+     *     ),
+     *     security={{"bearerAuth": {}}}
+     * )
+     */
     public function updateSubspecialty($id)
     {
         try {
@@ -220,6 +464,28 @@ class SpecialtiesController extends ResourceController
         }
     }
 
+    /**
+     * @OA\Delete(
+     *     path="/subspecialties/{id}",
+     *     summary="Delete a subspecialty",
+     *     tags={"Specialties"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Subspecialty deleted successfully"
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Deletion failed"
+     *     ),
+     *     security={{"bearerAuth": {}}}
+     * )
+     */
     public function deleteSubspecialty($id)
     {
         try {

@@ -7,6 +7,14 @@ use CodeIgniter\RESTful\ResourceController;
 use CodeIgniter\HTTP\ResponseInterface;
 use OpenApi\Attributes as OA;
 
+/**
+ * @OA\Info(title="API Name", version="1.0")
+ * @OA\Tag(name="Tag Name", description="Tag description")
+ * @OA\Tag(
+ *     name="Admin",
+ *     description="Operations for managing and viewing system activities"
+ * )
+ */
 class AdminController extends ResourceController
 {
     #[OA\Get(
@@ -76,6 +84,30 @@ class AdminController extends ResourceController
         $settings = service("settings");
         $settings->delete($name);
         return $this->respond(['message' => "Setting $name deleted successfully", 'data' => null], ResponseInterface::HTTP_OK);
+    }
 
+    public function getDistinctValues($table, $column)
+    {
+        try {
+            $tableMap = [
+                'specialties' => 'specialties',
+                'subspecialties' => 'subspecialties',
+                'regions' => 'regions',
+                'districts' => 'districts',
+                'practitioners' => 'practitioners',
+                'facilities' => 'facilities',
+            ];
+            //check if table is in the map
+            if (!array_key_exists($table, $tableMap)) {
+                return $this->respond(['message' => "Table $table not found"], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+            $model = new SettingsModel(); //could be any model
+            $result = $model->builder($tableMap[$table])->select($column)->distinct()->get()->getResult();
+
+            return $this->respond(['message' => '', 'data' => $result], ResponseInterface::HTTP_OK);
+        } catch (\Exception $th) {
+            log_message("error", $th->getMessage());
+            return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 }

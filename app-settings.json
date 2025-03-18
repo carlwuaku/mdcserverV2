@@ -119,8 +119,26 @@
                     "children": []
                 },
                 {
-                    "title": "Add New Licenses",
-                    "url": "/licenses/form/create",
+                    "title": "Add New Practitioner",
+                    "url": "/licenses/form/create/practitioners",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Add New Facility",
+                    "url": "/licenses/form/create/facilities",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Basic Reports",
+                    "url": "/licenses/reports",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Advanced Reports",
+                    "url": "/licenses/advanced-reports",
                     "icon": "",
                     "children": []
                 }
@@ -145,19 +163,7 @@
                     "children": []
                 },
                 {
-                    "title": "Manage Renewals",
-                    "url": "/licenses/renewals",
-                    "icon": "",
-                    "children": []
-                },
-                {
                     "title": "Renewal History",
-                    "url": "/licenses/renewals",
-                    "icon": "",
-                    "children": []
-                },
-                {
-                    "title": "Print Renewals",
                     "url": "/licenses/renewals",
                     "icon": "",
                     "children": []
@@ -532,6 +538,30 @@
                     "apiCountText": "Renewals"
                 }
             },
+            "renewalFilterFields": [
+                {
+                    "label": "Business Type",
+                    "name": "business_type",
+                    "hint": "",
+                    "options": [
+                        {
+                            "key": "Hospital",
+                            "value": "Hospital"
+                        },
+                        {
+                            "key": "Clinic",
+                            "value": "Clinic"
+                        },
+                        {
+                            "key": "Pharmacy",
+                            "value": "Pharmacy"
+                        }
+                    ],
+                    "type": "select",
+                    "value": "",
+                    "required": true
+                }
+            ],
             "fieldsToUpdateOnRenewal": [],
             "detailsPageHeaderTabs": [
                 {
@@ -555,11 +585,71 @@
                     "business_type"
                 ],
                 "joinCondition": "licenses.license_number = facilities.license_number"
-            }
+            },
+            "basicStatisticsFields": [
+                {
+                    "label": "Business Type",
+                    "name": "business_type",
+                    "type": "bar",
+                    "xAxisLabel": "Business Type",
+                    "yAxisLabel": "Number of Licenses"
+                }
+            ],
+            "advancedStatisticsFields": [
+                {
+                    "label": "Name",
+                    "name": "name",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": true
+                },
+                {
+                    "label": "Business Type",
+                    "name": "business_type",
+                    "hint": "",
+                    "options": [
+                        {
+                            "key": "Hospital",
+                            "value": "Hospital"
+                        },
+                        {
+                            "key": "Clinic",
+                            "value": "Clinic"
+                        },
+                        {
+                            "key": "Pharmacy",
+                            "value": "Pharmacy"
+                        }
+                    ],
+                    "type": "select",
+                    "value": "",
+                    "required": true
+                }
+            ]
         },
         "practitioners": {
             "table": "practitioners",
             "fields": [
+                {
+                    "label": "Practitioner Type",
+                    "name": "practitioner_type",
+                    "hint": "",
+                    "options": [
+                        {
+                            "key": "Doctor",
+                            "value": "Doctor"
+                        },
+                        {
+                            "key": "Physician Assistant",
+                            "value": "Physician Assistant"
+                        }
+                    ],
+                    "type": "select",
+                    "value": "",
+                    "required": true
+                },
                 {
                     "label": "License number",
                     "name": "license_number",
@@ -952,6 +1042,26 @@
                 }
             },
             "fieldsToUpdateOnRenewal": [],
+            "renewalFilterFields": [
+                {
+                    "label": "Practitioner Type",
+                    "name": "practitioner_type",
+                    "hint": "",
+                    "options": [
+                        {
+                            "key": "Doctor",
+                            "value": "Doctor"
+                        },
+                        {
+                            "key": "Physician Assistant",
+                            "value": "Physician Assistant"
+                        }
+                    ],
+                    "type": "select",
+                    "value": "",
+                    "required": false
+                }
+            ],
             "detailsPageHeaderTabs": [
                 {
                     "label": "Register Type",
@@ -987,7 +1097,192 @@
                     "provisional_number"
                 ],
                 "joinCondition": "licenses.license_number = practitioners.license_number"
-            }
+            },
+            "basicStatisticsFields": [
+                {
+                    "label": "Practitioner Type",
+                    "name": "practitioner_type",
+                    "type": "bar",
+                    "xAxisLabel": "Practitioner Type",
+                    "yAxisLabel": "Number of Licenses"
+                },
+                {
+                    "label": "Sex",
+                    "name": "sex",
+                    "type": "bar",
+                    "xAxisLabel": "Sex",
+                    "yAxisLabel": "Number of Licenses"
+                },
+                {
+                    "label": "Category",
+                    "name": "category",
+                    "type": "bar",
+                    "xAxisLabel": "Category",
+                    "yAxisLabel": "Number of Licenses"
+                },
+                {
+                    "label": "Nationality",
+                    "name": "nationality",
+                    "type": "bar",
+                    "xAxisLabel": "Nationality",
+                    "yAxisLabel": "Number of Licenses"
+                },
+                {
+                    "label": "Qualification at registration",
+                    "name": "qualification_at_registration",
+                    "type": "bar",
+                    "xAxisLabel": "Qualification at registration",
+                    "yAxisLabel": "Number of Licenses"
+                },
+                {
+                    "label": "Qualification date",
+                    "name": "year(qualification_date) as year",
+                    "type": "bar",
+                    "xAxisLabel": "Qualification date",
+                    "yAxisLabel": "Number of Licenses"
+                },
+                {
+                    "label": "Training Institution",
+                    "name": "training_institution",
+                    "type": "bar",
+                    "xAxisLabel": "Training Institution",
+                    "yAxisLabel": "Number of Licenses"
+                },
+                {
+                    "label": "Specialty",
+                    "name": "specialty",
+                    "type": "bar",
+                    "xAxisLabel": "Specialty",
+                    "yAxisLabel": "Number of Licenses"
+                },
+                {
+                    "label": "Institution Type",
+                    "name": "institution_type",
+                    "type": "bar",
+                    "xAxisLabel": "Institution Type",
+                    "yAxisLabel": "Number of Licenses"
+                },
+                {
+                    "label": "College Membership",
+                    "name": "college_membership",
+                    "type": "bar",
+                    "xAxisLabel": "College Membership",
+                    "yAxisLabel": "Number of Licenses"
+                }
+            ],
+            "basicStatisticsFilterFields": [
+                {
+                    "label": "Practitioner Type",
+                    "name": "practitioner_type",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/practitioners/practitioner_type",
+                    "apiKeyProperty": "practitioner_type",
+                    "apiLabelProperty": "practitioner_type",
+                    "apiType": "select"
+                }
+            ],
+            "advancedStatisticsFields": [
+                {
+                    "label": "Practitioner Type",
+                    "name": "practitioner_type",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/practitioners/practitioner_type",
+                    "apiKeyProperty": "practitioner_type",
+                    "apiLabelProperty": "practitioner_type",
+                    "apiType": "select"
+                },
+                {
+                    "label": "Date of birth",
+                    "name": "date_of_birth",
+                    "hint": "",
+                    "options": [],
+                    "type": "date-range",
+                    "value": "",
+                    "required": false
+                },
+                {
+                    "label": "Sex",
+                    "name": "sex",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/practitioners/sex",
+                    "apiKeyProperty": "sex",
+                    "apiLabelProperty": "sex",
+                    "apiType": "select"
+                },
+                {
+                    "label": "Natonality",
+                    "name": "nationality",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/practitioners/nationality",
+                    "apiKeyProperty": "nationality",
+                    "apiLabelProperty": "nationality",
+                    "apiType": "select"
+                },
+                {
+                    "label": "Training institution",
+                    "name": "training_institution",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/practitioners/training_institution",
+                    "apiKeyProperty": "training_institution",
+                    "apiLabelProperty": "training_institution",
+                    "apiType": "select"
+                },
+                {
+                    "label": "Qualification date",
+                    "name": "qualification_date",
+                    "hint": "",
+                    "options": [],
+                    "type": "date-range",
+                    "value": "",
+                    "required": false
+                },
+                {
+                    "label": "Place of Work",
+                    "name": "place_of_work",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/practitioners/place_of_work",
+                    "apiKeyProperty": "place_of_work",
+                    "apiLabelProperty": "place_of_work",
+                    "apiType": "select"
+                },
+                {
+                    "label": "Institution Type",
+                    "name": "institution_type",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/practitioners/institution_type",
+                    "apiKeyProperty": "institution_type",
+                    "apiLabelProperty": "institution_type",
+                    "apiType": "select"
+                }
+            ]
         }
     },
     "dashboardMenu": [

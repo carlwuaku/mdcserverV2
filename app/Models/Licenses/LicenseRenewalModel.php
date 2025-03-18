@@ -81,7 +81,7 @@ class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, 
     }
 
     public $searchFields = [
-        'type',
+        'license_type',
         'license_number',
         'receipt',
         'batch_number',
@@ -101,7 +101,6 @@ class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, 
             'status',
             'created_by',
             'created_on',
-
             'receipt',
             'qr_code',
             'batch_number',
@@ -137,16 +136,12 @@ class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, 
 
     public function getDisplayColumnLabels(): array
     {
-        return [
-        ];
+        return [];
     }
 
 
 
-    public function getTableName(): string
-    {
-        return $this->table;
-    }
+
 
 
 
@@ -154,33 +149,44 @@ class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, 
     {
 
         $default = [
+
+            // [
+            //     "label" => "License Type",
+            //     "name" => "license_type",
+            //     "type" => "select",
+            //     "hint" => "",
+            //     "options" => $this->getDistinctValuesAsKeyValuePairs('license_type'),
+            //     "value" => "",
+            //     "required" => false
+            // ],
             [
-                "label" => "License Number",
-                "name" => "license_number",
-                "type" => "text",
+                "label" => "Start Date",
+                "name" => "start_date",
+                "type" => "date-range",
+                "hint" => "",
+                "options" => "",
+                "value" => "",
+                "required" => false
+            ],
+            [
+                "label" => "End Date",
+                "name" => "expiry",
+                "type" => "date-range",
                 "hint" => "",
                 "options" => [],
                 "value" => "",
                 "required" => false
             ],
             [
-                "label" => "License Type",
-                "name" => "type",
-                "type" => "select",
+                "label" => "Created On",
+                "name" => "created_on",
+                "type" => "date-range",
                 "hint" => "",
-                "options" => $this->getDistinctValuesAsKeyValuePairs('license_type'),
+                "options" => [],
                 "value" => "",
                 "required" => false
             ],
-            // [
-            //     "label" => "Registration Date",
-            //     "name" => "registration_date",
-            //     "type" => "date",
-            //     "hint" => "",
-            //     "options" => [],
-            //     "value" => "",
-            //     "required" => false
-            // ],
+
             [
                 "label" => "Status",
                 "name" => "status",
@@ -219,7 +225,12 @@ class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, 
                 return $default;
             }
             $licenseDef = $licenseTypes[$this->licenseType];
-            $fields = $licenseDef['fields'];
+            $fields = $licenseDef['renewalFields'];
+            //prepend renewal_ to the names of the fields to differentiate them from the license fields
+            $fields = array_map(function ($field) {
+                $field['name'] = 'renewal_' . $field['name'];
+                return $field;
+            }, $fields);
 
             return array_merge($default, $fields);
         }
@@ -228,10 +239,15 @@ class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, 
 
 
 
+    public function getChildRenewalTable(string $licenseType): string
+    {
+        $licenseDef = Utils::getLicenseSetting($licenseType);
+        $renewalSubTable = $licenseDef->renewalTable;
+        return $renewalSubTable;
+    }
 
 
-
-    public function addLicenseDetails(BaseBuilder $builder, string $licenseType): BaseBuilder
+    public function addLicenseDetails(BaseBuilder $builder, string $licenseType, string $licenseJoinConditions = '', string $renewalJoinConditions = ''): BaseBuilder
     {
         try {
             $licenseDef = Utils::getLicenseSetting($licenseType);
@@ -250,8 +266,17 @@ class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, 
             $builder->select(array_merge(["{$this->table}.*"], $extraColumns, ["licenses.region", "licenses.district", "licenses.phone", "licenses.email", "licenses.postal_address"]));
             $builder->join("licenses", $this->table . '.license_number = licenses.license_number');
 
-            $builder->join($licenseTypeTable, $this->table . ".license_number = $licenseTypeTable.license_number");
-            $builder->join($renewalSubTable, $this->table . ".license_number = $renewalSubTable.license_number");
+            $fullLicenseJoinConditions = $this->table . ".license_number = $licenseTypeTable.license_number ";
+            if ($licenseJoinConditions) {
+                $fullLicenseJoinConditions .= ' AND ' . $licenseJoinConditions;
+            }
+
+            $fullRenewalJoinConditions = $this->table . ".license_number = $renewalSubTable.license_number ";
+            if ($renewalJoinConditions) {
+                $fullRenewalJoinConditions .= ' AND ' . $renewalJoinConditions;
+            }
+            $builder->join($licenseTypeTable, $fullLicenseJoinConditions);
+            $builder->join($renewalSubTable, $fullRenewalJoinConditions);
             return $builder;
         } catch (\Throwable $th) {
             log_message('error', $th->getMessage());
@@ -283,7 +308,6 @@ class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, 
                 if (array_key_exists($name, $formData)) {
                     $data[$name] = $formData[$name];
                 }
-
             }
             $data['license_number'] = $formData['license_number'];
             $data['renewal_id'] = $renewalId;

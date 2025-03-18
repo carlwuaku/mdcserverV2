@@ -9,14 +9,79 @@ use CodeIgniter\HTTP\ResponseInterface;
 use App\Helpers\CacheHelper;
 use App\Traits\CacheInvalidatorTrait;
 
+/**
+ * @OA\Tag(
+ *     name="Regions",
+ *     description="Operations for managing regions and districts"
+ * )
+ */
 class RegionController extends ResourceController
 {
     use CacheInvalidatorTrait;
 
     /**
-     * Return an array of resource objects, themselves in array format
-     *
-     * @return mixed
+     * @OA\Get(
+     *     path="/regions",
+     *     summary="Get all regions",
+     *     description="Returns a list of regions with optional filtering and pagination",
+     *     tags={"Regions"},
+     *     @OA\Parameter(
+     *         name="limit",
+     *         in="query",
+     *         description="Number of items per page",
+     *         required=false,
+     *         @OA\Schema(type="integer", default=1000)
+     *     ),
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         description="Page number",
+     *         required=false,
+     *         @OA\Schema(type="integer", default=0)
+     *     ),
+     *     @OA\Parameter(
+     *         name="withDeleted",
+     *         in="query",
+     *         description="Include deleted records",
+     *         required=false,
+     *         @OA\Schema(type="string", enum={"yes", "no"})
+     *     ),
+     *     @OA\Parameter(
+     *         name="param",
+     *         in="query",
+     *         description="Search parameter",
+     *         required=false,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="sortBy",
+     *         in="query",
+     *         description="Field to sort by",
+     *         required=false,
+     *         @OA\Schema(type="string", default="id")
+     *     ),
+     *     @OA\Parameter(
+     *         name="sortOrder",
+     *         in="query",
+     *         description="Sort order (asc/desc)",
+     *         required=false,
+     *         @OA\Schema(type="string", default="asc")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="List of regions",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="data", type="array", @OA\Items(type="object")),
+     *             @OA\Property(property="total", type="integer"),
+     *             @OA\Property(property="displayColumns", type="array", @OA\Items(type="string"))
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error"
+     *     ),
+     *     security={{"bearerAuth": {}}}
+     * )
      */
     public function getRegions()
     {
@@ -53,6 +118,52 @@ class RegionController extends ResourceController
         }
     }
 
+    /**
+     * @OA\Get(
+     *     path="/districts/{regionName}",
+     *     summary="Get districts by region",
+     *     description="Returns a list of districts for a specific region with optional filtering and pagination",
+     *     tags={"Regions"},
+     *     @OA\Parameter(
+     *         name="regionName",
+     *         in="path",
+     *         description="Name of the region",
+     *         required=false,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="limit",
+     *         in="query",
+     *         description="Number of items per page",
+     *         required=false,
+     *         @OA\Schema(type="integer", default=1000)
+     *     ),
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         description="Page number",
+     *         required=false,
+     *         @OA\Schema(type="integer", default=0)
+     *     ),
+     *     @OA\Parameter(
+     *         name="withDeleted",
+     *         in="query",
+     *         description="Include deleted records",
+     *         required=false,
+     *         @OA\Schema(type="string", enum={"yes", "no"})
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="List of districts",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="data", type="array", @OA\Items(type="object")),
+     *             @OA\Property(property="total", type="integer"),
+     *             @OA\Property(property="displayColumns", type="array", @OA\Items(type="string"))
+     *         )
+     *     ),
+     *     security={{"bearerAuth": {}}}
+     * )
+     */
     public function getDistricts($regionName = null)
     {
         try {
@@ -90,6 +201,29 @@ class RegionController extends ResourceController
         }
     }
 
+    /**
+     * @OA\Post(
+     *     path="/regions",
+     *     summary="Create a new region",
+     *     tags={"Regions"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"name"},
+     *             @OA\Property(property="name", type="string")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Region created successfully"
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Validation error"
+     *     ),
+     *     security={{"bearerAuth": {}}}
+     * )
+     */
     public function createRegion()
     {
         try {
@@ -117,6 +251,35 @@ class RegionController extends ResourceController
         }
     }
 
+    /**
+     * @OA\Put(
+     *     path="/regions/{id}",
+     *     summary="Update a region",
+     *     tags={"Regions"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"name"},
+     *             @OA\Property(property="name", type="string")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Region updated successfully"
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Validation error"
+     *     ),
+     *     security={{"bearerAuth": {}}}
+     * )
+     */
     public function updateRegion($id)
     {
         try {
@@ -144,6 +307,28 @@ class RegionController extends ResourceController
         }
     }
 
+    /**
+     * @OA\Delete(
+     *     path="/regions/{id}",
+     *     summary="Delete a region",
+     *     tags={"Regions"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Region deleted successfully"
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Deletion failed"
+     *     ),
+     *     security={{"bearerAuth": {}}}
+     * )
+     */
     public function deleteRegion($id)
     {
         try {
@@ -162,6 +347,30 @@ class RegionController extends ResourceController
         }
     }
 
+    /**
+     * @OA\Post(
+     *     path="/districts",
+     *     summary="Create a new district",
+     *     tags={"Regions"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"name", "region_name"},
+     *             @OA\Property(property="name", type="string"),
+     *             @OA\Property(property="region_name", type="string")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="District created successfully"
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Validation error"
+     *     ),
+     *     security={{"bearerAuth": {}}}
+     * )
+     */
     public function createDistrict()
     {
         try {
@@ -190,6 +399,36 @@ class RegionController extends ResourceController
         }
     }
 
+    /**
+     * @OA\Put(
+     *     path="/districts/{id}",
+     *     summary="Update a district",
+     *     tags={"Regions"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"name", "region_name"},
+     *             @OA\Property(property="name", type="string"),
+     *             @OA\Property(property="region_name", type="string")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="District updated successfully"
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Validation error"
+     *     ),
+     *     security={{"bearerAuth": {}}}
+     * )
+     */
     public function updateDistrict($id)
     {
         try {
@@ -218,6 +457,28 @@ class RegionController extends ResourceController
         }
     }
 
+    /**
+     * @OA\Delete(
+     *     path="/districts/{id}",
+     *     summary="Delete a district",
+     *     tags={"Regions"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="District deleted successfully"
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Deletion failed"
+     *     ),
+     *     security={{"bearerAuth": {}}}
+     * )
+     */
     public function deleteDistrict($id)
     {
         try {

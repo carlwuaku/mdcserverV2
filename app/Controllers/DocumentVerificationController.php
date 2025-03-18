@@ -7,6 +7,12 @@ use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 use \App\Models\DocumentVerification\DocumentVerificationModel;
 
+/**
+ * @OA\Tag(
+ *     name="Document Verification",
+ *     description="Operations for generating and verifying secure documents"
+ * )
+ */
 class DocumentVerificationController extends ResourceController
 {
     protected $db;
@@ -23,7 +29,36 @@ class DocumentVerificationController extends ResourceController
     }
 
     /**
-     * Generate secure document with QR code and digital signature
+     * @OA\Post(
+     *     path="/documents/generate",
+     *     summary="Generate secure document",
+     *     description="Generate a secure document with QR code and digital signature",
+     *     tags={"Document Verification"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             @OA\Property(property="document_type", type="string", description="Type of document"),
+     *             @OA\Property(property="issuing_department", type="string", description="Department issuing the document"),
+     *             @OA\Property(property="content", type="string", description="Document content"),
+     *             @OA\Property(property="expiry_date", type="string", format="date-time", description="Document expiry date")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Document generated successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="status", type="string"),
+     *             @OA\Property(property="document_id", type="string"),
+     *             @OA\Property(property="verification_token", type="string"),
+     *             @OA\Property(property="qr_code", type="string")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Document generation failed"
+     *     ),
+     *     security={{"bearerAuth": {}}}
+     * )
      */
     public function generateSecureDocument()
     {
@@ -55,7 +90,39 @@ class DocumentVerificationController extends ResourceController
     }
 
     /**
-     * Verify a document using its token
+     * @OA\Get(
+     *     path="/documents/verify/{token}",
+     *     summary="Verify document",
+     *     description="Verify a document using its verification token",
+     *     tags={"Document Verification"},
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="path",
+     *         required=true,
+     *         description="Document verification token",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Document verification result",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="status", type="string", enum={"valid", "invalid"}),
+     *             @OA\Property(property="document_type", type="string"),
+     *             @OA\Property(property="issuing_department", type="string"),
+     *             @OA\Property(property="issue_date", type="string", format="date-time"),
+     *             @OA\Property(property="last_verified", type="string", format="date-time"),
+     *             @OA\Property(property="verification_count", type="integer")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=429,
+     *         description="Too many verification attempts"
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Verification process failed"
+     *     )
+     * )
      */
     public function verifyDocument($token)
     {
@@ -107,7 +174,36 @@ class DocumentVerificationController extends ResourceController
     }
 
     /**
-     * Revoke a document
+     * @OA\Post(
+     *     path="/documents/revoke",
+     *     summary="Revoke document",
+     *     description="Revoke a previously generated document",
+     *     tags={"Document Verification"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"document_id"},
+     *             @OA\Property(property="document_id", type="string", description="ID of the document to revoke")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Document revoked successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="status", type="string"),
+     *             @OA\Property(property="message", type="string")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized"
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Failed to revoke document"
+     *     ),
+     *     security={{"bearerAuth": {}}}
+     * )
      */
     public function revokeDocument()
     {
