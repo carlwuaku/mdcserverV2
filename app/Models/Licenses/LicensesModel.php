@@ -284,7 +284,7 @@ class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormIn
             $builder->select($columns);
             $fullLicenseJoinConditions = $this->table . ".license_number = $licenseTypeTable.license_number ";
             if ($licenseJoinConditions) {
-                $fullLicenseJoinConditions .= ' AND ' . $licenseJoinConditions;
+                $builder->where($licenseJoinConditions);
             }
             if ($addJoin) {
                 $builder->join($licenseTypeTable, $fullLicenseJoinConditions);
