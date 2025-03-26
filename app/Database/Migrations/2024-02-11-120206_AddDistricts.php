@@ -34,6 +34,7 @@ class AddDistricts extends Migration
 
         $this->forge->addKey('id', true);
         $this->forge->addKey('region', false, false, 'region_key');
+        $this->forge->addKey('district', false, true, 'district_key');
         $this->forge->addForeignKey('region', 'regions', 'name', 'CASCADE', 'RESTRICT');
 
         $this->forge->createTable('districts', true, [

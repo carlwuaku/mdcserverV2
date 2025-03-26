@@ -29,6 +29,10 @@ class AdminController extends ResourceController
     {
         $settings = service("settings");
         $value = $settings->get($name);
+        //legacy settings may be lists represented as ; separated strings
+        if (is_string($value) && strpos($value, ';') !== false) {
+            $value = explode(';', $value);
+        }
         return $this->respond(['message' => '', 'data' => $value], ResponseInterface::HTTP_OK);
     }
 
