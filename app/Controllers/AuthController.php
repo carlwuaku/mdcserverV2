@@ -83,7 +83,8 @@ class AuthController extends ResourceController
     {
         $rules = [
             "username" => "required|is_unique[users.username]",
-            "password" => "required",
+            "password" => "required|min_length[8]|strong_password[]",
+            "password_confirm" => "required|matches[password]",
             "email" => "required|valid_email|is_unique[auth_identities.secret]",
         ];
         if (!$this->validate($rules)) {

@@ -25,7 +25,7 @@
             "icon": "auto_stories_outlined",
             "children": [
                 {
-                    "title": "Dashboard/Search",
+                    "title": "View/Search CPD Topics",
                     "url": "/cpd",
                     "icon": "",
                     "children": []
@@ -37,40 +37,19 @@
                     "children": []
                 },
                 {
-                    "title": "View CPD Topics",
-                    "url": "/cpd/list_cpd",
-                    "icon": "",
-                    "children": []
-                },
-                {
                     "title": "CDP Organizers",
                     "url": "/cpd/providers",
                     "icon": "",
                     "children": []
                 },
                 {
-                    "title": "CPD Report",
-                    "url": "/cpd/cpd_attendance_report",
-                    "icon": "",
-                    "children": []
-                },
-                {
-                    "title": "CDP Exemptions",
-                    "url": "/cpd/exemptions",
-                    "icon": "",
-                    "children": []
-                },
-                {
-                    "title": "CDP Online",
-                    "url": "/cpd/cpd_online_providers",
-                    "icon": "",
-                    "children": []
-                },
-                {
                     "title": "Approval",
-                    "url": "/approve_cpd_attendance",
+                    "url": "/applications",
                     "icon": "",
-                    "children": []
+                    "children": [],
+                    "urlParams": {
+                        "form_type": "CPD Attendance"
+                    }
                 }
             ]
         },
@@ -81,13 +60,7 @@
             "icon": "list_alt",
             "children": [
                 {
-                    "title": "All Applications",
-                    "url": "/applications",
-                    "icon": "",
-                    "children": []
-                },
-                {
-                    "title": "Select Applications",
+                    "title": "Manage Applications",
                     "url": "/applications/application-types",
                     "icon": "",
                     "children": []
@@ -626,6 +599,43 @@
                     "type": "select",
                     "value": "",
                     "required": true
+                }
+            ],
+            "searchFormFields": [
+                {
+                    "label": "Search",
+                    "name": "param",
+                    "hint": "Search by first name, last name, middle name, maiden name, provisional number, email, phone number",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": false,
+                    "api_url": "",
+                    "apiKeyProperty": "",
+                    "apiLabelProperty": "",
+                    "apiType": ""
+                },
+                {
+                    "label": "Business Type",
+                    "name": "business_type",
+                    "hint": "",
+                    "options": [
+                        {
+                            "key": "Hospital",
+                            "value": "Hospital"
+                        },
+                        {
+                            "key": "Clinic",
+                            "value": "Clinic"
+                        },
+                        {
+                            "key": "Pharmacy",
+                            "value": "Pharmacy"
+                        }
+                    ],
+                    "type": "select",
+                    "value": "",
+                    "required": false
                 }
             ]
         },
@@ -1282,6 +1292,34 @@
                     "apiLabelProperty": "institution_type",
                     "apiType": "select"
                 }
+            ],
+            "searchFormFields": [
+                {
+                    "label": "Search",
+                    "name": "param",
+                    "hint": "Search by first name, last name, middle name, maiden name, provisional number, email, phone number",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": false,
+                    "api_url": "",
+                    "apiKeyProperty": "",
+                    "apiLabelProperty": "",
+                    "apiType": ""
+                },
+                {
+                    "label": "Practitioner Type",
+                    "name": "practitioner_type",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/practitioners/practitioner_type",
+                    "apiKeyProperty": "practitioner_type",
+                    "apiLabelProperty": "practitioner_type",
+                    "apiType": "select"
+                }
             ]
         }
     },
@@ -1350,6 +1388,30 @@
             "label": "Practitioners",
             "key": "practitioners",
             "url": "licenses/details"
+        }
+    ],
+    "cpdFilterFields": [
+        {
+            "label": "Search",
+            "name": "param",
+            "hint": "Search by topic",
+            "options": [],
+            "type": "text",
+            "value": "",
+            "required": false,
+            "api_url": "",
+            "apiKeyProperty": "",
+            "apiLabelProperty": "",
+            "apiType": ""
+        },
+        {
+            "label": "Year",
+            "name": "year",
+            "hint": "",
+            "options": [],
+            "type": "number",
+            "value": "",
+            "required": false
         }
     ]
 }

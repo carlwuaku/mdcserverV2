@@ -25,7 +25,7 @@ use SimpleSoftwareIO\QrCode\Generator;
  */
 class PractitionerController extends ResourceController
 {
-    private $practitionerUtils ;
+    private $practitionerUtils;
     public function __construct()
     {
         $this->practitionerUtils = new PractitionerUtils();
@@ -127,7 +127,7 @@ class PractitionerController extends ResourceController
         return $this->respond(['message' => 'Practitioner restored successfully'], ResponseInterface::HTTP_OK);
     }
 
-    
+
 
     public function getPractitioner($uuid)
     {
@@ -288,7 +288,7 @@ class PractitionerController extends ResourceController
 
         /** @var ActivitiesModel $activitiesModel */
         $activitiesModel = new ActivitiesModel();
-        $activitiesModel->logActivity("updated additional qualification for practitioner {$data['registration_number']}. Changes: $changes");
+        $activitiesModel->logActivity("updated additional qualification for practitioner {$data->registration_number}. Changes: $changes");
 
         return $this->respond(['message' => 'Practitioner additional qualification updated successfully'], ResponseInterface::HTTP_OK);
     }
@@ -536,7 +536,7 @@ class PractitionerController extends ResourceController
                 'displayColumns' => $model->getDisplayColumns(),
                 'columnLabels' => $model->getDisplayColumnLabels(),
                 'columnFilters' => $model->getDisplayColumnFilters()
-                
+
             ], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
             log_message("error", $th->getMessage());
@@ -588,7 +588,7 @@ class PractitionerController extends ResourceController
             $specialty = $this->request->getPost('specialty');
             $subspecialty = $this->request->getPost('subspecialty');
             $college_membership = $this->request->getPost('college_membership');
-            
+
             PractitionerUtils::retainPractitioner(
                 $practitioner_uuid,
                 $expiry,
@@ -602,9 +602,9 @@ class PractitionerController extends ResourceController
                 $subspecialty,
                 $college_membership
             );
-           
+
             $model->db->transComplete();
-            
+
             return $this->respond(['message' => "Renewal created successfully", 'data' => ""], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
             log_message("error", $th->getMessage());
@@ -635,9 +635,8 @@ class PractitionerController extends ResourceController
             $startDate = $this->request->getVar('year') ?? date("Y-m-d");
             $year = date('Y', strtotime($startDate));
             $expiry = $this->request->getVar('expiry');
-            log_message("info", $practitioner_uuid);
             $practitioner = $this->practitionerUtils->getPractitionerDetails($practitioner_uuid);
-            if (empty ($expiry)) {
+            if (empty($expiry)) {
                 $data->expiry = PractitionerUtils::generateRenewalExpiryDate($practitioner, $startDate);
             }
             //get only the last part of the picture path

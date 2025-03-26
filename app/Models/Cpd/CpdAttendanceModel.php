@@ -82,7 +82,7 @@ class CpdAttendanceModel extends MyBaseModel implements TableDisplayInterface
         $providerModel = new CpdProviderModel();
         $cpdModel = new CpdModel();
         $licensesModel = new LicensesModel();
-        $builder->select("{$this->table}.*, {$cpdModel->table}.uuid as cpd_uuid, topic, credits, category,provider_uuid,{$cpdModel->table}.date as cpd_date, {$providerModel->table}.name as provider_name,  {$licensesModel->table}.name, {$licensesModel->table}.uuid as license_uuid")->
+        $builder->select("{$this->table}.*, {$cpdModel->table}.uuid as cpd_uuid, provider_uuid,{$cpdModel->table}.date as cpd_date, {$providerModel->table}.name as provider_name,  {$licensesModel->table}.name, {$licensesModel->table}.uuid as license_uuid")->
             join($cpdModel->table, "{$this->table}.cpd_uuid = {$cpdModel->table}.uuid", "left")->
             join($licensesModel->table, "{$this->table}.license_number = {$licensesModel->table}.license_number", "left")
             ->join($providerModel->table, "{$cpdModel->table}.provider_uuid = {$providerModel->table}.uuid", "left")

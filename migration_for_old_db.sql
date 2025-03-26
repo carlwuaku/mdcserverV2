@@ -1613,3 +1613,68 @@ FROM
 DROP TEMPORARY TABLE temp_cpd_topic_uuid_map;
 
 #END IMPORT ONLINE CPD ATTENDANCE#
+#IMPORT TEMP CPD ATTENDANCE INTO APPLICATION FORMS##
+CREATE TEMPORARY TABLE temp_cpd_topic_uuid_map AS
+SELECT
+    mdc.`bf_cpd`.id as cid,
+    uuid
+FROM
+    ci4_mdc3.`cpd_topics`
+    JOIN mdc.`bf_cpd` ON mdc.`bf_cpd`.topic = ci4_mdc3.`cpd_topics`.topic
+    AND mdc.`bf_cpd`.created_on = ci4_mdc3.`cpd_topics`.created_on;
+
+INSERT INTO
+    ci4_mdc3.`application_forms` (
+        picture,
+        first_name,
+        last_name,
+        middle_name,
+        email,
+        status,
+        application_code,
+        qr_code,
+        practitioner_type,
+        phone,
+        created_on,
+        form_data,
+        form_type
+    )
+SELECT
+    null,
+    null,
+    lic_num as last_name,
+    null,
+    null,
+    'Pending approval' as status,
+    concat('cpd_', mdc.`bf_cpd_attendance_temp`.`id`) as application_code,
+    null,
+    'practitioners' as practitioner_type,
+    null,
+    `date`,
+    JSON_OBJECT(
+        "topic",
+        `topic`,
+        "attendance_date",
+        `attendance_date`,
+        "venue",
+        mdc.`bf_cpd_attendance_temp`.`venue`,
+        "credits",
+        `credits`,
+        "category",
+        `category`,
+        "cpd_uuid",
+        (
+            SELECT
+                uuid
+            FROM
+                temp_cpd_topic_uuid_map
+            WHERE
+                temp_cpd_topic_uuid_map.cid = mdc.`bf_cpd`.id
+        ),
+        "license_number",
+        `lic_num`
+    ) as form_data,
+    'CPD Attendance' as form_type
+FROM
+    mdc.`bf_cpd_attendance_temp`
+    JOIN mdc.`bf_cpd` ON mdc.`bf_cpd`.id = mdc.`bf_cpd_attendance_temp`.cpd_id;

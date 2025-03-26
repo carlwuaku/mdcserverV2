@@ -251,32 +251,33 @@ class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, 
     {
         try {
             $licenseDef = Utils::getLicenseSetting($licenseType);
-            $licenseTypeFields = $licenseDef->fields;
+            // $licenseTypeFields = $licenseDef->fields;//we now have the data_snapshot field which holds all the data from the 
+            //license type table at the time of renewal
             $licenseTypeTable = $licenseDef->table;
             //get the sub table for that license type
             $renewalSubTable = $licenseDef->renewalTable;
             $renewalSubFields = $licenseDef->renewalFields;
             $extraColumns = [];
-            for ($i = 0; $i < count($licenseTypeFields); $i++) {
-                $extraColumns[] = $licenseTypeTable . "." . $licenseTypeFields[$i]['name'];
-            }
+            // for ($i = 0; $i < count($licenseTypeFields); $i++) {
+            //     $extraColumns[] = $licenseTypeTable . "." . $licenseTypeFields[$i]['name'];
+            // }
             for ($i = 0; $i < count($renewalSubFields); $i++) {
                 $extraColumns[] = $renewalSubTable . "." . $renewalSubFields[$i]['name'];
             }
             $builder->select(array_merge(["{$this->table}.*"], $extraColumns, ["licenses.region", "licenses.district", "licenses.phone", "licenses.email", "licenses.postal_address"]));
-            $builder->join("licenses", $this->table . '.license_number = licenses.license_number');
+            $builder->join("licenses", $this->table . '.license_number = licenses.license_number', 'left');
 
             $fullLicenseJoinConditions = $this->table . ".license_number = $licenseTypeTable.license_number ";
             if ($licenseJoinConditions) {
-                $fullLicenseJoinConditions .= ' AND ' . $licenseJoinConditions;
+                $builder->where($licenseJoinConditions);
             }
 
-            $fullRenewalJoinConditions = $this->table . ".license_number = $renewalSubTable.license_number ";
+            $fullRenewalJoinConditions = $this->table . ".id = $renewalSubTable.renewal_id ";
             if ($renewalJoinConditions) {
-                $fullRenewalJoinConditions .= ' AND ' . $renewalJoinConditions;
+                $builder->where($renewalJoinConditions);
             }
-            $builder->join($licenseTypeTable, $fullLicenseJoinConditions);
-            $builder->join($renewalSubTable, $fullRenewalJoinConditions);
+            $builder->join($licenseTypeTable, $fullLicenseJoinConditions, 'left');
+            $builder->join($renewalSubTable, $fullRenewalJoinConditions, 'left');
             return $builder;
         } catch (\Throwable $th) {
             log_message('error', $th->getMessage());

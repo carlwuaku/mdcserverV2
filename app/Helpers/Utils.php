@@ -113,7 +113,9 @@ class Utils
     }
 
 
-    public static function fillTemplate() {}
+    public static function fillTemplate()
+    {
+    }
 
     public static function generateApplicationCode($formType)
     {
