@@ -80,7 +80,7 @@
             ]
         },
         {
-            "title": "Licensing",
+            "title": "Doctors",
             "active_children": false,
             "url": "",
             "icon": "person_outlined",
@@ -89,17 +89,15 @@
                     "title": "View/Search Licenses",
                     "url": "/licenses/list",
                     "icon": "",
-                    "children": []
+                    "children": [],
+                    "urlParams": {
+                        "licenseType": "practitioners",
+                        "child_practitioner_type": "Doctor"
+                    }
                 },
                 {
-                    "title": "Add New Practitioner",
+                    "title": "Add New Doctor",
                     "url": "/licenses/form/create/practitioners",
-                    "icon": "",
-                    "children": []
-                },
-                {
-                    "title": "Add New Facility",
-                    "url": "/licenses/form/create/facilities",
                     "icon": "",
                     "children": []
                 },
@@ -107,13 +105,65 @@
                     "title": "Basic Reports",
                     "url": "/licenses/reports",
                     "icon": "",
-                    "children": []
+                    "children": [],
+                    "urlParams": {
+                        "licenseType": "practitioners",
+                        "child_practitioner_type": "Doctor"
+                    }
                 },
                 {
                     "title": "Advanced Reports",
                     "url": "/licenses/advanced-reports",
                     "icon": "",
+                    "children": [],
+                    "urlParams": {
+                        "licenseType": "practitioners",
+                        "child_practitioner_type": "Doctor"
+                    }
+                }
+            ]
+        },
+        {
+            "title": "Physician Assistants",
+            "active_children": false,
+            "url": "",
+            "icon": "person_outlined",
+            "children": [
+                {
+                    "title": "View/Search Licenses",
+                    "url": "/licenses/list",
+                    "icon": "",
+                    "children": [],
+                    "urlParams": {
+                        "licenseType": "practitioners",
+                        "child_practitioner_type": "Physician Assistant"
+                    }
+                },
+                {
+                    "title": "Add New Physician Assistant",
+                    "url": "/licenses/form/create/practitioners",
+                    "icon": "",
                     "children": []
+                },
+                {
+                    "title": "Basic Reports",
+                    "url": "/licenses/reports",
+                    "icon": "",
+                    "children": [],
+                    "urlParams": {
+                        "licenseType": "practitioners",
+                        "child_practitioner_type": "Physician Assistant"
+                    }
+                },
+                {
+                    "title": "Advanced Reports",
+                    "url": "/licenses/advanced-reports",
+                    "icon": "",
+                    "children": [],
+                    "urlParams": {
+                        "licenseType": "practitioners",
+                        "child_practitioner_type": "Physician Assistant"
+                    }
                 }
             ]
         },
@@ -241,404 +291,6 @@
         }
     ],
     "licenseTypes": {
-        "facilities": {
-            "table": "facilities",
-            "fields": [
-                {
-                    "label": "License Number",
-                    "name": "license_number",
-                    "hint": "",
-                    "options": [],
-                    "type": "text",
-                    "value": "",
-                    "required": true
-                },
-                {
-                    "label": "Name",
-                    "name": "name",
-                    "hint": "",
-                    "options": [],
-                    "type": "text",
-                    "value": "",
-                    "required": true
-                },
-                {
-                    "label": "Business Type",
-                    "name": "business_type",
-                    "hint": "",
-                    "options": [
-                        {
-                            "key": "Hospital",
-                            "value": "Hospital"
-                        },
-                        {
-                            "key": "Clinic",
-                            "value": "Clinic"
-                        },
-                        {
-                            "key": "Pharmacy",
-                            "value": "Pharmacy"
-                        }
-                    ],
-                    "type": "select",
-                    "value": "",
-                    "required": true
-                },
-                {
-                    "label": "Suburb",
-                    "name": "suburb",
-                    "hint": "",
-                    "options": [],
-                    "type": "text",
-                    "value": "",
-                    "required": true
-                },
-                {
-                    "label": "House Number",
-                    "name": "house_number",
-                    "hint": "",
-                    "options": [],
-                    "type": "text",
-                    "value": "",
-                    "required": true
-                },
-                {
-                    "label": "Longitude/Latitude",
-                    "name": "coordinates",
-                    "hint": "",
-                    "options": [],
-                    "type": "text",
-                    "value": "",
-                    "required": true
-                }
-            ],
-            "onCreateValidation": {
-                "name": "required",
-                "business_type": "required",
-                "suburb": "required",
-                "house_number": "required",
-                "region": "required",
-                "district": "required"
-            },
-            "onUpdateValidation": {},
-            "renewalFields": [
-                {
-                    "label": "Practitioner in Charge Registration Number",
-                    "name": "practitioner_in_charge",
-                    "hint": "",
-                    "options": [],
-                    "type": "text",
-                    "value": "",
-                    "required": true
-                },
-                {
-                    "label": "Weekdays Start Time",
-                    "name": "weekdays_start_time",
-                    "hint": "",
-                    "options": [],
-                    "type": "time",
-                    "value": "",
-                    "required": true
-                },
-                {
-                    "label": "Weekdays End Time",
-                    "name": "weekdays_end_time",
-                    "hint": "",
-                    "options": [],
-                    "type": "time",
-                    "value": "",
-                    "required": false
-                },
-                {
-                    "label": "Weekend Start Time",
-                    "name": "weekend_start_time",
-                    "hint": "",
-                    "options": [],
-                    "type": "time",
-                    "value": "",
-                    "required": true
-                },
-                {
-                    "label": "Weekdays End Time",
-                    "name": "weekend_end_time",
-                    "hint": "",
-                    "options": [],
-                    "type": "time",
-                    "value": "",
-                    "required": false
-                },
-                {
-                    "label": "In charge start time",
-                    "name": "in_charge_start_time",
-                    "hint": "",
-                    "options": [],
-                    "type": "text",
-                    "value": "",
-                    "required": true
-                },
-                {
-                    "label": "In charge closing time",
-                    "name": "in_charge_end_time",
-                    "hint": "",
-                    "options": [],
-                    "type": "text",
-                    "value": "",
-                    "required": true
-                }
-            ],
-            "renewalTable": "facility_renewal",
-            "renewalStages": {
-                "Pending Payment": {
-                    "label": "Pending Payment",
-                    "next": "Pending Approval",
-                    "fields": [
-                        {
-                            "label": "Renewal Date",
-                            "name": "renewal_date",
-                            "hint": "",
-                            "options": [],
-                            "type": "date",
-                            "value": "",
-                            "required": true
-                        },
-                        {
-                            "label": "Renewal Fee",
-                            "name": "renewal_fee",
-                            "hint": "",
-                            "options": [],
-                            "type": "text",
-                            "value": "",
-                            "required": true
-                        }
-                    ],
-                    "canViewPermissions": [],
-                    "canEditPermissions": [],
-                    "canDeletePermissions": [],
-                    "canApprovePermissions": [],
-                    "printable": false,
-                    "title": "Pending Payment",
-                    "active_children": false,
-                    "url": "/licenses/renewal",
-                    "urlParams": {
-                        "license_type": "facilities",
-                        "status": "Pending Payment"
-                    },
-                    "icon": "list_alt",
-                    "children": [],
-                    "description": "View/Print approved applications",
-                    "apiCountUrl": "/licenses/renewal-count?license_type=facilities&status=Pending Payment",
-                    "apiCountText": "Renewals"
-                },
-                "Pending Approval": {
-                    "next": "Approved",
-                    "fields": [
-                        {
-                            "label": "Renewal Date",
-                            "name": "renewal_date",
-                            "hint": "",
-                            "options": [],
-                            "type": "date",
-                            "value": "",
-                            "required": true
-                        },
-                        {
-                            "label": "Renewal Fee",
-                            "name": "renewal_fee",
-                            "hint": "",
-                            "options": [],
-                            "type": "text",
-                            "value": "",
-                            "required": true
-                        }
-                    ],
-                    "canViewPermissions": [],
-                    "canEditPermissions": [],
-                    "canDeletePermissions": [],
-                    "canApprovePermissions": [],
-                    "printable": false,
-                    "title": "Pending Approval",
-                    "active_children": false,
-                    "url": "/licenses/renewal",
-                    "urlParams": {
-                        "license_type": "facilities",
-                        "status": "Pending Approval"
-                    },
-                    "icon": "list_alt",
-                    "children": [],
-                    "description": "Manage submitted applications",
-                    "apiCountUrl": "/licenses/renewal-count?license_type=facilities&status=Pending Approval",
-                    "apiCountText": "Renewals"
-                },
-                "Approved": {
-                    "label": "Approved",
-                    "next": "",
-                    "fields": [
-                        {
-                            "label": "Renewal Date",
-                            "name": "renewal_date",
-                            "hint": "",
-                            "options": [],
-                            "type": "date",
-                            "value": "",
-                            "required": true
-                        },
-                        {
-                            "label": "Renewal Fee",
-                            "name": "renewal_fee",
-                            "hint": "",
-                            "options": [],
-                            "type": "text",
-                            "value": "",
-                            "required": true
-                        }
-                    ],
-                    "canViewPermissions": [],
-                    "canEditPermissions": [],
-                    "canDeletePermissions": [],
-                    "canApprovePermissions": [],
-                    "printable": false,
-                    "title": "Approved",
-                    "active_children": false,
-                    "url": "/licenses/renewal",
-                    "urlParams": {
-                        "license_type": "facilities",
-                        "status": "Approved"
-                    },
-                    "icon": "list_alt",
-                    "children": [],
-                    "description": "View/Print approved applications",
-                    "apiCountUrl": "/licenses/renewal-count?license_type=facilities&status=Approved",
-                    "apiCountText": "Renewals"
-                }
-            },
-            "renewalFilterFields": [
-                {
-                    "label": "Business Type",
-                    "name": "business_type",
-                    "hint": "",
-                    "options": [
-                        {
-                            "key": "Hospital",
-                            "value": "Hospital"
-                        },
-                        {
-                            "key": "Clinic",
-                            "value": "Clinic"
-                        },
-                        {
-                            "key": "Pharmacy",
-                            "value": "Pharmacy"
-                        }
-                    ],
-                    "type": "select",
-                    "value": "",
-                    "required": true
-                }
-            ],
-            "fieldsToUpdateOnRenewal": [],
-            "detailsPageHeaderTabs": [
-                {
-                    "label": "Business Type",
-                    "key": "business_type"
-                },
-                {
-                    "label": "In Good Standing",
-                    "key": "in_good_standing"
-                },
-                {
-                    "label": "Status",
-                    "key": "status"
-                }
-            ],
-            "searchFields": {
-                "fields": [
-                    "name",
-                    "town",
-                    "suburb",
-                    "business_type"
-                ],
-                "joinCondition": "licenses.license_number = facilities.license_number"
-            },
-            "basicStatisticsFields": [
-                {
-                    "label": "Business Type",
-                    "name": "business_type",
-                    "type": "bar",
-                    "xAxisLabel": "Business Type",
-                    "yAxisLabel": "Number of Licenses"
-                }
-            ],
-            "advancedStatisticsFields": [
-                {
-                    "label": "Name",
-                    "name": "name",
-                    "hint": "",
-                    "options": [],
-                    "type": "text",
-                    "value": "",
-                    "required": true
-                },
-                {
-                    "label": "Business Type",
-                    "name": "business_type",
-                    "hint": "",
-                    "options": [
-                        {
-                            "key": "Hospital",
-                            "value": "Hospital"
-                        },
-                        {
-                            "key": "Clinic",
-                            "value": "Clinic"
-                        },
-                        {
-                            "key": "Pharmacy",
-                            "value": "Pharmacy"
-                        }
-                    ],
-                    "type": "select",
-                    "value": "",
-                    "required": true
-                }
-            ],
-            "searchFormFields": [
-                {
-                    "label": "Search",
-                    "name": "param",
-                    "hint": "Search by first name, last name, middle name, maiden name, provisional number, email, phone number",
-                    "options": [],
-                    "type": "text",
-                    "value": "",
-                    "required": false,
-                    "api_url": "",
-                    "apiKeyProperty": "",
-                    "apiLabelProperty": "",
-                    "apiType": ""
-                },
-                {
-                    "label": "Business Type",
-                    "name": "business_type",
-                    "hint": "",
-                    "options": [
-                        {
-                            "key": "Hospital",
-                            "value": "Hospital"
-                        },
-                        {
-                            "key": "Clinic",
-                            "value": "Clinic"
-                        },
-                        {
-                            "key": "Pharmacy",
-                            "value": "Pharmacy"
-                        }
-                    ],
-                    "type": "select",
-                    "value": "",
-                    "required": false
-                }
-            ]
-        },
         "practitioners": {
             "table": "practitioners",
             "fields": [
@@ -1327,55 +979,42 @@
         {
             "title": "Applications",
             "active_children": false,
-            "url": "/applications",
+            "url": "/applications/application-types",
             "icon": "list_alt",
             "children": [],
             "description": "Manage submitted applications",
-            "apiCountUrl": "/applications/count",
+            "apiCountUrl": "/applications/count?status=Pending Approval",
             "apiCountText": "New Applications"
         },
         {
             "title": "Licensing",
             "active_children": false,
-            "url": "/licenses",
+            "url": "/licenses/list",
             "icon": "person_outlined",
-            "children": []
+            "children": [],
+            "description": "Manage licenses",
+            "apiCountUrl": "licenses/count",
+            "apiCountText": "Total licenses"
         },
         {
             "title": "License Renewal",
             "active_children": false,
-            "url": "/licenses",
+            "url": "/licenses/renewal-dashboard",
             "icon": "person_outlined",
             "children": [],
             "description": "Manage License Renewals",
-            "apiCountUrl": "licenses/renewal-count?status=Pending Approval",
+            "apiCountUrl": "licenses/renewal-count?status=Pending Approval&license_type=practitioners",
             "apiCountText": "Pending Approval"
         },
         {
-            "title": "Messaging",
+            "title": "CPDs",
             "active_children": false,
-            "url": "",
-            "icon": "mail",
-            "children": [
-                {
-                    "title": "Send Email",
-                    "url": "/send_mail",
-                    "icon": "",
-                    "children": []
-                },
-                {
-                    "title": "Send SMS",
-                    "url": "/send_sms",
-                    "icon": "",
-                    "children": []
-                },
-                {
-                    "title": "Email Queue",
-                    "url": "/email_queue",
-                    "icon": "",
-                    "children": []
-                }
-            ]
+            "url": "/cpd",
+            "icon": "auto_stories_outlined",
+            "children": [],
+            "description": "Manage CPD topics & attendance",
+            "apiCountUrl": "applications/count?status=Pending Approval&form_type=CPD Attendance",
+            "apiCountText": "Pending Approval"
         }
     ],
     "searchTypes": [

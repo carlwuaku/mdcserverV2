@@ -31,7 +31,11 @@ class AuthController extends ResourceController
     {
         // return CacheHelper::remember('app_settings', function() {
         //read the data from app-settings.json at the root of the project
-        $data = json_decode(file_get_contents(ROOTPATH . 'app-settings.json'), true);
+        $fileName = getenv('APP_SETTINGS_FILE') ?? 'app-settings.json';
+        if (!file_exists(ROOTPATH . $fileName)) {
+            return $this->respond(['message' => 'App settings file not found'], ResponseInterface::HTTP_NOT_FOUND);
+        }
+        $data = json_decode(file_get_contents(ROOTPATH . $fileName), true);
         //if logo is set, append the base url to it
         if (isset($data['logo'])) {
             $data['logo'] = base_url() . $data['logo'];
