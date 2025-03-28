@@ -32,15 +32,16 @@ class PermissionFilter implements FilterInterface
             $response->setStatusCode(ResponseInterface::HTTP_UNAUTHORIZED)->setJSON(["message" => 'you are not logged in'])->send();
             exit();
         }
-   
+
         if ($arguments) {
-           
+
             //the arguments would be permissions the user needs to have
             $rpModel = new RolePermissionsModel();
             foreach ($arguments as $permission) {
                 if (!$rpModel->hasPermission(auth()->getUser()->role_name, $permission)) {
-                    $response->setStatusCode(ResponseInterface::HTTP_UNAUTHORIZED)->setJSON(["message" => 'You are not permitted to perform this action'])->send();
-                    exit();
+                    return $response->setStatusCode(401)->setJSON(["message" => "You are not permitted to perform this action"]);
+                    // $response->setStatusCode(ResponseInterface::HTTP_UNAUTHORIZED)->setJSON(["message" => 'You are not permitted to perform this action'])->send();
+                    // exit();
                 }
             }
 

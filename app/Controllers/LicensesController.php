@@ -300,7 +300,10 @@ class LicensesController extends ResourceController
             $builder->orderBy("$tableName.$sortBy", $sortOrder);
             if ($licenseType) {
                 $builder->where("$tableName.type", $licenseType);
-                $addJoin = $param || $licenseJoinConditions ? false : true; //if there are child params, the join is already added
+                $addJoin = true; //if there are child params, the join is already added
+                if ($param) {
+                    $addJoin = false;
+                }
                 $builder = $model->addLicenseDetails($builder, $licenseType, $addJoin, $licenseJoinConditions);
             }
 
