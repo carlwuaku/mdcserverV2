@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Helpers\Utils;
 use App\Models\PermissionsModel;
 use App\Models\RolePermissionsModel;
 use App\Models\RolesModel;
@@ -31,17 +32,20 @@ class AuthController extends ResourceController
     {
         // return CacheHelper::remember('app_settings', function() {
         //read the data from app-settings.json at the root of the project
-        $fileName = getenv('APP_SETTINGS_FILE') ?? 'app-settings.json';
-        if (!file_exists(ROOTPATH . $fileName)) {
+        try {
+            $fileName = Utils::getAppSettingsFileName();
+
+            $data = json_decode(file_get_contents($fileName), true);
+            //if logo is set, append the base url to it
+            if (isset($data['logo'])) {
+                $data['logo'] = base_url() . $data['logo'];
+            }
+            $data['recaptchaSiteKey'] = getenv('RECAPTCHA_PUBLIC_KEY');
+            return $this->respond($data, ResponseInterface::HTTP_OK);
+        } catch (\Throwable $th) {
             return $this->respond(['message' => 'App settings file not found'], ResponseInterface::HTTP_NOT_FOUND);
         }
-        $data = json_decode(file_get_contents(ROOTPATH . $fileName), true);
-        //if logo is set, append the base url to it
-        if (isset($data['logo'])) {
-            $data['logo'] = base_url() . $data['logo'];
-        }
-        $data['recaptchaSiteKey'] = getenv('RECAPTCHA_PUBLIC_KEY');
-        return $this->respond($data, ResponseInterface::HTTP_OK);
+
         // }, 3600); // Cache for 1 hour
     }
 

@@ -199,7 +199,7 @@ class ApplicationsController extends ResourceController
             }
             log_message('info', print_r($stage, true));
             $userObject = new \App\Models\UsersModel();
-            $userData = $userObject->findById(auth()->id());
+            $userData = $userObject->findById(auth("tokens")->id());
             if (!in_array($userData->role_name, $stage['allowedUserRoles'])) {
                 return $this->respond(['message' => "You are not allowed to update applications to this stage"], ResponseInterface::HTTP_FORBIDDEN);
             }
@@ -890,8 +890,8 @@ class ApplicationsController extends ResourceController
     {
         try {
             $cacheKey = "app_config_" . md5($form_name . '_' . $type);
-            
-            return CacheHelper::remember($cacheKey, function() use ($form_name, $type) {
+
+            return CacheHelper::remember($cacheKey, function () use ($form_name, $type) {
                 //get the form-settings.json file and get the config for the specified form
                 $form = str_replace(" ", "-", $form_name);
                 $configContents = file_get_contents(WRITEPATH . 'config_files/form-settings.json');
@@ -917,13 +917,18 @@ class ApplicationsController extends ResourceController
 
             // Generate cache key based on query parameters
             $cacheKey = "app_templates_" . md5(json_encode([
-                $per_page, $page, $withDeleted, $param, $sortBy, $sortOrder
+                $per_page,
+                $page,
+                $withDeleted,
+                $param,
+                $sortBy,
+                $sortOrder
             ]));
 
-            return CacheHelper::remember($cacheKey, function() use ($per_page, $page, $withDeleted, $param, $sortBy, $sortOrder) {
+            return CacheHelper::remember($cacheKey, function () use ($per_page, $page, $withDeleted, $param, $sortBy, $sortOrder) {
                 $model = new ApplicationTemplateModel();
                 $builder = $param ? $model->search($param) : $model->builder();
-                
+
                 if ($withDeleted) {
                     $model->withDeleted();
                 }

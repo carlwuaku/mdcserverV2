@@ -142,7 +142,8 @@ INSERT INTO
         `portal_access`,
         `created_on`,
         `region`,
-        `district`
+        `district`,
+        `register_type`
     )
 SELECT
     '',
@@ -166,7 +167,8 @@ SELECT
     CASE
         WHEN d.id IS NULL THEN NULL
         ELSE NULLIF(bf_doctor.district, '')
-    END as district
+    END as district,
+    register_type,
 from
     mdc.bf_doctor
     LEFT JOIN ci4_mdc3.districts d ON d.district = bf_doctor.district;
@@ -281,7 +283,7 @@ INSERT INTO
         `portal_access`,
         `created_on`,
         `region`,
-        `district`
+        `district` `register_type`
     )
 SELECT
     '',
@@ -305,7 +307,8 @@ SELECT
     CASE
         WHEN d.id IS NULL THEN NULL
         ELSE NULLIF(mdc.bf_physician_assistant.district, '')
-    END as district
+    END as district,
+    register_type
 from
     mdc.bf_physician_assistant
     LEFT JOIN ci4_mdc3.districts d ON d.district = bf_physician_assistant.district;

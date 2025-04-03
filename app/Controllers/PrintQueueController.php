@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Controllers\BaseController;
 use App\Helpers\TemplateEngineHelper;
+use App\Models\DocumentVerification\DocumentVerificationModel;
 use App\Models\PrintQueueItemModel;
 use App\Models\PrintQueueModel;
 use App\Models\PrintHistoryModel;
@@ -11,6 +12,7 @@ use App\Models\PrintTemplateModel;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 use App\Models\ActivitiesModel;
+use Exception;
 use PhpOffice\PhpWord\IOFactory;
 use PhpOffice\PhpWord\Settings;
 
@@ -125,16 +127,16 @@ class PrintQueueController extends ResourceController
             unlink($htmlPath);
             return $this->respond([
                 'data' => $htmlContent,
-                
+
             ], ResponseInterface::HTTP_OK);
 
-            
+
 
         } catch (\Exception $e) {
             log_message('error', 'DOCX to HTML conversion error: ' . $e->getMessage());
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
 
-            
+
         }
     }
 
@@ -184,11 +186,11 @@ class PrintQueueController extends ResourceController
             $allowedRoles = $data->allowed_roles;
             unset($data->allowed_roles);
             $data->created_by = $userId;
-          
+
             $compiledQuery = $this->printTemplateModel->builder()->set($data)->getCompiledInsert();
-            
+
             $this->printTemplateModel->db->transStart();
-            
+
             if (!$this->printTemplateModel->insert($data)) {
                 return $this->respond(['message' => $this->printTemplateModel->errors()], ResponseInterface::HTTP_BAD_REQUEST);
             }
@@ -357,7 +359,7 @@ class PrintQueueController extends ResourceController
             }
 
             $userId = auth("tokens")->id();
-            
+
             $this->printTemplateModel->db->transStart();
 
             // Delete template roles first
@@ -519,11 +521,11 @@ class PrintQueueController extends ResourceController
             if (!$userRole) {
                 return $this->respond(['message' => 'User role not found'], ResponseInterface::HTTP_FORBIDDEN);
             }
-            
+
             $accessibleTemplateUuids = $this->printTemplateRolesModel->getAccessibleTemplateUuids($userRole);
 
             $builder = $param ? $model->search($param) : $model->builder();
-            
+
             // Filter by accessible templates
             if (empty($accessibleTemplateUuids)) {
                 // If user has no accessible templates, return empty result
@@ -541,7 +543,7 @@ class PrintQueueController extends ResourceController
             if ($withDeleted) {
                 $model->withDeleted();
             }
-            
+
             $totalBuilder = clone $builder;
             $total = $totalBuilder->countAllResults();
             $result = $builder->get($per_page, $page)->getResult();
@@ -610,6 +612,10 @@ class PrintQueueController extends ResourceController
             if (!$template) {
                 return $this->respond(['message' => "Template not found"], ResponseInterface::HTTP_BAD_REQUEST);
             }
+            $documentType = $this->request->getVar('document_type');
+            if (!$documentType) {
+                return $this->respond(['message' => "Document type is required"], ResponseInterface::HTTP_BAD_REQUEST);
+            }
 
             // Check if user has access to this template
             $userRole = auth("tokens")->user()->role_name;
@@ -617,12 +623,24 @@ class PrintQueueController extends ResourceController
                 return $this->respond(['message' => "Access denied"], ResponseInterface::HTTP_FORBIDDEN);
             }
 
+            $documentVerificationModel = new DocumentVerificationModel();
             $finishedTemplates = [];
             $data = $this->request->getVar();
 
             foreach ($data->objects as $object) {
                 $templateEngine = new TemplateEngineHelper();
                 $html = $templateEngine->process($template->template_content, $object);
+                $document = [
+                    "type" => $documentType,
+                    "content" => $html,
+                    "department" => auth('tokens')->user()->position,
+                    "unique_id" => $object->unique_id ?? null,
+                    "table_name" => $object->table_name ?? null,
+                    "table_row_uuid" => $object->table_row_uuid ?? null
+                ];
+                $result = $documentVerificationModel->generateSecureDocument($document);
+                //append the qr code to the content
+                $html .= "<img src='{$result['qr_path']}' alt='QR Code' />";
                 $finishedTemplates[] = '<div style="page-break-after: always;">' . $html . '</div>';
             }
 
@@ -633,16 +651,65 @@ class PrintQueueController extends ResourceController
         }
     }
 
-    public function createPrintQueue(){
-        try {   
-            
+    public function createPrintQueue()
+    {
+        try {
+
             $data = $this->request->getVar();
             $this->printQueueModel->insert($data);
             return $this->respond(['message' => "Print queue created successfully"], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
-            log_message('error',   $th->getMessage());
+            log_message('error', $th->getMessage());
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
 
+        }
+    }
+
+    /**
+     * Summary of printDocuments
+     * generate the verification token, qr code and print the document (return the html content or save to pdf and return the path).
+     * the objects in the request data should contain the document_type, content, template, data, expiry_date(optional), table_name (optional: example, license_renewal or housemanship_posting), 
+     * table_row_uuid(optional: the uuid for the row in the provided table), unique_id (optional: would be a license number or something similar). if content is empty, the template and data will be used to generate the content.
+     * @return ResponseInterface
+     */
+    public function printDocuments()
+    {
+        try {
+            /**
+             * @var string $results
+             */
+            $results = "";
+            /** @var array $documentData */
+            $documentData = $this->request->getVar('data');//an array of objects.
+            $documentVerificationModel = new DocumentVerificationModel();
+            $templateEngine = new TemplateEngineHelper();
+            foreach ($documentData as $document) {
+                $document = (array) $document;
+                $document['department'] = auth('tokens')->user()->position || auth('tokens')->user()->role_name; // Ensure department is set from the authenticated user
+                // log_message('info', print_r(auth('tokens')->user(), true));
+                if (!isset($document['type']) || empty($document['type'])) {
+                    return $this->respond(['message' => "Document type is required"], ResponseInterface::HTTP_BAD_REQUEST);
+                }
+
+                if (!isset($document['content']) || empty($document['content'])) {
+                    if (!isset($document['template']) || empty($document['template'])) {
+                        return $this->respond(['message' => "Template is required if the content is not provided"], ResponseInterface::HTTP_BAD_REQUEST);
+                    }
+                    if (!isset($document['data']) || empty($document['data'])) {
+                        return $this->respond(['message' => "Data is required if the content is not provided"], ResponseInterface::HTTP_BAD_REQUEST);
+                    }
+                    $document['content'] = $templateEngine->process($document['template'], $document['data']);
+                }
+                $result = $documentVerificationModel->generateSecureDocument($document);
+                //append the qr code to the content
+                // $document['content'] .= "<img src='{$result['qr_path']}' alt='QR Code' />";
+                $results .= '<div style="page-break-after: always; border:thin dashed">' . $document['content'] . '</div>';
+            }
+
+            return $this->respond(['message' => "Print queue created successfully", 'data' => $results], ResponseInterface::HTTP_OK);
+        } catch (\Throwable $th) {
+            log_message('error', $th->getMessage());
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
 

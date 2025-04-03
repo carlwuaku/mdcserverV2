@@ -140,6 +140,12 @@
                     "url": "/licenses/renewals",
                     "icon": "",
                     "children": []
+                },
+                {
+                    "title": "Renewal Print Queue",
+                    "url": "/licenses/renewal-print-queue",
+                    "icon": "",
+                    "children": []
                 }
             ]
         },
@@ -214,12 +220,6 @@
                     "children": []
                 },
                 {
-                    "title": "Permissions",
-                    "url": "/admin/permission_matrix",
-                    "icon": "",
-                    "children": []
-                },
-                {
                     "title": "System Settings",
                     "url": "/settings",
                     "icon": "",
@@ -228,12 +228,6 @@
                 {
                     "title": "Activities",
                     "url": "/activities",
-                    "icon": "",
-                    "children": []
-                },
-                {
-                    "title": "Logs",
-                    "url": "/admin/logs",
                     "icon": "",
                     "children": []
                 }
@@ -390,7 +384,9 @@
             "renewalStages": {
                 "Pending Payment": {
                     "label": "Pending Payment",
-                    "next": "Pending Approval",
+                    "allowedTransitions": [
+                        "Pending Approval"
+                    ],
                     "fields": [
                         {
                             "label": "Renewal Date",
@@ -411,11 +407,9 @@
                             "required": true
                         }
                     ],
-                    "canViewPermissions": [],
-                    "canEditPermissions": [],
-                    "canDeletePermissions": [],
-                    "canApprovePermissions": [],
+                    "permission": "Mark_Facilities_Renewal_Pending_Payment",
                     "printable": false,
+                    "onlineCertificatePrintable": false,
                     "title": "Pending Payment",
                     "active_children": false,
                     "url": "/licenses/renewal",
@@ -430,7 +424,9 @@
                     "apiCountText": "Renewals"
                 },
                 "Pending Approval": {
-                    "next": "Approved",
+                    "allowedTransitions": [
+                        "Approved"
+                    ],
                     "fields": [
                         {
                             "label": "Renewal Date",
@@ -451,11 +447,9 @@
                             "required": true
                         }
                     ],
-                    "canViewPermissions": [],
-                    "canEditPermissions": [],
-                    "canDeletePermissions": [],
-                    "canApprovePermissions": [],
+                    "permission": "Mark_Facilities_Renewal_Pending_Approval",
                     "printable": false,
+                    "onlineCertificatePrintable": false,
                     "title": "Pending Approval",
                     "active_children": false,
                     "url": "/licenses/renewal",
@@ -471,7 +465,7 @@
                 },
                 "Approved": {
                     "label": "Approved",
-                    "next": "",
+                    "allowedTransitions": [],
                     "fields": [
                         {
                             "label": "Renewal Date",
@@ -492,11 +486,9 @@
                             "required": true
                         }
                     ],
-                    "canViewPermissions": [],
-                    "canEditPermissions": [],
-                    "canDeletePermissions": [],
-                    "canApprovePermissions": [],
-                    "printable": false,
+                    "permission": "Mark_Facilities_Renewal_Approved",
+                    "printable": true,
+                    "onlineCertificatePrintable": true,
                     "title": "Approved",
                     "active_children": false,
                     "url": "/licenses/renewal",
@@ -930,7 +922,9 @@
             "renewalStages": {
                 "Pending Payment": {
                     "label": "Pending Payment",
-                    "next": "Pending Approval",
+                    "allowedTransitions": [
+                        "Pending Approval"
+                    ],
                     "fields": [
                         {
                             "label": "Renewal Date",
@@ -951,11 +945,9 @@
                             "required": true
                         }
                     ],
-                    "canViewPermissions": [],
-                    "canEditPermissions": [],
-                    "canDeletePermissions": [],
-                    "canApprovePermissions": [],
+                    "permission": "Mark_Practitioners_Renewal_Pending_Payment",
                     "printable": false,
+                    "onlineCertificatePrintable": false,
                     "title": "Pending Payment",
                     "active_children": false,
                     "url": "/licenses/renewal",
@@ -970,7 +962,9 @@
                     "apiCountText": "Renewals"
                 },
                 "Pending Approval": {
-                    "next": "Approved",
+                    "allowedTransitions": [
+                        "Approved"
+                    ],
                     "fields": [
                         {
                             "label": "Renewal Date",
@@ -991,11 +985,9 @@
                             "required": true
                         }
                     ],
-                    "canViewPermissions": [],
-                    "canEditPermissions": [],
-                    "canDeletePermissions": [],
-                    "canApprovePermissions": [],
+                    "permission": "Mark_Practitioners_Renewal_Pending_Approval",
                     "printable": false,
+                    "onlineCertificatePrintable": false,
                     "title": "Pending Approval",
                     "active_children": false,
                     "url": "/licenses/renewal",
@@ -1011,7 +1003,7 @@
                 },
                 "Approved": {
                     "label": "Approved",
-                    "next": "",
+                    "allowedTransitions": [],
                     "fields": [
                         {
                             "label": "Renewal Date",
@@ -1032,11 +1024,9 @@
                             "required": true
                         }
                     ],
-                    "canViewPermissions": [],
-                    "canEditPermissions": [],
-                    "canDeletePermissions": [],
-                    "canApprovePermissions": [],
-                    "printable": false,
+                    "permission": "Mark_Practitioners_Renewal_Approved",
+                    "printable": true,
+                    "onlineCertificatePrintable": true,
                     "title": "Approved",
                     "active_children": false,
                     "url": "/licenses/renewal",

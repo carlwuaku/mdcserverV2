@@ -22,7 +22,10 @@ class DocumentVerificationModel extends MyBaseModel
         'issuing_department',
         'created_at',
         'expires_at',
-        'is_revoked'
+        'is_revoked',
+        'unique_id',
+        'table_name',
+        'table_row_uuid'
     ];
 
     protected bool $allowEmptyInserts = false;
@@ -54,8 +57,8 @@ class DocumentVerificationModel extends MyBaseModel
     /**
      * Generate secure document with QR code and digital signature
      * 
-     * @param array $documentData
-     * @return array
+     * @param array{type:string, department:string, unique_id?:string, table_name?:string, table_row_uuid?:string} $documentData
+     * @return array{document_id:string, verification_url:string, qr_path:string}
      */
     public function generateSecureDocument($documentData)
     {
@@ -64,7 +67,8 @@ class DocumentVerificationModel extends MyBaseModel
         $documentId = bin2hex(random_bytes(16));
         // Generate verification token
         $token = Utils::generateVerificationToken($documentId);
-
+        $verificationUrl = site_url("verify/{$token}");
+        $qrCode = Utils::generateQRCode($verificationUrl, false, "");
         // Store document data
         $documentRecord = [
             'document_id' => $documentId,
@@ -75,17 +79,20 @@ class DocumentVerificationModel extends MyBaseModel
             'issuing_department' => $documentData['department'],
             'created_at' => date('Y-m-d H:i:s'),
             'expires_at' => date('Y-m-d H:i:s', strtotime('+1 year')),
-            'is_revoked' => false
+            'is_revoked' => false,
+            'unique_id' => $documentData['unique_id'] ?? null,
+            'table_name' => $documentData['table_name'] ?? null,
+            'table_row_uuid' => $documentData['table_row_uuid'] ?? null,
+            'qr_code' => $qrCode
         ];
         $this->insert((object) $documentRecord);
 
-        $verificationUrl = site_url("verify/{$token}");
-        $qrPath = Utils::generateQRCode($verificationUrl, true, "");
+
 
         return [
             'document_id' => $documentId,
             'verification_url' => $verificationUrl,
-            'qr_path' => $qrPath
+            'qr_path' => $qrCode
         ];
     }
 }

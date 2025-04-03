@@ -310,7 +310,6 @@ class LicensesController extends ResourceController
             if ($withDeleted) {
                 $model->withDeleted();
             }
-            log_message("info", $builder->getCompiledSelect(false));
             $totalBuilder = clone $builder;
             $total = $totalBuilder->countAllResults();
             $result = $builder->get($per_page, $page)->getResult();
@@ -351,6 +350,7 @@ class LicensesController extends ResourceController
             $expiry = $this->request->getVar('expiry'); //single date or 'date1 to date2'
             $licenseType = $this->request->getVar('license_type');
             $created_on = $this->request->getVar('created_on'); //single date or 'date1 to date2'
+            $inPrintQueue = $this->request->getVar('in_print_queue') ?? null;
 
             $builder = $param ? $model->search($param) : $model->builder();
             // $builder = $model->addCustomFields($builder);
@@ -387,6 +387,9 @@ class LicensesController extends ResourceController
                 $dateRange = Utils::getDateRange($created_on);
                 $builder->where($model->getTableName() . '.created_on >=', $dateRange['start']);
                 $builder->where($model->getTableName() . '.created_on <=', $dateRange['end']);
+            }
+            if ($inPrintQueue !== null) {
+                $builder->where("$renewal_table.in_print_queue", $inPrintQueue);
             }
             if (empty($licenseType)) {
                 return $this->respond(['message' => "License type is required"], ResponseInterface::HTTP_BAD_REQUEST);
@@ -447,9 +450,10 @@ class LicensesController extends ResourceController
             $result = $builder->get($per_page, $page)->getResult();
             //get the data_snapshot as a json object and use it to populate the data
             $data = array_map(function ($item) {
-                $item->data_snapshot = json_decode($item->data_snapshot, true);
+                $item->data_snapshot = empty($item->data_snapshot) ? [] : json_decode($item->data_snapshot, true);
                 //merge the data_snapshot with the data, preserving the original data
                 $item = (object) array_merge($item->data_snapshot, (array) $item);
+                $item->in_print_queue = $item->in_print_queue == 1 ? "Yes" : "No";
                 unset($item->data_snapshot);
                 return $item;
 
@@ -480,6 +484,7 @@ class LicensesController extends ResourceController
         $builder2->where($model2->getTableName() . '.uuid', $uuid);
         $builder2 = $model->addLicenseDetails($builder2, $data['license_type']);
         $finalData = $model2->first();
+
         if (!$data) {
             return $this->respond("License renewal not found", ResponseInterface::HTTP_BAD_REQUEST);
         }
@@ -561,43 +566,52 @@ class LicensesController extends ResourceController
         }
     }
 
+    /**
+     * Update multiple renewals at once with the same status. Can also be used to update them without a stage, 
+     * e.g. updating whether it's in the print queue or not in which 
+     * case the status would be whatever each one has
+     * @throws \Exception
+     * @return ResponseInterface
+     */
     public function updateBulkRenewals()
     {
         try {
 
-            $data = json_decode($this->request->getVar('data'), true); //an array of renewals
-            $status = $this->request->getVar('status');
+            $data = $this->request->getVar('data'); //an array of renewals
+            $status = $this->request->getVar('status') ?? null;
             $results = [];
             foreach ($data as $renewal) {
+                $renewal = (array) $renewal;
                 $renewalUuid = $renewal['uuid'];
-                try {
-                    //get the license type renewal stage required data
-                    $licenseType = $renewal['license_type'];
-                    log_message("info", "Renewal data: ");
+                $model = new LicenseRenewalModel();
+                $existingRenewal = $model->builder()->where('uuid', $renewalUuid)->get()->getFirstRow('array');
+                //get the license type renewal stage required data
+                $licenseType = $existingRenewal['license_type'];
+
+
+
+                unset($renewal['uuid']);
+                if (!empty($status)) {
                     $rules = Utils::getLicenseRenewalStageValidation($licenseType, $status);
                     $validation = \Config\Services::validation();
 
                     if (!$validation->setRules($rules)->run($renewal)) {
-                        // Validation passed
                         throw new Exception("Validation failed");
                     }
-
-                    unset($renewal['uuid']);
                     $renewal['status'] = $status;
-                    $model = new LicenseRenewalModel($licenseType);
-                    //start a transaction
-                    $model->db->transException(true)->transStart();
-
-                    LicenseUtils::updateRenewal(
-                        $renewalUuid,
-                        $renewal
-                    );
-
-                    $model->db->transComplete();
-                    $results[] = ['id' => $renewalUuid, 'successful' => true, 'message' => 'Renewal updated successfully'];
-                } catch (\Throwable $th) {
-                    $results[] = ['id' => $renewalUuid, 'successful' => false, 'message' => $th->getMessage()];
                 }
+                $model = new LicenseRenewalModel($licenseType);
+                //start a transaction
+                $model->db->transException(true)->transStart();
+
+                LicenseUtils::updateRenewal(
+                    $renewalUuid,
+                    $renewal
+                );
+
+                $model->db->transComplete();
+                $results[] = ['id' => $renewalUuid, 'successful' => true, 'message' => 'Renewal updated successfully'];
+
             }
 
 
@@ -735,6 +749,23 @@ class LicensesController extends ResourceController
             $licenseFields = array_merge($licenseModel->getFormFields(), $licenseDef->fields);
             return $this->respond([
                 'data' => $licenseFields
+            ], ResponseInterface::HTTP_OK);
+        } catch (\Throwable $th) {
+            log_message("error", $th->getMessage());
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+    }
+    /**
+     * Returns the list of statuses for a given license type, for which a renewal can be printed. If a renewal does not have one of 
+     * these statuses, it cannot be printed
+     * @return ResponseInterface
+     */
+    public function getPrintableRenewalStatuses($licenseType)
+    {
+        try {
+            $data = LicenseUtils::getPrintableRenewalStatuses($licenseType);
+            return $this->respond([
+                'data' => $data
             ], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
             log_message("error", $th->getMessage());

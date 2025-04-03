@@ -190,6 +190,12 @@
                     "url": "/licenses/renewals",
                     "icon": "",
                     "children": []
+                },
+                {
+                    "title": "Renewal Print Queue",
+                    "url": "/licenses/renewal-print-queue",
+                    "icon": "",
+                    "children": []
                 }
             ]
         },
@@ -264,12 +270,6 @@
                     "children": []
                 },
                 {
-                    "title": "Permissions",
-                    "url": "/admin/permission_matrix",
-                    "icon": "",
-                    "children": []
-                },
-                {
                     "title": "System Settings",
                     "url": "/settings",
                     "icon": "",
@@ -278,12 +278,6 @@
                 {
                     "title": "Activities",
                     "url": "/activities",
-                    "icon": "",
-                    "children": []
-                },
-                {
-                    "title": "Logs",
-                    "url": "/admin/logs",
                     "icon": "",
                     "children": []
                 }
@@ -582,7 +576,10 @@
             "renewalStages": {
                 "Pending Payment": {
                     "label": "Pending Payment",
-                    "next": "Pending Approval",
+                    "allowedTransitions": [
+                        "Pending Approval",
+                        "Approved"
+                    ],
                     "fields": [
                         {
                             "label": "Renewal Date",
@@ -603,11 +600,9 @@
                             "required": true
                         }
                     ],
-                    "canViewPermissions": [],
-                    "canEditPermissions": [],
-                    "canDeletePermissions": [],
-                    "canApprovePermissions": [],
+                    "permission": "Mark_Practitioners_Renewal_Pending_Payment",
                     "printable": false,
+                    "onlineCertificatePrintable": false,
                     "title": "Pending Payment",
                     "active_children": false,
                     "url": "/licenses/renewal",
@@ -622,7 +617,9 @@
                     "apiCountText": "Renewals"
                 },
                 "Pending Approval": {
-                    "next": "Approved",
+                    "allowedTransitions": [
+                        "Approved"
+                    ],
                     "fields": [
                         {
                             "label": "Renewal Date",
@@ -643,11 +640,9 @@
                             "required": true
                         }
                     ],
-                    "canViewPermissions": [],
-                    "canEditPermissions": [],
-                    "canDeletePermissions": [],
-                    "canApprovePermissions": [],
+                    "permission": "Mark_Practitioners_Renewal_Pending_Approval",
                     "printable": false,
+                    "onlineCertificatePrintable": false,
                     "title": "Pending Approval",
                     "active_children": false,
                     "url": "/licenses/renewal",
@@ -663,32 +658,60 @@
                 },
                 "Approved": {
                     "label": "Approved",
-                    "next": "",
+                    "allowedTransitions": [],
                     "fields": [
                         {
-                            "label": "Renewal Date",
-                            "name": "renewal_date",
-                            "hint": "",
+                            "label": "Print Template",
+                            "name": "print_template",
+                            "hint": "The template to use for printing by admins",
                             "options": [],
-                            "type": "date",
+                            "type": "api",
                             "value": "",
-                            "required": true
+                            "required": true,
+                            "api_url": "print-queue/templates",
+                            "apiKeyProperty": "template_name",
+                            "apiLabelProperty": "template_name",
+                            "apiType": "select"
                         },
                         {
-                            "label": "Renewal Fee",
-                            "name": "renewal_fee",
-                            "hint": "",
+                            "label": "Online Certificate Template",
+                            "name": "online_print_template",
+                            "hint": "The template to use for online certificate printing by practitioners",
                             "options": [],
-                            "type": "text",
+                            "type": "api",
                             "value": "",
-                            "required": true
+                            "required": false,
+                            "api_url": "print-queue/templates",
+                            "apiKeyProperty": "template_name",
+                            "apiLabelProperty": "template_name",
+                            "apiType": "select"
+                        },
+                        {
+                            "label": "Add To Print Queue",
+                            "name": "in_print_queue",
+                            "hint": "",
+                            "options": [
+                                {
+                                    "key": "Yes",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "No",
+                                    "value": "0"
+                                }
+                            ],
+                            "type": "select",
+                            "value": "1",
+                            "required": true,
+                            "api_url": "",
+                            "apiKeyProperty": "",
+                            "apiLabelProperty": "",
+                            "apiType": ""
                         }
                     ],
-                    "canViewPermissions": [],
-                    "canEditPermissions": [],
-                    "canDeletePermissions": [],
-                    "canApprovePermissions": [],
-                    "printable": false,
+                    "permission": "Mark_Practitioners_Renewal_Approved",
+                    "printable": true,
+                    "onlineCertificatePrintable": true,
                     "title": "Approved",
                     "active_children": false,
                     "url": "/licenses/renewal",
