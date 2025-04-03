@@ -44,7 +44,10 @@ class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, 
         'online_certificate_end_date',
         'picture',
         'license_type',
-        'license_uuid'
+        'license_uuid',
+        'print_template',
+        'online_print_template',
+        'in_print_queue'
     ];
 
     protected bool $allowEmptyInserts = false;
@@ -111,6 +114,9 @@ class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, 
             'approve_online_certificate',
             'online_certificate_start_date',
             'online_certificate_end_date',
+            'print_template',
+            'online_print_template',
+            'in_print_queue'
         ];
 
         if ($this->licenseType) {
@@ -315,16 +321,12 @@ class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, 
             // $this->setAllowedFields(allowedFields: $protectedFields);
             // $this->setTable($table);
             $license = $this->builder($table)->where('renewal_id', $renewalId)->get()->getFirstRow('array');
-            log_message('info', print_r($data, true));
             if ($license) {
-                log_message('info', 'license found for' . $renewalId);
                 //in this case we're using fields not listed in the allowed fields so we need to use set method
                 $this->builder($table)->where('renewal_id', $renewalId)->set($data)->update();
             } else {
-                log_message('info', 'no license found for' . $renewalId);
                 $db = \Config\Database::connect();
                 $db->table($table)->set($data)->insert();
-                log_message('info', 'inserted subdetails');
                 // log_message('info', 'no license found for' . $renewalId);
                 // $this->insert((object) $data);
                 // log_message('info', $this->builder()->getCompiledInsert(false));
@@ -363,21 +365,7 @@ class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, 
 
     public function getFormFields(): array
     {
-        /**
-         * 'receipt',
-        'qr_code',
-        'qr_text',
-        'expiry',
-        'status',
-        'batch_number',
-        'payment_date',
-        'payment_file',
-        'payment_file_date',
-        'payment_invoice_number',
-        'approve_online_certificate',
-        'online_certificate_start_date',
-        'online_certificate_end_date',
-         */
+
         return [
             [
                 "label" => "License Number",
@@ -498,6 +486,50 @@ class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, 
                 "value" => "",
                 "required" => false
             ],
+            [
+                "label" => "Print Template",
+                "name" => "print_template",
+                "hint" => "The template to use for printing by admins",
+                "options" => [],
+                "type" => "api",
+                "value" => "",
+                "required" => true,
+                "api_url" => "print-queue/templates",
+                "apiKeyProperty" => "template_name",
+                "apiLabelProperty" => "template_name",
+                "apiType" => "select"
+            ],
+            [
+                "label" => "Online Certificate Template",
+                "name" => "online_print_template",
+                "hint" => "The template to use for online certificate printing by practitioners",
+                "options" => [],
+                "type" => "api",
+                "value" => "",
+                "required" => false,
+                "api_url" => "print-queue/templates",
+                "apiKeyProperty" => "template_name",
+                "apiLabelProperty" => "template_name",
+                "apiType" => "select"
+            ],
+            [
+                "label" => "In Print Queue",
+                "name" => "in_print_queue",
+                "type" => "select",
+                "hint" => "",
+                "options" => [
+                    [
+                        "key" => "Yes",
+                        "value" => "1"
+                    ],
+                    [
+                        "key" => "No",
+                        "value" => "0"
+                    ]
+                ],
+                "value" => "",
+                "required" => false
+            ]
 
         ];
     }

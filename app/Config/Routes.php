@@ -45,6 +45,7 @@ $routes->group("print-queue", ["namespace" => "App\Controllers", "filter" => "ap
     $routes->put("templates/(:segment)", [PrintQueueController::class, "updatePrintTemplate/$1"], ["filter" => ["hasPermission:Edit_Print_Templates"]]);
     $routes->delete("templates/(:segment)", [PrintQueueController::class, "deletePrintTemplate/$1"], ["filter" => ["hasPermission:Delete_Print_Templates"]]);
     $routes->post("templates/(:segment)/print-selection", [PrintQueueController::class, "execute/$1"]); //each template has a list of allowed roles. this is used to check if the user has permission to access the template
+    $routes->post("templates/print", [PrintQueueController::class, "printDocuments"]); //print the provided data. each data point would have its own template
 });
 
 $routes->group("activities", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
@@ -75,7 +76,7 @@ $routes->group("admin", ["namespace" => "App\Controllers", "filter" => "apiauth"
     $routes->get("settings/(:segment)", [AdminController::class, "getSetting/$1"], ["filter" => ["hasPermission:View_Settings"]]);
     $routes->get("settings", [AdminController::class, "getSettings"], ["filter" => ["hasPermission:View_Settings"]]);
     $routes->post("api-user", [AuthController::class, "createApiKey"], ["filter" => ["hasPermission:Create_Api_User"]]);
-    $routes->get("distinct-values/(:segment)/(:segment)", [AdminController::class, "getDistinctValues/$1/$2"],);
+    $routes->get("distinct-values/(:segment)/(:segment)", [AdminController::class, "getDistinctValues/$1/$2"], );
 });
 
 $routes->group("practitioners", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
@@ -89,7 +90,7 @@ $routes->group("practitioners", ["namespace" => "App\Controllers", "filter" => "
     $routes->put("qualifications/(:segment)", [PractitionerController::class, "updatePractitionerQualification/$1"], ["filter" => ["hasPermission:Create_Or_Update_Practitioners_Qualifications"]]);
     $routes->delete("qualifications/(:segment)", [PractitionerController::class, "deletePractitionerQualification/$1"], ["filter" => ["hasPermission:Delete_Practitioners_Qualifications"]]);
     $routes->get("qualifications", [PractitionerController::class, "getPractitionerQualifications"], ["filter" => ["hasPermission:View_Practitioner_Qualifications"]]);
-    $routes->get("qualifications/(:segment)", [PractitionerController::class, "getPractitionerQualification/$1"], ["filter" => ["hasPermission:View_Practitioner_Qualifications"]],);
+    $routes->get("qualifications/(:segment)", [PractitionerController::class, "getPractitionerQualification/$1"], ["filter" => ["hasPermission:View_Practitioner_Qualifications"]], );
     $routes->post("qualifications", [PractitionerController::class, "createPractitionerQualification"], ["filter" => ["hasPermission:Create_Or_Update_Practitioners_Qualifications"]]);
     $routes->put("qualifications/(:segment)/restore", [PractitionerController::class, "restorePractitionerQualification/$1"], ["filter" => ["hasPermission:Delete_Practitioners_Qualifications"]]);
 
@@ -97,7 +98,7 @@ $routes->group("practitioners", ["namespace" => "App\Controllers", "filter" => "
     $routes->put("workhistory/(:segment)", [PractitionerController::class, "updatePractitionerWorkHistory/$1"], ["filter" => ["hasPermission:Create_Or_Update_Practitioners_Work_History"]]);
     $routes->delete("workhistory/(:segment)", [PractitionerController::class, "deletePractitionerWorkHistory/$1"], ["filter" => ["hasPermission:Delete_Practitioners_Work_History"]]);
     $routes->get("workhistory", [PractitionerController::class, "getPractitionerWorkHistories"], ["filter" => ["hasPermission:View_Practitioners_Work_History"]]);
-    $routes->get("workhistory/(:segment)", [PractitionerController::class, "getPractitionerWorkHistory/$1"], ["filter" => ["hasPermission:View_Practitioners_Work_History"]],);
+    $routes->get("workhistory/(:segment)", [PractitionerController::class, "getPractitionerWorkHistory/$1"], ["filter" => ["hasPermission:View_Practitioners_Work_History"]], );
     $routes->post("workhistory", [PractitionerController::class, "createPractitionerWorkHistory"], ["filter" => ["hasPermission:Create_Or_Update_Practitioners_Work_History"]]);
     $routes->put("workhistory/(:segment)/restore", [PractitionerController::class, "restorePractitionerWorkHistory/$1"], ["filter" => ["hasPermission:Delete_Practitioners_Work_History"]]);
 
@@ -143,12 +144,12 @@ $routes->group("applications", ["namespace" => "App\Controllers", "filter" => "a
     $routes->get("details", [ApplicationsController::class, "getApplications"], ["filter" => ["hasPermission:View_Application_Forms"]]);
     $routes->post("details/(:segment)", [ApplicationsController::class, "createApplication"], ["filter" => ["hasPermission:Create_Application_Forms"]]);
     $routes->put("details/(:segment)/restore", [ApplicationsController::class, "restoreApplication/$1"], ["filter" => ["hasPermission:Restore_Application_Forms"]]);
-    $routes->get("count", [ApplicationsController::class, "countApplications"], ["filter" => ["hasPermission:View_Application_Forms"]],);
-    $routes->get("statusCounts/(:segment)", [ApplicationsController::class, "getApplicationStatuses"], ["filter" => ["hasPermission:View_Application_Forms"]],);
+    $routes->get("count", [ApplicationsController::class, "countApplications"], ["filter" => ["hasPermission:View_Application_Forms"]], );
+    $routes->get("statusCounts/(:segment)", [ApplicationsController::class, "getApplicationStatuses"], ["filter" => ["hasPermission:View_Application_Forms"]], );
 
     $routes->get("types/(:segment)", [ApplicationsController::class, "getApplicationFormTypes"], ["filter" => ["hasPermission:View_Application_Forms"]]);
 
-    $routes->get("templates", [ApplicationsController::class, "getApplicationTemplates"], ["filter" => ["hasPermission:View_Application_Form_Templates"]],);
+    $routes->get("templates", [ApplicationsController::class, "getApplicationTemplates"], ["filter" => ["hasPermission:View_Application_Form_Templates"]], );
     $routes->put("templates/(:segment)", [ApplicationsController::class, "updateApplicationTemplate/$1"], ["filter" => ["hasPermission:Update_Application_Form_Templates"]]);
     $routes->delete("templates/(:segment)", [ApplicationsController::class, "deleteApplicationTemplate/$1"], ["filter" => ["hasPermission:Delete_Application_Form_Templates"]]);
     $routes->get("templates/(:segment)", [ApplicationsController::class, "getApplicationTemplate/$1"], ["filter" => ["hasPermission:View_Application_Form_Templates"]]);
@@ -156,7 +157,7 @@ $routes->group("applications", ["namespace" => "App\Controllers", "filter" => "a
     $routes->put("details/(:segment)/(:segment)", [ApplicationsController::class, "finishApplication/$1/$2"], ["filter" => ["hasPermission:Update_Application_Form_Templates"]]);
     $routes->get("config/(:segment)/(:segment)", [ApplicationsController::class, "getApplicationConfig/$1/$2"], ["filter" => ["hasPermission:View_Application_Form_Templates"]]);
     $routes->get("config", [ApplicationsController::class, "getApplicationConfig"], ["filter" => ["hasPermission:View_Application_Form_Templates"]]);
-    $routes->get("status/(:segment)", [ApplicationsController::class, "getApplicationStatusTransitions"], ["filter" => ["hasPermission:View_Application_Form_Templates"]],);
+    $routes->get("status/(:segment)", [ApplicationsController::class, "getApplicationStatusTransitions"], ["filter" => ["hasPermission:View_Application_Form_Templates"]], );
     $routes->put("status", [ApplicationsController::class, "updateApplicationStatus"], ["filter" => ["hasPermission:Update_Application_Forms"]]);
 });
 
@@ -167,18 +168,18 @@ $routes->group("licenses", ["namespace" => "App\Controllers", "filter" => "apiau
     $routes->get("details", [LicensesController::class, "getLicenses"], ["filter" => ["hasPermission:View_License_Details"]]);
     $routes->post("details", [LicensesController::class, "createLicense"], ["filter" => ["hasPermission:Create_License_Details"]]);
     $routes->put("details/(:segment)/restore", [LicensesController::class, "restoreLicense/$1"], ["filter" => ["hasPermission:Restore_License_Details"]]);
-    $routes->get("count", [LicensesController::class, "countLicenses"], ["filter" => ["hasPermission:View_License_Details"]],);
+    $routes->get("count", [LicensesController::class, "countLicenses"], ["filter" => ["hasPermission:View_License_Details"]], );
 
     $routes->get("config/(:segment)", [LicensesController::class, "getLicenseFormFields/$1"], ["filter" => ["hasPermission:View_License_Details"]]);
 
     $routes->put("renewal/(:segment)", [LicensesController::class, "updateRenewal/$1"], ["filter" => ["hasPermission:Update_License_Renewal"]]);
-    $routes->put("renewalStage", [LicensesController::class, "updateBulkRenewals"], ["filter" => ["hasPermission:Update_License_Renewal"]]);
+    $routes->put("renewal", [LicensesController::class, "updateBulkRenewals"], ["filter" => ["hasPermission:Update_License_Renewal"]]);
     $routes->delete("renewal/(:segment)", [LicensesController::class, "deleteRenewal/$1"], ["filter" => ["hasPermission:Delete_License_Renewal"]]);
     $routes->get("renewal", [LicensesController::class, "getRenewals"], ["filter" => ["hasPermission:View_License_Renewal"]]);
-    $routes->get("renewal-form-fields/(:segment)", [LicensesController::class, "getLicenseRenewalFormFields"], ["filter" => ["hasPermission:Create_License_Renewal"]],);
-    $routes->get("renewal-count", [LicensesController::class, "countRenewals"], ["filter" => ["hasPermission:View_License_Renewal"]],);
-    $routes->get("renewal/license/(:segment)", [LicensesController::class, "getRenewals/$1"], ["filter" => ["hasPermission:View_License_Renewal"]],);
-    $routes->get("renewal/(:segment)", [LicensesController::class, "getRenewal/$1"], ["filter" => ["hasPermission:View_License_Renewal"]],);
+    $routes->get("renewal-form-fields/(:segment)", [LicensesController::class, "getLicenseRenewalFormFields"], ["filter" => ["hasPermission:Create_License_Renewal"]], );
+    $routes->get("renewal-count", [LicensesController::class, "countRenewals"], ["filter" => ["hasPermission:View_License_Renewal"]], );
+    $routes->get("renewal/license/(:segment)", [LicensesController::class, "getRenewals/$1"], ["filter" => ["hasPermission:View_License_Renewal"]], );
+    $routes->get("renewal/(:segment)", [LicensesController::class, "getRenewal/$1"], ["filter" => ["hasPermission:View_License_Renewal"]], );
     $routes->post("renewal", [LicensesController::class, "createRenewal"], ["filter" => ["hasPermission:Create_License_Renewal"]]);
 
     $routes->get("reports/basic-statistics/(:segment)", [LicensesController::class, "getBasicStatistics/$1"], ["filter" => ["hasPermission:View_License_Details"]]);
@@ -192,7 +193,7 @@ $routes->group("cpd", ["namespace" => "App\Controllers", "filter" => "apiauth"],
     $routes->get("details", [CpdController::class, "getCpds"], ["filter" => ["hasPermission:View_CPD_Details"]]);
     $routes->post("details", [CpdController::class, "createCpd"], ["filter" => ["hasPermission:Create_CPD_Details"]]);
     $routes->put("details/(:segment)/restore", [CpdController::class, "restoreCpd/$1"], ["filter" => ["hasPermission:Restore_CPD_Details"]]);
-    $routes->get("count", [CpdController::class, "countCpds"], ["filter" => ["hasPermission:View_CPD_Details"]],);
+    $routes->get("count", [CpdController::class, "countCpds"], ["filter" => ["hasPermission:View_CPD_Details"]], );
 
     $routes->put("providers/(:segment)", [CpdController::class, "updateCpdProvider/$1"], ["filter" => ["hasPermission:Update_CPD_Providers"]]);
     $routes->delete("providers/(:segment)", [CpdController::class, "deleteCpdProvider/$1"], ["filter" => ["hasPermission:Delete_CPD_Providers"]]);
@@ -200,7 +201,7 @@ $routes->group("cpd", ["namespace" => "App\Controllers", "filter" => "apiauth"],
     $routes->get("providers", [CpdController::class, "getCpdProviders"], ["filter" => ["hasPermission:View_CPD_Providers"]]);
     $routes->post("providers", [CpdController::class, "createCpdProvider"], ["filter" => ["hasPermission:Create_CPD_Providers"]]);
     $routes->put("providers/(:segment)/restore", [CpdController::class, "restoreCpdProvider/$1"], ["filter" => ["hasPermission:Restore_CPD_Providers"]]);
-    $routes->get("providers-count", [CpdController::class, "countCpdProviders"], ["filter" => ["hasPermission:View_CPD_Providers"]],);
+    $routes->get("providers-count", [CpdController::class, "countCpdProviders"], ["filter" => ["hasPermission:View_CPD_Providers"]], );
 
     $routes->put("attendance/(:segment)", [CpdController::class, "updateCpdAttendance/$1"], ["filter" => ["hasPermission:Update_CPD_Attendance"]]);
     $routes->delete("attendance/(:segment)", [CpdController::class, "deleteCpdAttendance/$1"], ["filter" => ["hasPermission:Delete_CPD_Attendance"]]);
@@ -208,9 +209,9 @@ $routes->group("cpd", ["namespace" => "App\Controllers", "filter" => "apiauth"],
     $routes->get("attendance", [CpdController::class, "getCpdAttendances"], ["filter" => ["hasPermission:View_CPD_Attendance"]]);
     $routes->post("attendance", [CpdController::class, "createCpdAttendance"], ["filter" => ["hasPermission:Create_CPD_Attendance"]]);
     $routes->put("attendance/(:segment)/restore", [CpdController::class, "restoreCpdAttendance/$1"], ["filter" => ["hasPermission:Restore_CPD_Attendance"]]);
-    $routes->get("attendance-count", [CpdController::class, "countCpdAttendances"], ["filter" => ["hasPermission:View_CPD_Attendance"]],);
+    $routes->get("attendance-count", [CpdController::class, "countCpdAttendances"], ["filter" => ["hasPermission:View_CPD_Attendance"]], );
 
-    $routes->get("license-attendance", [CpdController::class, "getLicenseCpdAttendances"], ["filter" => ["hasPermission:View_CPD_Attendance"]],);
+    $routes->get("license-attendance", [CpdController::class, "getLicenseCpdAttendances"], ["filter" => ["hasPermission:View_CPD_Attendance"]], );
 });
 
 service('auth')->routes($routes);

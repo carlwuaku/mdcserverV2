@@ -37,7 +37,7 @@ class CpdController extends ResourceController
             if (!$this->validate($rules)) {
                 return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
             }
-            $userId = auth()->id();
+            $userId = auth("tokens")->id();
             $data = $this->request->getPost();
             $data['created_by'] = $userId;
             $model = new CpdModel();

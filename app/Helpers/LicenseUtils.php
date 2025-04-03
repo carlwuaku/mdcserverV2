@@ -85,7 +85,9 @@ class LicenseUtils extends Utils
             $data['qr_text'] = $qrText;
 
             $data['license_type'] = $licenseType;
+
             $formData = $model->createArrayFromAllowedFields($data, true);
+            $formData['data_snapshot'] = json_encode(self::getLicenseDetails($license_uuid));
             // log_message('info', print_r($formData, true));
             // log_message('info', $model->builder()->set($formData)->getCompiledInsert());
 
@@ -140,15 +142,22 @@ class LicenseUtils extends Utils
         try {
             $model = new LicenseRenewalModel();
             $renewal = $model->builder()->where('uuid', $renewal_uuid)->get()->getFirstRow('array');
-            log_message("info", print_r($renewal, true));
 
             $licenseType = $renewal['license_type'];
             $license_number = $renewal['license_number'];
-
+            $data['license_type'] = $licenseType;
+            $data['license_number'] = $license_number;
 
 
             $year = date('Y', strtotime($renewal['start_date']));
-            if ($data['status'] === "Approved") {//check for the terminal status from the app settings for that license type
+            $printableStatuses = array_map(function ($status) {
+                return $status['label'];
+            }, self::getPrintableRenewalStatuses($licenseType));
+
+            log_message('info', print_r($printableStatuses, true));
+            //if the status allows the license to be printed, generate the qr code
+            if (empty($renewal['qr_code']) && isset($data['status']) && in_array($data['status'], $printableStatuses)) {
+                //check for the terminal status from the app settings for that license type
                 $code = md5($renewal['license_number'] . "%%" . $year);
                 $qrText = "manager.mdcghana.org/api/verifyRelicensure/$code";
                 $qrCodeGenerator = new Generator();
@@ -161,11 +170,9 @@ class LicenseUtils extends Utils
             }
             $formData = $model->createArrayFromAllowedFields($data, false);
             // log_message('info', print_r($formData, true));
-            log_message('info', print_r($formData, true));
 
             $model->where("uuid", $renewal_uuid)->set($formData)->update();
             $id = $renewal['id'];
-            log_message('info', 'Renewal updated successfully');
 
             $LicensesModel = new LicensesModel();
             $subModel = new LicenseRenewalModel();
@@ -278,7 +285,7 @@ class LicenseUtils extends Utils
      */
     public static function licenseRequiresRevalidation($licenseDetails, $revalidationPeriod = null, $revalidationMessage = "License has lapsed revalidation period", $revalidationManualMessage = "License marked for revalidation")
     {
-        $templateObject = new TemplateEngine();
+        $templateObject = new TemplateEngineHelper();
         if (array_key_exists('requires_revalidation', $licenseDetails) && $licenseDetails['requires_revalidation'] == 'yes') {
 
             return ['result' => true, 'message' => $templateObject->process($revalidationManualMessage, $licenseDetails)];
@@ -296,6 +303,25 @@ class LicenseUtils extends Utils
 
         }
 
+    }
+
+    /**
+     * Return a list of statuses that can be printed on the renewal certificate
+     * @param mixed $licenseType
+     * @return array
+     */
+    public static function getPrintableRenewalStatuses($licenseType)
+    {
+        $licenseDef = Utils::getLicenseSetting($licenseType);
+        $results = [];
+        $renewalStages = (array) $licenseDef->renewalStages;
+        foreach (array_values($renewalStages) as $value) {
+            if ($value['printable']) {
+                $results[] = $value;
+            }
+
+        }
+        return $results;
     }
 
     /**

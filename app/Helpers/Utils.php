@@ -20,8 +20,23 @@ class Utils
 {
 
     // Path to your certificate files - store these securely!
-    private static $privateKeyPath = WRITEPATH . 'certs/private.pem';
-    private static $publicKeyPath = WRITEPATH . 'certs/public.pem';
+    private static $privateKeyPath = ROOTPATH . 'certs/private_key.pem';
+    private static $publicKeyPath = ROOTPATH . 'certs/public_key.pem';
+
+    /**
+     * Get the absolute path to the app settings file
+     * @return string
+     */
+    public static function getAppSettingsFileName()
+    {
+        $fileName = getenv('APP_SETTINGS_FILE') ?? 'app-settings.json';
+        if (!file_exists(ROOTPATH . $fileName)) {
+            log_message('error', "Settings file not found: $fileName");
+            throw new \Exception("No settings file found", 1);
+
+        }
+        return ROOTPATH . $fileName;
+    }
 
     /**
      * Compares two objects and returns the keys with different values.
@@ -68,7 +83,7 @@ class Utils
             data: $qrText,
             encoding: new Encoding('UTF-8'),
             errorCorrectionLevel: ErrorCorrectionLevel::Low,
-            size: 300,
+            size: 100,
             margin: 10,
             roundBlockSizeMode: RoundBlockSizeMode::Margin,
             foregroundColor: new Color(0, 0, 0),
@@ -77,11 +92,12 @@ class Utils
         );
 
         // Create generic logo
-        // $logo = new Logo(
-        //     path: __DIR__ . '/assets/symfony.png',
-        //     resizeToWidth: 50,
-        //     punchoutBackground: true
-        // );
+        $logoPath = FCPATH . 'assets/images/logo.png';// PUBLICPATH . '/assets/images/logo.png';
+        $logo = new Logo(
+            path: $logoPath,
+            resizeToWidth: 50,
+            punchoutBackground: false
+        );
 
         // Create generic label
         $label = new Label(
@@ -89,16 +105,17 @@ class Utils
             textColor: new Color(255, 0, 0)
         );
 
-        $result = $writer->write(qrCode: $qrCode);
+        $result = $writer->write($qrCode);
 
         // Validate the result
-        $writer->validateResult($result, $qrText);
-        // Save it to a file
-        $mimetype = "png";
-        $file_name = empty($filename) ? uniqid() . ".$mimetype" : $filename . ".$mimetype";
+        // $writer->validateResult($result, $qrText);
 
-        $writer->validateResult($result, $qrText);
+
+        // $writer->validateResult($result, $qrText);
         if ($saveFile) {
+            // Save it to a file
+            $mimetype = "png";
+            $file_name = empty($filename) ? uniqid() . ".$mimetype" : $filename . ".$mimetype";
             //if the folder does not exist, create it
             if (!file_exists(WRITEPATH . QRCODES_ASSETS_FOLDER)) {
                 mkdir(WRITEPATH . QRCODES_ASSETS_FOLDER);
@@ -126,7 +143,7 @@ class Utils
     }
 
     /**
-     * get the value for a key in app-settings.json
+     * get the value for a key in app settings
      * @param string $license
      * @return array
      */
@@ -135,7 +152,7 @@ class Utils
         /**
          * @var array
          */
-        $data = json_decode(file_get_contents(ROOTPATH . 'app-settings.json'), true);
+        $data = json_decode(file_get_contents(self::getAppSettingsFileName()), true);
         if ($key) {
             return $data[$key] ?? null;
         }
@@ -144,9 +161,9 @@ class Utils
 
     public static function setAppSettings(string $key, $value)
     {
-        $data = json_decode(file_get_contents(ROOTPATH . 'app-settings.json'), true);
+        $data = json_decode(file_get_contents(self::getAppSettingsFileName()), true);
         $data[$key] = $value;
-        file_put_contents(ROOTPATH . 'app-settings.json', json_encode($data));
+        file_put_contents(self::getAppSettingsFileName(), json_encode($data));
     }
 
     /**
@@ -240,7 +257,7 @@ class Utils
             /** @var array {label: string, name: string, hint: string, options: array, type: string, value: string, required: bool} */
 
             $fields = $licenseDef->renewalStages[$stage]['fields'];
-
+            log_message('info', "Fields: " . $stage . $license . json_encode($fields));
             return self::getRulesFromFormGeneratorFields($fields);
         } catch (\Throwable $th) {
             throw $th;
