@@ -77,6 +77,10 @@ $routes->group("admin", ["namespace" => "App\Controllers", "filter" => "apiauth"
     $routes->get("settings", [AdminController::class, "getSettings"], ["filter" => ["hasPermission:View_Settings"]]);
     $routes->post("api-user", [AuthController::class, "createApiKey"], ["filter" => ["hasPermission:Create_Api_User"]]);
     $routes->get("distinct-values/(:segment)/(:segment)", [AdminController::class, "getDistinctValues/$1/$2"], );
+    $routes->post("users/setup-google-auth", [AuthController::class, "setupGoogleAuth"], ["filter" => ["hasPermission:Create_Or_Edit_User_Role"]]);
+    $routes->post("users/disable-google-auth", [AuthController::class, "disableGoogleAuth"], ["filter" => ["hasPermission:Create_Or_Edit_User_Role"]]);
+    $routes->post("users/verify-google-auth", [AuthController::class, "verifyAndEnableGoogleAuth"], ["filter" => ["hasPermission:Create_Or_Edit_User_Role"]]);
+
 });
 
 $routes->group("practitioners", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
