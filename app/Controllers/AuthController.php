@@ -14,6 +14,7 @@ use CodeIgniter\Database\MigrationRunner;
 use Google\ReCaptcha\ReCaptcha;
 use ReCaptcha\ReCaptcha as ReCaptchaReCaptcha;
 use App\Helpers\CacheHelper;
+use Vectorface\GoogleAuthenticator;
 
 /**
  * @OA\Tag(
@@ -149,15 +150,68 @@ class AuthController extends ResourceController
         if (auth()->loggedIn()) {
             auth()->logout();
         }
+
         $rules = [
             "email" => "required|valid_email",
             "password" => "required"
         ];
+        $key = getenv('AUTH_ENCRYPTION_KEY');
+
+        // Check if 2FA code is required for this request
+        $is2faVerification = $this->request->getVar('verification_mode') === '2fa';
+
+        if ($is2faVerification) {
+            // When verifying 2FA, we need the code and user ID
+            $rules = [
+                'user_id' => 'required|numeric',
+                'code' => 'required|min_length[6]|max_length[6]|numeric'
+            ];
+        }
+
         if (!$this->validate($rules)) {
             $message = implode(" ", array_values($this->validator->getErrors()));
             return $this->respond(['message' => $message], ResponseInterface::HTTP_BAD_REQUEST);
         }
-        // success
+
+        if ($is2faVerification) {
+            // 2FA VERIFICATION FLOW
+            $userId = $this->request->getVar('user_id');
+            $code = $this->request->getVar('code');
+
+            $userObject = new UsersModel();
+            $userData = $userObject->findById($userId);
+
+            if (!$userData) {
+                return $this->respond(["message" => "User not found"], ResponseInterface::HTTP_NOT_FOUND);
+            }
+
+            // Verify Google Authenticator code
+            $g = new GoogleAuthenticator();
+            ;
+            $secret = $userData->google_auth_secret;
+
+            if (!$secret) {
+                return $this->respond(["message" => "2FA not set up for this account"], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+
+            if (!$g->verifyCode($secret, $code, 2)) {
+                return $this->respond(["message" => "Invalid verification code"], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+
+            // 2FA succeeded, log the user in
+            auth()->login($userId);
+
+            $token = $userData->generateAccessToken($key);
+
+            $response = [
+                "token" => $token->raw_token,
+                "user" => $userData,
+            ];
+
+            return $this->respondCreated($response);
+        }
+
+        // STANDARD LOGIN FLOW (FIRST STEP)
         $credentials = [
             "email" => $this->request->getVar("email"),
             "password" => $this->request->getVar("password")
@@ -169,19 +223,137 @@ class AuthController extends ResourceController
         }
 
         $userObject = new UsersModel();
-        $userData = $userObject->findById(auth()->id());
-        $token = $userData->generateAccessToken("somesecretkey");
-        // $permissionsObject = new PermissionsModel();
-        // $permissions = $permissionsObject->getRolePermissions($userData->role_id, true);
-        // $userData->permissions = $permissions;
+        $userData = $userObject->findById(auth("tokens")->user()->id);
+        log_message('info', $userData);
+        // Check if 2FA is enabled for this user
+        if (!empty($userData->google_auth_secret)) {
+            // Don't actually log them in yet - require 2FA verification
+            auth()->logout();
+            //generate a new random token
+            $token = bin2hex(random_bytes(16));
+            // Store the token in the session or database for later verification
+            $userObject->update($userData->id, [
+                '2fa_verification_token' => $token
+            ]);
+            return $this->respond([
+                "message" => "2FA verification required",
+                "requires_2fa" => true,
+                "token" => $userData->id,
+            ], ResponseInterface::HTTP_OK);
+        }
+
+        // No 2FA required, proceed with normal login
+        $token = $userData->generateAccessToken($key);
+
         $response = [
             "token" => $token->raw_token,
             "user" => $userData,
-
         ];
 
-
         return $this->respondCreated($response);
+    }
+
+    public function setupGoogleAuth()
+    {
+        $uuid = $this->request->getVar('uuid');
+        $userObject = new UsersModel();
+
+        $userData = $userObject->where(["uuid" => $uuid])->first();
+
+        // Create Google Authenticator object
+        $authenticator = new GoogleAuthenticator();
+
+        // Generate a secret key
+        $secret = $authenticator->createSecret();
+
+        // Create the QR code URL
+        $appName = getenv("GOOGLE_AUTHENTICATOR_APP_NAME"); // Replace with your app name
+        $email = $userData->email;
+        $qrCodeUrl = $authenticator->getQRCodeUrl($email, $secret, $appName);
+
+        // Save the secret key to the user's record in the database
+        $userObject->update($userData->id, [
+            'two_fa_setup_token' => $secret
+        ]);
+
+        return $this->respond([
+            'secret' => $secret, // User can manually enter this if they can't scan QR
+            'qr_code_url' => $qrCodeUrl,
+            'message' => 'Scan this QR code with Google Authenticator app'
+        ], ResponseInterface::HTTP_OK);
+    }
+
+    public function verifyAndEnableGoogleAuth()
+    {
+        $rules = [
+            'code' => 'required|min_length[6]|max_length[6]|numeric',
+            'uuid' => 'required|is_not_unique[users.uuid]',
+        ];
+        if (!$this->validate($rules)) {
+            $message = implode(" ", array_values($this->validator->getErrors()));
+            return $this->respond(['message' => $message], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+        $uuid = $this->request->getVar('uuid');
+        $userObject = new UsersModel();
+        $userData = $userObject->where(["uuid" => $uuid])->first();
+        if (!$userData) {
+            return $this->respond([
+                'message' => 'No user found. Please start setup again.'
+            ], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+        $userId = $userData->id;
+        $secret = $userData->two_fa_setup_token;
+
+
+
+        // Get the temporary secret from session
+        if (!$secret) {
+            return $this->respond([
+                'message' => 'No 2FA setup in progress. Please start setup again.'
+            ], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+
+        // Verify the code
+        $authenticator = new GoogleAuthenticator();
+        $code = $this->request->getVar('code');
+
+        if (!$authenticator->verifyCode($secret, $code, 2)) {
+            return $this->respond([
+                'message' => 'Invalid verification code'
+            ], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+        log_message('info', $secret . ' Code is valid');
+        // Code is valid, save the secret to the user's record
+
+        // $userData->google_auth_secret = $secret;
+        // $userData->two_fa_setup_token = null; // Clear the setup token
+        // $userObject->save($userData);
+        $userObject->update($userData->id, [
+            'two_fa_setup_token' => null,
+            'google_auth_secret' => $secret,
+        ]);
+
+        return $this->respond([
+            'message' => '2FA has been successfully enabled for your account'
+        ], ResponseInterface::HTTP_OK);
+    }
+
+    public function disableGoogleAuth()
+    {
+
+
+        $userId = $this->request->getVar('user_id');
+        $userObject = new UsersModel();
+        $userData = $userObject->findById($userId);
+
+
+        // Remove 2FA
+        $userData->google_auth_secret = null;
+        $userObject->save($userData);
+
+        return $this->respond([
+            'message' => '2FA has been successfully disabled for this account'
+        ], ResponseInterface::HTTP_OK);
     }
 
     /**
@@ -253,6 +425,8 @@ class AuthController extends ResourceController
 
     public function mobileLogin()
     {
+        // Check if 2FA code is required for this request
+        $is2faVerification = $this->request->getVar('verification_mode') === '2fa';
         // Validate credentials
         $rules = setting('Validation.login') ?? [
             'email' => config('auth')->emailValidationRules,
@@ -266,24 +440,83 @@ class AuthController extends ResourceController
             ],
         ];
 
+        if ($is2faVerification) {
+            // When verifying 2FA, we need the code and token
+            $rules = [
+                'token' => 'required',
+                'code' => 'required|min_length[6]|max_length[6]|numeric',
+                'device_name' => [
+                    'label' => 'Device Name',
+                    'rules' => 'required|string',
+                ],
+            ];
+        }
+
+
         if (!$this->validateData($this->request->getPost(), $rules, [], config('Auth')->DBGroup)) {
             return $this->response
                 ->setJSON(['errors' => $this->validator->getErrors()])
                 ->setStatusCode(401);
         }
+        if ($is2faVerification) {
+            // 2FA VERIFICATION FLOW
+            $token = $this->request->getVar('token');
+            $code = $this->request->getVar('code');
 
-        // Get the credentials for login
-        $credentials = $this->request->getPost(setting('Auth.validFields'));
-        $credentials = array_filter($credentials);
-        $credentials['password'] = $this->request->getPost('password');
+            $userObject = new UsersModel();
+            $userData = $userObject->where(["two_fa_verification_token" => $token])->first();
 
-        // Attempt to login
-        $result = auth()->attempt($credentials);
-        if (!$result->isOK()) {
-            return $this->response
-                ->setJSON(['message' => $result->reason()])
-                ->setStatusCode(401);
+            if (!$userData) {
+                return $this->respond(["message" => "User not found"], ResponseInterface::HTTP_NOT_FOUND);
+            }
+
+            // Verify Google Authenticator code
+            $authenticator = new GoogleAuthenticator();
+            $secret = $userData->google_auth_secret;
+
+            if (!$secret) {
+                return $this->respond(["message" => "2FA not set up for this account"], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+
+            if (!$authenticator->verifyCode($secret, $code, 2)) {
+                return $this->respond(["message" => "Invalid verification code"], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+
+            // 2FA succeeded, log the user in
+            auth()->login($userData);
+        } else {
+            // Get the credentials for login
+            $credentials = $this->request->getPost(setting('Auth.validFields'));
+            $credentials = array_filter($credentials);
+            $credentials['password'] = $this->request->getPost('password');
+
+            // Attempt to login
+            $result = auth()->attempt($credentials);
+            if (!$result->isOK()) {
+                return $this->response
+                    ->setJSON(['message' => $result->reason()])
+                    ->setStatusCode(401);
+            }
+            $userObject = new UsersModel();
+            $userData = $userObject->findById(auth()->id());
+            // Check if 2FA is enabled for this user
+            if (!empty($userData->google_auth_secret)) {
+                // Don't actually log them in yet - require 2FA verification
+                auth()->logout();
+                //generate a new random token
+                $token = bin2hex(random_bytes(16));
+                // Store the token in the session or database for later verification
+                $userObject->update($userData->id, [
+                    'two_fa_verification_token' => $token
+                ]);
+                return $this->respond([
+                    "message" => "2FA verification required",
+                    "requires_2fa" => true,
+                    "token" => $token,
+                ], ResponseInterface::HTTP_OK);
+            }
         }
+
 
         // Generate token and return to client
         $token = auth()->user()->generateAccessToken(service('request')->getVar('device_name'));
@@ -703,12 +936,26 @@ class AuthController extends ResourceController
     {
         try {
             $per_page = $this->request->getVar('limit') ? (int) $this->request->getVar('limit') : 100;
+            $param = $this->request->getVar('param');
+            $sortBy = $this->request->getVar('sortBy') ?? "id";
+            $sortOrder = $this->request->getVar('sortOrder') ?? "asc";
+            $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
+
+
             $model = new UsersModel();
-            $builder = $model->builder();
+            $builder = $param ? $model->search($param) : $model->builder();
+
+            $builder->select("id, uuid, username, status, status_message, active, created_at, regionId, position, picture, phone, email, role_name, CASE WHEN google_auth_secret IS NOT NULL THEN 'yes' ELSE 'no' END AS google_authenticator_setup")
+            ;
+
+            $builder->orderBy($sortBy, $sortOrder);
+            $totalBuilder = clone $builder;
+            $total = $totalBuilder->countAllResults();
+            $result = $builder->get($per_page, $page)->getResult();
 
             return $this->respond([
-                'data' => $model->withDeleted()->paginate($per_page),
-                'pager' => $model->pager->getDetails(),
+                'data' => $result,
+                'total' => $total,
                 'displayColumns' => $model->getDisplayColumns()
             ], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {

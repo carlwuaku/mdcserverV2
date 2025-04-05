@@ -33,7 +33,8 @@ class UsersModel extends UserModel implements TableDisplayInterface
             'position',
             'picture',
             'phone',
-            'email'
+            'email',
+            'google_authenticator_setup'
         ];
     }
 
@@ -53,7 +54,10 @@ class UsersModel extends UserModel implements TableDisplayInterface
         'regionId',
         'position',
         'picture',
-        'phone'
+        'phone',
+        'two_fa_verification_token',
+        'two_fa_setup_token',
+        'google_auth_secret'
     ];
 
 

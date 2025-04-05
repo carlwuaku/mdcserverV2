@@ -680,7 +680,7 @@
                             "options": [],
                             "type": "api",
                             "value": "",
-                            "required": false,
+                            "required": true,
                             "api_url": "print-queue/templates",
                             "apiKeyProperty": "template_name",
                             "apiLabelProperty": "template_name",
