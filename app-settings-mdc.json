@@ -1101,5 +1101,27 @@
             "value": "",
             "required": false
         }
+    ],
+    "portalHomeMenu": [
+        {
+            "title": "Practitioner Login",
+            "active_children": false,
+            "url": "/login",
+            "icon": "list_alt",
+            "children": [],
+            "description": "Manage submitted applications",
+            "apiCountUrl": "/applications/count?status=Pending Approval",
+            "apiCountText": "New Applications"
+        },
+        {
+            "title": "Applications",
+            "active_children": false,
+            "url": "/application-forms",
+            "icon": "person_outlined",
+            "children": [],
+            "description": "Manage licenses",
+            "apiCountUrl": "licenses/count",
+            "apiCountText": "Total licenses"
+        }
     ]
 }

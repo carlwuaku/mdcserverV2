@@ -274,13 +274,14 @@ class LicensesController extends ResourceController
                             if ($key === "child_param") {
                                 continue;
                             }
+                            $columnName = str_replace('child_', '', $licenseTypeTable . '.' . $key);
                             //if it contains a date, we need to format it
                             if (strpos($key, 'date') !== false) {
                                 $dateRange = Utils::getDateRange($value);
-                                $joinConditions[] = "$licenseTypeTable.$key >=" . $dateRange['start'];
-                                $joinConditions[] = "$licenseTypeTable.$key <=" . $dateRange['end'];
+                                $joinConditions[] = "$columnName >=" . $dateRange['start'];
+                                $joinConditions[] = "$columnName <=" . $dateRange['end'];
                             } else {
-                                $joinConditions[] = str_replace('child_', '', $licenseTypeTable . '.' . $key) . ' = ' . "'$value'";
+                                $joinConditions[] = $columnName . ' = ' . "'$value'";
                             }
                         }
                         $licenseJoinConditions = implode(" AND ", $joinConditions);

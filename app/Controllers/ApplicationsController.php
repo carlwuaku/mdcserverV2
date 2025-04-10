@@ -77,7 +77,6 @@ class ApplicationsController extends ResourceController
                 $data['status'] = $template->initialStage;
             }
 
-            log_message('info', $template->initialStage);
 
             $stages = json_decode($template->stages, true);
             if (!empty($stages)) {
@@ -87,7 +86,7 @@ class ApplicationsController extends ResourceController
                      * @var ApplicationTemplateStage[]  $initialStage
                      */
                     $initialStage = array_filter($stages, function ($stage) use ($template) {
-                        return $stage['id'] == $template->initialStage;
+                        return $stage['name'] == $template->initialStage;
                     });
                     if (empty($initialStage)) {
                         throw new Exception("Initial stage not found");
@@ -111,7 +110,6 @@ class ApplicationsController extends ResourceController
             $activitiesModel = new ActivitiesModel();
 
             $activitiesModel->logActivity("Created application {$data['form_type']} with code $applicationCode");
-            //if registered this year, retain the person
             return $this->respond(['message' => 'Application created successfully', 'data' => ['applicationCode' => $applicationCode]], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
             log_message('error', $th->getMessage());
@@ -963,6 +961,33 @@ class ApplicationsController extends ResourceController
         return $data;
     }
 
+    public function getApplicationTemplateForFilling(string $uuid): array|object|null
+    {
+        try {
+            $model = new ApplicationTemplateModel();
+            $builder = $model->builder();
+            $builder->select("uuid, header,form_name, footer, data, open_date, close_date, on_submit_message, description, guidelines")->where('uuid', $uuid)->orWhere('form_name', $uuid);
+            $data = $model->first();
+            if (!$data) {
+                throw new Exception("Application template not found");
+            }
+            if (!empty($data['open_date']) && !empty($data['close_date'])) {
+                $currentDate = date("Y-m-d");
+                if ($currentDate < $data['open_date'] || $currentDate > $data['close_date']) {
+                    throw new Exception("Application template is not available for filling");
+                }
+            }
+            $data['data'] = json_decode($data['data'], true);
+            return $this->respond([
+                'data' => $data,
+                'message' => ""
+            ], ResponseInterface::HTTP_OK);
+        } catch (\Throwable $th) {
+            log_message('error', $th->getMessage());
+            return $this->respond(['message' => "Application not found at this time. Please try again later"], ResponseInterface::HTTP_NOT_FOUND);
+        }
+    }
+
     public function getApplicationTemplate($uuid)
     {
         try {
@@ -978,7 +1003,7 @@ class ApplicationsController extends ResourceController
     {
         try {
             $rules = [
-                "form_name" => "required|is_unique[application_templates.form_name]",
+                "form_name" => "required|is_unique[application_form_templates.form_name]",
                 "data" => "required"
             ];
 
@@ -1018,8 +1043,7 @@ class ApplicationsController extends ResourceController
 
             $model = new ApplicationTemplateModel();
             $data = $this->request->getVar();
-
-            if (!$model->update($uuid, $data)) {
+            if (!$model->builder()->where(key: ['uuid' => $uuid])->update($data)) {
                 return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
             }
 
