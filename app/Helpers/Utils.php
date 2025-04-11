@@ -138,7 +138,8 @@ class Utils
     {
         $year = date('y');
         $prefix = strtoupper(substr($formType, 0, 3));
-        $suffix = strtoupper(substr(uniqid(), 0, 6)) . $year;
+
+        $suffix = bin2hex(random_bytes(16)) . $year;
         return $prefix . $suffix;
     }
 

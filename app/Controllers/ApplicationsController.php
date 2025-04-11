@@ -66,7 +66,7 @@ class ApplicationsController extends ResourceController
             $applicationCode = $data['application_code'] = Utils::generateApplicationCode($form_type);
             //get the form actions and initial stage
             $applicationTemplateModel = new ApplicationTemplateModel();
-            $template = $applicationTemplateModel->builder()->select(['form_name', 'stages', 'initialStage', 'finalStage'])->where('form_name', $form_type)->get()->getFirstRow();
+            $template = $applicationTemplateModel->builder()->select(['form_name', 'stages', 'initialStage', 'finalStage', 'on_submit_message'])->where('form_name', $form_type)->get()->getFirstRow();
             if (!$template) {
                 throw new Exception("Form template not found");
             }
@@ -86,6 +86,7 @@ class ApplicationsController extends ResourceController
                      * @var ApplicationTemplateStage[]  $initialStage
                      */
                     $initialStage = array_filter($stages, function ($stage) use ($template) {
+                        return $stage['name'] == $template->initialStage;
                         return $stage['name'] == $template->initialStage;
                     });
                     if (empty($initialStage)) {
@@ -110,7 +111,7 @@ class ApplicationsController extends ResourceController
             $activitiesModel = new ActivitiesModel();
 
             $activitiesModel->logActivity("Created application {$data['form_type']} with code $applicationCode");
-            return $this->respond(['message' => 'Application created successfully', 'data' => ['applicationCode' => $applicationCode]], ResponseInterface::HTTP_OK);
+            return $this->respond(['message' => 'Application created successfully', 'data' => ['applicationCode' => $applicationCode, 'onSubmitMessage' => $template->on_submit_message]], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
             log_message('error', $th->getMessage());
             return $this->respond(['message' => $th->getMessage()], ResponseInterface::HTTP_BAD_REQUEST);
