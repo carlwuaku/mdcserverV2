@@ -15,6 +15,7 @@ use Google\ReCaptcha\ReCaptcha;
 use ReCaptcha\ReCaptcha as ReCaptchaReCaptcha;
 use App\Helpers\CacheHelper;
 use Vectorface\GoogleAuthenticator;
+use CodeIgniter\I18n\Time;
 
 /**
  * @OA\Tag(
@@ -42,6 +43,14 @@ class AuthController extends ResourceController
                 $data['logo'] = base_url() . $data['logo'];
             }
             $data['recaptchaSiteKey'] = getenv('RECAPTCHA_PUBLIC_KEY');
+            if (isset($data['portalHomeMenu'])) {
+                //set each image url relative to the base url
+                foreach ($data['portalHomeMenu'] as $key => $menu) {
+                    if (isset($menu['image'])) {
+                        $data['portalHomeMenu'][$key]['image'] = base_url() . $menu['image'];
+                    }
+                }
+            }
             return $this->respond($data, ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
             return $this->respond(['message' => 'App settings file not found'], ResponseInterface::HTTP_NOT_FOUND);
@@ -145,113 +154,113 @@ class AuthController extends ResourceController
      *     )
      * )
      */
-    public function login()
-    {
-        if (auth()->loggedIn()) {
-            auth()->logout();
-        }
+    // public function login()
+    // {
+    //     if (auth()->loggedIn()) {
+    //         auth()->logout();
+    //     }
 
-        $rules = [
-            "email" => "required|valid_email",
-            "password" => "required"
-        ];
-        $key = getenv('AUTH_ENCRYPTION_KEY');
+    //     $rules = [
+    //         "email" => "required|valid_email",
+    //         "password" => "required"
+    //     ];
+    //     $key = getenv('AUTH_ENCRYPTION_KEY');
 
-        // Check if 2FA code is required for this request
-        $is2faVerification = $this->request->getVar('verification_mode') === '2fa';
+    //     // Check if 2FA code is required for this request
+    //     $is2faVerification = $this->request->getVar('verification_mode') === '2fa';
 
-        if ($is2faVerification) {
-            // When verifying 2FA, we need the code and user ID
-            $rules = [
-                'user_id' => 'required|numeric',
-                'code' => 'required|min_length[6]|max_length[6]|numeric'
-            ];
-        }
+    //     if ($is2faVerification) {
+    //         // When verifying 2FA, we need the code and user ID
+    //         $rules = [
+    //             'user_id' => 'required|numeric',
+    //             'code' => 'required|min_length[6]|max_length[6]|numeric'
+    //         ];
+    //     }
 
-        if (!$this->validate($rules)) {
-            $message = implode(" ", array_values($this->validator->getErrors()));
-            return $this->respond(['message' => $message], ResponseInterface::HTTP_BAD_REQUEST);
-        }
+    //     if (!$this->validate($rules)) {
+    //         $message = implode(" ", array_values($this->validator->getErrors()));
+    //         return $this->respond(['message' => $message], ResponseInterface::HTTP_BAD_REQUEST);
+    //     }
 
-        if ($is2faVerification) {
-            // 2FA VERIFICATION FLOW
-            $userId = $this->request->getVar('user_id');
-            $code = $this->request->getVar('code');
+    //     if ($is2faVerification) {
+    //         // 2FA VERIFICATION FLOW
+    //         $userId = $this->request->getVar('user_id');
+    //         $code = $this->request->getVar('code');
 
-            $userObject = new UsersModel();
-            $userData = $userObject->findById($userId);
+    //         $userObject = new UsersModel();
+    //         $userData = $userObject->findById($userId);
 
-            if (!$userData) {
-                return $this->respond(["message" => "User not found"], ResponseInterface::HTTP_NOT_FOUND);
-            }
+    //         if (!$userData) {
+    //             return $this->respond(["message" => "User not found"], ResponseInterface::HTTP_NOT_FOUND);
+    //         }
 
-            // Verify Google Authenticator code
-            $g = new GoogleAuthenticator();
-            ;
-            $secret = $userData->google_auth_secret;
+    //         // Verify Google Authenticator code
+    //         $g = new GoogleAuthenticator();
+    //         ;
+    //         $secret = $userData->google_auth_secret;
 
-            if (!$secret) {
-                return $this->respond(["message" => "2FA not set up for this account"], ResponseInterface::HTTP_BAD_REQUEST);
-            }
+    //         if (!$secret) {
+    //             return $this->respond(["message" => "2FA not set up for this account"], ResponseInterface::HTTP_BAD_REQUEST);
+    //         }
 
-            if (!$g->verifyCode($secret, $code, 2)) {
-                return $this->respond(["message" => "Invalid verification code"], ResponseInterface::HTTP_BAD_REQUEST);
-            }
+    //         if (!$g->verifyCode($secret, $code, 2)) {
+    //             return $this->respond(["message" => "Invalid verification code"], ResponseInterface::HTTP_BAD_REQUEST);
+    //         }
 
-            // 2FA succeeded, log the user in
-            auth()->login($userId);
+    //         // 2FA succeeded, log the user in
+    //         auth()->login($userId);
 
-            $token = $userData->generateAccessToken($key);
+    //         $token = $userData->generateAccessToken($key);
 
-            $response = [
-                "token" => $token->raw_token,
-                "user" => $userData,
-            ];
+    //         $response = [
+    //             "token" => $token->raw_token,
+    //             "user" => $userData,
+    //         ];
 
-            return $this->respondCreated($response);
-        }
+    //         return $this->respondCreated($response);
+    //     }
 
-        // STANDARD LOGIN FLOW (FIRST STEP)
-        $credentials = [
-            "email" => $this->request->getVar("email"),
-            "password" => $this->request->getVar("password")
-        ];
+    //     // STANDARD LOGIN FLOW (FIRST STEP)
+    //     $credentials = [
+    //         "email" => $this->request->getVar("email"),
+    //         "password" => $this->request->getVar("password")
+    //     ];
 
-        $loginAttempt = auth()->attempt($credentials);
-        if (!$loginAttempt->isOK()) {
-            return $this->respond(["message" => "Wrong combination. Try again"], ResponseInterface::HTTP_NOT_FOUND);
-        }
+    //     $loginAttempt = auth()->attempt($credentials);
+    //     if (!$loginAttempt->isOK()) {
+    //         return $this->respond(["message" => "Wrong combination. Try again"], ResponseInterface::HTTP_NOT_FOUND);
+    //     }
 
-        $userObject = new UsersModel();
-        $userData = $userObject->findById(auth("tokens")->user()->id);
-        log_message('info', $userData);
-        // Check if 2FA is enabled for this user
-        if (!empty($userData->google_auth_secret)) {
-            // Don't actually log them in yet - require 2FA verification
-            auth()->logout();
-            //generate a new random token
-            $token = bin2hex(random_bytes(16));
-            // Store the token in the session or database for later verification
-            $userObject->update($userData->id, [
-                '2fa_verification_token' => $token
-            ]);
-            return $this->respond([
-                "message" => "2FA verification required",
-                "requires_2fa" => true,
-                "token" => $userData->id,
-            ], ResponseInterface::HTTP_OK);
-        }
+    //     $userObject = new UsersModel();
+    //     $userData = $userObject->findById(auth("tokens")->user()->id);
+    //     log_message('info', $userData);
+    //     // Check if 2FA is enabled for this user
+    //     if (!empty($userData->google_auth_secret)) {
+    //         // Don't actually log them in yet - require 2FA verification
+    //         auth()->logout();
+    //         //generate a new random token
+    //         $token = bin2hex(random_bytes(16));
+    //         // Store the token in the session or database for later verification
+    //         $userObject->update($userData->id, [
+    //             '2fa_verification_token' => $token
+    //         ]);
+    //         return $this->respond([
+    //             "message" => "2FA verification required",
+    //             "requires_2fa" => true,
+    //             "token" => $userData->id,
+    //         ], ResponseInterface::HTTP_OK);
+    //     }
 
-        // No 2FA required, proceed with normal login
-        $token = $userData->generateAccessToken($key);
+    //     // No 2FA required, proceed with normal login
+    //     $token = $userData->generateAccessToken($key);
 
-        $response = [
-            "token" => $token->raw_token,
-            "user" => $userData,
-        ];
+    //     $response = [
+    //         "token" => $token->raw_token,
+    //         "user" => $userData,
+    //     ];
 
-        return $this->respondCreated($response);
-    }
+    //     return $this->respondCreated($response);
+    // }
 
     public function setupGoogleAuth()
     {
@@ -377,13 +386,27 @@ class AuthController extends ResourceController
         $userObject = new UsersModel();
         $userData = $userObject->findById($userId);
         if (!$userData) {
-            return $this->respond(["message" => "User not found"], ResponseInterface::HTTP_BAD_REQUEST);
+            return $this->respond(["message" => "User not found"], ResponseInterface::HTTP_NOT_FOUND);
         }
-        $rpObject = new RolePermissionsModel();
-        $permissions = $rpObject->where("role", $userData->role_name)->findAll();
         $permissionsList = [];
-        foreach ($permissions as $permission) {
-            $permissionsList[] = $permission['permission'];
+        //for admins use their roles to get permissions
+        if ($userData->user_type === 'admin') {
+            $rpObject = new RolePermissionsModel();
+            $permissions = $rpObject->where("role", $userData->role_name)->findAll();
+
+            foreach ($permissions as $permission) {
+                $permissionsList[] = $permission['permission'];
+            }
+        } else {
+            //for non admins use their permissions from the app.settings.json file.
+            //also get their profile details from their profile table
+            $db = \Config\Database::connect();
+
+            $profileData = $db->table($userData->profile_table)->where(["uuid" => $userData->profile_table_uuid])->get()->getFirstRow();
+            if (!empty($profileData)) {
+
+                $userData->profile_data = $profileData;
+            }
         }
         $userData->permissions = $permissionsList;
         return $this->respondCreated([
@@ -436,6 +459,13 @@ class AuthController extends ResourceController
             ],
             'device_name' => [
                 'label' => 'Device Name',
+                'rules' => "required|string|in_list[admin portal,practitioners portal]",
+                'errors' => [
+                    'in_list' => 'Invalid request',
+                ],
+            ],
+            'user_type' => [
+                'label' => 'User Type',
                 'rules' => 'required|string',
             ],
         ];
@@ -447,7 +477,7 @@ class AuthController extends ResourceController
                 'code' => 'required|min_length[6]|max_length[6]|numeric',
                 'device_name' => [
                     'label' => 'Device Name',
-                    'rules' => 'required|string',
+                    'rules' => "required|string|in_list['admin portal','practitioners portal']",
                 ],
             ];
         }
@@ -457,6 +487,12 @@ class AuthController extends ResourceController
             return $this->response
                 ->setJSON(['errors' => $this->validator->getErrors()])
                 ->setStatusCode(401);
+        }
+        //make sure the user_type is a valid one
+        $userType = $this->request->getVar('user_type');
+        $deviceName = $this->request->getVar('device_name');
+        if (!in_array($userType, USER_TYPES)) {
+            return $this->respond(['message' => 'Invalid user type'], ResponseInterface::HTTP_BAD_REQUEST);
         }
         if ($is2faVerification) {
             // 2FA VERIFICATION FLOW
@@ -484,6 +520,9 @@ class AuthController extends ResourceController
 
             // 2FA succeeded, log the user in
             auth()->login($userData);
+            $userObject->update($userData->id, [
+                'two_fa_verification_token' => null
+            ]);
         } else {
             // Get the credentials for login
             $credentials = $this->request->getPost(setting('Auth.validFields'));
@@ -497,8 +536,27 @@ class AuthController extends ResourceController
                     ->setJSON(['message' => $result->reason()])
                     ->setStatusCode(401);
             }
+            //check if the user is the correct type
             $userObject = new UsersModel();
             $userData = $userObject->findById(auth()->id());
+            if ($userData->user_type !== $userType) {
+                return $this->respond(['message' => 'Invalid user type'], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+            // if the device name is admin portal, check if the user is an admin
+            if ($deviceName === 'admin portal' && $userData->user_type !== 'admin') {
+                return $this->respond(['message' => 'Invalid user type'], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+
+            // if the device name is practitioners portal, make sure the user is not an admin
+            if ($deviceName === 'practitioners portal' && $userData->user_type === 'admin') {
+                return $this->respond(['message' => 'Invalid user type'], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+
+
+            // check if the user's two_fa_deadline is set and if it is in the past and has not set up 2FA
+            if ($userData->two_fa_deadline && $userData->two_fa_deadline < date('Y-m-d') && empty($userData->google_auth_secret)) {
+                return $this->respond(['message' => 'The deadline to enable 2 factor authentication has passed. Please contact our office for support.'], ResponseInterface::HTTP_BAD_REQUEST);
+            }
             // Check if 2FA is enabled for this user
             if (!empty($userData->google_auth_secret)) {
                 // Don't actually log them in yet - require 2FA verification
@@ -785,6 +843,7 @@ class AuthController extends ResourceController
      */
     public function createUser()
     {
+        $userTypes = implode(",", USER_TYPES);
         $rules = [
             "username" => "required|is_unique[users.username]",
             "email" => "required|valid_email|is_unique[auth_identities.secret]",
@@ -792,6 +851,8 @@ class AuthController extends ResourceController
             "role_name" => "required|is_not_unique[roles.role_name]",
             "password" => "required|min_length[8]|strong_password[]",
             "password_confirm" => "required|matches[password]",
+            "display_name" => "required",
+            "user_type" => "required|in_list[$userTypes]",
         ];
         if (!$this->validate($rules)) {
             $message = implode(" ", array_values($this->validator->getErrors()));
@@ -808,30 +869,110 @@ class AuthController extends ResourceController
         return $this->respond(['message' => 'User created successfully', 'data' => $id], ResponseInterface::HTTP_OK);
     }
 
-    // public function updateUser($userId)
-    // {
-    //     $rules = [
-    //         "username" => "required|is_unique[users.username,id,{$userId}]",
-    //         "email" => "required|valid_email|is_unique[auth_identities.secret,id,{$userId}]",
-    //         "phone" => "required|min_length[10]",
-    //         "role_id" => "required|is_natural_no_zero|is_not_unique[roles.role_id]",
-    //         "password" => "if_exist|min_length[8]",
-    //         "password_confirm" => "required_with[password]|matches[password]",
-    //     ];
-    //     if (!$this->validate($rules)) {
-    //         return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
-    //     }
-    //     $data = $this->request->getVar();
+    public function createNonAdminUsers()
+    {
+        try {
+            $userTypesArray = USER_TYPES;
+            // Remove 'admin' from the array
+            if (($key = array_search('admin', $userTypesArray)) !== false) {
+                unset($userTypesArray[$key]);
+            }
+            $userTypes = implode(",", $userTypesArray);
 
-    //     //restore it if it had been deleted
-    //     $data->id = $userId;
-    //     // log_message('info',$data);
-    //     $model = new UsersModel();
-    //     if (!$model->update($userId, $data)) {
-    //         return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
-    //     }
-    //     return $this->respond(['message' => 'User updated successfully'], ResponseInterface::HTTP_OK);
-    // }
+            // Base rules without password requirement
+            $baseRules = [
+                "username" => "required|is_unique[users.username]|is_unique[auth_identities.secret]",
+                "email" => "required|valid_email|is_unique[auth_identities.secret]",
+                "phone" => "required|min_length[10]",
+                "display_name" => "permit_empty",//for some users it will be taken from their profile
+                "user_type" => "required|in_list[$userTypes]",
+            ];
+
+            // Password rules 
+            $passwordRules = [
+                "password" => "min_length[8]|strong_password[]",
+                "password_confirm" => "matches[password]",
+            ];
+
+            // licenses rules
+            $licensesRules = [
+                "profile_table" => "in_list[licenses]",
+                "profile_table_uuid" => "is_not_unique[licenses.uuid]",
+            ];
+
+            //TODO: cpd and other user types would have their rules here
+            // Get the JSON data
+            $usersData = $this->request->getJSON(true);
+
+            // Check if it's a single user (object) or multiple users (array of objects)
+            if (!isset($usersData[0])) {
+                // Convert single user to array format
+                $usersData = [$usersData];
+            }
+
+            $results = [];
+            $userObject = auth()->getProvider();
+
+            foreach ($usersData as $userData) {
+                // Create validation for this specific user
+                $validator = \Config\Services::validation();
+
+                // Validate base rules
+                $validator->setRules($baseRules);
+
+                // Only apply password rules if password is provided
+                if (!empty($userData['password'])) {
+                    $validator->setRules($passwordRules);
+                }
+                if ($userData['user_type'] === 'license') {
+                    $validator->setRules($licensesRules);
+                }
+
+                if (!$validator->run($userData)) {
+                    $message = implode(" ", array_values($validator->getErrors()));
+                    $results[] = [
+                        'status' => 'error',
+                        'message' => $message,
+                        'data' => $userData['username'] ?? 'Unknown user'
+                    ];
+                    continue;
+                }
+
+                try {
+                    $userEntityObject = new User($userData);
+                    $userObject->save($userEntityObject);
+                    $id = $userObject->getInsertID();
+
+                    $results[] = [
+                        'status' => 'success',
+                        'message' => 'User created successfully',
+                        'data' => $id
+                    ];
+                } catch (\Exception $e) {
+                    $results[] = [
+                        'status' => 'error',
+                        'message' => $e->getMessage(),
+                        'data' => $userData['username'] ?? 'Unknown user'
+                    ];
+                }
+            }
+
+            // If all users failed, return a bad request status
+            if (
+                count(array_filter($results, function ($item) {
+                    return $item['status'] === 'error';
+                })) === count($results)
+            ) {
+                return $this->respond(['message' => 'All user creations failed', 'details' => $results], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+
+            // Otherwise return success with details
+            return $this->respond(['message' => 'Users processed', 'details' => $results], ResponseInterface::HTTP_OK);
+        } catch (\Throwable $th) {
+            log_message('error', $th->getMessage());
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+    }
 
 
     public function updateUser($userId)
@@ -867,11 +1008,6 @@ class AuthController extends ResourceController
                     $existingUser->{$key} = $value;
                 }
             }
-
-            // If a new password was provided, hash it before saving
-            //    if (isset($data['password']) && $data['password'] !== '') {
-            //        $existingUser->password = password_hash($data['password'], PASSWORD_DEFAULT);
-            //    }
 
             $userObject->save($existingUser);
 
@@ -945,7 +1081,7 @@ class AuthController extends ResourceController
             $model = new UsersModel();
             $builder = $param ? $model->search($param) : $model->builder();
 
-            $builder->select("id, uuid, username, status, status_message, active, created_at, regionId, position, picture, phone, email, role_name, CASE WHEN google_auth_secret IS NOT NULL THEN 'yes' ELSE 'no' END AS google_authenticator_setup")
+            $builder->select("id, uuid, display_name, user_type, username, status, status_message, active, created_at, regionId, position, picture, phone, email, role_name, CASE WHEN google_auth_secret IS NOT NULL THEN 'yes' ELSE 'no' END AS google_authenticator_setup")
             ;
 
             $builder->orderBy($sortBy, $sortOrder);
@@ -1091,6 +1227,25 @@ class AuthController extends ResourceController
 
         foreach ($fields as $value) {
             echo "\"$value\", `$value`,";
+        }
+    }
+
+    public function getUserTypes()
+    {
+        try {
+            $userTypesArray = USER_TYPES;
+            $result = array_map(function ($type) {
+                return [
+                    'value' => $type,
+                    'key' => ucfirst($type)
+                ];
+            }, $userTypesArray);
+            return $this->respond([
+                'data' => $result,
+            ], ResponseInterface::HTTP_OK);
+        } catch (\Throwable $th) {
+            log_message('error', $th->getMessage());
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
 }

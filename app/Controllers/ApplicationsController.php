@@ -87,7 +87,6 @@ class ApplicationsController extends ResourceController
                      */
                     $initialStage = array_filter($stages, function ($stage) use ($template) {
                         return $stage['name'] == $template->initialStage;
-                        return $stage['name'] == $template->initialStage;
                     });
                     if (empty($initialStage)) {
                         throw new Exception("Initial stage not found");
