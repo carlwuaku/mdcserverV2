@@ -90,6 +90,8 @@ $routes->group("admin", ["namespace" => "App\Controllers", "filter" => "apiauth"
     $routes->post("users/setup-google-auth", [AuthController::class, "setupGoogleAuth"], ["filter" => ["hasPermission:Create_Or_Edit_User_Role"]]);
     $routes->post("users/disable-google-auth", [AuthController::class, "disableGoogleAuth"], ["filter" => ["hasPermission:Create_Or_Edit_User_Role"]]);
     $routes->post("users/verify-google-auth", [AuthController::class, "verifyAndEnableGoogleAuth"], ["filter" => ["hasPermission:Create_Or_Edit_User_Role"]]);
+    $routes->post("users/non-admin", [AuthController::class, "createNonAdminUsers"], ["filter" => ["hasPermission:Create_Or_Edit_User"]]);
+    $routes->get("users/types", [AuthController::class, "getUserTypes"], ["filter" => ["hasPermission:Create_Or_Edit_User"]]);
 
 });
 

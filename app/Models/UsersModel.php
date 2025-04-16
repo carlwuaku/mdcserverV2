@@ -23,8 +23,10 @@ class UsersModel extends UserModel implements TableDisplayInterface
     {
         return [
             'username',
+            'display_name',
             'status',
             'status_message',
+            'user_type',
             'active',
             'last_active',
             'deleted_at',
@@ -45,6 +47,7 @@ class UsersModel extends UserModel implements TableDisplayInterface
 
     protected $allowedFields = [
         'username',
+        'display_name',
         'status',
         'status_message',
         'active',
@@ -57,10 +60,27 @@ class UsersModel extends UserModel implements TableDisplayInterface
         'phone',
         'two_fa_verification_token',
         'two_fa_setup_token',
-        'google_auth_secret'
+        'google_auth_secret',
+        'user_type',
+        'two_fa_deadline',
+        'profile_table',
+        'profile_table_uuid',
+        'email'
     ];
 
-
+    protected $defaultProfileSelect = [
+        'display_name',
+        'role_name',
+        'regionId',
+        'position',
+        'picture',
+        'phone',
+        'user_type',
+        'two_fa_deadline',
+        'profile_table',
+        'profile_table_uuid',
+        'email'
+    ];
 
 
 
@@ -92,4 +112,11 @@ class UsersModel extends UserModel implements TableDisplayInterface
         return [];
     }
 
+    public function getNonAdminUserProfile(string $table, string $uuid)
+    {
+        $this->builder($table)
+            ->select($this->defaultProfileSelect)
+            ->where('uuid', $uuid);
+        return $this->first();
+    }
 }

@@ -105,7 +105,8 @@ INSERT
         `picture`,
         `phone`,
         `email`,
-        `role_name`
+        `role_name`,
+        `user_type`
     )
 SELECT
     `username`,
@@ -121,7 +122,8 @@ SELECT
             mdc.bf_roles
         WHERE
             role_id = mdc.bf_users.role_id
-    ) as role_name
+    ) as role_name,
+    'admin' as user_type
 FROM
     mdc.`bf_users`;
 

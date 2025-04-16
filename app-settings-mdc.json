@@ -1104,24 +1104,35 @@
     ],
     "portalHomeMenu": [
         {
-            "title": "Practitioner Login",
+            "title": "Practitioner Portal",
             "active_children": false,
             "url": "/login",
-            "icon": "list_alt",
-            "children": [],
-            "description": "Manage submitted applications",
-            "apiCountUrl": "/applications/count?status=Pending Approval",
-            "apiCountText": "New Applications"
+            "image": "assets/images/stethoscope.jpg",
+            "icon": "person_outlined",
+            "options": [
+                {
+                    "label": "Open portal",
+                    "loginUrl": "/login/license",
+                    "url": "/dashboard",
+                    "urlParams": {}
+                }
+            ],
+            "description": "Login to your account as a registered practitioner"
         },
         {
-            "title": "Applications",
+            "title": "View/Fill Application Forms",
             "active_children": false,
             "url": "/application-forms",
-            "icon": "person_outlined",
-            "children": [],
-            "description": "Manage licenses",
-            "apiCountUrl": "licenses/count",
-            "apiCountText": "Total licenses"
+            "image": "assets/images/application_form.jpg",
+            "icon": "auto_stories_outlined",
+            "options": [
+                {
+                    "label": "View forms",
+                    "url": "/application-forms",
+                    "urlParams": {}
+                }
+            ],
+            "description": "View or fill application forms. You may need to login as a guest"
         }
     ]
 }
