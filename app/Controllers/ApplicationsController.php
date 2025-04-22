@@ -606,127 +606,127 @@ class ApplicationsController extends ResourceController
      * @param array $applicationDetails The details of the application
      * @return array{message: string, status: int} The response message and status
      */
-    private function approveTemporaryApplication(array $applicationDetails)
-    {
-        try {
-            //start a transaction
-            $today = date("Y-m-d");
-            $model = new ApplicationsModel();
-            $practitionerModel = new PractitionerModel();
-            $renewalModel = new PractitionerRenewalModel();
-            $registration_number = $this->request->getVar('registration_number');
+    // private function approveTemporaryApplication(array $applicationDetails)
+    // {
+    //     try {
+    //         //start a transaction
+    //         $today = date("Y-m-d");
+    //         $model = new ApplicationsModel();
+    //         $practitionerModel = new PractitionerModel();
+    //         $renewalModel = new PractitionerRenewalModel();
+    //         $registration_number = $this->request->getVar('registration_number');
 
-            $model->builder()->where(['uuid' => $applicationDetails['uuid']])->update(['status' => "approved"]);
-            $formData = json_decode($applicationDetails['form_data'], true);
+    //         $model->builder()->where(['uuid' => $applicationDetails['uuid']])->update(['status' => "approved"]);
+    //         $formData = json_decode($applicationDetails['form_data'], true);
 
-            $practitionerData = $practitionerModel->createArrayFromAllowedFields($formData);
-            $practitionerData['register_type'] = "Temporary";
-            $practitionerData['practitioner_type'] = $formData['type'];
-            $practitionerData['year_of_provisional'] = $today;
-            $practitionerData['registration_date'] = $today;
-            $practitionerData['registration_number'] = $registration_number;
-            $practitionerData['qualification_at_registration'] = $formData["qualification"];
-            $practitionerData['qualification_date'] = $formData["date_of_graduation"];
-            $practitionerData['status'] = 1;
-            $practitionerModel->db->transException(true)->transStart();
+    //         $practitionerData = $practitionerModel->createArrayFromAllowedFields($formData);
+    //         $practitionerData['register_type'] = "Temporary";
+    //         $practitionerData['practitioner_type'] = $formData['type'];
+    //         $practitionerData['year_of_provisional'] = $today;
+    //         $practitionerData['registration_date'] = $today;
+    //         $practitionerData['registration_number'] = $registration_number;
+    //         $practitionerData['qualification_at_registration'] = $formData["qualification"];
+    //         $practitionerData['qualification_date'] = $formData["date_of_graduation"];
+    //         $practitionerData['status'] = 1;
+    //         $practitionerModel->db->transException(true)->transStart();
 
-            $practitionerId = $practitionerModel->insert((object) $practitionerData);
+    //         $practitionerId = $practitionerModel->insert((object) $practitionerData);
 
-            $practitioner = $practitionerModel->find($practitionerId);
+    //         $practitioner = $practitionerModel->find($practitionerId);
 
-            $model->delete($applicationDetails['id']);
-
-
-            $retentionYear = date("Y");
-            //save the documents to the documents model
-            //create a retention record with the qr code
-            $retentionData = $renewalModel->createArrayFromAllowedFields($practitioner);
-            $retentionData = array_merge($retentionData, [
-                "practitioner_uuid" => $practitioner['uuid'],
-                "status" => "Approved",
-                "practitioner_type" => $practitioner['practitioner_type'],
-            ]);
-
-            PractitionerUtils::retainPractitioner(
-                $practitioner['uuid'],
-                "",
-                $retentionData,
-                $retentionYear,
-                null,
-                null,
-                null,
-                null,
-                $practitionerData['specialty']
-            );
-            $practitionerModel->db->transComplete();
-
-            return ['message' => 'Application updated successfully', 'status' => ResponseInterface::HTTP_OK];
-        } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
-            return ['message' => 'Server error: ' . $th->getMessage(), 'status' => ResponseInterface::HTTP_INTERNAL_SERVER_ERROR];
-        }
-    }
-
-    private function approveProvisionalApplication(array $applicationDetails)
-    {
-        try {
-            //start a transaction
-            $today = date("Y-m-d");
-            $model = new ApplicationsModel();
-            $practitionerModel = new PractitionerModel();
-            $renewalModel = new PractitionerRenewalModel();
-            $registration_number = $this->request->getVar('registration_number');
-
-            $model->builder()->where(['uuid' => $applicationDetails['uuid']])->update(['status' => "approved"]);
-            $formData = json_decode($applicationDetails['form_data'], true);
-
-            $practitionerData = $practitionerModel->createArrayFromAllowedFields($formData);
-            $practitionerData['register_type'] = "Provisional";
-            $practitionerData['practitioner_type'] = $formData['type'];
-            $practitionerData['year_of_provisional'] = $today;
-            $practitionerData['registration_date'] = $today;
-            $practitionerData['registration_number'] = $registration_number;
-            $practitionerData['qualification_at_registration'] = $formData["qualification"];
-            $practitionerData['qualification_date'] = $formData["date_of_graduation"];
-            $practitionerData['status'] = 1;
-            $practitionerModel->db->transException(true)->transStart();
-
-            $practitionerId = $practitionerModel->insert((object) $practitionerData);
-
-            $practitioner = $practitionerModel->find($practitionerId);
-
-            $model->delete($applicationDetails['id']);
+    //         $model->delete($applicationDetails['id']);
 
 
-            $retentionYear = date("Y");
-            //save the documents to the documents model
-            //create a retention record with the qr code
-            $retentionData = $renewalModel->createArrayFromAllowedFields($practitioner);
-            $retentionData = array_merge($retentionData, [
-                "practitioner_uuid" => $practitioner['uuid'],
-                "status" => "Approved",
-                "practitioner_type" => $practitioner['practitioner_type'],
-            ]);
+    //         $retentionYear = date("Y");
+    //         //save the documents to the documents model
+    //         //create a retention record with the qr code
+    //         $retentionData = $renewalModel->createArrayFromAllowedFields($practitioner);
+    //         $retentionData = array_merge($retentionData, [
+    //             "practitioner_uuid" => $practitioner['uuid'],
+    //             "status" => "Approved",
+    //             "practitioner_type" => $practitioner['practitioner_type'],
+    //         ]);
 
-            PractitionerUtils::retainPractitioner(
-                $practitioner['uuid'],
-                "",
-                $retentionData,
-                $retentionYear,
-                null,
-                null,
-                null,
-                null,
-                $practitionerData['specialty']
-            );
-            $practitionerModel->db->transComplete();
+    //         PractitionerUtils::retainPractitioner(
+    //             $practitioner['uuid'],
+    //             "",
+    //             $retentionData,
+    //             $retentionYear,
+    //             null,
+    //             null,
+    //             null,
+    //             null,
+    //             $practitionerData['specialty']
+    //         );
+    //         $practitionerModel->db->transComplete();
 
-            return ['message' => 'Application updated successfully', 'status' => ResponseInterface::HTTP_OK];
-        } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
-            return ['message' => 'Server error: ' . $th->getMessage(), 'status' => ResponseInterface::HTTP_INTERNAL_SERVER_ERROR];
-        }
-    }
+    //         return ['message' => 'Application updated successfully', 'status' => ResponseInterface::HTTP_OK];
+    //     } catch (\Throwable $th) {
+    //         log_message("error", $th->getMessage());
+    //         return ['message' => 'Server error: ' . $th->getMessage(), 'status' => ResponseInterface::HTTP_INTERNAL_SERVER_ERROR];
+    //     }
+    // }
+
+    // private function approveProvisionalApplication(array $applicationDetails)
+    // {
+    //     try {
+    //         //start a transaction
+    //         $today = date("Y-m-d");
+    //         $model = new ApplicationsModel();
+    //         $practitionerModel = new PractitionerModel();
+    //         $renewalModel = new PractitionerRenewalModel();
+    //         $registration_number = $this->request->getVar('registration_number');
+
+    //         $model->builder()->where(['uuid' => $applicationDetails['uuid']])->update(['status' => "approved"]);
+    //         $formData = json_decode($applicationDetails['form_data'], true);
+
+    //         $practitionerData = $practitionerModel->createArrayFromAllowedFields($formData);
+    //         $practitionerData['register_type'] = "Provisional";
+    //         $practitionerData['practitioner_type'] = $formData['type'];
+    //         $practitionerData['year_of_provisional'] = $today;
+    //         $practitionerData['registration_date'] = $today;
+    //         $practitionerData['registration_number'] = $registration_number;
+    //         $practitionerData['qualification_at_registration'] = $formData["qualification"];
+    //         $practitionerData['qualification_date'] = $formData["date_of_graduation"];
+    //         $practitionerData['status'] = 1;
+    //         $practitionerModel->db->transException(true)->transStart();
+
+    //         $practitionerId = $practitionerModel->insert((object) $practitionerData);
+
+    //         $practitioner = $practitionerModel->find($practitionerId);
+
+    //         $model->delete($applicationDetails['id']);
+
+
+    //         $retentionYear = date("Y");
+    //         //save the documents to the documents model
+    //         //create a retention record with the qr code
+    //         $retentionData = $renewalModel->createArrayFromAllowedFields($practitioner);
+    //         $retentionData = array_merge($retentionData, [
+    //             "practitioner_uuid" => $practitioner['uuid'],
+    //             "status" => "Approved",
+    //             "practitioner_type" => $practitioner['practitioner_type'],
+    //         ]);
+
+    //         PractitionerUtils::retainPractitioner(
+    //             $practitioner['uuid'],
+    //             "",
+    //             $retentionData,
+    //             $retentionYear,
+    //             null,
+    //             null,
+    //             null,
+    //             null,
+    //             $practitionerData['specialty']
+    //         );
+    //         $practitionerModel->db->transComplete();
+
+    //         return ['message' => 'Application updated successfully', 'status' => ResponseInterface::HTTP_OK];
+    //     } catch (\Throwable $th) {
+    //         log_message("error", $th->getMessage());
+    //         return ['message' => 'Server error: ' . $th->getMessage(), 'status' => ResponseInterface::HTTP_INTERNAL_SERVER_ERROR];
+    //     }
+    // }
 
 
 
@@ -814,73 +814,73 @@ class ApplicationsController extends ResourceController
     }
 
 
-    public function finishApplication(string $uuid, string $decision)
-    {
-        try {
-            $comments = $this->request->getVar('comments');
-            //the decision is either approve or deny
-            if ($decision !== "approve" && $decision !== "deny") {
-                return $this->respond(['message' => 'Invalid decision'], ResponseInterface::HTTP_BAD_REQUEST);
-            }
-            $data = $this->getApplicationDetails($uuid);
-            $emailTemplate = $this->request->getVar("email_template");
-            if (!$data) {
-                return $this->respond(['message' => "Application not found"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
-            }
-            $data = (array) $data;
-            $result = [];
-            if ($decision === "approve") {
+    // public function finishApplication(string $uuid, string $decision)
+    // {
+    //     try {
+    //         $comments = $this->request->getVar('comments');
+    //         //the decision is either approve or deny
+    //         if ($decision !== "approve" && $decision !== "deny") {
+    //             return $this->respond(['message' => 'Invalid decision'], ResponseInterface::HTTP_BAD_REQUEST);
+    //         }
+    //         $data = $this->getApplicationDetails($uuid);
+    //         $emailTemplate = $this->request->getVar("email_template");
+    //         if (!$data) {
+    //             return $this->respond(['message' => "Application not found"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+    //         }
+    //         $data = (array) $data;
+    //         $result = [];
+    //         if ($decision === "approve") {
 
-                switch ($data['form_type']) {
-                    case 'Practitioners Permanent Registration Application':
-                        $result = $this->approvePermanentApplication($data);
+    //             switch ($data['form_type']) {
+    //                 case 'Practitioners Permanent Registration Application':
+    //                     $result = $this->approvePermanentApplication($data);
 
-                        break;
-                    case 'Practitioners Temporary Registration Application':
-                        $result = $this->approveTemporaryApplication($data);
+    //                     break;
+    //                 case 'Practitioners Temporary Registration Application':
+    //                     $result = $this->approveTemporaryApplication($data);
 
-                        break;
-                    case 'Practitioners Provisional Registration Application':
-                        $result = $this->approveProvisionalApplication($data);
+    //                     break;
+    //                 case 'Practitioners Provisional Registration Application':
+    //                     $result = $this->approveProvisionalApplication($data);
 
-                        break;
+    //                     break;
 
-                    case 'Practitioners Portal Edit':
-                        $result = $this->approvePortalEdit($data);
+    //                 case 'Practitioners Portal Edit':
+    //                     $result = $this->approvePortalEdit($data);
 
-                        break;
-                    default:
+    //                     break;
+    //                 default:
 
-                        //update the status and send an email if one was provided
-                        $model = new ApplicationsModel();
-                        $model->builder()->where(['uuid' => $uuid])->update(['status' => "approved"]);
-                        $result = ['message' => 'Application updated successfully', 'status' => ResponseInterface::HTTP_OK];
-                }
-            } else {
-                $model = new ApplicationsModel();
-                $model->builder()->where(['uuid' => $uuid])->update(['status' => "denied"]);
-                $result = ['message' => 'Application denied successfully', 'status' => ResponseInterface::HTTP_OK];
-            }
-            /** @var ActivitiesModel $activitiesModel */
-            $activitiesModel = new ActivitiesModel();
-            $activitiesModel->logActivity("Completed application {$data['form_type']} for {$data['email']} with decision: {$decision}, comments: $comments");
+    //                     //update the status and send an email if one was provided
+    //                     $model = new ApplicationsModel();
+    //                     $model->builder()->where(['uuid' => $uuid])->update(['status' => "approved"]);
+    //                     $result = ['message' => 'Application updated successfully', 'status' => ResponseInterface::HTTP_OK];
+    //             }
+    //         } else {
+    //             $model = new ApplicationsModel();
+    //             $model->builder()->where(['uuid' => $uuid])->update(['status' => "denied"]);
+    //             $result = ['message' => 'Application denied successfully', 'status' => ResponseInterface::HTTP_OK];
+    //         }
+    //         /** @var ActivitiesModel $activitiesModel */
+    //         $activitiesModel = new ActivitiesModel();
+    //         $activitiesModel->logActivity("Completed application {$data['form_type']} for {$data['email']} with decision: {$decision}, comments: $comments");
 
 
-            if (trim($emailTemplate)) {
-                $formName = $data['form_type'];
-                $subject = $formName;
-                $receiver = $data['email'];
-                //TODO: : implement fill template in utils
-                $message = $emailTemplate;
-                $emailConfig = new EmailConfig($message, $subject, $receiver);
-                EmailHelper::sendEmail($emailConfig);
-            }
-            return $this->respond(['message' => $result['message']], $result['status']);
-        } catch (\Throwable $th) {
-            log_message('error', $th->getMessage());
-            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
+    //         if (trim($emailTemplate)) {
+    //             $formName = $data['form_type'];
+    //             $subject = $formName;
+    //             $receiver = $data['email'];
+    //             //TODO: : implement fill template in utils
+    //             $message = $emailTemplate;
+    //             $emailConfig = new EmailConfig($message, $subject, $receiver);
+    //             EmailHelper::sendEmail($emailConfig);
+    //         }
+    //         return $this->respond(['message' => $result['message']], $result['status']);
+    //     } catch (\Throwable $th) {
+    //         log_message('error', $th->getMessage());
+    //         return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+    //     }
+    // }
 
 
 

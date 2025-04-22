@@ -200,6 +200,56 @@
             ]
         },
         {
+            "title": "Housemanship",
+            "active_children": false,
+            "url": "",
+            "icon": "auto_stories_outlined",
+            "children": [
+                {
+                    "title": "View/Search Postings",
+                    "url": "/housemanship/postings",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Add Posting for session 1",
+                    "url": "/housemanship/postings/add/1",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Add Posting for session 2",
+                    "url": "/housemanship/postings/add/2",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Manage applications",
+                    "url": "/housemanship/add",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Add Facility",
+                    "url": "/housemanship/facilities/add",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Manage Facilities",
+                    "url": "/housemanship/facilities",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Manage Disciplines",
+                    "url": "/housemanship/disciplines",
+                    "icon": "",
+                    "children": []
+                }
+            ]
+        },
+        {
             "title": "Messaging",
             "active_children": false,
             "url": "",
@@ -1102,6 +1152,56 @@
             "required": false
         }
     ],
+    "housemanship": {
+        "availabilityCategories": [
+            {
+                "value": "available",
+                "key": "Available for selection by Doctors"
+            },
+            {
+                "value": "medical",
+                "key": "Available for selection by Doctors (Medical)"
+            },
+            {
+                "value": "dental",
+                "key": "Available for selection by Doctors (Dental)"
+            },
+            {
+                "value": "available_pa_selection",
+                "key": "Available for selection by Physician Assistant"
+            },
+            {
+                "value": "available_pa_dental_selection",
+                "key": "Available for selection by Physician Assistant (Dental)"
+            },
+            {
+                "value": "available_pa_medical_selection",
+                "key": "Available for selection by Physician Assistant (Medical)"
+            },
+            {
+                "value": "available_pa_cra_selection",
+                "key": "Available for selection by Physician Assistant (CRA)"
+            }
+        ],
+        "sessions": {
+            "1": {
+                "number_of_facilities": 1,
+                "application_form_fields": [],
+                "available_to": [
+                    {}
+                ],
+                "allowRepeatRegion": true
+            },
+            "2": {
+                "number_of_facilities": 2,
+                "application_form_fields": [],
+                "available_to": [
+                    {}
+                ],
+                "allowRepeatRegion": false
+            }
+        }
+    },
     "portalHomeMenu": [
         {
             "title": "Practitioner Portal",

@@ -389,7 +389,6 @@ class CpdController extends ResourceController
             if ($withDeleted) {
                 $model->withDeleted();
             }
-            log_message("error", $builder->getCompiledSelect(false));
             $totalBuilder = clone $builder;
             $total = $totalBuilder->countAllResults();
             $result = $builder->get($per_page, $page)->getResult();

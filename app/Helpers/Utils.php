@@ -15,6 +15,8 @@ use \DateTime;
 use App\Models\Cpd\CpdModel;
 use App\Models\Cpd\ExternalCpdsModel;
 use App\Models\Cpd\CpdAttendanceModel;
+use App\Helpers\Enums\HousemanshipSetting;
+
 
 class Utils
 {
@@ -581,4 +583,19 @@ class Utils
             'end' => $dateRange
         ];
     }
+
+    /**
+     * get a setting for housemanship. could be availabilityCategories
+     * @return array
+     */
+    public static function getHousemanshipSetting(HousemanshipSetting $setting): array
+    {
+        $result = self::getAppSettings("housemanship");
+        if (!$result || !array_key_exists($setting->value, $result)) {
+            throw new \Exception("$setting->value not found in housemanship settings");
+        }
+        return $result[$setting->value];
+    }
+
+
 }
