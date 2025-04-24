@@ -32,7 +32,7 @@ class HousemanshipPostingsModel extends MyBaseModel implements TableDisplayInter
     protected array $castHandlers = [];
 
     // Dates
-    protected $useTimestamps = false;
+    protected $useTimestamps = true;
     protected $dateFormat = 'datetime';
     protected $createdField = 'created_at';
     protected $updatedField = 'updated_at';
@@ -101,7 +101,7 @@ class HousemanshipPostingsModel extends MyBaseModel implements TableDisplayInter
             ],
             [
                 "label" => "Practitioner category",
-                "name" => "type",
+                "name" => "category",
                 "type" => "select",
                 "hint" => "",
                 "options" => $this->getDistinctValuesAsKeyValuePairs('category'),
@@ -110,16 +110,16 @@ class HousemanshipPostingsModel extends MyBaseModel implements TableDisplayInter
             ],
             [
                 "label" => "Session",
-                "name" => "type",
+                "name" => "session",
                 "type" => "select",
                 "hint" => "",
-                "options" => $this->getHousemanshipSessions(),
+                "options" => $this->getDistinctValuesAsKeyValuePairs('session'),
                 "value" => "",
                 "required" => false
             ],
             [
                 "label" => "Year",
-                "name" => "type",
+                "name" => "year",
                 "type" => "select",
                 "hint" => "",
                 "options" => $this->getDistinctValuesAsKeyValuePairs('year'),

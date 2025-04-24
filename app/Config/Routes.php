@@ -252,6 +252,7 @@ $routes->group("housemanship", ["namespace" => "App\Controllers", "filter" => "a
     $routes->post("posting", [HousemanshipController::class, "createHousemanshipPosting"], ["filter" => ["hasPermission:Create_CPD_Providers"]]);
     $routes->get("posting", [HousemanshipController::class, "getHousemanshipPostings"], ["filter" => ["hasPermission:View_CPD_Providers"]]);
     $routes->get("posting/(:segment)", [HousemanshipController::class, "getHousemanshipPosting/$1"], ["filter" => ["hasPermission:View_CPD_Providers"]]);
+    $routes->put("posting/(:segment)", [HousemanshipController::class, "updateHousemanshipPosting/$1"], ["filter" => ["hasPermission:Update_CPD_Providers"]]);
 
 
     $routes->get("license-attendance", [HousemanshipController::class, "getLicenseCpdAttendances"], ["filter" => ["hasPermission:View_CPD_Attendance"]], );

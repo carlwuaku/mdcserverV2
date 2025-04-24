@@ -944,6 +944,15 @@
                     "required": false
                 },
                 {
+                    "label": "Registration date",
+                    "name": "registration_date",
+                    "hint": "",
+                    "options": [],
+                    "type": "date-range",
+                    "value": "",
+                    "required": false
+                },
+                {
                     "label": "Sex",
                     "name": "sex",
                     "hint": "",

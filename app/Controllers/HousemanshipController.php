@@ -760,6 +760,85 @@ class HousemanshipController extends ResourceController
         }
     }
 
+    public function updateHousemanshipPosting($uuid)
+    {
+        try {
+            $rules = [
+                "registration_number" => "required|is_not_unique[licenses.license_number]",
+                "session" => "required",
+                "year" => "required|integer|exact_length[4]",
+                "letter_template" => "required|is_not_unique[print_templates.template_name]",
+                "details" => "required"
+            ];
+
+            if (!$this->validate($rules)) {
+                $message = implode(" ", array_values($this->validator->getErrors()));
+                return $this->respond(['message' => $message], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+
+            $license = LicenseUtils::getLicenseDetails($this->request->getVar('registration_number'));
+            if (!$license) {
+                throw new Exception("License not found");
+            }
+            $data = $this->request->getJSON(true);
+            $data['category'] = $license['category'];
+            $data['type'] = $license['practitioner_type'];
+            $model = new HousemanshipPostingsModel();
+
+            $model->db->transException(true)->transStart();
+            /**
+             * @var \App\Models\Housemanship\HousemanshipPostingDetailsModel[] $details
+             */
+            $details = $data['details'];//array
+            unset($data['details']);
+            log_message("info", print_r($data, true));
+            $model->builder()->where(['uuid' => $uuid])->update($data);
+
+            $postingDetailsModel = new HousemanshipPostingDetailsModel();
+            //delete existing details
+            $postingDetailsModel->builder()->where(['posting_uuid' => $uuid])->delete();
+            $postingUuid = $uuid;
+
+            $detailsValidationRules = [
+                "facility_name" => "required|is_not_unique[housemanship_facilities.name]",
+                "discipline" => "required|is_not_unique[housemanship_disciplines.name]",
+                "start_date" => "required|valid_date",
+                "end_date" => "required|valid_date",
+            ];
+
+            foreach ($details as $postingDetail) {
+                $postingDetail = (array) $postingDetail;
+                $postingDetail['posting_uuid'] = $postingUuid;
+                $validation = \Config\Services::validation();
+
+                if (!$validation->setRules($detailsValidationRules)->run($postingDetail)) {
+                    throw new Exception("Validation failed");
+                }
+                //get the facility details
+                $facilityModel = new HousemanshipFacilitiesModel();
+                $facility = $facilityModel->where(['name' => $postingDetail['facility_name']])->first();
+                if (!$facility) {
+                    throw new Exception("Facility not found");
+                }
+                $postingDetail['facility_region'] = $facility['region'];
+                $postingDetail['facility_details'] = json_encode($facility);
+
+                $postingDetailsModel->insert($postingDetail);
+            }
+
+            /** @var ActivitiesModel $activitiesModel */
+            $activitiesModel = new ActivitiesModel();
+            $activitiesModel->logActivity("Updated housemanship session {$data['session']} posting for {$data['registration_number']}", null, $this->activityModule);
+
+            $model->db->transComplete();
+
+            return $this->respond(['message' => "Housemanship posting updated successfully for {$data['registration_number']}", 'data' => ""], ResponseInterface::HTTP_OK);
+        } catch (Exception $th) {
+            log_message("error", $th->getMessage());
+            return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+    }
+
 
 
     public function deleteHousemanshipPosting($uuid)
@@ -808,6 +887,12 @@ class HousemanshipController extends ResourceController
     }
 
 
+    /**
+     * get a single housemanship posting with its details flattened. this will mostly be used for filling the form to edit the posting
+     * @param mixed $uuid
+     * @throws \Exception
+     * @return ResponseInterface
+     */
     public function getHousemanshipPosting($uuid)
     {
         try {
@@ -819,11 +904,11 @@ class HousemanshipController extends ResourceController
             }
             $details = $detailsModel->where(["posting_uuid" => $uuid])->findAll();
             for ($i = 0; $i < count($details); $i++) {
-                $data["facility_$i"] = $details[$i]['facility_name'];
-                $data["discipline_$i"] = $details[$i]['discipline'];
-                $data["start_date_$i"] = $details[$i]['start_date'];
-                $data["end_date_$i"] = $details[$i]['end_date'];
-                $data["facility_region_$i"] = $details[$i]['facility_region'];
+                $data["posting_detail-facility_name-$i"] = $details[$i]['facility_name'];
+                $data["posting_detail-discipline-$i"] = $details[$i]['discipline'];
+                $data["posting_detail-start_date-$i"] = $details[$i]['start_date'];
+                $data["posting_detail-end_date-$i"] = $details[$i]['end_date'];
+                $data["posting_detail-facility_region-$i"] = $details[$i]['facility_region'];
             }
 
             return $this->respond(['data' => $data, 'displayColumns' => $model->getDisplayColumns()], ResponseInterface::HTTP_OK);
@@ -856,20 +941,61 @@ class HousemanshipController extends ResourceController
                 $builder->where($tableName . "." . $key, $value);
             }, $filterArray, array_keys($filterArray));
 
-
-
             $builder->orderBy("$tableName.$sortBy", $sortOrder);
 
             if ($withDeleted) {
                 $model->withDeleted();
             }
+
             $totalBuilder = clone $builder;
             $total = $totalBuilder->countAllResults();
-            $result = $builder->get($per_page, $page)->getResult();
+            $displayColumns = $model->getDisplayColumns();
+            // 1. Get parent records (housemanship postings)
+            $parentRecords = $builder->get($per_page, $page)->getResult();
+
+            // 2. Extract all parent IDs
+            $parentIds = array_map(function ($record) {
+                return $record->uuid;
+            }, $parentRecords);
+
+            // 3. Get all related child records in a single query
+            $childRecords = [];
+            if (!empty($parentIds)) {
+                $childRecords = $detailsModel->whereIn('posting_uuid', $parentIds)->findAll();
+            }
+
+            // 4. Group child records by parent_id for quick access
+            $childrenByParentId = [];
+            foreach ($childRecords as $child) {
+                if (!isset($childrenByParentId[$child['posting_uuid']])) {
+                    $childrenByParentId[$child['posting_uuid']] = [];
+                }
+                $childrenByParentId[$child['posting_uuid']][] = $child;
+            }
+
+            // 5. Combine parent and child data
+            foreach ($parentRecords as $parent) {
+                $children = $childrenByParentId[$parent->uuid] ?? [];
+                foreach ($children as $index => $child) {
+                    // Convert child object to array to manipulate
+                    $childArray = (array) $child;
+                    foreach ($childArray as $key => $value) {
+                        if (!in_array($key, ['posting_uuid', 'id', 'facility_details'])) { // Skip the join key
+                            // Add child fields to parent
+                            $fieldName = $key . "_" . ($index + 1);
+                            if (!in_array($fieldName, $displayColumns)) {
+                                $displayColumns[] = $fieldName;
+                            }
+                            $parent->$fieldName = $value;
+                        }
+                    }
+                }
+            }
+
             return $this->respond([
-                'data' => $result,
+                'data' => $parentRecords,
                 'total' => $total,
-                'displayColumns' => $model->getDisplayColumns(),
+                'displayColumns' => $displayColumns,
                 'columnFilters' => $model->getDisplayColumnFilters()
             ], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
@@ -918,6 +1044,57 @@ class HousemanshipController extends ResourceController
         } catch (\Throwable $th) {
             log_message("error", $th->getMessage());
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+    }
+
+    public function updateBulkPostings()
+    {
+        try {
+
+            $data = $this->request->getVar('data'); //an array of postings
+            $letterTemplate = $this->request->getVar('letter_template');
+
+            $results = [];
+            foreach ($data as $renewal) {
+                $renewal = (array) $renewal;
+                $renewalUuid = $renewal['uuid'];
+                $model = new LicenseRenewalModel();
+                $existingRenewal = $model->builder()->where('uuid', $renewalUuid)->get()->getFirstRow('array');
+                //get the license type renewal stage required data
+                $licenseType = $existingRenewal['license_type'];
+
+
+
+                unset($renewal['uuid']);
+                if (!empty($status)) {
+                    $rules = Utils::getLicenseRenewalStageValidation($licenseType, $status);
+                    $validation = \Config\Services::validation();
+
+                    if (!$validation->setRules($rules)->run($renewal)) {
+                        throw new Exception("Validation failed");
+                    }
+                    $renewal['status'] = $status;
+                }
+                $model = new LicenseRenewalModel($licenseType);
+                //start a transaction
+                $model->db->transException(true)->transStart();
+
+                LicenseUtils::updateRenewal(
+                    $renewalUuid,
+                    $renewal
+                );
+
+                $model->db->transComplete();
+                $results[] = ['id' => $renewalUuid, 'successful' => true, 'message' => 'Renewal updated successfully'];
+
+            }
+
+
+
+            return $this->respond(['message' => 'Renewal updated successfully', 'data' => $results], ResponseInterface::HTTP_OK);
+        } catch (\Throwable $th) {
+            log_message("error", $th->getMessage());
+            return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
 }

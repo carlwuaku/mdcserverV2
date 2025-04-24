@@ -13,7 +13,8 @@ class UpdateHousemanshipPostingCreatedOn extends Migration
             if ($this->db->fieldExists('created_on', 'housemanship_postings')) {
                 // Modify the name field to be NOT NULL
                 $this->forge->modifyColumn('housemanship_postings', [
-                    'created_at' => [
+                    'created_on' => [
+                        'name' => 'created_at',
                         'type' => 'DATETIME',
                         'null' => true,
                         'default' => null,

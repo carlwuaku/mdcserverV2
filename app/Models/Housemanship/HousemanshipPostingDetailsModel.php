@@ -129,4 +129,58 @@ class HousemanshipPostingDetailsModel extends MyBaseModel implements FormInterfa
 
         ];
     }
+
+    public function getDisplayColumnFilters(): array
+    {
+
+        $default = [
+            [
+                "label" => "Facility",
+                "name" => "type",
+                "type" => "select",
+                "hint" => "",
+                "options" => $this->getDistinctValuesAsKeyValuePairs('facility_name'),
+                "value" => "",
+                "required" => false
+            ],
+            [
+                "label" => "Discipline",
+                "name" => "discipline",
+                "type" => "select",
+                "hint" => "",
+                "options" => $this->getDistinctValuesAsKeyValuePairs('discipline'),
+                "value" => "",
+                "required" => false
+            ],
+            [
+                "label" => "Region",
+                "name" => "facility_region",
+                "type" => "select",
+                "hint" => "",
+                "options" => $this->getDistinctValuesAsKeyValuePairs('facility_region'),
+                "value" => "",
+                "required" => false
+            ],
+            [
+                "label" => "Start Date",
+                "name" => "start_date",
+                "type" => "date-range",
+                "hint" => "",
+                "options" => [],
+                "value" => "",
+                "required" => false
+            ],
+            [
+                "label" => "End Date",
+                "name" => "end_date",
+                "type" => "date-range",
+                "hint" => "",
+                "options" => [],
+                "value" => "",
+                "required" => false
+            ]
+        ];
+
+        return $default;
+    }
 }
