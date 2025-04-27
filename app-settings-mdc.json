@@ -225,7 +225,19 @@
                 },
                 {
                     "title": "Manage applications",
-                    "url": "/housemanship/add",
+                    "url": "/housemanship/posting-applications",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Add application for session 1",
+                    "url": "/housemanship/posting-applications/add/1",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Add application for session 2",
+                    "url": "/housemanship/posting-applications/add/2",
                     "icon": "",
                     "children": []
                 },
@@ -918,6 +930,20 @@
                     "apiKeyProperty": "practitioner_type",
                     "apiLabelProperty": "practitioner_type",
                     "apiType": "select"
+                },
+                {
+                    "label": "Specialty",
+                    "name": "specialty",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/practitioners/specialty",
+                    "apiKeyProperty": "specialty",
+                    "apiLabelProperty": "specialty",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
                 }
             ],
             "advancedStatisticsFields": [
@@ -932,7 +958,8 @@
                     "api_url": "admin/distinct-values/practitioners/practitioner_type",
                     "apiKeyProperty": "practitioner_type",
                     "apiLabelProperty": "practitioner_type",
-                    "apiType": "select"
+                    "apiType": "select",
+                    "selection_mode": "multiple"
                 },
                 {
                     "label": "Date of birth",
@@ -963,7 +990,8 @@
                     "api_url": "admin/distinct-values/practitioners/sex",
                     "apiKeyProperty": "sex",
                     "apiLabelProperty": "sex",
-                    "apiType": "select"
+                    "apiType": "select",
+                    "selection_mode": "multiple"
                 },
                 {
                     "label": "Natonality",
@@ -976,7 +1004,8 @@
                     "api_url": "admin/distinct-values/practitioners/nationality",
                     "apiKeyProperty": "nationality",
                     "apiLabelProperty": "nationality",
-                    "apiType": "select"
+                    "apiType": "select",
+                    "selection_mode": "multiple"
                 },
                 {
                     "label": "Training institution",
@@ -989,7 +1018,8 @@
                     "api_url": "admin/distinct-values/practitioners/training_institution",
                     "apiKeyProperty": "training_institution",
                     "apiLabelProperty": "training_institution",
-                    "apiType": "select"
+                    "apiType": "select",
+                    "selection_mode": "multiple"
                 },
                 {
                     "label": "Qualification date",
@@ -1011,7 +1041,8 @@
                     "api_url": "admin/distinct-values/practitioners/place_of_work",
                     "apiKeyProperty": "place_of_work",
                     "apiLabelProperty": "place_of_work",
-                    "apiType": "select"
+                    "apiType": "select",
+                    "selection_mode": "multiple"
                 },
                 {
                     "label": "Institution Type",
@@ -1024,7 +1055,8 @@
                     "api_url": "admin/distinct-values/practitioners/institution_type",
                     "apiKeyProperty": "institution_type",
                     "apiLabelProperty": "institution_type",
-                    "apiType": "select"
+                    "apiType": "select",
+                    "selection_mode": "multiple"
                 }
             ],
             "searchFormFields": [

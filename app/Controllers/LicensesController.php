@@ -258,9 +258,10 @@ class LicensesController extends ResourceController
                     /**
                      * @var array
                      */
-                    $childParams = array_filter($this->request->getGet(), function ($key) {
+                    $childParams = array_filter((array) $this->request->getVar(), function ($key) {
                         return strpos($key, 'child_') === 0;
                     }, ARRAY_FILTER_USE_KEY);
+                    log_message("info", "Child params: " . print_r($childParams, true));
                     // if childParams is not empty, 
                     if (!empty($childParams)) {
                         $licenseDef = Utils::getLicenseSetting($licenseType);
@@ -270,19 +271,31 @@ class LicensesController extends ResourceController
                          */
                         $joinConditions = [];
                         foreach ($childParams as $key => $value) {
+                            $value = Utils::parseParam($value);
                             //if child_param, skip it
                             if ($key === "child_param") {
                                 continue;
                             }
                             $columnName = str_replace('child_', '', $licenseTypeTable . '.' . $key);
-                            //if it contains a date, we need to format it
-                            if (strpos($key, 'date') !== false) {
-                                $dateRange = Utils::getDateRange($value);
-                                $joinConditions[] = "$columnName >=" . $dateRange['start'];
-                                $joinConditions[] = "$columnName <=" . $dateRange['end'];
+                            if (is_array($value)) {
+                                if (!empty($value)) {
+                                    //add quotes to each item in the array and join them with a comma
+                                    $value = implode(",", array_map(function ($item) {
+                                        return "'$item'";
+                                    }, $value));
+                                    $joinConditions[] = "$columnName IN ($value)";
+                                }
                             } else {
-                                $joinConditions[] = $columnName . ' = ' . "'$value'";
+                                //if it contains a date, we need to format it
+                                if (strpos($key, 'date') !== false) {
+                                    $dateRange = Utils::getDateRange($value);
+                                    $joinConditions[] = "$columnName >= '" . $dateRange['start'] . "'";
+                                    $joinConditions[] = "$columnName <= '" . $dateRange['end'] . "'";
+                                } else {
+                                    $joinConditions[] = $columnName . ' = ' . "'$value'";
+                                }
                             }
+
                         }
                         $licenseJoinConditions = implode(" AND ", $joinConditions);
                     }
@@ -311,6 +324,7 @@ class LicensesController extends ResourceController
             if ($withDeleted) {
                 $model->withDeleted();
             }
+            log_message("info", $model->builder()->getCompiledSelect(false));
             $totalBuilder = clone $builder;
             $total = $totalBuilder->countAllResults();
             $result = $builder->get($per_page, $page)->getResult();

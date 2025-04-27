@@ -169,6 +169,8 @@ $routes->group("licenses", ["namespace" => "App\Controllers", "filter" => "apiau
     $routes->post("details", [LicensesController::class, "createLicense"], ["filter" => ["hasPermission:Create_License_Details"]]);
     $routes->put("details/(:segment)/restore", [LicensesController::class, "restoreLicense/$1"], ["filter" => ["hasPermission:Restore_License_Details"]]);
     $routes->get("count", [LicensesController::class, "countLicenses"], ["filter" => ["hasPermission:View_License_Details"]], );
+    $routes->post("count", [LicensesController::class, "countLicenses"], ["filter" => ["hasPermission:View_License_Details"]], );
+    $routes->post("details/filter", [LicensesController::class, "getLicenses"], ["filter" => ["hasPermission:View_License_Details"]]);
 
     $routes->get("config/(:segment)", [LicensesController::class, "getLicenseFormFields/$1"], ["filter" => ["hasPermission:View_License_Details"]]);
 
@@ -183,6 +185,7 @@ $routes->group("licenses", ["namespace" => "App\Controllers", "filter" => "apiau
     $routes->post("renewal", [LicensesController::class, "createRenewal"], ["filter" => ["hasPermission:Create_License_Renewal"]]);
 
     $routes->get("reports/basic-statistics/(:segment)", [LicensesController::class, "getBasicStatistics/$1"], ["filter" => ["hasPermission:View_License_Details"]]);
+    $routes->post("reports/basic-statistics/(:segment)", [LicensesController::class, "getBasicStatistics/$1"], ["filter" => ["hasPermission:View_License_Details"]]);
 });
 
 
@@ -253,6 +256,13 @@ $routes->group("housemanship", ["namespace" => "App\Controllers", "filter" => "a
     $routes->get("posting", [HousemanshipController::class, "getHousemanshipPostings"], ["filter" => ["hasPermission:View_CPD_Providers"]]);
     $routes->get("posting/(:segment)", [HousemanshipController::class, "getHousemanshipPosting/$1"], ["filter" => ["hasPermission:View_CPD_Providers"]]);
     $routes->put("posting/(:segment)", [HousemanshipController::class, "updateHousemanshipPosting/$1"], ["filter" => ["hasPermission:Update_CPD_Providers"]]);
+
+    $routes->get("posting-application/form/(:num)", [HousemanshipController::class, "getHousemanshipPostingApplicationFormFields/$1"], ["filter" => ["hasPermission:View_CPD_Providers"]]);
+    $routes->delete("posting-application/(:segment)", [HousemanshipController::class, "deleteHousemanshipPostingApplication/$1"], ["filter" => ["hasPermission:Delete_CPD_Providers"]]);
+    $routes->post("posting-application", [HousemanshipController::class, "createHousemanshipPostingApplication"], ["filter" => ["hasPermission:Create_CPD_Providers"]]);
+    $routes->get("posting-application", [HousemanshipController::class, "getHousemanshipPostingApplications"], ["filter" => ["hasPermission:View_CPD_Providers"]]);
+    $routes->get("posting-application/(:segment)", [HousemanshipController::class, "getHousemanshipPostingApplication/$1"], ["filter" => ["hasPermission:View_CPD_Providers"]]);
+    $routes->put("posting-application/(:segment)", [HousemanshipController::class, "updateHousemanshipPostingApplication/$1"], ["filter" => ["hasPermission:Update_CPD_Providers"]]);
 
 
     $routes->get("license-attendance", [HousemanshipController::class, "getLicenseCpdAttendances"], ["filter" => ["hasPermission:View_CPD_Attendance"]], );

@@ -598,4 +598,38 @@ class Utils
     }
 
 
+    /**
+     * attempt to parse a parameter as JSON. If it is valid JSON, return the decoded value.
+     * If it is not valid JSON, return the original value.
+     * @param string $param
+     * @return mixed
+     */
+    public static function parseParam($param)
+    {
+        // If it's not a string, just return it as-is
+        if (!is_string($param)) {
+            return $param;
+        }
+
+        // Trim the string
+        $param = trim($param);
+
+        // Check if it looks like JSON (starts with { or [)
+        if (
+            (substr($param, 0, 1) == '{' && substr($param, -1) == '}') ||
+            (substr($param, 0, 1) == '[' && substr($param, -1) == ']')
+        ) {
+
+            // Try to decode it
+            $decoded = json_decode($param, true);
+
+            // If the decode was successful, return the decoded value
+            if (json_last_error() === JSON_ERROR_NONE) {
+                return $decoded;
+            }
+        }
+
+        // If it doesn't look like JSON or couldn't be decoded, return original
+        return $param;
+    }
 }

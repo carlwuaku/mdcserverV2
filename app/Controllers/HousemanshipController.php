@@ -4,6 +4,8 @@ namespace App\Controllers;
 
 use App\Controllers\BaseController;
 use App\Helpers\LicenseUtils;
+use App\Models\Housemanship\HousemanshipApplicationDetailsModel;
+use App\Models\Housemanship\HousemanshipApplicationModel;
 use App\Models\Housemanship\HousemanshipDisciplinesModel;
 use App\Models\Housemanship\HousemanshipFacilitiesModel;
 use App\Models\Housemanship\HousemanshipFacilityAvailabilityModel;
@@ -691,7 +693,7 @@ class HousemanshipController extends ResourceController
     {
         try {
             $rules = [
-                "registration_number" => "required|is_not_unique[licenses.license_number]",
+                "license_number" => "required|is_not_unique[licenses.license_number]",
                 "session" => "required",
                 "year" => "required|integer|exact_length[4]",
                 "letter_template" => "required|is_not_unique[print_templates.template_name]",
@@ -702,13 +704,15 @@ class HousemanshipController extends ResourceController
                 $message = implode(" ", array_values($this->validator->getErrors()));
                 return $this->respond(['message' => $message], ResponseInterface::HTTP_BAD_REQUEST);
             }
-            $license = LicenseUtils::getLicenseDetails($this->request->getVar('registration_number'));
+            $license = LicenseUtils::getLicenseDetails($this->request->getVar('license_number'));
             if (!$license) {
                 throw new Exception("License not found");
             }
+
             $data = $this->request->getJSON(true);
             $data['category'] = $license['category'];
             $data['type'] = $license['practitioner_type'];
+            $data['practitioner_details'] = json_encode($license);
             $model = new HousemanshipPostingsModel();
             $model->db->transException(true)->transStart();
             $postingId = $model->insert($data);
@@ -749,11 +753,11 @@ class HousemanshipController extends ResourceController
 
             /** @var ActivitiesModel $activitiesModel */
             $activitiesModel = new ActivitiesModel();
-            $activitiesModel->logActivity("Added housemanship session {$data['session']} posting for {$data['registration_number']}", null, $this->activityModule);
+            $activitiesModel->logActivity("Added housemanship session {$data['session']} posting for {$data['license_number']}", null, $this->activityModule);
 
             $model->db->transComplete();
 
-            return $this->respond(['message' => "Housemanship posting created successfully for {$data['registration_number']}", 'data' => ""], ResponseInterface::HTTP_OK);
+            return $this->respond(['message' => "Housemanship posting created successfully for {$data['license_number']}", 'data' => ""], ResponseInterface::HTTP_OK);
         } catch (Exception $th) {
             log_message("error", $th->getMessage());
             return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_BAD_REQUEST);
@@ -764,7 +768,7 @@ class HousemanshipController extends ResourceController
     {
         try {
             $rules = [
-                "registration_number" => "required|is_not_unique[licenses.license_number]",
+                "license_number" => "required|is_not_unique[licenses.license_number]",
                 "session" => "required",
                 "year" => "required|integer|exact_length[4]",
                 "letter_template" => "required|is_not_unique[print_templates.template_name]",
@@ -776,13 +780,14 @@ class HousemanshipController extends ResourceController
                 return $this->respond(['message' => $message], ResponseInterface::HTTP_BAD_REQUEST);
             }
 
-            $license = LicenseUtils::getLicenseDetails($this->request->getVar('registration_number'));
+            $license = LicenseUtils::getLicenseDetails($this->request->getVar('license_number'));
             if (!$license) {
                 throw new Exception("License not found");
             }
             $data = $this->request->getJSON(true);
             $data['category'] = $license['category'];
             $data['type'] = $license['practitioner_type'];
+            $data['practitioner_details'] = json_encode($license);
             $model = new HousemanshipPostingsModel();
 
             $model->db->transException(true)->transStart();
@@ -791,7 +796,6 @@ class HousemanshipController extends ResourceController
              */
             $details = $data['details'];//array
             unset($data['details']);
-            log_message("info", print_r($data, true));
             $model->builder()->where(['uuid' => $uuid])->update($data);
 
             $postingDetailsModel = new HousemanshipPostingDetailsModel();
@@ -828,11 +832,11 @@ class HousemanshipController extends ResourceController
 
             /** @var ActivitiesModel $activitiesModel */
             $activitiesModel = new ActivitiesModel();
-            $activitiesModel->logActivity("Updated housemanship session {$data['session']} posting for {$data['registration_number']}", null, $this->activityModule);
+            $activitiesModel->logActivity("Updated housemanship session {$data['session']} posting for {$data['license_number']}", null, $this->activityModule);
 
             $model->db->transComplete();
 
-            return $this->respond(['message' => "Housemanship posting updated successfully for {$data['registration_number']}", 'data' => ""], ResponseInterface::HTTP_OK);
+            return $this->respond(['message' => "Housemanship posting updated successfully for {$data['license_number']}", 'data' => ""], ResponseInterface::HTTP_OK);
         } catch (Exception $th) {
             log_message("error", $th->getMessage());
             return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_BAD_REQUEST);
@@ -852,7 +856,7 @@ class HousemanshipController extends ResourceController
             }
             /** @var ActivitiesModel $activitiesModel */
             $activitiesModel = new ActivitiesModel();
-            $activitiesModel->logActivity("Deleted housemanship posting for {$data['registration_number']}.", null, $this->activityModule);
+            $activitiesModel->logActivity("Deleted housemanship posting for {$data['license_number']}.", null, $this->activityModule);
 
             return $this->respond(['message' => 'Housemanship posting deleted successfully'], ResponseInterface::HTTP_OK);
         } catch (Exception $th) {
@@ -936,7 +940,8 @@ class HousemanshipController extends ResourceController
             $filterArray = $model->createArrayFromAllowedFields((array) $this->request->getGet());
             // Validate inputs here
             $tableName = $model->table;
-            $builder = $param ? $model->search($param) : $model->builder();
+            $builder = $param ? $model->search($param) : $model->builder()->select("$tableName.*");
+            $builder = $model->addPractitionerDetailsFields($builder);
             array_map(function ($value, $key) use ($builder, $tableName) {
                 $builder->where($tableName . "." . $key, $value);
             }, $filterArray, array_keys($filterArray));
@@ -1047,54 +1052,432 @@ class HousemanshipController extends ResourceController
         }
     }
 
-    public function updateBulkPostings()
+    public function createHousemanshipPostingApplication()
+    {
+        try {
+            $rules = [
+                "license_number" => "required|is_not_unique[licenses.license_number]",
+                "session" => "required",
+                "year" => "required|integer|exact_length[4]",
+                "details" => "required"
+            ];
+
+            if (!$this->validate($rules)) {
+                $message = implode(" ", array_values($this->validator->getErrors()));
+                return $this->respond(['message' => $message], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+            $license = LicenseUtils::getLicenseDetails($this->request->getVar('license_number'));
+            if (!$license) {
+                return $this->respond(['message' => "License not found"], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+
+            $data = $this->request->getJSON(true);
+            $data['category'] = $license['category'];
+            $data['type'] = $license['practitioner_type'];
+            $model = new HousemanshipApplicationModel();
+            $model->db->transException(true)->transStart();
+            $applicationId = $model->insert($data);
+            $application = $model->where(['id' => $applicationId])->first();
+            if (!$application) {
+                throw new Exception("Failed to create application");
+            }
+            $applicationUuid = $application['uuid'];
+            /**
+             * @var \App\Models\Housemanship\HousemanshipApplicationDetailsModel[] $details
+             */
+            $details = $data['details'];//array
+            $detailsValidationRules = [
+                "first_choice" => "required|is_not_unique[housemanship_facilities.name]",
+                "second_choice" => "required|is_not_unique[housemanship_facilities.name]|differs[first_choice]",
+                "discipline" => "required|is_not_unique[housemanship_disciplines.name]"
+            ];
+            foreach ($details as $applicationDetail) {
+                $applicationDetail = (array) $applicationDetail;
+                $applicationDetail['application_uuid'] = $applicationUuid;
+                $validation = \Config\Services::validation();
+
+                if (!$validation->setRules($detailsValidationRules)->run($applicationDetail)) {
+                    $message = implode(" ", array_values($validation->getErrors()));
+                    return $this->respond(['message' => $message], ResponseInterface::HTTP_BAD_REQUEST);
+                }
+                //get the facility details
+                $facilityModel = new HousemanshipFacilitiesModel();
+                $firstChoice = $facilityModel->where(['name' => $applicationDetail['first_choice']])->first();
+                if (!$firstChoice) {
+                    log_message("error", "First choice facility not found {$applicationDetail['first_choice']}");
+                    $message = "First choice facility not found ";
+                    return $this->respond(['message' => $message], ResponseInterface::HTTP_BAD_REQUEST);
+                }
+
+                $secondChoice = $facilityModel->where(['name' => $applicationDetail['second_choice']])->first();
+                if (!$secondChoice) {
+                    log_message("error", "Second choice facility not found {$applicationDetail['second_choice']}");
+                    $message = "Second choice facility not found ";
+                    return $this->respond(['message' => $message], ResponseInterface::HTTP_BAD_REQUEST);
+                }
+                $applicationDetail['first_choice_region'] = $firstChoice['region'];
+                $applicationDetail['second_choice_region'] = $secondChoice['region'];
+                $applicationDetailsModel = new HousemanshipApplicationDetailsModel();
+                $applicationDetailsModel->insert($applicationDetail);
+            }
+
+            /** @var ActivitiesModel $activitiesModel */
+            $activitiesModel = new ActivitiesModel();
+            $activitiesModel->logActivity("Added housemanship session {$data['session']} application for {$data['license_number']}", null, $this->activityModule);
+
+            $model->db->transComplete();
+
+            return $this->respond(['message' => "Housemanship application created successfully for {$data['license_number']}", 'data' => ""], ResponseInterface::HTTP_OK);
+        } catch (Exception $th) {
+            log_message("error", $th->getMessage());
+            return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+    }
+
+    public function updateHousemanshipPostingApplication($uuid)
+    {
+        try {
+            $rules = [
+                "license_number" => "required|is_not_unique[licenses.license_number]",
+                "session" => "required",
+                "year" => "required|integer|exact_length[4]",
+                "details" => "required"
+            ];
+
+            if (!$this->validate($rules)) {
+                $message = implode(" ", array_values($this->validator->getErrors()));
+                return $this->respond(['message' => $message], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+
+            $license = LicenseUtils::getLicenseDetails($this->request->getVar('license_number'));
+            if (!$license) {
+                throw new Exception("License not found");
+            }
+            $data = $this->request->getJSON(true);
+            $data['category'] = $license['category'];
+            $data['type'] = $license['practitioner_type'];
+
+            $model = new HousemanshipApplicationModel();
+
+            $model->db->transException(true)->transStart();
+            /**
+             * @var \App\Models\Housemanship\HousemanshipApplicationDetailsModel[] $details
+             */
+            $details = $data['details'];//array
+            unset($data['details']);
+            $model->builder()->where(['uuid' => $uuid])->update($data);
+
+            $applicationDetailsModel = new HousemanshipApplicationDetailsModel();
+            //delete existing details
+            $applicationDetailsModel->builder()->where(['application_uuid' => $uuid])->delete();
+            $applicationUuid = $uuid;
+
+            $detailsValidationRules = [
+                "first_choice" => "required|is_not_unique[housemanship_facilities.name]",
+                "second_choice" => "required|is_not_unique[housemanship_facilities.name]|differs[first_choice]",
+                "discipline" => "required|is_not_unique[housemanship_disciplines.name]"
+            ];
+
+            foreach ($details as $applicationDetail) {
+                $applicationDetail = (array) $applicationDetail;
+                $applicationDetail['application_uuid'] = $applicationUuid;
+                $validation = \Config\Services::validation();
+
+                if (!$validation->setRules($detailsValidationRules)->run($applicationDetail)) {
+                    $message = implode(" ", array_values($validation->getErrors()));
+                    return $this->respond(['message' => $message], ResponseInterface::HTTP_BAD_REQUEST);
+                }
+
+                //get the facility details
+                $facilityModel = new HousemanshipFacilitiesModel();
+                $firstChoice = $facilityModel->where(['name' => $applicationDetail['first_choice']])->first();
+                if (!$firstChoice) {
+                    log_message("error", "First choice facility not found {$applicationDetail['first_choice']}");
+                    $message = "First choice facility not found ";
+                    return $this->respond(['message' => $message], ResponseInterface::HTTP_BAD_REQUEST);
+                }
+                $secondChoice = $facilityModel->where(['name' => $applicationDetail['second_choice']])->first();
+
+                if (!$secondChoice) {
+                    log_message("error", "Second choice facility not found {$applicationDetail['second_choice']}");
+                    $message = "Second choice facility not found ";
+                    return $this->respond(['message' => $message], ResponseInterface::HTTP_BAD_REQUEST);
+                }
+                $applicationDetail['first_choice_region'] = $firstChoice['region'];
+                $applicationDetail['second_choice_region'] = $secondChoice['region'];
+
+
+                $applicationDetailsModel->insert($applicationDetail);
+            }
+
+            /** @var ActivitiesModel $activitiesModel */
+            $activitiesModel = new ActivitiesModel();
+            $activitiesModel->logActivity("Updated housemanship session {$data['session']} application for {$data['license_number']}", null, $this->activityModule);
+
+            $model->db->transComplete();
+
+            return $this->respond(['message' => "Housemanship application updated successfully for {$data['license_number']}", 'data' => ""], ResponseInterface::HTTP_OK);
+        } catch (Exception $th) {
+            log_message("error", $th->getMessage());
+            return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+    }
+
+
+
+    public function deleteHousemanshipPostingApplication($uuid)
+    {
+        try {
+            $model = new HousemanshipApplicationModel();
+            $data = $model->where(["uuid" => $uuid])->first();
+
+            if (!$model->where('uuid', $uuid)->delete()) {
+                return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+            }
+            /** @var ActivitiesModel $activitiesModel */
+            $activitiesModel = new ActivitiesModel();
+            $activitiesModel->logActivity("Deleted housemanship posting application for {$data['license_number']}.", null, $this->activityModule);
+
+            return $this->respond(['message' => 'Housemanship posting application deleted successfully'], ResponseInterface::HTTP_OK);
+        } catch (Exception $th) {
+            log_message("error", $th->getMessage());
+            return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+
+    }
+
+    public function countHousemanshipPostingApplications()
     {
         try {
 
-            $data = $this->request->getVar('data'); //an array of postings
-            $letterTemplate = $this->request->getVar('letter_template');
+            $param = $this->request->getVar('param');
+            $model = new HousemanshipApplicationModel();
+            $filterArray = $model->createArrayFromAllowedFields((array) $this->request->getGet());
+            // Validate inputs here
 
-            $results = [];
-            foreach ($data as $renewal) {
-                $renewal = (array) $renewal;
-                $renewalUuid = $renewal['uuid'];
-                $model = new LicenseRenewalModel();
-                $existingRenewal = $model->builder()->where('uuid', $renewalUuid)->get()->getFirstRow('array');
-                //get the license type renewal stage required data
-                $licenseType = $existingRenewal['license_type'];
+            $builder = $param ? $model->search($param) : $model->builder();
+            array_map(function ($value, $key) use ($builder) {
+                $builder->where($key, $value);
+            }, $filterArray, array_keys($filterArray));
 
-
-
-                unset($renewal['uuid']);
-                if (!empty($status)) {
-                    $rules = Utils::getLicenseRenewalStageValidation($licenseType, $status);
-                    $validation = \Config\Services::validation();
-
-                    if (!$validation->setRules($rules)->run($renewal)) {
-                        throw new Exception("Validation failed");
-                    }
-                    $renewal['status'] = $status;
-                }
-                $model = new LicenseRenewalModel($licenseType);
-                //start a transaction
-                $model->db->transException(true)->transStart();
-
-                LicenseUtils::updateRenewal(
-                    $renewalUuid,
-                    $renewal
-                );
-
-                $model->db->transComplete();
-                $results[] = ['id' => $renewalUuid, 'successful' => true, 'message' => 'Renewal updated successfully'];
-
-            }
-
-
-
-            return $this->respond(['message' => 'Renewal updated successfully', 'data' => $results], ResponseInterface::HTTP_OK);
+            $total = $builder->countAllResults();
+            return $this->respond([
+                'data' => $total
+            ], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
             log_message("error", $th->getMessage());
-            return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_BAD_REQUEST);
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+
+    /**
+     * get a single housemanship application with its details flattened. this will mostly be used for filling the form to edit the application
+     * @param mixed $uuid
+     * @throws \Exception
+     * @return ResponseInterface
+     */
+    public function getHousemanshipPostingApplication($uuid)
+    {
+        try {
+            $model = new HousemanshipApplicationModel();
+            $detailsModel = new HousemanshipApplicationDetailsModel();
+            $data = $model->where(["uuid" => $uuid])->first();
+            if (!$data) {
+                throw new Exception("Housemanship application not found");
+            }
+            $details = $detailsModel->where(["application_uuid" => $uuid])->findAll();
+            for ($i = 0; $i < count($details); $i++) {
+                $data["posting_application_detail-first_choice-$i"] = $details[$i]['first_choice'];
+                $data["posting_application_detail-discipline-$i"] = $details[$i]['discipline'];
+                $data["posting_application_detail-second_choice-$i"] = $details[$i]['second_choice'];
+            }
+
+            return $this->respond(['data' => $data, 'displayColumns' => $model->getDisplayColumns()], ResponseInterface::HTTP_OK);
+
+        } catch (\Throwable $th) {
+            log_message("error", $th->getMessage());
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
+
+        }
+    }
+
+    public function getHousemanshipPostingApplications()
+    {
+        try {
+            $per_page = $this->request->getVar('limit') ? (int) $this->request->getVar('limit') : 100;
+            $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
+            $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted') === "yes";
+            $param = $this->request->getVar('param');
+            $sortBy = $this->request->getVar('sortBy') ?? "id";
+            $sortOrder = $this->request->getVar('sortOrder') ?? "asc";
+
+            $model = new HousemanshipApplicationModel();
+            $detailsModel = new HousemanshipApplicationDetailsModel();
+
+            $filterArray = $model->createArrayFromAllowedFields((array) $this->request->getGet());
+            // Validate inputs here
+            $tableName = $model->table;
+            $builder = $param ? $model->search($param) : $model->builder()->select("$tableName.*");
+            $builder = $model->addPractitionerDetailsFields($builder);
+            array_map(function ($value, $key) use ($builder, $tableName) {
+                $builder->where($tableName . "." . $key, $value);
+            }, $filterArray, array_keys($filterArray));
+
+            $builder->orderBy("$tableName.$sortBy", $sortOrder);
+
+            if ($withDeleted) {
+                $model->withDeleted();
+            }
+
+            $totalBuilder = clone $builder;
+            $total = $totalBuilder->countAllResults();
+            $displayColumns = $model->getDisplayColumns();
+            // 1. Get parent records (housemanship applications)
+            $parentRecords = $builder->get($per_page, $page)->getResult();
+
+            // 2. Extract all parent IDs
+            $parentIds = array_map(function ($record) {
+                return $record->uuid;
+            }, $parentRecords);
+
+            // 3. Get all related child records in a single query
+            $childRecords = [];
+            if (!empty($parentIds)) {
+                $childRecords = $detailsModel->whereIn('application_uuid', $parentIds)->findAll();
+            }
+
+            // 4. Group child records by parent_id for quick access
+            $childrenByParentId = [];
+            foreach ($childRecords as $child) {
+                if (!isset($childrenByParentId[$child['application_uuid']])) {
+                    $childrenByParentId[$child['application_uuid']] = [];
+                }
+                $childrenByParentId[$child['application_uuid']][] = $child;
+            }
+
+            // 5. Combine parent and child data
+            foreach ($parentRecords as $parent) {
+                $children = $childrenByParentId[$parent->uuid] ?? [];
+                foreach ($children as $index => $child) {
+                    // Convert child object to array to manipulate
+                    $childArray = (array) $child;
+                    foreach ($childArray as $key => $value) {
+                        if (!in_array($key, ['application_uuid', 'id'])) { // Skip the join key
+                            // Add child fields to parent
+                            $fieldName = $key . "_" . ($index + 1);
+                            if (!in_array($fieldName, $displayColumns)) {
+                                $displayColumns[] = $fieldName;
+                            }
+                            $parent->$fieldName = $value;
+                        }
+                    }
+                }
+            }
+
+            return $this->respond([
+                'data' => $parentRecords,
+                'total' => $total,
+                'displayColumns' => $displayColumns,
+                'columnFilters' => $model->getDisplayColumnFilters()
+            ], ResponseInterface::HTTP_OK);
+        } catch (\Throwable $th) {
+            log_message("error", $th->getMessage());
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+    }
+
+    public function getHousemanshipPostingApplicationFormFields($session)
+    {
+        $model = new HousemanshipApplicationModel();
+        $detailsModel = new HousemanshipApplicationDetailsModel();
+        try {
+            $sessionSetting = Utils::getHousemanshipSetting(HousemanshipSetting::SESSIONS);
+            if (!$sessionSetting) {
+                throw new Exception("Session setting not found");
+            }
+            if (!array_key_exists($session, $sessionSetting)) {
+                throw new Exception("Session not found");
+            }
+            $numberOfRequiredFacilities = (int) $sessionSetting[$session]['number_of_facilities'];
+            $mainFields = $model->getFormFields();
+            $detailsFields = $detailsModel->getFormFields();
+            //add the details fields to the main fields the number of times required
+            for ($i = 0; $i < $numberOfRequiredFacilities; $i++) {
+                $mainFields[] = [
+                    "label" => "Discipline " . ($i + 1),
+                    "name" => "",
+                    "type" => "label",
+                    "hint" => "",
+                    "options" => [],
+                    "value" => "",
+                    "required" => false
+                ];
+                $detail = [];
+                foreach ($detailsFields as $detailsField) {
+                    $detailsField['name'] = "posting_application_detail-{$detailsField['name']}-$i";
+                    $detail[] = $detailsField;
+                }
+
+                $mainFields[] = $detail;
+            }
+            return $this->respond([
+                'data' => $mainFields
+            ], ResponseInterface::HTTP_OK);
+        } catch (\Throwable $th) {
+            log_message("error", $th->getMessage());
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+    }
+
+    // public function updateBulkPostings()
+    // {
+    //     try {
+
+    //         $data = $this->request->getVar('data'); //an array of postings
+    //         $letterTemplate = $this->request->getVar('letter_template');
+
+    //         $results = [];
+    //         foreach ($data as $renewal) {
+    //             $renewal = (array) $renewal;
+    //             $renewalUuid = $renewal['uuid'];
+    //             $model = new LicenseRenewalModel();
+    //             $existingRenewal = $model->builder()->where('uuid', $renewalUuid)->get()->getFirstRow('array');
+    //             //get the license type renewal stage required data
+    //             $licenseType = $existingRenewal['license_type'];
+
+
+
+    //             unset($renewal['uuid']);
+    //             if (!empty($status)) {
+    //                 $rules = Utils::getLicenseRenewalStageValidation($licenseType, $status);
+    //                 $validation = \Config\Services::validation();
+
+    //                 if (!$validation->setRules($rules)->run($renewal)) {
+    //                     throw new Exception("Validation failed");
+    //                 }
+    //                 $renewal['status'] = $status;
+    //             }
+    //             $model = new LicenseRenewalModel($licenseType);
+    //             //start a transaction
+    //             $model->db->transException(true)->transStart();
+
+    //             LicenseUtils::updateRenewal(
+    //                 $renewalUuid,
+    //                 $renewal
+    //             );
+
+    //             $model->db->transComplete();
+    //             $results[] = ['id' => $renewalUuid, 'successful' => true, 'message' => 'Renewal updated successfully'];
+
+    //         }
+
+
+
+    //         return $this->respond(['message' => 'Renewal updated successfully', 'data' => $results], ResponseInterface::HTTP_OK);
+    //     } catch (\Throwable $th) {
+    //         log_message("error", $th->getMessage());
+    //         return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_BAD_REQUEST);
+    //     }
+    // }
 }

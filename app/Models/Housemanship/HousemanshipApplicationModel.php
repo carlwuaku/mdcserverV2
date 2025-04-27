@@ -5,27 +5,23 @@ namespace App\Models\Housemanship;
 use App\Helpers\Interfaces\TableDisplayInterface;
 use App\Helpers\Interfaces\FormInterface;
 use App\Models\MyBaseModel;
-use App\Helpers\Utils;
-use App\Helpers\Enums\HousemanshipSetting;
 use CodeIgniter\Database\BaseBuilder;
-class HousemanshipPostingsModel extends MyBaseModel implements TableDisplayInterface, FormInterface
+class HousemanshipApplicationModel extends MyBaseModel implements TableDisplayInterface, FormInterface
 {
-    protected $table = 'housemanship_postings';
+    protected $table = 'housemanship_postings_applications';
     protected $primaryKey = 'id';
     protected $useAutoIncrement = true;
     protected $returnType = 'array';
     protected $useSoftDeletes = false;
     protected $protectFields = true;
     protected $allowedFields = [
-
         'license_number',
-        'type',
+        'date',
         'category',
-        'session',
+        'type',
         'year',
-        'letter_template',
-        'practitioner_details'
-
+        'session',
+        'tags'
     ];
 
     protected bool $allowEmptyInserts = false;
@@ -58,9 +54,8 @@ class HousemanshipPostingsModel extends MyBaseModel implements TableDisplayInter
     protected $beforeDelete = [];
     protected $afterDelete = [];
 
-
     public $searchFields = [
-        'license_number'
+        'license_number',
     ];
 
 
@@ -77,7 +72,7 @@ class HousemanshipPostingsModel extends MyBaseModel implements TableDisplayInter
             'category',
             'session',
             'year',
-            'letter_template'
+            'tags'
         ];
     }
 
@@ -173,31 +168,28 @@ class HousemanshipPostingsModel extends MyBaseModel implements TableDisplayInter
 
 
             [
-                "label" => "Letter Template",
-                "name" => "letter_template",
-                "type" => "api",
+                "label" => "Direct entry",
+                "name" => "tags",
+                "type" => "text",
                 "value" => "",
                 "required" => false,
-                "api_url" => "print-queue/templates",
-                "apiKeyProperty" => "template_name",
-                "apiLabelProperty" => "template_name",
-                "apiType" => "select"
+                "api_url" => "",
+                "apiKeyProperty" => "",
+                "apiLabelProperty" => "",
+                "apiType" => ""
             ]
         ];
     }
 
-    public function getHousemanshipSessions()
-    {
-        $sessionSetting = Utils::getHousemanshipSetting(HousemanshipSetting::SESSIONS);
-        return array_keys($sessionSetting);
-    }
-
     public function addPractitionerDetailsFields(BaseBuilder $builder)
     {
+        $practitionersTable = "practitioners";
+
         $fields = ["first_name", "last_name", "middle_name"];
         foreach ($fields as $field) {
-            $builder->select('JSON_EXTRACT(practitioner_details, "$.' . $field . '") as ' . $field);
+            $builder->select($practitionersTable . "." . $field);
         }
+        $builder->join($practitionersTable, "$practitionersTable.license_number = $this->table.license_number", "left");
         return $builder;
     }
 
