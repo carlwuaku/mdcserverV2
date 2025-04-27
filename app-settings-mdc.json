@@ -543,6 +543,46 @@
                     "apiKeyProperty": "name",
                     "apiLabelProperty": "name",
                     "apiType": "datalist"
+                },
+                {
+                    "label": "Specialty",
+                    "name": "specialty",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "specialties/specialties",
+                    "apiKeyProperty": "name",
+                    "apiLabelProperty": "name",
+                    "apiType": "select",
+                    "onChange": ""
+                },
+                {
+                    "label": "Subspecialty",
+                    "name": "subspecialty",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "specialties/subspecialties",
+                    "apiKeyProperty": "subspecialty",
+                    "apiLabelProperty": "subspecialty",
+                    "apiType": "select"
+                },
+                {
+                    "label": "College Membership",
+                    "name": "college_membership",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/settings/Practitioners.college_membership_types",
+                    "apiKeyProperty": "name",
+                    "apiLabelProperty": "name",
+                    "apiType": "select"
                 }
             ],
             "onCreateValidation": {
@@ -631,6 +671,19 @@
                     "api_url": "specialties/subspecialties",
                     "apiKeyProperty": "subspecialty",
                     "apiLabelProperty": "subspecialty",
+                    "apiType": "select"
+                },
+                {
+                    "label": "College Membership",
+                    "name": "college_membership",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/settings/Practitioners.college_membership_types",
+                    "apiKeyProperty": "name",
+                    "apiLabelProperty": "name",
                     "apiType": "select"
                 }
             ],
@@ -944,6 +997,62 @@
                     "apiLabelProperty": "specialty",
                     "apiType": "select",
                     "selection_mode": "multiple"
+                },
+                {
+                    "label": "Sub-specialty",
+                    "name": "subspecialty",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/practitioners/subspecialty",
+                    "apiKeyProperty": "subspecialty",
+                    "apiLabelProperty": "subspecialty",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                },
+                {
+                    "label": "Register Type",
+                    "name": "register_type",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/practitioners/register_type",
+                    "apiKeyProperty": "register_type",
+                    "apiLabelProperty": "register_type",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                },
+                {
+                    "label": "College Membership",
+                    "name": "college_membership",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/practitioners/college_membership",
+                    "apiKeyProperty": "college_membership",
+                    "apiLabelProperty": "college_membership",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                },
+                {
+                    "label": "Category",
+                    "name": "category",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/practitioners/category",
+                    "apiKeyProperty": "category",
+                    "apiLabelProperty": "category",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
                 }
             ],
             "advancedStatisticsFields": [
@@ -971,8 +1080,17 @@
                     "required": false
                 },
                 {
-                    "label": "Registration date",
-                    "name": "registration_date",
+                    "label": "Provisional Registration date",
+                    "name": "year_of_provisional",
+                    "hint": "",
+                    "options": [],
+                    "type": "date-range",
+                    "value": "",
+                    "required": false
+                },
+                {
+                    "label": "Permanent Registration date",
+                    "name": "year_of_permanent",
                     "hint": "",
                     "options": [],
                     "type": "date-range",
@@ -994,7 +1112,7 @@
                     "selection_mode": "multiple"
                 },
                 {
-                    "label": "Natonality",
+                    "label": "Nationality",
                     "name": "nationality",
                     "hint": "",
                     "options": [],
@@ -1055,6 +1173,76 @@
                     "api_url": "admin/distinct-values/practitioners/institution_type",
                     "apiKeyProperty": "institution_type",
                     "apiLabelProperty": "institution_type",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                },
+                {
+                    "label": "Specialty",
+                    "name": "specialty",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/practitioners/specialty",
+                    "apiKeyProperty": "specialty",
+                    "apiLabelProperty": "specialty",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                },
+                {
+                    "label": "Sub-specialty",
+                    "name": "subspecialty",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/practitioners/subspecialty",
+                    "apiKeyProperty": "subspecialty",
+                    "apiLabelProperty": "subspecialty",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                },
+                {
+                    "label": "Register Type",
+                    "name": "register_type",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/practitioners/register_type",
+                    "apiKeyProperty": "register_type",
+                    "apiLabelProperty": "register_type",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                },
+                {
+                    "label": "College Membership",
+                    "name": "college_membership",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/practitioners/college_membership",
+                    "apiKeyProperty": "college_membership",
+                    "apiLabelProperty": "college_membership",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                },
+                {
+                    "label": "Category",
+                    "name": "category",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/practitioners/category",
+                    "apiKeyProperty": "category",
+                    "apiLabelProperty": "category",
                     "apiType": "select",
                     "selection_mode": "multiple"
                 }
