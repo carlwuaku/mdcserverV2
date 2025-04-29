@@ -149,17 +149,17 @@ class LicensesController extends ResourceController
     public function countLicenses()
     {
         try {
-
+            // use getVar instead of getGet to get the params since this also serves a post request
             $param = $this->request->getVar('param');
             $model = new LicensesModel();
             $licenseType = $this->request->getVar('licenseType') ?? null;
-            $licenseJoinConditions = '';
-            $filterArray = $model->createArrayFromAllowedFields((array) $this->request->getGet());
+            $filterArray = $model->createArrayFromAllowedFields((array) $this->request->getVar());
+            $builder = $param ? $model->search($param) : $model->builder();
             //get the params   that have 'child_' appears .
             /**
              * @var array
              */
-            $childParams = array_filter($this->request->getGet(), function ($key) {
+            $childParams = array_filter((array) $this->request->getVar(), function ($key) {
                 return strpos($key, 'child_') === 0;
             }, ARRAY_FILTER_USE_KEY);
             // if childParams is not empty, 
@@ -168,25 +168,40 @@ class LicensesController extends ResourceController
                     throw new Exception("License type is required");
                 }
                 $licenseDef = Utils::getLicenseSetting($licenseType);
-                $renewalSubTable = $licenseDef->renewalTable;
                 $licenseTypeTable = $licenseDef->table;
-                /**
-                 * @var array
-                 */
-                $joinConditions = [];
+
                 foreach ($childParams as $key => $value) {
-                    $joinConditions[] = str_replace('child_', '', $licenseTypeTable . '.' . $key) . ' = ' . "'$value'";
+                    $value = Utils::parseParam($value);
+                    //if child_param, skip it
+                    if ($key === "child_param") {
+                        continue;
+                    }
+                    $columnName = $licenseTypeTable . "." . str_replace('child_', '', $key);
+                    $builder = Utils::parseWhereClause($builder, $columnName, $value);
+                    // if (is_array($value)) {
+                    //     if (!empty($value)) {
+                    //         $builder->whereIn($columnName, $value);
+                    //     }
+                    // } else {
+                    //     //if it contains a date, we need to format it
+                    //     if (strpos($key, 'date') !== false) {
+                    //         $dateRange = Utils::getDateRange($value);
+                    //         $builder->where($columnName . ' >=', $dateRange['start']);
+                    //         $builder->where($columnName . ' <=', $dateRange['end']);
+                    //     } else {
+                    //         $builder->where($columnName, $value);
+                    //     }
+                    // }
                 }
-                $licenseJoinConditions = implode(" AND ", $joinConditions);
             }
-            $builder = $param ? $model->search($param) : $model->builder();
+
             array_map(function ($value, $key) use ($builder) {
                 if (strpos($key, 'child_') === 0) {
                     $builder->where($key, $value);
                 }
             }, $filterArray, array_keys($filterArray));
             if ($licenseType) {
-                $builder = $model->addLicenseDetails($builder, $licenseType, true, $licenseJoinConditions);
+                $builder = $model->addLicenseDetails($builder, $licenseType, true);
             }
             $total = $builder->countAllResults();
             return $this->respond([
@@ -233,64 +248,60 @@ class LicensesController extends ResourceController
     public function getLicenses()
     {
         try {
-            $per_page = $this->request->getVar('limit') ? (int) $this->request->getVar('limit') : 100;
-            $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
-            $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted') === "yes";
-            $param = $this->request->getVar('param') ?? $this->request->getVar('child_param');
-            $sortBy = $this->request->getVar('sortBy') ?? "id";
-            $sortOrder = $this->request->getVar('sortOrder') ?? "asc";
+            $per_page = $this->request->getGet('limit') ? (int) $this->request->getGet('limit') : 100;
+            $page = $this->request->getGet('page') ? (int) $this->request->getGet('page') : 0;
+            $withDeleted = $this->request->getGet('withDeleted') && $this->request->getGet('withDeleted') === "yes";
+            $param = $this->request->getGet('param') ?? $this->request->getGet('child_param');
+            $sortBy = $this->request->getGet('sortBy') ?? "id";
+            $sortOrder = $this->request->getGet('sortOrder') ?? "asc";
             $licenseType = $this->request->getVar('licenseType') ?? null;
-            $licenseJoinConditions = '';
+
             $model = new LicensesModel();
+            if ($licenseType) {
+                $model->licenseType = $licenseType;
+                $searchFields = Utils::getLicenseSearchFields($licenseType);
+                $searchFields['table'] = Utils::getLicenseTable($licenseType);
+                $model->joinSearchFields = $searchFields;
+                $licenseDef = Utils::getLicenseSetting($licenseType);
+                $licenseTypeTable = $licenseDef->table;
+            }
             /** if set, use this year for checking whether the license is in goodstanding */
             $renewalDate = $this->request->getVar('renewalDate');
+            $builder = $param ? $model->search($param) : $model->builder();
             if ($renewalDate) {
                 $model->renewalDate = date("Y-m-d", strtotime($renewalDate));
             }
             if ($licenseType) {
-                $model->licenseType = $licenseType;
+                // $model->licenseType = $licenseType;
                 try {
-                    $searchFields = Utils::getLicenseSearchFields($licenseType);
-                    $searchFields['table'] = Utils::getLicenseTable($licenseType);
-                    $model->joinSearchFields = $searchFields;
-
                     //get the params   that have 'child_' appears . in the url are converted to _
                     /**
                      * @var array
                      */
-                    $childParams = array_filter($this->request->getGet(), function ($key) {
+                    $childParams = array_filter((array) $this->request->getVar(), function ($key) {
                         return strpos($key, 'child_') === 0;
                     }, ARRAY_FILTER_USE_KEY);
                     // if childParams is not empty, 
+
                     if (!empty($childParams)) {
-                        $licenseDef = Utils::getLicenseSetting($licenseType);
-                        $licenseTypeTable = $licenseDef->table;
-                        /**
-                         * @var array
-                         */
-                        $joinConditions = [];
+
+
                         foreach ($childParams as $key => $value) {
+                            $value = Utils::parseParam($value);
                             //if child_param, skip it
                             if ($key === "child_param") {
                                 continue;
                             }
-                            $columnName = str_replace('child_', '', $licenseTypeTable . '.' . $key);
-                            //if it contains a date, we need to format it
-                            if (strpos($key, 'date') !== false) {
-                                $dateRange = Utils::getDateRange($value);
-                                $joinConditions[] = "$columnName >=" . $dateRange['start'];
-                                $joinConditions[] = "$columnName <=" . $dateRange['end'];
-                            } else {
-                                $joinConditions[] = $columnName . ' = ' . "'$value'";
-                            }
+                            $columnName = $licenseTypeTable . "." . str_replace('child_', '', $key);
+                            $builder = Utils::parseWhereClause($builder, $columnName, $value);
+
                         }
-                        $licenseJoinConditions = implode(" AND ", $joinConditions);
                     }
                 } catch (\Throwable $th) {
-                    log_message("error", $th->getMessage());
+                    log_message("error", $th);
                 }
             }
-            $builder = $param ? $model->search($param) : $model->builder();
+
             $builder = $model->addCustomFields($builder);
             if ($renewalDate) {
                 //this is pretty much only used when selecting people for renewal. in this case
@@ -298,19 +309,25 @@ class LicensesController extends ResourceController
                 $builder = $model->addLastRenewalField($builder);
             }
             $tableName = $model->getTableName();
-            $builder->orderBy("$tableName.$sortBy", $sortOrder);
+            if ($sortBy === "id" || in_array($sortBy, $model->allowedFields)) {
+                $sortField = $tableName . "." . $sortBy;
+            } else {
+                $sortField = $licenseTypeTable . "." . $sortBy;
+            }
+            $builder->orderBy("$sortField", $sortOrder);
             if ($licenseType) {
                 $builder->where("$tableName.type", $licenseType);
                 $addJoin = true; //if there are child params, the join is already added
                 if ($param) {
                     $addJoin = false;
                 }
-                $builder = $model->addLicenseDetails($builder, $licenseType, $addJoin, $licenseJoinConditions);
+                $builder = $model->addLicenseDetails($builder, $licenseType, $addJoin);
             }
 
             if ($withDeleted) {
                 $model->withDeleted();
             }
+            // log_message("info", $model->builder()->getCompiledSelect(false));
             $totalBuilder = clone $builder;
             $total = $totalBuilder->countAllResults();
             $result = $builder->get($per_page, $page)->getResult();
@@ -321,6 +338,7 @@ class LicensesController extends ResourceController
                 'columnFilters' => $model->getDisplayColumnFilters()
             ], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
+            log_message("error", $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
@@ -330,13 +348,7 @@ class LicensesController extends ResourceController
     public function getRenewals($license_uuid = null)
     {
         try {
-            // $rules = [
-            //     "start_date" => "if_exist|valid_date",
-            //     "expiry" => "if_exist|valid_date",
-            // ];
-            // if (!$this->validate($rules)) {
-            //     return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
-            // }
+
             $per_page = $this->request->getVar('limit') ? (int) $this->request->getVar('limit') : 100;
             $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
             $param = $this->request->getVar('param');
@@ -816,30 +828,20 @@ class LicensesController extends ResourceController
             $model = new LicensesModel();
             $results = [];
             $fields = $model->getBasicStatisticsFields($licenseType);
-            $licenseJoinConditions = '';
-            $licenseTypeTable = '';
+            $allFields = array_merge($fields['default'], $fields['custom']);
+            // $licenseJoinConditions = '';
+            $licenseDef = Utils::getLicenseSetting($licenseType);
+            $licenseTypeTable = $licenseDef->table;
             //get the params   that have 'child_' appears . in the url are converted to _
             /**
              * @var array
              */
-            $childParams = array_filter($this->request->getGet(), function ($key) {
+            $childParams = array_filter((array) $this->request->getVar(), function ($key) {
                 return strpos($key, 'child_') === 0;
             }, ARRAY_FILTER_USE_KEY);
-            // if childParams is not empty, 
-            if (!empty($childParams)) {
-                $licenseDef = Utils::getLicenseSetting($licenseType);
-                $licenseTypeTable = $licenseDef->table;
-                /**
-                 * @var array
-                 */
-                $joinConditions = [];
-                foreach ($childParams as $key => $value) {
-                    $joinConditions[] = str_replace('child_', '', $licenseTypeTable . '.' . $key) . ' = ' . "'$value'";
-                }
-                $licenseJoinConditions = implode(" AND ", $joinConditions);
-            }
-            foreach ($fields['default'] as $field) {
+            foreach ($allFields as $field) {
                 $builder = $model->builder();
+                $builder->join($licenseTypeTable, "$licenseTypeTable.license_number = licenses.license_number");
                 $builder->select([$field->name, "COUNT(*) as count"]);
                 if ($licenseType !== null) {
                     $builder->where("type", $licenseType);
@@ -848,40 +850,17 @@ class LicensesController extends ResourceController
                 if (strpos($field->name, " as ") !== false) {
                     $field->name = explode(" as ", $field->name)[1];
                 }
-                if ($licenseJoinConditions) {
-                    $builder->join($licenseTypeTable, "$licenseTypeTable.license_number = licenses.license_number");
-                    $builder->where($licenseJoinConditions);
-                }
-                $builder->groupBy($field->name);
-                $result = $builder->get()->getResult();
-                //replace null with 'Null'
-                $result = array_map(function ($item) use ($field) {
-                    $item->{$field->name} = empty($item->{$field->name}) ? 'Null' : $item->{$field->name};
-                    return $item;
-                }, $result);
-                $results[$field->name] = [
-                    "label" => $field->label,
-                    "type" => $field->type,
-                    "data" => $result,
-                    "labelProperty" => $field->name,
-                    "valueProperty" => "count",
-                    "name" => $field->name,
-                    "xAxisLabel" => $field->xAxisLabel,
-                    "yAxisLabel" => $field->yAxisLabel,
-                ];
-            }
-            $licenseDef = Utils::getLicenseSetting($licenseType);
-            $table = $licenseDef->table;
-            foreach ($fields['custom'] as $field) {
-                $builder = $model->builder($table);
-                $builder->select([$field->name, "COUNT(*) as count"]);
+                if (!empty($childParams)) {
 
-                //if the field has an alias, use it
-                if (strpos($field->name, " as ") !== false) {
-                    $field->name = explode(" as ", $field->name)[1];
-                }
-                if ($licenseJoinConditions) {
-                    $builder->where($licenseJoinConditions);
+
+
+                    foreach ($childParams as $key => $value) {
+                        $value = Utils::parseParam($value);
+
+                        $columnName = $licenseTypeTable . "." . str_replace('child_', '', $key);
+                        $builder = Utils::parseWhereClause($builder, $columnName, $value);
+
+                    }
                 }
                 $builder->groupBy($field->name);
                 $result = $builder->get()->getResult();
@@ -901,6 +880,7 @@ class LicensesController extends ResourceController
                     "yAxisLabel" => $field->yAxisLabel,
                 ];
             }
+
             return $this->respond(['data' => $results], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
             log_message("error", $th->getMessage());

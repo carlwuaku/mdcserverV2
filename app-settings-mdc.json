@@ -200,6 +200,68 @@
             ]
         },
         {
+            "title": "Housemanship",
+            "active_children": false,
+            "url": "",
+            "icon": "auto_stories_outlined",
+            "children": [
+                {
+                    "title": "View/Search Postings",
+                    "url": "/housemanship/postings",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Add Posting for session 1",
+                    "url": "/housemanship/postings/add/1",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Add Posting for session 2",
+                    "url": "/housemanship/postings/add/2",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Manage applications",
+                    "url": "/housemanship/posting-applications",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Add application for session 1",
+                    "url": "/housemanship/posting-applications/add/1",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Add application for session 2",
+                    "url": "/housemanship/posting-applications/add/2",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Add Facility",
+                    "url": "/housemanship/facilities/add",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Manage Facilities",
+                    "url": "/housemanship/facilities",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Manage Disciplines",
+                    "url": "/housemanship/disciplines",
+                    "icon": "",
+                    "children": []
+                }
+            ]
+        },
+        {
             "title": "Messaging",
             "active_children": false,
             "url": "",
@@ -481,6 +543,46 @@
                     "apiKeyProperty": "name",
                     "apiLabelProperty": "name",
                     "apiType": "datalist"
+                },
+                {
+                    "label": "Specialty",
+                    "name": "specialty",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "specialties/specialties",
+                    "apiKeyProperty": "name",
+                    "apiLabelProperty": "name",
+                    "apiType": "select",
+                    "onChange": ""
+                },
+                {
+                    "label": "Subspecialty",
+                    "name": "subspecialty",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "specialties/subspecialties",
+                    "apiKeyProperty": "subspecialty",
+                    "apiLabelProperty": "subspecialty",
+                    "apiType": "select"
+                },
+                {
+                    "label": "College Membership",
+                    "name": "college_membership",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/settings/Practitioners.college_membership_types",
+                    "apiKeyProperty": "name",
+                    "apiLabelProperty": "name",
+                    "apiType": "select"
                 }
             ],
             "onCreateValidation": {
@@ -569,6 +671,19 @@
                     "api_url": "specialties/subspecialties",
                     "apiKeyProperty": "subspecialty",
                     "apiLabelProperty": "subspecialty",
+                    "apiType": "select"
+                },
+                {
+                    "label": "College Membership",
+                    "name": "college_membership",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/settings/Practitioners.college_membership_types",
+                    "apiKeyProperty": "name",
+                    "apiLabelProperty": "name",
                     "apiType": "select"
                 }
             ],
@@ -868,6 +983,76 @@
                     "apiKeyProperty": "practitioner_type",
                     "apiLabelProperty": "practitioner_type",
                     "apiType": "select"
+                },
+                {
+                    "label": "Specialty",
+                    "name": "specialty",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/practitioners/specialty",
+                    "apiKeyProperty": "specialty",
+                    "apiLabelProperty": "specialty",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                },
+                {
+                    "label": "Sub-specialty",
+                    "name": "subspecialty",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/practitioners/subspecialty",
+                    "apiKeyProperty": "subspecialty",
+                    "apiLabelProperty": "subspecialty",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                },
+                {
+                    "label": "Register Type",
+                    "name": "register_type",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/practitioners/register_type",
+                    "apiKeyProperty": "register_type",
+                    "apiLabelProperty": "register_type",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                },
+                {
+                    "label": "College Membership",
+                    "name": "college_membership",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/practitioners/college_membership",
+                    "apiKeyProperty": "college_membership",
+                    "apiLabelProperty": "college_membership",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                },
+                {
+                    "label": "Category",
+                    "name": "category",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/practitioners/category",
+                    "apiKeyProperty": "category",
+                    "apiLabelProperty": "category",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
                 }
             ],
             "advancedStatisticsFields": [
@@ -882,11 +1067,30 @@
                     "api_url": "admin/distinct-values/practitioners/practitioner_type",
                     "apiKeyProperty": "practitioner_type",
                     "apiLabelProperty": "practitioner_type",
-                    "apiType": "select"
+                    "apiType": "select",
+                    "selection_mode": "multiple"
                 },
                 {
                     "label": "Date of birth",
                     "name": "date_of_birth",
+                    "hint": "",
+                    "options": [],
+                    "type": "date-range",
+                    "value": "",
+                    "required": false
+                },
+                {
+                    "label": "Provisional Registration date",
+                    "name": "year_of_provisional",
+                    "hint": "",
+                    "options": [],
+                    "type": "date-range",
+                    "value": "",
+                    "required": false
+                },
+                {
+                    "label": "Permanent Registration date",
+                    "name": "year_of_permanent",
                     "hint": "",
                     "options": [],
                     "type": "date-range",
@@ -904,10 +1108,11 @@
                     "api_url": "admin/distinct-values/practitioners/sex",
                     "apiKeyProperty": "sex",
                     "apiLabelProperty": "sex",
-                    "apiType": "select"
+                    "apiType": "select",
+                    "selection_mode": "multiple"
                 },
                 {
-                    "label": "Natonality",
+                    "label": "Nationality",
                     "name": "nationality",
                     "hint": "",
                     "options": [],
@@ -917,7 +1122,8 @@
                     "api_url": "admin/distinct-values/practitioners/nationality",
                     "apiKeyProperty": "nationality",
                     "apiLabelProperty": "nationality",
-                    "apiType": "select"
+                    "apiType": "select",
+                    "selection_mode": "multiple"
                 },
                 {
                     "label": "Training institution",
@@ -930,7 +1136,8 @@
                     "api_url": "admin/distinct-values/practitioners/training_institution",
                     "apiKeyProperty": "training_institution",
                     "apiLabelProperty": "training_institution",
-                    "apiType": "select"
+                    "apiType": "select",
+                    "selection_mode": "multiple"
                 },
                 {
                     "label": "Qualification date",
@@ -952,7 +1159,8 @@
                     "api_url": "admin/distinct-values/practitioners/place_of_work",
                     "apiKeyProperty": "place_of_work",
                     "apiLabelProperty": "place_of_work",
-                    "apiType": "select"
+                    "apiType": "select",
+                    "selection_mode": "multiple"
                 },
                 {
                     "label": "Institution Type",
@@ -965,7 +1173,78 @@
                     "api_url": "admin/distinct-values/practitioners/institution_type",
                     "apiKeyProperty": "institution_type",
                     "apiLabelProperty": "institution_type",
-                    "apiType": "select"
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                },
+                {
+                    "label": "Specialty",
+                    "name": "specialty",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/practitioners/specialty",
+                    "apiKeyProperty": "specialty",
+                    "apiLabelProperty": "specialty",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                },
+                {
+                    "label": "Sub-specialty",
+                    "name": "subspecialty",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/practitioners/subspecialty",
+                    "apiKeyProperty": "subspecialty",
+                    "apiLabelProperty": "subspecialty",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                },
+                {
+                    "label": "Register Type",
+                    "name": "register_type",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/practitioners/register_type",
+                    "apiKeyProperty": "register_type",
+                    "apiLabelProperty": "register_type",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                },
+                {
+                    "label": "College Membership",
+                    "name": "college_membership",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/practitioners/college_membership",
+                    "apiKeyProperty": "college_membership",
+                    "apiLabelProperty": "college_membership",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                },
+                {
+                    "label": "Category",
+                    "name": "category",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/practitioners/category",
+                    "apiKeyProperty": "category",
+                    "apiLabelProperty": "category",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
                 }
             ],
             "searchFormFields": [
@@ -1102,6 +1381,56 @@
             "required": false
         }
     ],
+    "housemanship": {
+        "availabilityCategories": [
+            {
+                "value": "available",
+                "key": "Available for selection by Doctors"
+            },
+            {
+                "value": "medical",
+                "key": "Available for selection by Doctors (Medical)"
+            },
+            {
+                "value": "dental",
+                "key": "Available for selection by Doctors (Dental)"
+            },
+            {
+                "value": "available_pa_selection",
+                "key": "Available for selection by Physician Assistant"
+            },
+            {
+                "value": "available_pa_dental_selection",
+                "key": "Available for selection by Physician Assistant (Dental)"
+            },
+            {
+                "value": "available_pa_medical_selection",
+                "key": "Available for selection by Physician Assistant (Medical)"
+            },
+            {
+                "value": "available_pa_cra_selection",
+                "key": "Available for selection by Physician Assistant (CRA)"
+            }
+        ],
+        "sessions": {
+            "1": {
+                "number_of_facilities": 1,
+                "application_form_fields": [],
+                "available_to": [
+                    {}
+                ],
+                "allowRepeatRegion": true
+            },
+            "2": {
+                "number_of_facilities": 2,
+                "application_form_fields": [],
+                "available_to": [
+                    {}
+                ],
+                "allowRepeatRegion": false
+            }
+        }
+    },
     "portalHomeMenu": [
         {
             "title": "Practitioner Portal",

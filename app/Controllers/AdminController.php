@@ -27,13 +27,19 @@ class AdminController extends ResourceController
 
     public function getSetting($name = null)
     {
-        $settings = service("settings");
-        $value = $settings->get($name);
-        //legacy settings may be lists represented as ; separated strings
-        if (is_string($value) && strpos($value, ';') !== false) {
-            $value = explode(';', $value);
+        try {
+            $settings = service("settings");
+            $value = $settings->get($name);
+            //legacy settings may be lists represented as ; separated strings
+            if (is_string($value) && strpos($value, ';') !== false) {
+                $value = explode(';', $value);
+            }
+            return $this->respond(['message' => '', 'data' => $value], ResponseInterface::HTTP_OK);
+        } catch (\Throwable $th) {
+            log_message('error', __METHOD__ . '' . $th->getMessage());
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
-        return $this->respond(['message' => '', 'data' => $value], ResponseInterface::HTTP_OK);
+
     }
 
     public function getSettings()

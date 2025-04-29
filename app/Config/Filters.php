@@ -88,7 +88,8 @@ class Filters extends BaseConfig
                 'licenses/*',
                 'cpd/*',
                 'print-queue/*',
-                'guest/*'
+                'guest/*',
+                'housemanship/*'
             ],
             'after' => [
                 'api/*',
@@ -103,7 +104,8 @@ class Filters extends BaseConfig
                 'licenses/*',
                 'cpd/*',
                 'print-queue/*',
-                'guest/*'
+                'guest/*',
+                'housemanship/*'
             ]
         ],
     ];
