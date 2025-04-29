@@ -2,6 +2,7 @@
 
 namespace App\Helpers;
 
+use CodeIgniter\Database\BaseBuilder;
 use Endroid\QrCode\Color\Color;
 use Endroid\QrCode\Encoding\Encoding;
 use Endroid\QrCode\ErrorCorrectionLevel;
@@ -631,5 +632,72 @@ class Utils
 
         // If it doesn't look like JSON or couldn't be decoded, return original
         return $param;
+    }
+
+    /**
+     * add a where clause to a query builder depending on the value type. It will check if the value is an array, a date range, or a null value.
+     * @param BaseBuilder $builder
+     * @param string $columnName
+     * @param mixed $value
+     * @return BaseBuilder
+     */
+    public static function parseWhereClause(BaseBuilder $builder, $columnName, $value): BaseBuilder
+    {
+        if (is_array($value)) {
+            if (!empty($value)) {
+                // Check if the array contains special values
+                $nullExists = in_array('--Null--', $value);
+                $emptyExists = in_array('--Empty Value--', $value);
+
+                // Filter out special values to get regular values
+                $regularValues = array_filter($value, function ($item) {
+                    return $item !== '--Null--' && $item !== '--Empty Value--';
+                });
+
+                // If we have special values, we need to build a complex WHERE clause
+                if ($nullExists || $emptyExists) {
+                    $builder->groupStart(); // Start grouping conditions with parentheses
+
+                    if (!empty($regularValues)) {
+                        $builder->whereIn($columnName, $regularValues);
+                    }
+
+                    if ($nullExists) {
+                        if (!empty($regularValues)) {
+                            $builder->orWhere($columnName . ' IS NULL');
+                        } else {
+                            $builder->where($columnName . ' IS NULL');
+                        }
+                    }
+
+                    if ($emptyExists) {
+                        if (!empty($regularValues) || $nullExists) {
+                            $builder->orWhere($columnName . ' = ""');
+                        } else {
+                            $builder->where($columnName . ' = ""');
+                        }
+                    }
+
+                    $builder->groupEnd(); // End grouping
+                } else {
+                    // No special values, just use regular whereIn
+                    $builder->whereIn($columnName, $value);
+                }
+            }
+        } else {
+            // Single value logic remains the same
+            if (strpos($columnName, 'date') !== false) {
+                $dateRange = Utils::getDateRange($value);
+                $builder->where($columnName . ' >=', $dateRange['start']);
+                $builder->where($columnName . ' <=', $dateRange['end']);
+            } else if ($value === "--Null--") {
+                $builder->where($columnName . ' IS NULL');
+            } else if ($value === "--Empty Value--") {
+                $builder->where($columnName . ' = ""');
+            } else {
+                $builder->where($columnName, $value);
+            }
+        }
+        return $builder;
     }
 }

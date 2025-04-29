@@ -177,21 +177,21 @@ class LicensesController extends ResourceController
                         continue;
                     }
                     $columnName = $licenseTypeTable . "." . str_replace('child_', '', $key);
-
-                    if (is_array($value)) {
-                        if (!empty($value)) {
-                            $builder->whereIn($columnName, $value);
-                        }
-                    } else {
-                        //if it contains a date, we need to format it
-                        if (strpos($key, 'date') !== false) {
-                            $dateRange = Utils::getDateRange($value);
-                            $builder->where($columnName . ' >=', $dateRange['start']);
-                            $builder->where($columnName . ' <=', $dateRange['end']);
-                        } else {
-                            $builder->where($columnName, $value);
-                        }
-                    }
+                    $builder = Utils::parseWhereClause($builder, $columnName, $value);
+                    // if (is_array($value)) {
+                    //     if (!empty($value)) {
+                    //         $builder->whereIn($columnName, $value);
+                    //     }
+                    // } else {
+                    //     //if it contains a date, we need to format it
+                    //     if (strpos($key, 'date') !== false) {
+                    //         $dateRange = Utils::getDateRange($value);
+                    //         $builder->where($columnName . ' >=', $dateRange['start']);
+                    //         $builder->where($columnName . ' <=', $dateRange['end']);
+                    //     } else {
+                    //         $builder->where($columnName, $value);
+                    //     }
+                    // }
                 }
             }
 
@@ -248,15 +248,23 @@ class LicensesController extends ResourceController
     public function getLicenses()
     {
         try {
-            $per_page = $this->request->getVar('limit') ? (int) $this->request->getVar('limit') : 100;
-            $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
-            $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted') === "yes";
-            $param = $this->request->getVar('param') ?? $this->request->getVar('child_param');
-            $sortBy = $this->request->getVar('sortBy') ?? "id";
-            $sortOrder = $this->request->getVar('sortOrder') ?? "asc";
+            $per_page = $this->request->getGet('limit') ? (int) $this->request->getGet('limit') : 100;
+            $page = $this->request->getGet('page') ? (int) $this->request->getGet('page') : 0;
+            $withDeleted = $this->request->getGet('withDeleted') && $this->request->getGet('withDeleted') === "yes";
+            $param = $this->request->getGet('param') ?? $this->request->getGet('child_param');
+            $sortBy = $this->request->getGet('sortBy') ?? "id";
+            $sortOrder = $this->request->getGet('sortOrder') ?? "asc";
             $licenseType = $this->request->getVar('licenseType') ?? null;
-            // $licenseJoinConditions = '';
+
             $model = new LicensesModel();
+            if ($licenseType) {
+                $model->licenseType = $licenseType;
+                $searchFields = Utils::getLicenseSearchFields($licenseType);
+                $searchFields['table'] = Utils::getLicenseTable($licenseType);
+                $model->joinSearchFields = $searchFields;
+                $licenseDef = Utils::getLicenseSetting($licenseType);
+                $licenseTypeTable = $licenseDef->table;
+            }
             /** if set, use this year for checking whether the license is in goodstanding */
             $renewalDate = $this->request->getVar('renewalDate');
             $builder = $param ? $model->search($param) : $model->builder();
@@ -264,12 +272,8 @@ class LicensesController extends ResourceController
                 $model->renewalDate = date("Y-m-d", strtotime($renewalDate));
             }
             if ($licenseType) {
-                $model->licenseType = $licenseType;
+                // $model->licenseType = $licenseType;
                 try {
-                    $searchFields = Utils::getLicenseSearchFields($licenseType);
-                    $searchFields['table'] = Utils::getLicenseTable($licenseType);
-                    $model->joinSearchFields = $searchFields;
-
                     //get the params   that have 'child_' appears . in the url are converted to _
                     /**
                      * @var array
@@ -280,8 +284,7 @@ class LicensesController extends ResourceController
                     // if childParams is not empty, 
 
                     if (!empty($childParams)) {
-                        $licenseDef = Utils::getLicenseSetting($licenseType);
-                        $licenseTypeTable = $licenseDef->table;
+
 
                         foreach ($childParams as $key => $value) {
                             $value = Utils::parseParam($value);
@@ -290,26 +293,12 @@ class LicensesController extends ResourceController
                                 continue;
                             }
                             $columnName = $licenseTypeTable . "." . str_replace('child_', '', $key);
+                            $builder = Utils::parseWhereClause($builder, $columnName, $value);
 
-                            if (is_array($value)) {
-                                if (!empty($value)) {
-                                    $builder->whereIn($columnName, $value);
-                                }
-                            } else {
-                                //if it contains a date, we need to format it
-                                if (strpos($key, 'date') !== false) {
-                                    $dateRange = Utils::getDateRange($value);
-                                    $builder->where($columnName . ' >=', $dateRange['start']);
-                                    $builder->where($columnName . ' <=', $dateRange['end']);
-                                } else {
-                                    $builder->where($columnName, $value);
-                                }
-                            }
                         }
-                        // $licenseJoinConditions = implode(" AND ", $joinConditions);
                     }
                 } catch (\Throwable $th) {
-                    log_message("error", $th->getMessage());
+                    log_message("error", $th);
                 }
             }
 
@@ -320,7 +309,12 @@ class LicensesController extends ResourceController
                 $builder = $model->addLastRenewalField($builder);
             }
             $tableName = $model->getTableName();
-            $builder->orderBy("$tableName.$sortBy", $sortOrder);
+            if ($sortBy === "id" || in_array($sortBy, $model->allowedFields)) {
+                $sortField = $tableName . "." . $sortBy;
+            } else {
+                $sortField = $licenseTypeTable . "." . $sortBy;
+            }
+            $builder->orderBy("$sortField", $sortOrder);
             if ($licenseType) {
                 $builder->where("$tableName.type", $licenseType);
                 $addJoin = true; //if there are child params, the join is already added
@@ -333,7 +327,7 @@ class LicensesController extends ResourceController
             if ($withDeleted) {
                 $model->withDeleted();
             }
-            log_message("info", $model->builder()->getCompiledSelect(false));
+            // log_message("info", $model->builder()->getCompiledSelect(false));
             $totalBuilder = clone $builder;
             $total = $totalBuilder->countAllResults();
             $result = $builder->get($per_page, $page)->getResult();
@@ -344,6 +338,7 @@ class LicensesController extends ResourceController
                 'columnFilters' => $model->getDisplayColumnFilters()
             ], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
+            log_message("error", $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
@@ -353,13 +348,7 @@ class LicensesController extends ResourceController
     public function getRenewals($license_uuid = null)
     {
         try {
-            // $rules = [
-            //     "start_date" => "if_exist|valid_date",
-            //     "expiry" => "if_exist|valid_date",
-            // ];
-            // if (!$this->validate($rules)) {
-            //     return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
-            // }
+
             $per_page = $this->request->getVar('limit') ? (int) $this->request->getVar('limit') : 100;
             $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
             $param = $this->request->getVar('param');
@@ -869,21 +858,8 @@ class LicensesController extends ResourceController
                         $value = Utils::parseParam($value);
 
                         $columnName = $licenseTypeTable . "." . str_replace('child_', '', $key);
+                        $builder = Utils::parseWhereClause($builder, $columnName, $value);
 
-                        if (is_array($value)) {
-                            if (!empty($value)) {
-                                $builder->whereIn($columnName, $value);
-                            }
-                        } else {
-                            //if it contains a date, we need to format it
-                            if (strpos($key, 'date') !== false) {
-                                $dateRange = Utils::getDateRange($value);
-                                $builder->where($columnName . ' >=', $dateRange['start']);
-                                $builder->where($columnName . ' <=', $dateRange['end']);
-                            } else {
-                                $builder->where($columnName, $value);
-                            }
-                        }
                     }
                 }
                 $builder->groupBy($field->name);
