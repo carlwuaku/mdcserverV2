@@ -728,8 +728,8 @@ class HousemanshipController extends ResourceController
             $detailsValidationRules = [
                 "facility_name" => "required|is_not_unique[housemanship_facilities.name]",
                 "discipline" => "required|is_not_unique[housemanship_disciplines.name]",
-                "start_date" => "required|valid_date",
-                "end_date" => "required|valid_date",
+                "start_date" => "permit_empty|valid_date",
+                "end_date" => "permit_empty|valid_date",
             ];
             foreach ($details as $postingDetail) {
                 $postingDetail = (array) $postingDetail;
@@ -806,8 +806,8 @@ class HousemanshipController extends ResourceController
             $detailsValidationRules = [
                 "facility_name" => "required|is_not_unique[housemanship_facilities.name]",
                 "discipline" => "required|is_not_unique[housemanship_disciplines.name]",
-                "start_date" => "required|valid_date",
-                "end_date" => "required|valid_date",
+                "start_date" => "permit_empty|valid_date",
+                "end_date" => "permit_empty|valid_date",
             ];
 
             foreach ($details as $postingDetail) {

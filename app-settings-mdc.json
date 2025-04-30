@@ -224,8 +224,14 @@
                     "children": []
                 },
                 {
-                    "title": "Manage applications",
-                    "url": "/housemanship/posting-applications",
+                    "title": "Manage year 1 applications",
+                    "url": "/housemanship/posting-applications/1",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Manage year 2 applications",
+                    "url": "/housemanship/posting-applications/2",
                     "icon": "",
                     "children": []
                 },

@@ -109,15 +109,7 @@ class HousemanshipApplicationModel extends MyBaseModel implements TableDisplayIn
                 "value" => "",
                 "required" => false
             ],
-            [
-                "label" => "Session",
-                "name" => "session",
-                "type" => "select",
-                "hint" => "",
-                "options" => $this->getDistinctValuesAsKeyValuePairs('session'),
-                "value" => "",
-                "required" => false
-            ],
+
             [
                 "label" => "Year",
                 "name" => "year",
