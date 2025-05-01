@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Controllers\BaseController;
 use App\Helpers\LicenseUtils;
+use App\Helpers\Types\HousemanshipPostingType;
 use App\Models\Housemanship\HousemanshipApplicationDetailsModel;
 use App\Models\Housemanship\HousemanshipApplicationModel;
 use App\Models\Housemanship\HousemanshipDisciplinesModel;
@@ -20,6 +21,7 @@ use App\Models\ActivitiesModel;
 use \Exception;
 use App\Helpers\Utils;
 use App\Helpers\Enums\HousemanshipSetting;
+use App\Helpers\HousemanshipUtils;
 
 class HousemanshipController extends ResourceController
 {
@@ -1427,6 +1429,74 @@ class HousemanshipController extends ResourceController
         } catch (\Throwable $th) {
             log_message("error", $th->getMessage());
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+    }
+
+    public function approveHousemanshipPostingApplications()
+    {
+        try {
+            $rules = [
+                "data" => "required"
+            ];
+
+            if (!$this->validate($rules)) {
+                $message = implode(" ", array_values($this->validator->getErrors()));
+                return $this->respond(['message' => $message], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+            /**
+             * @var array<\App\Helpers\Types\HousemanshipPostingApplicationRequestType> $data
+             */
+            $data = $this->request->getVar('data');
+            if (!is_array($data)) {
+                return $this->respond(['message' => "Invalid data"], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+            $user = auth("tokens")->user()->display_name;
+            $results = [];
+            try {
+                foreach ($data as $application) {
+                    $applicationUuid = $application->application_uuid;
+
+                    $license = LicenseUtils::getLicenseDetails($application->license_number);
+                    if (!$license) {
+                        throw new Exception("License not found");
+                    }
+                    $postingData = new HousemanshipPostingType(
+                        $application->license_number,
+                        $license['type'],
+                        $license['category'],
+                        $application->session,
+                        $application->year,
+                        $application->letter_template,
+                        $application->tags,
+                        json_encode($license),
+                        $application->details
+                    );
+                    HousemanshipUtils::createPosting($postingData, $user);
+                    $results[] = [
+                        'successful' => true,
+                        'license_number' => "$application->license_number"
+                    ];
+                    $model = new HousemanshipApplicationModel();
+                    $existingApplication = $model->builder()->where('uuid', $applicationUuid)->get()->getFirstRow('array');
+                    //delete the application
+                    $model->builder()->where('uuid', $applicationUuid)->delete();
+                    /** @var ActivitiesModel $activitiesModel */
+                    $activitiesModel = new ActivitiesModel();
+                    $activitiesModel->logActivity("Approved housemanship posting application for year {$existingApplication['session']} posting for {$existingApplication['license_number']}", $user, "housemanship");
+
+                }
+            } catch (\Throwable $th) {
+                log_message("error", $th);
+                $results[] = [
+                    'successful' => false,
+                    'license_number' => "$application->license_number"
+                ];
+            }
+
+            return $this->respond(['message' => "Housemanship posting", 'data' => $results], ResponseInterface::HTTP_OK);
+        } catch (Exception $th) {
+            log_message("error", $th->getMessage());
+            return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
 
