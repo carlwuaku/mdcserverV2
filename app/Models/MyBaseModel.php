@@ -34,45 +34,85 @@ class MyBaseModel extends Model
     public function search(string $searchString): BaseBuilder
     {
         try {
-            //sanitize the search string
-            $searchString = $this->db->escapeLikeString($searchString);
-            $words = array_map('trim', explode(',', $searchString));
+            // Sanitize the search string once
+            $searchString = trim($searchString);
+            $commaWords = array_filter(array_map('trim', explode(',', $searchString)));
+
             $builder = $this->db->table($this->table);
+
+            // Prepare fields array
             $fields = [];
-            $orginalFields = $this->searchFields ?? $this->allowedFields;
-            foreach ($orginalFields as $orginalField) {
-                $fields[] = "$this->table.$orginalField";
+            $originalFields = $this->searchFields ?? $this->allowedFields;
+            foreach ($originalFields as $originalField) {
+                $fields[] = "$this->table.$originalField";
             }
+
+            // Handle joins if specified
             if (!empty($this->joinSearchFields)) {
+                $table = $this->joinSearchFields['table'];
                 foreach ($this->joinSearchFields['fields'] as $field) {
-                    $table = $this->joinSearchFields['table'];
                     $fields[] = "$table.$field";
                 }
                 $builder->join($table, $this->joinSearchFields['joinCondition'], 'left');
             }
-            $conditions = [];
-            foreach ($words as $word) {
-                if (!empty($word)) {
-                    $wordlikeConditions = [];
-                    $splitWords = array_map('trim', explode(' ', $word));
-                    foreach ($splitWords as $splitWord) {
-                        if (!empty($splitWord)) {
-                            $splitWordLikeConditionsArray = [];
-                            $splitWord = $this->db->escapeLikeString($splitWord);
-                            $splitWordConditions = array_map(function ($column) use ($splitWord, &$splitWordLikeConditionsArray) {
 
-                                $columnName = str_contains($column, ".") ? $column : $this->table . "." . $column;
-                                $splitWordLikeConditionsArray[] = "{$columnName} LIKE '%{$splitWord}%'";
-                            }, $fields);
-                            $wordlikeConditions[] = "(" . implode(" or ", $splitWordLikeConditionsArray) . ")";
+            // Build search conditions
+            if (!empty($commaWords)) {
+                $builder->groupStart(); // Start main group (outermost)
+
+                foreach ($commaWords as $commaIndex => $commaWord) {
+                    // For the first comma-separated value, start directly
+                    // For subsequent values, OR them with the previous ones
+                    if ($commaIndex > 0) {
+                        $builder->orGroupStart();
+                    } else {
+                        $builder->groupStart();
+                    }
+
+                    $spaceWords = array_filter(array_map('trim', explode(' ', $commaWord)));
+
+                    foreach ($spaceWords as $spaceIndex => $spaceWord) {
+                        // For first word, create a field OR group
+                        // For subsequent words, AND them with the previous group
+                        if ($spaceIndex === 0) {
+                            // Create first term group
+                            $builder->groupStart(); // Start the field OR group
+
+                            foreach ($fields as $fieldIndex => $field) {
+                                $escapedWord = $this->db->escapeLikeString($spaceWord);
+
+                                if ($fieldIndex === 0) {
+                                    $builder->like("LOWER($field)", strtolower($escapedWord), 'both', true, true);
+                                } else {
+                                    $builder->orLike("LOWER($field)", strtolower($escapedWord), 'both', true, true);
+                                }
+                            }
+
+                            $builder->groupEnd(); // Close field OR group
+                        } else {
+                            // For subsequent words, AND a new field OR group
+                            $builder->groupStart(); // Start the AND group
+
+                            foreach ($fields as $fieldIndex => $field) {
+                                $escapedWord = $this->db->escapeLikeString($spaceWord);
+
+                                if ($fieldIndex === 0) {
+                                    $builder->like("LOWER($field)", strtolower($escapedWord), 'both', true, true);
+                                } else {
+                                    $builder->orLike("LOWER($field)", strtolower($escapedWord), 'both', true, true);
+                                }
+                            }
+
+                            $builder->groupEnd(); // Close the AND group
                         }
                     }
-                    $conditions[] = "(" . implode(" and ", $wordlikeConditions) . ")";
+
+                    $builder->groupEnd(); // Close the group for this comma-separated term
                 }
+
+                $builder->groupEnd(); // Close the main search group
             }
 
-            $likeConditions = implode(" or ", $conditions);
-            $builder->where($likeConditions);
             return $builder;
         } catch (\Throwable $th) {
             log_message("error", $th->getMessage());
@@ -80,6 +120,7 @@ class MyBaseModel extends Model
             throw $th;
         }
     }
+
     public function _search(string $searchString): BaseBuilder
     {
         $words = explode(',', $searchString);
@@ -209,5 +250,19 @@ class MyBaseModel extends Model
     public function getTableName(): string
     {
         return $this->table;
+    }
+}
+
+class JoinSearchFields
+{
+    public string $table;
+    public array $fields;
+    public string $joinCondition;
+
+    public function __construct(string $table, array $fields, string $joinCondition)
+    {
+        $this->table = $table;
+        $this->fields = $fields;
+        $this->joinCondition = $joinCondition;
     }
 }

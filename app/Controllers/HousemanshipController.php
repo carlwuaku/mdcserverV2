@@ -52,7 +52,7 @@ class HousemanshipController extends ResourceController
 
             return $this->respond(['message' => 'Housemanship facility created successfully', 'data' => $id], ResponseInterface::HTTP_OK);
         } catch (Exception $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -90,7 +90,7 @@ class HousemanshipController extends ResourceController
 
             return $this->respond(['message' => 'Housemanship facility updated successfully'], ResponseInterface::HTTP_OK);
         } catch (Exception $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -113,7 +113,7 @@ class HousemanshipController extends ResourceController
 
             return $this->respond(['message' => 'Housemanship facility deleted successfully'], ResponseInterface::HTTP_OK);
         } catch (Exception $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
 
@@ -137,8 +137,8 @@ class HousemanshipController extends ResourceController
             return $this->respond([
                 'data' => $total
             ], ResponseInterface::HTTP_OK);
-        } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+        } catch (Exception $th) {
+            log_message("error", $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -170,7 +170,6 @@ class HousemanshipController extends ResourceController
 
 
             $builder = $param ? $model->search($param) : $model->builder();
-            // $builder = $model->addCustomFields($builder);
 
             $tableName = $model->table;
             $builder->orderBy("$tableName.$sortBy", $sortOrder);
@@ -187,8 +186,8 @@ class HousemanshipController extends ResourceController
                 'displayColumns' => $model->getDisplayColumns(),
                 'columnFilters' => $model->getDisplayColumnFilters()
             ], ResponseInterface::HTTP_OK);
-        } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+        } catch (Exception $th) {
+            log_message("error", $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
@@ -200,8 +199,8 @@ class HousemanshipController extends ResourceController
             return $this->respond([
                 'data' => $model->getFormFields()
             ], ResponseInterface::HTTP_OK);
-        } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+        } catch (Exception $th) {
+            log_message("error", $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
@@ -240,7 +239,7 @@ class HousemanshipController extends ResourceController
 
             return $this->respond(['message' => 'Housemanship facility capacity created successfully', 'data' => $id], ResponseInterface::HTTP_OK);
         } catch (Exception $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -282,7 +281,7 @@ class HousemanshipController extends ResourceController
 
             return $this->respond(['message' => 'Housemanship facility capacity updated successfully'], ResponseInterface::HTTP_OK);
         } catch (Exception $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -305,7 +304,7 @@ class HousemanshipController extends ResourceController
 
             return $this->respond(['message' => 'Housemanship facility capacity deleted successfully'], ResponseInterface::HTTP_OK);
         } catch (Exception $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
 
@@ -346,8 +345,8 @@ class HousemanshipController extends ResourceController
                 'displayColumns' => $model->getDisplayColumns(),
                 'columnFilters' => $model->getDisplayColumnFilters()
             ], ResponseInterface::HTTP_OK);
-        } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+        } catch (Exception $th) {
+            log_message("error", $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
@@ -360,8 +359,8 @@ class HousemanshipController extends ResourceController
             return $this->respond([
                 'data' => $model->getFormFields()
             ], ResponseInterface::HTTP_OK);
-        } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+        } catch (Exception $th) {
+            log_message("error", $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
@@ -400,7 +399,7 @@ class HousemanshipController extends ResourceController
 
             return $this->respond(['message' => 'Housemanship facility availability created successfully', 'data' => $id], ResponseInterface::HTTP_OK);
         } catch (Exception $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -443,7 +442,7 @@ class HousemanshipController extends ResourceController
 
             return $this->respond(['message' => 'Housemanship facility availability updated successfully'], ResponseInterface::HTTP_OK);
         } catch (Exception $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -466,7 +465,7 @@ class HousemanshipController extends ResourceController
 
             return $this->respond(['message' => 'Housemanship facility availability deleted successfully'], ResponseInterface::HTTP_OK);
         } catch (Exception $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
 
@@ -507,8 +506,8 @@ class HousemanshipController extends ResourceController
                 'displayColumns' => $model->getDisplayColumns(),
                 'columnFilters' => $model->getDisplayColumnFilters()
             ], ResponseInterface::HTTP_OK);
-        } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+        } catch (Exception $th) {
+            log_message("error", $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
@@ -521,8 +520,8 @@ class HousemanshipController extends ResourceController
             return $this->respond([
                 'data' => $model->getFormFields()
             ], ResponseInterface::HTTP_OK);
-        } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+        } catch (Exception $th) {
+            log_message("error", $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
@@ -552,7 +551,7 @@ class HousemanshipController extends ResourceController
 
             return $this->respond(['message' => 'Housemanship discipline created successfully', 'data' => $id], ResponseInterface::HTTP_OK);
         } catch (Exception $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -588,7 +587,7 @@ class HousemanshipController extends ResourceController
 
             return $this->respond(['message' => 'Housemanship discipline updated successfully'], ResponseInterface::HTTP_OK);
         } catch (Exception $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -611,7 +610,7 @@ class HousemanshipController extends ResourceController
 
             return $this->respond(['message' => 'Housemanship discipline deleted successfully'], ResponseInterface::HTTP_OK);
         } catch (Exception $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
 
@@ -630,8 +629,8 @@ class HousemanshipController extends ResourceController
             $activitiesModel->logActivity("Restored license {$data['name']} from recycle bin");
 
             return $this->respond(['message' => 'Discipline restored successfully'], ResponseInterface::HTTP_OK);
-        } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+        } catch (Exception $th) {
+            log_message("error", $th);
             return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
@@ -671,8 +670,8 @@ class HousemanshipController extends ResourceController
                 'displayColumns' => $model->getDisplayColumns(),
                 'columnFilters' => $model->getDisplayColumnFilters()
             ], ResponseInterface::HTTP_OK);
-        } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+        } catch (Exception $th) {
+            log_message("error", $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
@@ -685,8 +684,8 @@ class HousemanshipController extends ResourceController
             return $this->respond([
                 'data' => $model->getFormFields()
             ], ResponseInterface::HTTP_OK);
-        } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+        } catch (Exception $th) {
+            log_message("error", $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
@@ -761,7 +760,7 @@ class HousemanshipController extends ResourceController
 
             return $this->respond(['message' => "Housemanship posting created successfully for {$data['license_number']}", 'data' => ""], ResponseInterface::HTTP_OK);
         } catch (Exception $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
@@ -840,7 +839,7 @@ class HousemanshipController extends ResourceController
 
             return $this->respond(['message' => "Housemanship posting updated successfully for {$data['license_number']}", 'data' => ""], ResponseInterface::HTTP_OK);
         } catch (Exception $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
@@ -862,7 +861,7 @@ class HousemanshipController extends ResourceController
 
             return $this->respond(['message' => 'Housemanship posting deleted successfully'], ResponseInterface::HTTP_OK);
         } catch (Exception $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
 
@@ -886,8 +885,8 @@ class HousemanshipController extends ResourceController
             return $this->respond([
                 'data' => $total
             ], ResponseInterface::HTTP_OK);
-        } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+        } catch (Exception $th) {
+            log_message("error", $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -919,8 +918,8 @@ class HousemanshipController extends ResourceController
 
             return $this->respond(['data' => $data, 'displayColumns' => $model->getDisplayColumns()], ResponseInterface::HTTP_OK);
 
-        } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+        } catch (Exception $th) {
+            log_message("error", $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
 
         }
@@ -1005,8 +1004,8 @@ class HousemanshipController extends ResourceController
                 'displayColumns' => $displayColumns,
                 'columnFilters' => $model->getDisplayColumnFilters()
             ], ResponseInterface::HTTP_OK);
-        } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+        } catch (Exception $th) {
+            log_message("error", $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
@@ -1048,8 +1047,8 @@ class HousemanshipController extends ResourceController
             return $this->respond([
                 'data' => $mainFields
             ], ResponseInterface::HTTP_OK);
-        } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+        } catch (Exception $th) {
+            log_message("error", $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
@@ -1131,7 +1130,7 @@ class HousemanshipController extends ResourceController
 
             return $this->respond(['message' => "Housemanship application created successfully for {$data['license_number']}", 'data' => ""], ResponseInterface::HTTP_OK);
         } catch (Exception $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
@@ -1220,7 +1219,7 @@ class HousemanshipController extends ResourceController
 
             return $this->respond(['message' => "Housemanship application updated successfully for {$data['license_number']}", 'data' => ""], ResponseInterface::HTTP_OK);
         } catch (Exception $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
@@ -1242,7 +1241,7 @@ class HousemanshipController extends ResourceController
 
             return $this->respond(['message' => 'Housemanship posting application deleted successfully'], ResponseInterface::HTTP_OK);
         } catch (Exception $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
 
@@ -1266,8 +1265,8 @@ class HousemanshipController extends ResourceController
             return $this->respond([
                 'data' => $total
             ], ResponseInterface::HTTP_OK);
-        } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+        } catch (Exception $th) {
+            log_message("error", $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -1297,8 +1296,8 @@ class HousemanshipController extends ResourceController
 
             return $this->respond(['data' => $data, 'displayColumns' => $model->getDisplayColumns()], ResponseInterface::HTTP_OK);
 
-        } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+        } catch (Exception $th) {
+            log_message("error", $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
 
         }
@@ -1310,7 +1309,7 @@ class HousemanshipController extends ResourceController
             $per_page = $this->request->getVar('limit') ? (int) $this->request->getVar('limit') : 100;
             $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
             $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted') === "yes";
-            $param = $this->request->getVar('param');
+            $param = $this->request->getVar('param') ?? null;
             $sortBy = $this->request->getVar('sortBy') ?? "id";
             $sortOrder = $this->request->getVar('sortOrder') ?? "asc";
 
@@ -1320,8 +1319,8 @@ class HousemanshipController extends ResourceController
             $filterArray = $model->createArrayFromAllowedFields((array) $this->request->getGet());
             // Validate inputs here
             $tableName = $model->table;
-            $builder = $param ? $model->search($param) : $model->builder()->select("$tableName.*");
-            $builder = $model->addPractitionerDetailsFields($builder);
+            $builder = !empty($param) ? $model->search($param)->select("$tableName.*") : $model->builder()->select("$tableName.*");
+            $builder = $model->addPractitionerDetailsFields($builder, empty($param));
             array_map(function ($value, $key) use ($builder, $tableName) {
                 $builder->where($tableName . "." . $key, $value);
             }, $filterArray, array_keys($filterArray));
@@ -1333,6 +1332,7 @@ class HousemanshipController extends ResourceController
             }
 
             $totalBuilder = clone $builder;
+
             $total = $totalBuilder->countAllResults();
             $displayColumns = $model->getDisplayColumns();
             // 1. Get parent records (housemanship applications)
@@ -1383,8 +1383,8 @@ class HousemanshipController extends ResourceController
                 'displayColumns' => $displayColumns,
                 'columnFilters' => $model->getDisplayColumnFilters()
             ], ResponseInterface::HTTP_OK);
-        } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+        } catch (Exception $th) {
+            log_message("error", $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
@@ -1426,8 +1426,8 @@ class HousemanshipController extends ResourceController
             return $this->respond([
                 'data' => $mainFields
             ], ResponseInterface::HTTP_OK);
-        } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+        } catch (Exception $th) {
+            log_message("error", $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
@@ -1485,7 +1485,7 @@ class HousemanshipController extends ResourceController
                     $activitiesModel->logActivity("Approved housemanship posting application for year {$existingApplication['session']} posting for {$existingApplication['license_number']}", $user, "housemanship");
 
                 }
-            } catch (\Throwable $th) {
+            } catch (Exception $th) {
                 log_message("error", $th);
                 $results[] = [
                     'successful' => false,
@@ -1495,7 +1495,7 @@ class HousemanshipController extends ResourceController
 
             return $this->respond(['message' => "Housemanship posting", 'data' => $results], ResponseInterface::HTTP_OK);
         } catch (Exception $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
@@ -1545,7 +1545,7 @@ class HousemanshipController extends ResourceController
 
 
     //         return $this->respond(['message' => 'Renewal updated successfully', 'data' => $results], ResponseInterface::HTTP_OK);
-    //     } catch (\Throwable $th) {
+    //     } catch (Exception $th) {
     //         log_message("error", $th->getMessage());
     //         return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_BAD_REQUEST);
     //     }
