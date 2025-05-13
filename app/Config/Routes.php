@@ -60,7 +60,7 @@ $routes->group("print-queue", ["namespace" => "App\Controllers", "filter" => "ap
 });
 
 $routes->group("activities", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
-    $routes->get("", [ActivitiesController::class, "index"], ["filter" => ["hasPermission:View Activities"]]);
+    $routes->get("", [ActivitiesController::class, "index"], ["filter" => ["hasPermission:View_Activities"]]);
 });
 
 $routes->group("admin", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
@@ -216,7 +216,6 @@ $routes->group("cpd", ["namespace" => "App\Controllers", "filter" => "apiauth"],
 
     $routes->get("license-attendance", [CpdController::class, "getLicenseCpdAttendances"], ["filter" => ["hasPermission:View_CPD_Attendance"]], );
 });
-//TODO: add the housemanship permissions
 $routes->group("housemanship", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
     $routes->get("facilities/details/form", [HousemanshipController::class, "getHousemanshipFacilityFormFields"], ["filter" => ["hasPermission:Create_Or_Update_Housemanship_Facilities"]]);
     $routes->get("facilities/capacities", [HousemanshipController::class, "getHousemanshipFacilityCapacities"], ["filter" => ["hasPermission:View_Housemanship_Facilities"]]);
@@ -261,9 +260,10 @@ $routes->group("housemanship", ["namespace" => "App\Controllers", "filter" => "a
     $routes->delete("posting-application/(:segment)", [HousemanshipController::class, "deleteHousemanshipPostingApplication/$1"], ["filter" => ["hasPermission:Delete_Housemanship_Posting_Applications"]]);
     $routes->post("posting-application", [HousemanshipController::class, "createHousemanshipPostingApplication"], ["filter" => ["hasPermission:Create_Or_Update_Housemanship_Posting_Applications"]]);
     $routes->get("posting-application", [HousemanshipController::class, "getHousemanshipPostingApplications"], ["filter" => ["hasPermission:View_Housemanship_Posting_Applications"]]);
+    $routes->get("posting-application/count/", [HousemanshipController::class, "getHousemanshipPostingApplicationsCount"], ["filter" => ["hasPermission:View_Housemanship_Posting_Applications"]]);
+    $routes->post("posting-application/approve", [HousemanshipController::class, "approveHousemanshipPostingApplications"], ["filter" => ["hasPermission:Create_Or_Update_Housemanship_Postings"]]);
     $routes->get("posting-application/(:segment)", [HousemanshipController::class, "getHousemanshipPostingApplication/$1"], ["filter" => ["hasPermission:View_Housemanship_Posting_Applications"]]);
     $routes->put("posting-application/(:segment)", [HousemanshipController::class, "updateHousemanshipPostingApplication/$1"], ["filter" => ["hasPermission:Create_Or_Update_Housemanship_Posting_Applications"]]);
-    $routes->post("posting-application/approve", [HousemanshipController::class, "approveHousemanshipPostingApplications"], ["filter" => ["hasPermission:Create_Or_Update_Housemanship_Postings"]]);
 
 
 });

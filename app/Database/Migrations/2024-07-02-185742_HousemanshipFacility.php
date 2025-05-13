@@ -87,9 +87,9 @@ class HousemanshipFacility extends Migration
 
         $this->forge->addKey('id', true);
         $this->forge->addKey('name', false, true);
-        $this->forge->addKey('type', false, true);
-        $this->forge->addKey('region', false, true);
-        
+        $this->forge->addKey('type', false, false);
+        $this->forge->addKey('region', false, false);
+
         $this->forge->createTable('housemanship_facilities', true);
         $trigger = "
        CREATE TRIGGER before_insert_housemanship_facility

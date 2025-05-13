@@ -941,7 +941,7 @@ class HousemanshipController extends ResourceController
             $filterArray = $model->createArrayFromAllowedFields((array) $this->request->getGet());
             // Validate inputs here
             $tableName = $model->table;
-            $builder = $param ? $model->search($param) : $model->builder()->select("$tableName.*");
+            $builder = $param ? $model->search($param)->select("$tableName.*") : $model->builder()->select("$tableName.*");
             $builder = $model->addPractitionerDetailsFields($builder);
             array_map(function ($value, $key) use ($builder, $tableName) {
                 $builder->where($tableName . "." . $key, $value);
@@ -1382,6 +1382,42 @@ class HousemanshipController extends ResourceController
                 'total' => $total,
                 'displayColumns' => $displayColumns,
                 'columnFilters' => $model->getDisplayColumnFilters()
+            ], ResponseInterface::HTTP_OK);
+        } catch (Exception $th) {
+            log_message("error", $th);
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+    }
+
+    public function getHousemanshipPostingApplicationsCount()
+    {
+        try {
+
+            $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted') === "yes";
+            $param = $this->request->getVar('param') ?? null;
+
+            $model = new HousemanshipApplicationModel();
+
+            $filterArray = $model->createArrayFromAllowedFields((array) $this->request->getGet());
+            // Validate inputs here
+            $tableName = $model->table;
+            $builder = !empty($param) ? $model->search($param)->select("$tableName.*") : $model->builder()->select("$tableName.*");
+            $builder = $model->addPractitionerDetailsFields($builder, empty($param));
+            array_map(function ($value, $key) use ($builder, $tableName) {
+                $builder->where($tableName . "." . $key, $value);
+            }, $filterArray, array_keys($filterArray));
+
+
+            if ($withDeleted) {
+                $model->withDeleted();
+            }
+            $count = $builder->countAllResults();
+
+
+
+            return $this->respond([
+                'data' => $count,
+
             ], ResponseInterface::HTTP_OK);
         } catch (Exception $th) {
             log_message("error", $th);

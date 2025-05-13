@@ -1,9 +1,9 @@
 #IMPORTANT:  CHECK THE NAMES OF THE DATABASES AND TABLES
-#ci4_mdc3 should be the name of the database that you are migrating to
+#ci4_mdc4 should be the name of the database that you are migrating to
 #mdc should be the name of the database that you are migrating from
 #IMPORT SETTINGS#
 INSERT INTO
-    ci4_mdc3.`settings` (
+    ci4_mdc4.`settings` (
         `key`,
         `value`,
         `class`,
@@ -28,7 +28,7 @@ VALUES
 #END IMPORT SETTINGS#
 #IMPORT REGIONS#
 INSERT INTO
-    ci4_mdc3.`regions` (`name`)
+    ci4_mdc4.`regions` (`name`)
 SELECT
     `name`
 FROM
@@ -41,7 +41,7 @@ VALUES
 #END IMPORT REGIONS#
 #-IMPORT DISTRICTS#
 INSERT INTO
-    ci4_mdc3.`districts` (`district`, `region`)
+    ci4_mdc4.`districts` (`district`, `region`)
 SELECT
     `district`,
     (
@@ -58,7 +58,7 @@ FROM
 #END IMPORT DISTRICTS#
 #IMPORT SPECIALTIES#
 INSERT INTO
-    ci4_mdc3.`specialties` (`name`)
+    ci4_mdc4.`specialties` (`name`)
 SELECT
     `name`
 FROM
@@ -67,7 +67,7 @@ FROM
 #END IMPORT SPECIALTIES#
 #IMPORT SUBSPECIALTIES#
 INSERT INTO
-    ci4_mdc3.`subspecialties` (`subspecialty`, `specialty`)
+    ci4_mdc4.`subspecialties` (`subspecialty`, `specialty`)
 SELECT
     `subspecialty`,
     (
@@ -84,7 +84,7 @@ FROM
 #END IMPORT SUBSPECIALTIES#
 #IMPORT ROLES#
 INSERT INTO
-    ci4_mdc3.`roles` (`role_name`, `description`)
+    ci4_mdc4.`roles` (`role_name`, `description`)
 SELECT
     `role_name`,
     `description`
@@ -98,7 +98,7 @@ VALUES
 #END IMPORT ROLES#
 #IMPORT USERS#
 INSERT
-    IGNORE INTO ci4_mdc3.`users` (
+    IGNORE INTO ci4_mdc4.`users` (
         `username`,
         `regionId`,
         `position`,
@@ -130,7 +130,7 @@ FROM
 #END IMPORT USERS#
 #migration for doctors. import the data from the old database to the licenses table
 INSERT INTO
-    ci4_mdc3.`licenses`(
+    ci4_mdc4.`licenses`(
         `uuid`,
         `license_number`,
         `name`,
@@ -170,15 +170,18 @@ SELECT
         WHEN d.id IS NULL THEN NULL
         ELSE NULLIF(bf_doctor.district, '')
     END as district,
-    register_type,
+    register_type
 from
     mdc.bf_doctor
-    LEFT JOIN ci4_mdc3.districts d ON d.district = bf_doctor.district;
+    LEFT JOIN ci4_mdc4.districts d ON d.district = bf_doctor.district
+WHERE
+    mdc.bf_doctor.registration_number IS NOT NULL
+    AND mdc.bf_doctor.registration_number != '';
 
 ########-END DOCTORS LICENSE MIGRATION#######-
 ##MIGRATE DOCTORS DETAILS INTO THE PRACTITIONERS TABLE##
 INSERT INTO
-    ci4_mdc3.`practitioners`(
+    ci4_mdc4.`practitioners`(
         `first_name`,
         `middle_name`,
         `last_name`,
@@ -271,7 +274,7 @@ from
 ####-END DOCTORS MIGRATION#######-
 #-migration for physician assistants
 INSERT INTO
-    ci4_mdc3.`licenses`(
+    ci4_mdc4.`licenses`(
         `uuid`,
         `license_number`,
         `name`,
@@ -285,7 +288,8 @@ INSERT INTO
         `portal_access`,
         `created_on`,
         `region`,
-        `district` `register_type`
+        `district`,
+        `register_type`
     )
 SELECT
     '',
@@ -313,10 +317,13 @@ SELECT
     register_type
 from
     mdc.bf_physician_assistant
-    LEFT JOIN ci4_mdc3.districts d ON d.district = bf_physician_assistant.district;
+    LEFT JOIN ci4_mdc4.districts d ON d.district = bf_physician_assistant.district
+WHERE
+    mdc.bf_physician_assistant.registration_number IS NOT NULL
+    AND mdc.bf_physician_assistant.registration_number != '';
 
 INSERT INTO
-    ci4_mdc3.`practitioners`(
+    ci4_mdc4.`practitioners`(
         `first_name`,
         `middle_name`,
         `last_name`,
@@ -383,7 +390,7 @@ from
 ######END PHYSICIAN ASSISTANTS MIGRATION#######-
 #-doctors renewal. the renewal is split into the licenses_renewal and practitioners_renewal. the licenses_renewal is the main table that holds the renewal data and the practitioners_renewal is the table that holds the additional data for the practitioners
 INSERT INTO
-    ci4_mdc3.`license_renewal`(
+    ci4_mdc4.`license_renewal`(
         `license_number`,
         `created_by`,
         `created_on`,
@@ -422,10 +429,9 @@ from
     mdc.bf_retention;
 
 #############END DOCTORS RENEWAL MIGRATION###########
-#########-END UPDATE LICENSE UUID#########-
 #update the license_renewal table to add the data_snapshot data . this should be a json object with all the data from the licenses + practitioners table
 UPDATE
-    ci4_mdc3.`license_renewal`
+    ci4_mdc4.`license_renewal`
 SET
     `data_snapshot` = (
         SELECT
@@ -478,7 +484,7 @@ WHERE
 #############-END UPDATE LICENSE DATA SNAPSHOT###########
 #UPDATE SNAPSHOT BASED ON PROVISIONAL NUMBER##
 UPDATE
-    ci4_mdc3.`license_renewal`
+    ci4_mdc4.`license_renewal`
 SET
     `data_snapshot` = (
         SELECT
@@ -521,9 +527,18 @@ SET
                 `picture`
             ) as data_snapshot
         FROM
-            mdc.`bf_doctor`
+            mdc.`bf_doctor` d1
         WHERE
-            mdc.`bf_doctor`.`provisional_number` = `license_renewal`.`license_number` ##THIS SUBQUERY RETURNS MORE THAN ONE ROW. NEED TO FIX THIS
+            d1.`provisional_number` = `license_renewal`.`license_number`
+            AND NOT EXISTS (
+                SELECT
+                    1
+                FROM
+                    mdc.`bf_doctor` d2
+                WHERE
+                    d2.`provisional_number` = `license_renewal`.`license_number`
+                    AND d2.`id` != d1.`id`
+            )
     )
 WHERE
     `data_snapshot` IS NULL;
@@ -533,7 +548,7 @@ WHERE
 ########-PHYSICIAN ASSISTANTS RENEWAL########-
 #-physician assistants renewal. the renewal is split into the licenses_renewal and practitioners_renewal. the licenses_renewal is the main table that holds the renewal data and the practitioners_renewal is the table that holds the additional data for the practitioners
 INSERT INTO
-    ci4_mdc3.`license_renewal`(
+    ci4_mdc4.`license_renewal`(
         `license_number`,
         `created_by`,
         `created_on`,
@@ -582,7 +597,7 @@ FROM
 
 # Update using the temporary table
 UPDATE
-    ci4_mdc3.license_renewal lr
+    ci4_mdc4.license_renewal lr
     JOIN temp_license_map tlm ON tlm.license_number = lr.license_number
 SET
     lr.license_uuid = tlm.uuid
@@ -608,7 +623,7 @@ WHERE
 
 # Update using the temporary table
 UPDATE
-    ci4_mdc3.license_renewal lr
+    ci4_mdc4.license_renewal lr
     JOIN temp_license_map tlm ON tlm.license_number = lr.license_number
 SET
     lr.license_uuid = tlm.uuid
@@ -621,7 +636,7 @@ DROP TEMPORARY TABLE temp_license_map;
 #########-END UPDATE LICENSE UUID#########-
 #update the license_renewal table to add the data_snapshot data .for PAs this should be a json object with all the data from the licenses + practitioners table
 UPDATE
-    ci4_mdc3.`license_renewal`
+    ci4_mdc4.`license_renewal`
 SET
     `data_snapshot` = (
         SELECT
@@ -681,7 +696,7 @@ SELECT
     l.id AS renewal_id
 FROM
     mdc.bf_retention b
-    JOIN ci4_mdc3.license_renewal l ON b.reg_num = l.license_number
+    JOIN ci4_mdc4.license_renewal l ON b.reg_num = l.license_number
     and b.created_on = l.created_on
 WHERE
     l.license_type = 'practitioners';
@@ -693,7 +708,7 @@ ADD
     INDEX (reg_num);
 
 INSERT INTO
-    ci4_mdc3.practitioners_renewal(
+    ci4_mdc4.practitioners_renewal(
         `renewal_id`,
         # Adding the parent ID
         `license_number`,
@@ -733,7 +748,7 @@ SELECT
     l.id AS renewal_id
 FROM
     mdc.bf_pa_retention b
-    JOIN ci4_mdc3.license_renewal l ON b.reg_num = l.license_number
+    JOIN ci4_mdc4.license_renewal l ON b.reg_num = l.license_number
     and b.created_on = l.created_on
 WHERE
     l.license_type = 'practitioners';
@@ -745,7 +760,7 @@ ADD
     INDEX (reg_num);
 
 INSERT INTO
-    ci4_mdc3.practitioners_renewal(
+    ci4_mdc4.practitioners_renewal(
         `renewal_id`,
         # Adding the parent ID
         `license_number`,
@@ -774,7 +789,7 @@ DROP TEMPORARY TABLE temp_renewal_mapping;
 ############import applications##########
 #IMPORT PERMANENT REGISTRATIONS##
 INSERT INTO
-    ci4_mdc3.`application_forms` (
+    ci4_mdc4.`application_forms` (
         picture,
         first_name,
         last_name,
@@ -960,7 +975,7 @@ FROM
 ##END PERMANENT REGISTRATIONS##
 # IMPORT TEMPORARY REGISTRATIONS##
 INSERT INTO
-    ci4_mdc3.`application_forms` (
+    ci4_mdc4.`application_forms` (
         picture,
         first_name,
         last_name,
@@ -1148,7 +1163,7 @@ FROM
 ##END TEMPORARY REGISTRATIONS##
 ##PROVISIONAL REGISTRATIONS##
 INSERT INTO
-    ci4_mdc3.`application_forms` (
+    ci4_mdc4.`application_forms` (
         picture,
         first_name,
         last_name,
@@ -1308,7 +1323,7 @@ SET
     );
 
 INSERT INTO
-    ci4_mdc3.`application_forms` (
+    ci4_mdc4.`application_forms` (
         practitioner_type,
         form_type,
         last_name,
@@ -1340,7 +1355,7 @@ where
 #-END IMPORT APPLICATIONS#
 #IMPORT DOCTOR_ADDITIONAL_QUALIFICATIONS
 INSERT INTO
-    ci4_mdc3.`practitioner_additional_qualifications` (
+    ci4_mdc4.`practitioner_additional_qualifications` (
         `uuid`,
         `registration_number`,
         `institution`,
@@ -1376,7 +1391,7 @@ VALUES
 #END IMPORT DOCTOR_ADDITIONAL_QUALIFICATIONS#
 #IMPORT PA ADDITIONAL QUALIFICATIONS
 INSERT INTO
-    ci4_mdc3.`practitioner_additional_qualifications` (
+    ci4_mdc4.`practitioner_additional_qualifications` (
         `uuid`,
         `registration_number`,
         `institution`,
@@ -1399,7 +1414,7 @@ FROM
 #END IMPORT PA ADDITIONAL QUALIFICATIONS#
 #IMPORT DOCTOR WORK HISTORY#
 INSERT INTO
-    ci4_mdc3.`practitioner_work_history` (
+    ci4_mdc4.`practitioner_work_history` (
         `uuid`,
         `registration_number`,
         `institution`,
@@ -1426,10 +1441,12 @@ SELECT
     END as institution_type,
     `created_on`
 FROM
-    mdc.`bf_doctor_work_history` #END IMPORT DOCTOR WORK HISTORY#
-    #IMPORT PA WORK HISTORY#
+    mdc.`bf_doctor_work_history`;
+
+#END IMPORT DOCTOR WORK HISTORY#
+#IMPORT PA WORK HISTORY#
 INSERT INTO
-    ci4_mdc3.`practitioner_work_history` (
+    ci4_mdc4.`practitioner_work_history` (
         `uuid`,
         `registration_number`,
         `institution`,
@@ -1456,10 +1473,13 @@ SELECT
     END as institution_type,
     `created_on`
 FROM
-    mdc.`bf_pa_work_history` #END IMPORT PA WORK HISTORY#
-    #IMPORT CPD PROVIDERS#
+    mdc.`bf_pa_work_history`;
+
+#END IMPORT PA WORK HISTORY#
+#IMPORT CPD PROVIDERS#
+#BEFORE RUNNING THIS SCRIPT, MAKE SURE THE bf_cpd_facilities table has only unique names
 INSERT INTO
-    ci4_mdc3.`cpd_providers` (
+    ci4_mdc4.`cpd_providers` (
         `name`,
         `location`,
         `phone`,
@@ -1480,11 +1500,11 @@ SELECT
     mdc.`bf_cpd_facilities`.id as pid,
     uuid
 FROM
-    ci4_mdc3.`cpd_providers`
-    JOIN mdc.`bf_cpd_facilities` ON mdc.`bf_cpd_facilities`.name = ci4_mdc3.`cpd_providers`.name;
+    ci4_mdc4.`cpd_providers`
+    JOIN mdc.`bf_cpd_facilities` ON mdc.`bf_cpd_facilities`.name = ci4_mdc4.`cpd_providers`.name;
 
 INSERT INTO
-    ci4_mdc3.`cpd_topics` (
+    ci4_mdc4.`cpd_topics` (
         `topic`,
         `date`,
         `created_on`,
@@ -1536,12 +1556,12 @@ SELECT
     mdc.`bf_cpd`.id as cid,
     uuid
 FROM
-    ci4_mdc3.`cpd_topics`
-    JOIN mdc.`bf_cpd` ON mdc.`bf_cpd`.topic = ci4_mdc3.`cpd_topics`.topic
-    AND mdc.`bf_cpd`.created_on = ci4_mdc3.`cpd_topics`.created_on;
+    ci4_mdc4.`cpd_topics`
+    JOIN mdc.`bf_cpd` ON mdc.`bf_cpd`.topic = ci4_mdc4.`cpd_topics`.topic
+    AND mdc.`bf_cpd`.created_on = ci4_mdc4.`cpd_topics`.created_on;
 
 INSERT INTO
-    ci4_mdc3.`cpd_attendance` (
+    ci4_mdc4.`cpd_attendance` (
         `uuid`,
         `topic`,
         `attendance_date`,
@@ -1580,12 +1600,12 @@ SELECT
     mdc.`bf_cpd`.id as cid,
     uuid
 FROM
-    ci4_mdc3.`cpd_topics`
-    JOIN mdc.`bf_cpd` ON mdc.`bf_cpd`.topic = ci4_mdc3.`cpd_topics`.topic
-    AND mdc.`bf_cpd`.created_on = ci4_mdc3.`cpd_topics`.created_on;
+    ci4_mdc4.`cpd_topics`
+    JOIN mdc.`bf_cpd` ON mdc.`bf_cpd`.topic = ci4_mdc4.`cpd_topics`.topic
+    AND mdc.`bf_cpd`.created_on = ci4_mdc4.`cpd_topics`.created_on;
 
 INSERT INTO
-    ci4_mdc3.`cpd_attendance` (
+    ci4_mdc4.`cpd_attendance` (
         `uuid`,
         `topic`,
         `attendance_date`,
@@ -1624,12 +1644,12 @@ SELECT
     mdc.`bf_cpd`.id as cid,
     uuid
 FROM
-    ci4_mdc3.`cpd_topics`
-    JOIN mdc.`bf_cpd` ON mdc.`bf_cpd`.topic = ci4_mdc3.`cpd_topics`.topic
-    AND mdc.`bf_cpd`.created_on = ci4_mdc3.`cpd_topics`.created_on;
+    ci4_mdc4.`cpd_topics`
+    JOIN mdc.`bf_cpd` ON mdc.`bf_cpd`.topic = ci4_mdc4.`cpd_topics`.topic
+    AND mdc.`bf_cpd`.created_on = ci4_mdc4.`cpd_topics`.created_on;
 
 INSERT INTO
-    ci4_mdc3.`application_forms` (
+    ci4_mdc4.`application_forms` (
         picture,
         first_name,
         last_name,
@@ -1683,3 +1703,904 @@ SELECT
 FROM
     mdc.`bf_cpd_attendance_temp`
     JOIN mdc.`bf_cpd` ON mdc.`bf_cpd`.id = mdc.`bf_cpd_attendance_temp`.cpd_id;
+
+#IMPORT HOUSEMANSHIP FACILITIES##
+#BEFORE RUNNING THIS SCRIPT, MAKE SURE THE bf_intern_facilities table has only unique names
+INSERT
+    IGNORE INTO ci4_mdc4.`housemanship_facilities` (
+        `name`,
+        `location`,
+        `region`,
+        `type`,
+        `uuid`
+    )
+SELECT
+    `name`,
+    `location`,
+    `region`,
+    `type`,
+    '' as uuid
+FROM
+    mdc.`bf_intern_facilities`;
+
+#END IMPORT HOUSEMANSHIP FACILITIES#
+#IMPORT HOUSEMANSHIP FACILITY AVAILABILITY#
+#previously the availability was stored in the bf_intern_facilities table as columns. they now have their own table so they can be stored per year per facility
+INSERT
+    IGNORE INTO ci4_mdc4.`housemanship_facility_availability` (facility_name, year, category, available)
+SELECT
+    name AS facility_name,
+    2025 AS year,
+    'available' AS category,
+    CASE
+        WHEN available = 'Yes' THEN 1
+        ELSE 0
+    END AS available
+FROM
+    mdc.`bf_intern_facilities`;
+
+INSERT
+    IGNORE INTO ci4_mdc4.`housemanship_facility_availability` (facility_name, year, category, available)
+SELECT
+    name AS facility_name,
+    2025 AS year,
+    'medical' AS category,
+    CASE
+        WHEN medical = 'Yes' THEN 1
+        ELSE 0
+    END AS available
+FROM
+    mdc.`bf_intern_facilities`;
+
+INSERT
+    IGNORE INTO ci4_mdc4.`housemanship_facility_availability` (facility_name, year, category, available)
+SELECT
+    name AS facility_name,
+    2025 AS year,
+    'dental' AS category,
+    CASE
+        WHEN dental = 'Yes' THEN 1
+        ELSE 0
+    END AS available
+FROM
+    mdc.`bf_intern_facilities`;
+
+INSERT
+    IGNORE INTO ci4_mdc4.`housemanship_facility_availability` (facility_name, year, category, available)
+SELECT
+    name AS facility_name,
+    2025 AS year,
+    'available_pa_selection' AS category,
+    CASE
+        WHEN available_pa_selection = 'Yes' THEN 1
+        ELSE 0
+    END AS available
+FROM
+    mdc.`bf_intern_facilities`;
+
+INSERT
+    IGNORE INTO ci4_mdc4.`housemanship_facility_availability` (facility_name, year, category, available)
+SELECT
+    name AS facility_name,
+    2025 AS year,
+    'available_pa_medical_selection' AS category,
+    CASE
+        WHEN available_pa_medical_selection = 'Yes' THEN 1
+        ELSE 0
+    END AS available
+FROM
+    mdc.`bf_intern_facilities`;
+
+INSERT
+    IGNORE INTO ci4_mdc4.`housemanship_facility_availability` (facility_name, year, category, available)
+SELECT
+    name AS facility_name,
+    2025 AS year,
+    'available_pa_dental_selection' AS category,
+    CASE
+        WHEN available_pa_dental_selection = 'Yes' THEN 1
+        ELSE 0
+    END AS available
+FROM
+    mdc.`bf_intern_facilities`;
+
+INSERT
+    IGNORE INTO ci4_mdc4.`housemanship_facility_availability` (facility_name, year, category, available)
+SELECT
+    name AS facility_name,
+    2025 AS year,
+    'available_pa_cra_selection' AS category,
+    CASE
+        WHEN available_pa_cra_selection = 'Yes' THEN 1
+        ELSE 0
+    END AS available
+FROM
+    mdc.`bf_intern_facilities`;
+
+#END IMPORT HOUSEMANSHIP FACILITY AVAILABILITY#
+#IMPORT HOUSEMANSHIP CAPACITY#
+#ADD EACH DISCIPLINE FIRST THEN THE MAX CAPACITY
+INSERT
+    IGNORE INTO ci4_mdc4.`housemanship_disciplines` (name)
+VALUES
+    ('General medicine');
+
+INSERT
+    IGNORE INTO ci4_mdc4.`housemanship_facility_capacities` (facility_name, year, discipline, capacity)
+SELECT
+    name AS facility_name,
+    2025 AS year,
+    'General medicine' AS discipline,
+    general_medicine AS capacity
+FROM
+    mdc.`bf_intern_facilities`;
+
+INSERT
+    IGNORE INTO ci4_mdc4.`housemanship_disciplines` (name)
+VALUES
+    ('Surgery');
+
+INSERT
+    IGNORE INTO ci4_mdc4.`housemanship_facility_capacities` (facility_name, year, discipline, capacity)
+SELECT
+    name AS facility_name,
+    2025 AS year,
+    'Surgery' AS discipline,
+    surgery AS capacity
+FROM
+    mdc.`bf_intern_facilities`;
+
+INSERT
+    IGNORE INTO ci4_mdc4.`housemanship_disciplines` (name)
+VALUES
+    ('Obstetrics and gynaecology');
+
+INSERT
+    IGNORE INTO ci4_mdc4.`housemanship_facility_capacities` (facility_name, year, discipline, capacity)
+SELECT
+    name AS facility_name,
+    2025 AS year,
+    'Obstetrics
+and gynaecology' AS discipline,
+    gynae AS capacity
+FROM
+    mdc.`bf_intern_facilities`;
+
+INSERT
+    IGNORE INTO ci4_mdc4.`housemanship_disciplines` (name)
+VALUES
+    ('Paediatrics');
+
+INSERT
+    IGNORE INTO ci4_mdc4.`housemanship_facility_capacities` (facility_name, year, discipline, capacity)
+SELECT
+    name AS facility_name,
+    2025 AS year,
+    'Paediatrics' AS discipline,
+    paediatrics AS capacity
+FROM
+    mdc.`bf_intern_facilities`;
+
+INSERT
+    IGNORE INTO ci4_mdc4.`housemanship_disciplines` (name)
+VALUES
+    ('Psychiatry');
+
+INSERT
+    IGNORE INTO ci4_mdc4.`housemanship_facility_capacities` (facility_name, year, discipline, capacity)
+SELECT
+    name AS facility_name,
+    2025 AS year,
+    'Psychiatry' AS discipline,
+    psychiatry AS capacity
+FROM
+    mdc.`bf_intern_facilities`;
+
+INSERT
+    IGNORE INTO ci4_mdc4.`housemanship_disciplines` (name)
+VALUES
+    ('Anaesthesia');
+
+INSERT
+    IGNORE INTO ci4_mdc4.`housemanship_facility_capacities` (facility_name, year, discipline, capacity)
+SELECT
+    name AS facility_name,
+    2025 AS year,
+    'Anaesthesia' AS discipline,
+    anaesthesia AS capacity
+FROM
+    mdc.`bf_intern_facilities`;
+
+INSERT
+    IGNORE INTO ci4_mdc4.`housemanship_disciplines` (name)
+VALUES
+    ('Dentistry');
+
+INSERT
+    IGNORE INTO ci4_mdc4.`housemanship_facility_capacities` (facility_name, year, discipline, capacity)
+SELECT
+    name AS facility_name,
+    2025 AS year,
+    'Dentistry' AS discipline,
+    dentistry AS capacity
+FROM
+    mdc.`bf_intern_facilities`;
+
+INSERT
+    IGNORE INTO ci4_mdc4.`housemanship_disciplines` (name)
+VALUES
+    ('Emergency medicine');
+
+INSERT
+    IGNORE INTO ci4_mdc4.`housemanship_facility_capacities` (facility_name, year, discipline, capacity)
+SELECT
+    name AS facility_name,
+    2025 AS year,
+    'Emergency medicine' AS discipline,
+    emergency_medicine AS capacity
+FROM
+    mdc.`bf_intern_facilities`;
+
+#END IMPORT HOUSEMANSHIP CAPACITY#
+#IMPORT HOUSEMANSHIP POSTINGS SESSION 1#
+INSERT
+    IGNORE INTO ci4_mdc4.`housemanship_postings` (
+        uuid,
+        license_number,
+        type,
+        category,
+        session,
+        year,
+        created_at
+    )
+SELECT
+    '' as uuid,
+    `registration_number` as license_number,
+    `type`,
+    `category`,
+    '1' as session,
+    `year`,
+    `created_on` as created_at
+FROM
+    mdc.`bf_housemanship_posting`;
+
+#END IMPORT HOUSEMANSHIP POSTINGS SESSION 1#
+#IMPORT HOUSEMANSHIP POSTINGS SESSION 1 DETAILS#
+CREATE TEMPORARY TABLE temp_housemanship_posting_uuid_map AS
+SELECT
+    mdc.`bf_housemanship_posting`.id as posting_id,
+    uuid,
+    name,
+    region
+FROM
+    ci4_mdc4.`housemanship_postings`
+    JOIN mdc.`bf_housemanship_posting` ON mdc.`bf_housemanship_posting`.registration_number = ci4_mdc4.`housemanship_postings`.license_number
+    AND mdc.`bf_housemanship_posting`.created_on = ci4_mdc4.`housemanship_postings`.created_at
+    JOIN mdc.`bf_intern_facilities` ON mdc.`bf_intern_facilities`.id = mdc.`bf_housemanship_posting`.facility_id;
+
+;
+
+INSERT INTO
+    ci4_mdc4.`housemanship_postings_details` (
+        posting_uuid,
+        start_date,
+        end_date,
+        discipline,
+        facility_name,
+        facility_region
+    )
+SELECT
+    (
+        SELECT
+            uuid
+        FROM
+            temp_housemanship_posting_uuid_map
+        WHERE
+            posting_id = mdc.`bf_housemanship_posting`.id
+    ) as posting_uuid,
+    `start_date`,
+    `end_date`,
+    `discipline_1` as discipline,
+    (
+        SELECT
+            name
+        FROM
+            temp_housemanship_posting_uuid_map
+        WHERE
+            posting_id = mdc.`bf_housemanship_posting`.id
+    ) as facility_name,
+    (
+        SELECT
+            region
+        FROM
+            temp_housemanship_posting_uuid_map
+        WHERE
+            posting_id = mdc.`bf_housemanship_posting`.id
+    ) as facility_region
+FROM
+    mdc.`bf_housemanship_posting`;
+
+INSERT INTO
+    ci4_mdc4.`housemanship_postings_details` (
+        posting_uuid,
+        start_date,
+        end_date,
+        discipline,
+        facility_name,
+        facility_region
+    )
+SELECT
+    (
+        SELECT
+            uuid
+        FROM
+            temp_housemanship_posting_uuid_map
+        WHERE
+            posting_id = mdc.`bf_housemanship_posting`.id
+    ) as posting_uuid,
+    `discipline_2_start` as start_date,
+    `discipline_2_end` as end_date,
+    `discipline_2` as discipline,
+    (
+        SELECT
+            name
+        FROM
+            temp_housemanship_posting_uuid_map
+        WHERE
+            posting_id = mdc.`bf_housemanship_posting`.id
+    ) as facility_name,
+    (
+        SELECT
+            region
+        FROM
+            temp_housemanship_posting_uuid_map
+        WHERE
+            posting_id = mdc.`bf_housemanship_posting`.id
+    ) as facility_region
+FROM
+    mdc.`bf_housemanship_posting`;
+
+DROP TEMPORARY TABLE temp_housemanship_posting_uuid_map;
+
+#END IMPORT HOUSEMANSHIP POSTINGS SESSION 1 DETAILS#
+#IMPORT HOUSEMANSHIP POSTINGS SESSION 2#
+INSERT
+    IGNORE INTO ci4_mdc4.`housemanship_postings` (
+        uuid,
+        license_number,
+        type,
+        category,
+        session,
+        year,
+        created_at
+    )
+SELECT
+    '' as uuid,
+    `registration_number` as license_number,
+    `type`,
+    `category`,
+    '2' as session,
+    `year`,
+    `created_on` as created_at
+FROM
+    mdc.`bf_housemanship_2_posting`;
+
+#END IMPORT HOUSEMANSHIP POSTINGS SESSION 2#
+#IMPORT HOUSEMANSHIP POSTINGS SESSION 2 DETAILS#
+CREATE TEMPORARY TABLE temp_housemanship_posting_uuid_map AS
+SELECT
+    mdc.`bf_housemanship_2_posting`.id as posting_id,
+    uuid,
+    (
+        SELECT
+            name
+        FROM
+            mdc.`bf_intern_facilities`
+        WHERE
+            id = mdc.`bf_housemanship_2_posting`.discipline_1_facility
+    ) as facility_1_name,
+    (
+        SELECT
+            region
+        FROM
+            mdc.`bf_intern_facilities`
+        WHERE
+            id = mdc.`bf_housemanship_2_posting`.discipline_1_facility
+    ) as facility_1_region,
+    (
+        SELECT
+            name
+        FROM
+            mdc.`bf_intern_facilities`
+        WHERE
+            id = mdc.`bf_housemanship_2_posting`.discipline_2_facility
+    ) as facility_2_name,
+    (
+        SELECT
+            region
+        FROM
+            mdc.`bf_intern_facilities`
+        WHERE
+            id = mdc.`bf_housemanship_2_posting`.discipline_2_facility
+    ) as facility_2_region
+FROM
+    ci4_mdc4.`housemanship_postings`
+    JOIN mdc.`bf_housemanship_2_posting` ON mdc.`bf_housemanship_2_posting`.registration_number = ci4_mdc4.`housemanship_postings`.license_number
+    AND mdc.`bf_housemanship_2_posting`.created_on = ci4_mdc4.`housemanship_postings`.created_at;
+
+INSERT INTO
+    ci4_mdc4.`housemanship_postings_details` (
+        posting_uuid,
+        start_date,
+        end_date,
+        discipline,
+        facility_name,
+        facility_region
+    )
+SELECT
+    (
+        SELECT
+            uuid
+        FROM
+            temp_housemanship_posting_uuid_map
+        WHERE
+            posting_id = mdc.`bf_housemanship_2_posting`.id
+    ) as posting_uuid,
+    `discipline_1_start` as start_date,
+    `discipline_1_end` as end_date,
+    `discipline_1` as discipline,
+    (
+        SELECT
+            facility_1_name
+        FROM
+            temp_housemanship_posting_uuid_map
+        WHERE
+            posting_id = mdc.`bf_housemanship_2_posting`.id
+    ) as facility_name,
+    (
+        SELECT
+            facility_1_region
+        FROM
+            temp_housemanship_posting_uuid_map
+        WHERE
+            posting_id = mdc.`bf_housemanship_2_posting`.id
+    ) as facility_region
+FROM
+    mdc.`bf_housemanship_2_posting`;
+
+INSERT INTO
+    ci4_mdc4.`housemanship_postings_details` (
+        posting_uuid,
+        start_date,
+        end_date,
+        discipline,
+        facility_name,
+        facility_region
+    )
+SELECT
+    (
+        SELECT
+            uuid
+        FROM
+            temp_housemanship_posting_uuid_map
+        WHERE
+            posting_id = mdc.`bf_housemanship_2_posting`.id
+    ) as posting_uuid,
+    `discipline_2_start` as start_date,
+    `discipline_2_end` as end_date,
+    `discipline_2` as discipline,
+    (
+        SELECT
+            facility_2_name
+        FROM
+            temp_housemanship_posting_uuid_map
+        WHERE
+            posting_id = mdc.`bf_housemanship_2_posting`.id
+    ) as facility_name,
+    (
+        SELECT
+            facility_2_region
+        FROM
+            temp_housemanship_posting_uuid_map
+        WHERE
+            posting_id = mdc.`bf_housemanship_2_posting`.id
+    ) as facility_region
+FROM
+    mdc.`bf_housemanship_2_posting`;
+
+DROP TEMPORARY TABLE temp_housemanship_posting_uuid_map;
+
+#END IMPORT HOUSEMANSHIP POSTINGS SESSION 1 DETAILS#
+#UPDATE HOUSEMANSHIP POSTING PRACTITIONER DETAILS#
+UPDATE
+    ci4_mdc4.`housemanship_postings`
+SET
+    `practitioner_details` = (
+        SELECT
+            JSON_OBJECT(
+                'first_name',
+                `first_name`,
+                'middle_name',
+                `middle_name`,
+                'last_name',
+                `last_name`,
+                'date_of_birth',
+                `date_of_birth`,
+                'license_number',
+                `registration_number`,
+                'sex',
+                `sex`,
+                'title',
+                `title`,
+                'maiden_name',
+                `maiden_name`,
+                'marital_status',
+                `marital_status`,
+                'nationality',
+                `nationality`,
+                'qualification_at_registration',
+                `qualification_at_registration`,
+                'training_institution',
+                `training_institution`,
+                'qualification_date',
+                `qualification_date`,
+                'residential_address',
+                `residential_address`,
+                'register_type',
+                `register_type`,
+                'specialty',
+                `specialty`,
+                'category',
+                `category`,
+                'picture',
+                `picture`
+            ) as practitioner_details
+        FROM
+            mdc.`bf_doctor`
+        WHERE
+            mdc.`bf_doctor`.`registration_number` = ci4_mdc4.`housemanship_postings`.`license_number`
+            OR mdc.`bf_doctor`.`provisional_number` = ci4_mdc4.`housemanship_postings`.`license_number`
+        LIMIT
+            1
+    )
+WHERE
+    `practitioner_details` IS NULL;
+
+UPDATE
+    ci4_mdc4.`housemanship_postings`
+SET
+    `practitioner_details` = (
+        SELECT
+            JSON_OBJECT(
+                'first_name',
+                `first_name`,
+                'middle_name',
+                `middle_name`,
+                'last_name',
+                `last_name`,
+                'date_of_birth',
+                `date_of_birth`,
+                'license_number',
+                `registration_number`,
+                'sex',
+                `sex`,
+                'title',
+                `title`,
+                'maiden_name',
+                `maiden_name`,
+                'marital_status',
+                `marital_status`,
+                'nationality',
+                `nationality`,
+                'qualification_at_registration',
+                `qualification_at_registration`,
+                'training_institution',
+                `training_institution`,
+                'qualification_date',
+                `qualification_date`,
+                'residential_address',
+                `residential_address`,
+                'register_type',
+                `register_type`,
+                'specialty',
+                `specialty`,
+                'category',
+                `category`,
+                'picture',
+                `picture`
+            ) as practitioner_details
+        FROM
+            mdc.`bf_physician_assistant`
+        WHERE
+            mdc.`bf_physician_assistant`.`registration_number` = ci4_mdc4.`housemanship_postings`.`license_number`
+            OR mdc.`bf_physician_assistant`.`provisional_number` = ci4_mdc4.`housemanship_postings`.`license_number`
+        LIMIT
+            1
+    )
+WHERE
+    `practitioner_details` IS NULL
+    AND `type` = 'PA';
+
+#END UPDATE HOUSEMANSHIP POSTING PRACTITIONER DETAILS#
+#UPDATE HOUSEMANSHIP POSTING DETAILS FACILITY DETAILS#
+UPDATE
+    ci4_mdc4.`housemanship_postings_details`
+SET
+    `facility_details` = (
+        SELECT
+            JSON_OBJECT(
+                'name',
+                `name`,
+                'region',
+                `region`,
+                'location',
+                `location`,
+                'type',
+                `type`
+            ) as facility_details
+        FROM
+            ci4_mdc4.`housemanship_facilities`
+        WHERE
+            ci4_mdc4.`housemanship_postings_details`.facility_name = ci4_mdc4.`housemanship_facilities`.`name`
+    )
+WHERE
+    `facility_details` IS NULL;
+
+#END UPDATE HOUSEMANSHIP POSTING DETAILS FACILITY DETAILS#
+#IMPORT HOUSEMANSHIP POSTING APPLICATIONS##
+INSERT INTO
+    ci4_mdc4.`housemanship_postings_applications` (
+        uuid,
+        license_number,
+        type,
+        year,
+        created_at,
+        session,
+        status,
+        date,
+        tags,
+        category
+    )
+SELECT
+    '' as uuid,
+    `registration_number` as license_number,
+    `type`,
+    year(date) as year,
+    `created_on` as created_at,
+    `session`,
+    'Pending approval' as status,
+    `date`,
+    `extra_info` as tags,
+    `category`
+FROM
+    mdc.`bf_housemanship_application`;
+
+#END IMPORT HOUSEMANSHIP POSTING APPLICATIONS#
+#IMPORT HOUSEMANSHIP POSTING APPLICATIONS DETAILS##
+CREATE TEMPORARY TABLE temp_housemanship_posting_application_uuid_map AS
+SELECT
+    mdc.`bf_housemanship_application`.id as application_id,
+    uuid
+FROM
+    ci4_mdc4.`housemanship_postings_applications`
+    JOIN mdc.`bf_housemanship_application` ON mdc.`bf_housemanship_application`.registration_number = ci4_mdc4.`housemanship_postings_applications`.license_number
+    AND mdc.`bf_housemanship_application`.created_on = ci4_mdc4.`housemanship_postings_applications`.created_at;
+
+INSERT INTO
+    ci4_mdc4.`housemanship_postings_application_details` (
+        application_uuid,
+        first_choice,
+        first_choice_region,
+        second_choice,
+        second_choice_region
+    )
+SELECT
+    (
+        SELECT
+            uuid
+        FROM
+            temp_housemanship_posting_application_uuid_map
+        WHERE
+            application_id = mdc.`bf_housemanship_application`.id
+    ) as application_uuid,
+    (
+        SELECT
+            name
+        FROM
+            mdc.`bf_intern_facilities`
+        WHERE
+            first_choice = mdc.`bf_intern_facilities`.id
+    ) as first_choice,
+    (
+        SELECT
+            region
+        FROM
+            mdc.`bf_intern_facilities`
+        WHERE
+            first_choice = mdc.`bf_intern_facilities`.id
+    ) as first_choice_region,
+    (
+        SELECT
+            name
+        FROM
+            mdc.`bf_intern_facilities`
+        WHERE
+            second_choice = mdc.`bf_intern_facilities`.id
+    ) as second_choice,
+    (
+        SELECT
+            region
+        FROM
+            mdc.`bf_intern_facilities`
+        WHERE
+            second_choice = mdc.`bf_intern_facilities`.id
+    ) as second_choice_region
+FROM
+    mdc.`bf_housemanship_application`;
+
+DROP TEMPORARY TABLE temp_housemanship_posting_application_uuid_map;
+
+#END IMPORT HOUSEMANSHIP POSTING APPLICATIONS DETAILS#
+#IMPORT HOUSEMANSHIP POSTING APPLICATIONS##
+INSERT INTO
+    ci4_mdc4.`housemanship_postings_applications` (
+        uuid,
+        license_number,
+        type,
+        year,
+        created_at,
+        session,
+        status,
+        date,
+        category
+    )
+SELECT
+    '' as uuid,
+    `registration_number` as license_number,
+    `type`,
+    year,
+    `created_on` as created_at,
+    '2' as session,
+    'Pending approval' as status,
+    `date`,
+    `category`
+FROM
+    mdc.`bf_housemanship_2_application`;
+
+#END IMPORT HOUSEMANSHIP POSTING APPLICATIONS#
+#IMPORT HOUSEMANSHIP POSTING APPLICATIONS DETAILS##
+#GET THE DISCIPLINES INTO THE HOUSEMANSHIP DISCIPLINES TABLE
+INSERT
+    IGNORE INTO ci4_mdc4.`housemanship_disciplines` (name)
+SELECT
+    `discipline_1` as name
+FROM
+    mdc.`bf_housemanship_2_application`;
+
+INSERT
+    IGNORE INTO ci4_mdc4.`housemanship_disciplines` (name)
+SELECT
+    `discipline_2` as name
+FROM
+    mdc.`bf_housemanship_2_application`;
+
+CREATE TEMPORARY TABLE temp_housemanship_posting_application_uuid_map AS
+SELECT
+    mdc.`bf_housemanship_2_application`.id as application_id,
+    uuid
+FROM
+    ci4_mdc4.`housemanship_postings_applications`
+    JOIN mdc.`bf_housemanship_2_application` ON mdc.`bf_housemanship_2_application`.registration_number = ci4_mdc4.`housemanship_postings_applications`.license_number
+    AND mdc.`bf_housemanship_2_application`.created_on = ci4_mdc4.`housemanship_postings_applications`.created_at;
+
+INSERT INTO
+    ci4_mdc4.`housemanship_postings_application_details` (
+        application_uuid,
+        discipline,
+        first_choice,
+        first_choice_region,
+        second_choice,
+        second_choice_region
+    )
+SELECT
+    (
+        SELECT
+            uuid
+        FROM
+            temp_housemanship_posting_application_uuid_map
+        WHERE
+            application_id = mdc.`bf_housemanship_2_application`.id
+    ) as application_uuid,
+    `discipline_1` as discipline,
+    (
+        SELECT
+            name
+        FROM
+            mdc.`bf_intern_facilities`
+        WHERE
+            discipline_1_first_choice = mdc.`bf_intern_facilities`.id
+    ) as first_choice,
+    (
+        SELECT
+            region
+        FROM
+            mdc.`bf_intern_facilities`
+        WHERE
+            discipline_1_first_choice = mdc.`bf_intern_facilities`.id
+    ) as first_choice_region,
+    (
+        SELECT
+            name
+        FROM
+            mdc.`bf_intern_facilities`
+        WHERE
+            discipline_1_second_choice = mdc.`bf_intern_facilities`.id
+    ) as second_choice,
+    (
+        SELECT
+            region
+        FROM
+            mdc.`bf_intern_facilities`
+        WHERE
+            discipline_1_second_choice = mdc.`bf_intern_facilities`.id
+    ) as second_choice_region
+FROM
+    mdc.`bf_housemanship_2_application`;
+
+INSERT INTO
+    ci4_mdc4.`housemanship_postings_application_details` (
+        application_uuid,
+        discipline,
+        first_choice,
+        first_choice_region,
+        second_choice,
+        second_choice_region
+    )
+SELECT
+    (
+        SELECT
+            uuid
+        FROM
+            temp_housemanship_posting_application_uuid_map
+        WHERE
+            application_id = mdc.`bf_housemanship_2_application`.id
+    ) as application_uuid,
+    `discipline_2` as discipline,
+    (
+        SELECT
+            name
+        FROM
+            mdc.`bf_intern_facilities`
+        WHERE
+            discipline_2_first_choice = mdc.`bf_intern_facilities`.id
+    ) as first_choice,
+    (
+        SELECT
+            region
+        FROM
+            mdc.`bf_intern_facilities`
+        WHERE
+            discipline_2_first_choice = mdc.`bf_intern_facilities`.id
+    ) as first_choice_region,
+    (
+        SELECT
+            name
+        FROM
+            mdc.`bf_intern_facilities`
+        WHERE
+            discipline_2_second_choice = mdc.`bf_intern_facilities`.id
+    ) as second_choice,
+    (
+        SELECT
+            region
+        FROM
+            mdc.`bf_intern_facilities`
+        WHERE
+            discipline_2_second_choice = mdc.`bf_intern_facilities`.id
+    ) as second_choice_region
+FROM
+    mdc.`bf_housemanship_2_application`;
+
+DROP TEMPORARY TABLE temp_housemanship_posting_application_uuid_map;
+
+#END IMPORT HOUSEMANSHIP POSTING APPLICATIONS DETAILS#

@@ -4,9 +4,11 @@ namespace App\Models;
 
 use CodeIgniter\Model;
 use CodeIgniter\Database\BaseBuilder;
+use App\Traits\JSONQueryTrait;
 
 class MyBaseModel extends Model
 {
+    use JSONQueryTrait;
     protected $table = "";
     protected $allowedFields = [];
     /**
