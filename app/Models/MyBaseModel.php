@@ -5,12 +5,14 @@ namespace App\Models;
 use CodeIgniter\Model;
 use CodeIgniter\Database\BaseBuilder;
 use App\Traits\JSONQueryTrait;
-
+use App\Traits\BaseBuilderJSONQueryTrait;
 class MyBaseModel extends Model
 {
     use JSONQueryTrait;
     protected $table = "";
     protected $allowedFields = [];
+
+
     /**
      * a list of tables to join with the model when getting details/searching. the key is the table name and the value is an array
      * specifying the fields and join condition

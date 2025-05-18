@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Controllers\BaseController;
+use App\Helpers\BaseBuilderJSONQueryUtil;
 use App\Helpers\PractitionerUtils;
 use App\Models\Applications\ApplicationsModel;
 use App\Models\Applications\ApplicationTemplateModel;
@@ -25,6 +26,7 @@ use App\Traits\CacheInvalidatorTrait;
 class ApplicationsController extends ResourceController
 {
     use CacheInvalidatorTrait;
+    protected $baseBuilderJsonQuery;
 
     private $primaryColumns = ['first_name', 'picture', 'last_name', 'middle_name', 'email', 'phone'];
     private function createFormMetaFromPayload(array $payload, string $form_type): array
@@ -335,6 +337,25 @@ class ApplicationsController extends ResourceController
             if ($form_type !== null) {
                 $builder->where('form_type', $form_type);
             }
+            //add a filter for fields from form_data. these fields will be prefixed with child_
+            /**
+             * @var array
+             */
+            $childParams = array_filter($this->request->getGet(), function ($key) {
+                return strpos($key, 'child_') === 0;
+            }, ARRAY_FILTER_USE_KEY);
+            // if childParams is not empty, search for the fields in form_data. this is a json field
+            if (!empty($childParams)) {
+                foreach ($childParams as $key => $value) {
+                    $field = str_replace('child_', '', $key);
+                    $builder = BaseBuilderJSONQueryUtil::whereJson(
+                        $builder,
+                        'form_data',
+                        $field,
+                        $value
+                    );
+                }
+            }
 
             // if ($withDeleted) {
             //     $model->withDeleted();
@@ -514,6 +535,25 @@ class ApplicationsController extends ResourceController
             }
             if ($form_type !== null) {
                 $builder->where('form_type', $form_type);
+            }
+            //add a filter for fields from form_data. these fields will be prefixed with child_
+            /**
+             * @var array
+             */
+            $childParams = array_filter($this->request->getGet(), function ($key) {
+                return strpos($key, 'child_') === 0;
+            }, ARRAY_FILTER_USE_KEY);
+            // if childParams is not empty, search for the fields in form_data. this is a json field
+            if (!empty($childParams)) {
+                foreach ($childParams as $key => $value) {
+                    $field = str_replace('child_', '', $key);
+                    $builder = BaseBuilderJSONQueryUtil::whereJson(
+                        $builder,
+                        'form_data',
+                        $field,
+                        $value
+                    );
+                }
             }
 
             $total = $builder->countAllResults();

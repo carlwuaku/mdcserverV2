@@ -1298,9 +1298,10 @@
                     "children": [],
                     "urlParams": {
                         "form_type": "Practitioners Provisional Registration Application",
-                        "status": "Pending Approval"
+                        "status": "Pending Approval",
+                        "child_type": "Doctor"
                     },
-                    "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Practitioners Provisional Registration Application",
+                    "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Practitioners Provisional Registration Application&child_type=Doctor",
                     "apiCountText": ""
                 },
                 {
@@ -1310,9 +1311,10 @@
                     "children": [],
                     "urlParams": {
                         "form_type": "Practitioners Permanent Registration Application",
-                        "status": "Pending Approval"
+                        "status": "Pending Approval",
+                        "child_type": "Doctor"
                     },
-                    "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Practitioners Permanent Registration Application",
+                    "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Practitioners Permanent Registration Application&child_type=Doctor",
                     "apiCountText": ""
                 },
                 {
@@ -1322,9 +1324,10 @@
                     "children": [],
                     "urlParams": {
                         "form_type": "Practitioners Temporary Registration Application",
-                        "status": "Pending Approval"
+                        "status": "Pending Approval",
+                        "child_type": "Doctor"
                     },
-                    "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Practitioners Temporary Registration Application",
+                    "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Practitioners Temporary Registration Application&child_type=Doctor",
                     "apiCountText": ""
                 },
                 {

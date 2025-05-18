@@ -192,11 +192,23 @@ class HousemanshipPostingsModel extends MyBaseModel implements TableDisplayInter
         return array_keys($sessionSetting);
     }
 
+    /**
+     * Adds practitioner details fields to the query builder.
+     *
+     * This function selects specific fields ('first_name', 'last_name', 'middle_name') 
+     * from a JSON column named 'practitioner_details' and adds them to the query builder.
+     * Each field is extracted from the JSON using JSON_UNQUOTE and JSON_EXTRACT 
+     * functions and is aliased with its original name.
+     *
+     * @param \CodeIgniter\Database\BaseBuilder $builder The query builder to which the fields are added
+     * @return \CodeIgniter\Database\BaseBuilder The modified query builder
+     */
+
     public function addPractitionerDetailsFields(BaseBuilder $builder)
     {
         $fields = ["first_name", "last_name", "middle_name"];
         foreach ($fields as $field) {
-            $builder->select('JSON_EXTRACT(practitioner_details, "$.' . $field . '") as ' . $field);
+            $builder->select('JSON_UNQUOTE(JSON_EXTRACT(practitioner_details, "$.' . $field . '")) as ' . $field);
         }
         return $builder;
     }
