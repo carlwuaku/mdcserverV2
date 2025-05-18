@@ -84,12 +84,12 @@ class Filters extends BaseConfig
                 'specialties/*',
                 'email/*',
                 'applications/*',
-                'activities/*',
                 'licenses/*',
                 'cpd/*',
                 'print-queue/*',
                 'guest/*',
-                'housemanship/*'
+                'housemanship/*',
+                'activities/*',
             ],
             'after' => [
                 'api/*',
@@ -100,12 +100,13 @@ class Filters extends BaseConfig
                 'specialties/*',
                 'email/*',
                 'applications/*',
-                'activities/*',
                 'licenses/*',
                 'cpd/*',
                 'print-queue/*',
                 'guest/*',
-                'housemanship/*'
+                'housemanship/*',
+                'activities/*',
+                'activities',
             ]
         ],
     ];

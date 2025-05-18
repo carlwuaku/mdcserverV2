@@ -203,7 +203,7 @@
             "title": "Housemanship",
             "active_children": false,
             "url": "",
-            "icon": "auto_stories_outlined",
+            "icon": "medical_services",
             "children": [
                 {
                     "title": "View/Search Postings",
@@ -224,8 +224,14 @@
                     "children": []
                 },
                 {
-                    "title": "Manage applications",
-                    "url": "/housemanship/posting-applications",
+                    "title": "Manage year 1 applications",
+                    "url": "/housemanship/posting-applications/1",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Manage year 2 applications",
+                    "url": "/housemanship/posting-applications/2",
                     "icon": "",
                     "children": []
                 },
@@ -288,7 +294,7 @@
             ]
         },
         {
-            "title": "Print Templates",
+            "title": "Print/Messaging Templates",
             "active_children": false,
             "url": "",
             "icon": "print",
@@ -1279,11 +1285,90 @@
     },
     "dashboardMenu": [
         {
-            "title": "Applications",
+            "title": "Doctors",
             "active_children": false,
             "url": "/applications/application-types",
             "icon": "list_alt",
-            "children": [],
+            "color": "green",
+            "children": [
+                {
+                    "title": "New Provisional Registrations",
+                    "url": "/applications",
+                    "icon": "",
+                    "children": [],
+                    "urlParams": {
+                        "form_type": "Practitioners Provisional Registration Application",
+                        "status": "Pending Approval",
+                        "child_type": "Doctor"
+                    },
+                    "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Practitioners Provisional Registration Application&child_type=Doctor",
+                    "apiCountText": ""
+                },
+                {
+                    "title": "New Permanent Registrations",
+                    "url": "/applications",
+                    "icon": "",
+                    "children": [],
+                    "urlParams": {
+                        "form_type": "Practitioners Permanent Registration Application",
+                        "status": "Pending Approval",
+                        "child_type": "Doctor"
+                    },
+                    "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Practitioners Permanent Registration Application&child_type=Doctor",
+                    "apiCountText": ""
+                },
+                {
+                    "title": "New Temporary Registrations",
+                    "url": "/applications",
+                    "icon": "",
+                    "children": [],
+                    "urlParams": {
+                        "form_type": "Practitioners Temporary Registration Application",
+                        "status": "Pending Approval",
+                        "child_type": "Doctor"
+                    },
+                    "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Practitioners Temporary Registration Application&child_type=Doctor",
+                    "apiCountText": ""
+                },
+                {
+                    "title": "New Portal Edits",
+                    "url": "/applications",
+                    "icon": "",
+                    "children": [],
+                    "urlParams": {
+                        "form_type": "Portal Edit",
+                        "status": "Pending Approval"
+                    },
+                    "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Portal Edit",
+                    "apiCountText": ""
+                },
+                {
+                    "title": "Renewals pending approval",
+                    "url": "/licenses/renewals-manage",
+                    "icon": "",
+                    "children": [],
+                    "urlParams": {
+                        "child_practitioner_type": "Doctor",
+                        "license_type": "practitioners",
+                        "status": "Pending Approval"
+                    },
+                    "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Pending Approval&child_practitioner_type=Doctor",
+                    "apiCountText": ""
+                },
+                {
+                    "title": "Renewals pending payment",
+                    "url": "/licenses/renewals-manage",
+                    "icon": "",
+                    "children": [],
+                    "urlParams": {
+                        "child_practitioner_type": "Doctor",
+                        "license_type": "practitioners",
+                        "status": "Pending Payment"
+                    },
+                    "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Pending Payment&child_practitioner_type=Doctor",
+                    "apiCountText": ""
+                }
+            ],
             "description": "Manage submitted applications",
             "apiCountUrl": "/applications/count?status=Pending Approval",
             "apiCountText": "New Applications"

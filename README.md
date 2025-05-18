@@ -65,7 +65,7 @@ Additionally, make sure that the following extensions are enabled in your PHP:
 # INSTALLING THIS SOFTWARE
 ## MIGRATION
 
-To properly install this, run the `migration -all` command in the terminal. This will run the Codeigniter Shield Migration which is required to set up the authentication tables.
+To properly install this, run the `php spark migration -all` command in the terminal. This will run the Codeigniter Shield Migration which is required to set up the authentication tables.
 
 --generate keys
 openssl genrsa -out private_key.pem 2048

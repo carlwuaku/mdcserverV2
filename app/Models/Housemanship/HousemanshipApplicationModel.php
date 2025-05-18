@@ -58,7 +58,16 @@ class HousemanshipApplicationModel extends MyBaseModel implements TableDisplayIn
         'license_number',
     ];
 
-
+    public $joinSearchFields = [
+        'table' => 'licenses',
+        'fields' => [
+            'name',
+            'license_number',
+            'email',
+            'phone'
+        ],
+        'joinCondition' => "licenses.license_number = housemanship_postings_applications.license_number",
+    ];
 
     public function getDisplayColumns(): array
     {
@@ -68,6 +77,8 @@ class HousemanshipApplicationModel extends MyBaseModel implements TableDisplayIn
             'last_name',
             'middle_name',
             'license_number',
+            'phone',
+            'email',
             'type',
             'category',
             'session',
@@ -109,15 +120,7 @@ class HousemanshipApplicationModel extends MyBaseModel implements TableDisplayIn
                 "value" => "",
                 "required" => false
             ],
-            [
-                "label" => "Session",
-                "name" => "session",
-                "type" => "select",
-                "hint" => "",
-                "options" => $this->getDistinctValuesAsKeyValuePairs('session'),
-                "value" => "",
-                "required" => false
-            ],
+
             [
                 "label" => "Year",
                 "name" => "year",
@@ -181,15 +184,35 @@ class HousemanshipApplicationModel extends MyBaseModel implements TableDisplayIn
         ];
     }
 
-    public function addPractitionerDetailsFields(BaseBuilder $builder)
+    /**
+     * Adds the practitioner details fields to the query builder.
+     * This method is used to join the practitioners and licenses tables to get the details of the practitioner.
+     * It selects the first name, last name, and middle name from the practitioners table and the phone and email from the licenses table.
+     * The join is done on the license_number field.
+     * The method returns the modified query builder.
+     * @param \CodeIgniter\Database\BaseBuilder $builder
+     * @param bool $joinLicenses Whether to join the licenses table or not. when a search is done, a join is done on the licenses table so it should be skipped here by setting it to false
+     * @return BaseBuilder
+     */
+    public function addPractitionerDetailsFields(BaseBuilder $builder, bool $joinLicensesTable = false)
     {
         $practitionersTable = "practitioners";
+        $practitionersTableFields = ["first_name", "last_name", "middle_name"];
+        $licensesTable = "licenses";
+        $licensesTableFields = ["phone", "email"];
 
-        $fields = ["first_name", "last_name", "middle_name"];
-        foreach ($fields as $field) {
+
+        foreach ($practitionersTableFields as $field) {
             $builder->select($practitionersTable . "." . $field);
         }
+        foreach ($licensesTableFields as $field) {
+            $builder->select($licensesTable . "." . $field);
+        }
         $builder->join($practitionersTable, "$practitionersTable.license_number = $this->table.license_number", "left");
+        if ($joinLicensesTable) {
+            $builder->join($licensesTable, "$licensesTable.license_number = $this->table.license_number", "left");
+        }
+
         return $builder;
     }
 

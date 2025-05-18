@@ -77,8 +77,7 @@ class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormIn
     }
 
     public $searchFields = [
-        'type',
-        'name',
+
         'license_number',
         'email',
         'phone',
@@ -568,7 +567,7 @@ class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormIn
         } else {
             $fields = [];
         }
-        $defaultFields =  [
+        $defaultFields = [
             new BasicStatisticsField("Year of registration", "year(registration_date) as year", "bar", "Year", "Number of licenses"),
             new BasicStatisticsField("Status", "status", "bar", "Status", "Number of licenses"),
             new BasicStatisticsField("Region", "region", "bar", "Region", "Number of licenses"),

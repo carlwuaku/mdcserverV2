@@ -33,7 +33,6 @@ class ApplicationFormActionHelper extends Utils
      */
     private static function sendEmailToApplicant($action, $data)
     {
-        log_message('info', 'Sending email to applicant');
         $templateModel = new TemplateEngineHelper();
         $content = $templateModel->process($action->config['template'], $data);
         $subject = $templateModel->process($action->config['subject'], $data);

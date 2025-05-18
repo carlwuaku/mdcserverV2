@@ -327,7 +327,7 @@ class LicensesController extends ResourceController
             if ($withDeleted) {
                 $model->withDeleted();
             }
-            // log_message("info", $model->builder()->getCompiledSelect(false));
+            // log_message("info", $builder->getCompiledSelect(false));
             $totalBuilder = clone $builder;
             $total = $totalBuilder->countAllResults();
             $result = $builder->get($per_page, $page)->getResult();
