@@ -7,7 +7,7 @@ namespace App\Traits;
  * 
  * Adds JSON query capabilities to CodeIgniter 4 Models using JSON_EXTRACT
  */
-trait JSONQueryTrait
+trait JsonQueryTrait
 {
     /**
      * Query a JSON field for equality
