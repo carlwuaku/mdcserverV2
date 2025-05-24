@@ -180,12 +180,18 @@ $routes->group("licenses", ["namespace" => "App\Controllers", "filter" => "apiau
     $routes->get("renewal", [LicensesController::class, "getRenewals"], ["filter" => ["hasPermission:View_License_Renewal"]]);
     $routes->get("renewal-form-fields/(:segment)", [LicensesController::class, "getLicenseRenewalFormFields"], ["filter" => ["hasPermission:Create_License_Renewal"]], );
     $routes->get("renewal-count", [LicensesController::class, "countRenewals"], ["filter" => ["hasPermission:View_License_Renewal"]], );
+    $routes->post("renewal-count", [LicensesController::class, "countRenewals"], ["filter" => ["hasPermission:View_License_Renewal"]], );
+
     $routes->get("renewal/license/(:segment)", [LicensesController::class, "getRenewals/$1"], ["filter" => ["hasPermission:View_License_Renewal"]], );
     $routes->get("renewal/(:segment)", [LicensesController::class, "getRenewal/$1"], ["filter" => ["hasPermission:View_License_Renewal"]], );
     $routes->post("renewal", [LicensesController::class, "createRenewal"], ["filter" => ["hasPermission:Create_License_Renewal"]]);
 
     $routes->get("reports/basic-statistics/(:segment)", [LicensesController::class, "getBasicStatistics/$1"], ["filter" => ["hasPermission:View_License_Details"]]);
     $routes->post("reports/basic-statistics/(:segment)", [LicensesController::class, "getBasicStatistics/$1"], ["filter" => ["hasPermission:View_License_Details"]]);
+
+    $routes->get("renewal-reports/basic-statistics/(:segment)", [LicensesController::class, "getRenewalBasicStatistics/$1"], ["filter" => ["hasPermission:View_License_Renewal"]]);
+    $routes->post("renewal-reports/basic-statistics/(:segment)", [LicensesController::class, "getRenewalBasicStatistics/$1"], ["filter" => ["hasPermission:View_License_Renewal"]]);
+
 });
 
 

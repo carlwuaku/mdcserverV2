@@ -106,6 +106,9 @@ class AdminController extends ResourceController
                 'districts' => 'districts',
                 'practitioners' => 'practitioners',
                 'facilities' => 'facilities',
+                'practitioners_renewal' => 'practitioners_renewal',
+                'license_renewal' => 'license_renewal',
+                'licenses' => 'licenses'
             ];
             //check if table is in the map
             if (!array_key_exists($table, $tableMap)) {

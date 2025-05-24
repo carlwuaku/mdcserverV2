@@ -518,7 +518,7 @@ SET
                 'residential_address',
                 `residential_address`,
                 'register_type',
-                `register_type`,
+                'provisional',
                 'specialty',
                 `specialty`,
                 'category',
@@ -544,6 +544,94 @@ WHERE
     `data_snapshot` IS NULL;
 
 ##END UPDATE SNAPSHOT BASED ON PROVISIONAL NUMBER##
+#UPDATE PRACTITIONER RENEWAL DETAILS BASED ON REGISTRATION NUMBER  FOR DOCTORS##
+UPDATE
+    ci4_mdc4.`practitioners_renewal` pr
+    JOIN mdc.`bf_doctor` d1 ON d1.`registration_number` = pr.`license_number`
+SET
+    pr.`first_name` = d1.`first_name`,
+    pr.`middle_name` = d1.`middle_name`,
+    pr.`last_name` = d1.`last_name`,
+    pr.`title` = d1.`title`,
+    pr.`maiden_name` = d1.`maiden_name`,
+    pr.`marital_status` = d1.`marital_status`,
+    pr.`category` = d1.`category`,
+    pr.`sex` = d1.`sex`,
+    pr.`practitioner_type` = 'Doctor',
+    pr.`register_type` = d1.`register_type`,
+    pr.`qualifications` = (
+        SELECT
+            CASE
+                WHEN COUNT(*) = 0 THEN '[]'
+                ELSE CONCAT(
+                    '[',
+                    GROUP_CONCAT(
+                        JSON_OBJECT(
+                            'qualification',
+                            q.`qualification`,
+                            'institution',
+                            q.`institution`,
+                            'start_date',
+                            q.`start_date`,
+                            'end_date',
+                            q.`end_date`
+                        ) SEPARATOR ','
+                    ),
+                    ']'
+                )
+            END
+        FROM
+            mdc.`bf_doctor_school` q
+        WHERE
+            q.`reg_num` = pr.`license_number`
+    );
+
+#############-END UPDATE PRACTITIONER RENEWAL DETAILS BASED ON REGISTRATION NUMBER###########
+#UPDATE  PRACTITIONER RENEWAL DETAILS BASED ON PROVISIONAL NUMBER##
+UPDATE
+    ci4_mdc4.`practitioners_renewal` pr
+    JOIN mdc.`bf_doctor` d1 ON d1.`registration_number` = pr.`license_number`
+SET
+    pr.`first_name` = d1.`first_name`,
+    pr.`middle_name` = d1.`middle_name`,
+    pr.`last_name` = d1.`last_name`,
+    pr.`title` = d1.`title`,
+    pr.`maiden_name` = d1.`maiden_name`,
+    pr.`marital_status` = d1.`marital_status`,
+    pr.`category` = d1.`category`,
+    pr.`sex` = d1.`sex`,
+    pr.`practitioner_type` = 'Doctor',
+    pr.`register_type` = 'Provisional',
+    pr.`qualifications` = (
+        SELECT
+            CASE
+                WHEN COUNT(*) = 0 THEN '[]'
+                ELSE CONCAT(
+                    '[',
+                    GROUP_CONCAT(
+                        JSON_OBJECT(
+                            'qualification',
+                            q.`qualification`,
+                            'institution',
+                            q.`institution`,
+                            'start_date',
+                            q.`start_date`,
+                            'end_date',
+                            q.`end_date`
+                        ) SEPARATOR ','
+                    ),
+                    ']'
+                )
+            END
+        FROM
+            mdc.`bf_doctor_school` q
+        WHERE
+            q.`reg_num` = pr.`license_number`
+    )
+WHERE
+    pr.`first_name` IS NULL;
+
+##END UPDATE PRACTITIONER RENEWAL DETAILS BASED ON PROVISIONAL NUMBER FOR DOCTORS##
 #########-END UPDATE PRACTITIONER RENEWAL#########-
 ########-PHYSICIAN ASSISTANTS RENEWAL########-
 #-physician assistants renewal. the renewal is split into the licenses_renewal and practitioners_renewal. the licenses_renewal is the main table that holds the renewal data and the practitioners_renewal is the table that holds the additional data for the practitioners
@@ -786,6 +874,96 @@ FROM
 DROP TEMPORARY TABLE temp_renewal_mapping;
 
 #-END UPDATE PRACTITIONER RENEWAL#########-
+#UPDATE PRACTITIONER RENEWAL DETAILS BASED ON REGISTRATION NUMBER  FOR PAS##
+UPDATE
+    ci4_mdc4.`practitioners_renewal` pr
+    JOIN mdc.`bf_physician_assistant` d1 ON d1.`registration_number` = pr.`license_number`
+SET
+    pr.`first_name` = d1.`first_name`,
+    pr.`middle_name` = d1.`middle_name`,
+    pr.`last_name` = d1.`last_name`,
+    pr.`title` = d1.`title`,
+    pr.`maiden_name` = d1.`maiden_name`,
+    pr.`marital_status` = d1.`marital_status`,
+    pr.`category` = d1.`category`,
+    pr.`sex` = d1.`sex`,
+    pr.`practitioner_type` = 'Physician Assistant',
+    pr.`register_type` = d1.`register_type`,
+    pr.`qualifications` = (
+        SELECT
+            CASE
+                WHEN COUNT(*) = 0 THEN '[]'
+                ELSE CONCAT(
+                    '[',
+                    GROUP_CONCAT(
+                        JSON_OBJECT(
+                            'qualification',
+                            q.`qualification`,
+                            'institution',
+                            q.`institution`,
+                            'start_date',
+                            q.`start_date`,
+                            'end_date',
+                            q.`end_date`
+                        ) SEPARATOR ','
+                    ),
+                    ']'
+                )
+            END
+        FROM
+            mdc.`bf_pa_school` q
+        WHERE
+            q.`reg_num` = pr.`license_number`
+    )
+WHERE
+    pr.`first_name` IS NULL;
+
+#############-END UPDATE PRACTITIONER RENEWAL DETAILS BASED ON REGISTRATION NUMBER###########
+#UPDATE  PRACTITIONER RENEWAL DETAILS BASED ON PROVISIONAL NUMBER##
+UPDATE
+    ci4_mdc4.`practitioners_renewal` pr
+    JOIN mdc.`bf_physician_assistant` d1 ON d1.`registration_number` = pr.`license_number`
+SET
+    pr.`first_name` = d1.`first_name`,
+    pr.`middle_name` = d1.`middle_name`,
+    pr.`last_name` = d1.`last_name`,
+    pr.`title` = d1.`title`,
+    pr.`maiden_name` = d1.`maiden_name`,
+    pr.`marital_status` = d1.`marital_status`,
+    pr.`category` = d1.`category`,
+    pr.`sex` = d1.`sex`,
+    pr.`practitioner_type` = 'Physician Assistant',
+    pr.`register_type` = 'Provisional',
+    pr.`qualifications` = (
+        SELECT
+            CASE
+                WHEN COUNT(*) = 0 THEN '[]'
+                ELSE CONCAT(
+                    '[',
+                    GROUP_CONCAT(
+                        JSON_OBJECT(
+                            'qualification',
+                            q.`qualification`,
+                            'institution',
+                            q.`institution`,
+                            'start_date',
+                            q.`start_date`,
+                            'end_date',
+                            q.`end_date`
+                        ) SEPARATOR ','
+                    ),
+                    ']'
+                )
+            END
+        FROM
+            mdc.`bf_pa_school` q
+        WHERE
+            q.`reg_num` = pr.`license_number`
+    )
+WHERE
+    pr.`first_name` IS NULL;
+
+##END UPDATE PRACTITIONER RENEWAL DETAILS BASED ON PROVISIONAL NUMBER FOR DOCTORS##
 ############import applications##########
 #IMPORT PERMANENT REGISTRATIONS##
 INSERT INTO

@@ -176,7 +176,8 @@ class Utils
      * @return object {table: string, fields: array, onCreateValidation: array, 
      * onUpdateValidation: array, renewalFields: array, renewalTable: string, renewalStages: object, 
      * fieldsToUpdateOnRenewal: array, basicStatisticsFields: array,
-     *  basicStatisticsFilterFields: array, advancedStatisticsFields: array, renewalFilterFields: array}
+     *  basicStatisticsFilterFields: array, advancedStatisticsFields: array, renewalFilterFields: array, 
+     *  renewalBasicStatisticsFields: array, renewalSearchFields: array}
      */
     public static function getLicenseSetting(string $license): object
     {
@@ -339,6 +340,24 @@ class Utils
         }
     }
 
+    /**
+     * get the validation rules defined in app.settings.json for a license type when creating a license.
+     * @param string $license
+     * @return array
+     */
+    public static function getLicenseRenewalSearchFields(string $license): array
+    {
+        try {
+            $licenseDef = self::getLicenseSetting($license);
+            if (property_exists($licenseDef, 'renewalSearchFields')) {
+                return $licenseDef->renewalSearchFields;
+            }
+            throw new \Exception("Renewal search fields not defined for $license");
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+    }
+
     public static function generateSecureDocument($documentData)
     {
 
@@ -349,7 +368,7 @@ class Utils
 
         // Generate verification token
         $token = self::generateVerificationToken($documentId);
-        $verificationUrl = site_url("verify/{$token}");
+        $verificationUrl = site_url(relativePath: "verify/{$token}");
         $qrPath = Utils::generateQRCode($verificationUrl, true);
         return $qrPath;
     }

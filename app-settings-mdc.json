@@ -196,6 +196,12 @@
                     "url": "/licenses/renewal-print-queue",
                     "icon": "",
                     "children": []
+                },
+                {
+                    "title": "Renewal Reports",
+                    "url": "/licenses/renewal-reports",
+                    "icon": "",
+                    "children": []
                 }
             ]
         },
@@ -350,6 +356,92 @@
                     "children": []
                 }
             ]
+        }
+    ],
+    "renewalBasicStatisticsFilterFields": [
+        {
+            "label": "Status",
+            "name": "status",
+            "hint": "",
+            "options": [],
+            "type": "api",
+            "value": "",
+            "required": false,
+            "api_url": "admin/distinct-values/license_renewal/status",
+            "apiKeyProperty": "status",
+            "apiLabelProperty": "status",
+            "apiType": "select",
+            "selection_mode": "multiple"
+        },
+        {
+            "label": "Date Created",
+            "name": "created_on",
+            "hint": "",
+            "options": [],
+            "type": "date-range",
+            "value": "",
+            "required": false,
+            "api_url": "",
+            "apiKeyProperty": "",
+            "apiLabelProperty": "",
+            "apiType": "",
+            "selection_mode": ""
+        }
+    ],
+    "basicStatisticsFilterFields": [
+        {
+            "label": "Region",
+            "name": "region",
+            "hint": "",
+            "options": [],
+            "type": "api",
+            "value": "",
+            "required": false,
+            "api_url": "admin/distinct-values/licenses/region",
+            "apiKeyProperty": "region",
+            "apiLabelProperty": "region",
+            "apiType": "select"
+        },
+        {
+            "label": "District",
+            "name": "district",
+            "hint": "",
+            "options": [],
+            "type": "api",
+            "value": "",
+            "required": false,
+            "api_url": "admin/distinct-values/licenses/district",
+            "apiKeyProperty": "district",
+            "apiLabelProperty": "district",
+            "apiType": "select"
+        },
+        {
+            "label": "Date Created",
+            "name": "created_on",
+            "hint": "",
+            "options": [],
+            "type": "date-range",
+            "value": "",
+            "required": false,
+            "api_url": "",
+            "apiKeyProperty": "",
+            "apiLabelProperty": "",
+            "apiType": "",
+            "selection_mode": ""
+        },
+        {
+            "label": "Country",
+            "name": "country_of_practice",
+            "hint": "",
+            "options": [],
+            "type": "api",
+            "value": "",
+            "required": false,
+            "api_url": "admin/distinct-values/licenses/country_of_practice",
+            "apiKeyProperty": "country_of_practice",
+            "apiLabelProperty": "country_of_practice",
+            "apiType": "select",
+            "selection_mode": "multiple"
         }
     ],
     "licenseTypes": {
@@ -847,6 +939,14 @@
                     "apiCountText": "Renewals"
                 }
             },
+            "renewalSearchFields": {
+                "fields": [
+                    "first_name",
+                    "last_name",
+                    "middle_name"
+                ],
+                "joinCondition": "practitioners_renewal.renewal_id = license_renewal.id"
+            },
             "fieldsToUpdateOnRenewal": [],
             "renewalFilterFields": [
                 {
@@ -913,6 +1013,13 @@
                     "yAxisLabel": "Number of Licenses"
                 },
                 {
+                    "label": "Register Type",
+                    "name": "register_type",
+                    "type": "bar",
+                    "xAxisLabel": "Register Type",
+                    "yAxisLabel": "Number of Licenses"
+                },
+                {
                     "label": "Sex",
                     "name": "sex",
                     "type": "bar",
@@ -959,6 +1066,13 @@
                     "name": "specialty",
                     "type": "bar",
                     "xAxisLabel": "Specialty",
+                    "yAxisLabel": "Number of Licenses"
+                },
+                {
+                    "label": "Subspecialty",
+                    "name": "subspecialty",
+                    "type": "bar",
+                    "xAxisLabel": "Subspecialty",
                     "yAxisLabel": "Number of Licenses"
                 },
                 {
@@ -1279,6 +1393,163 @@
                     "apiKeyProperty": "practitioner_type",
                     "apiLabelProperty": "practitioner_type",
                     "apiType": "select"
+                }
+            ],
+            "renewalBasicStatisticsFields": [
+                {
+                    "label": "Practitioner Type",
+                    "name": "practitioner_type",
+                    "type": "bar",
+                    "xAxisLabel": "Practitioner Type",
+                    "yAxisLabel": "Number of Licenses"
+                },
+                {
+                    "label": "Register Type",
+                    "name": "register_type",
+                    "type": "bar",
+                    "xAxisLabel": "Practitioner Type",
+                    "yAxisLabel": "Number of Licenses"
+                },
+                {
+                    "label": "Sex",
+                    "name": "sex",
+                    "type": "bar",
+                    "xAxisLabel": "Sex",
+                    "yAxisLabel": "Number of Licenses"
+                },
+                {
+                    "label": "Category",
+                    "name": "category",
+                    "type": "bar",
+                    "xAxisLabel": "Category",
+                    "yAxisLabel": "Number of Licenses"
+                },
+                {
+                    "label": "Specialty",
+                    "name": "specialty",
+                    "type": "bar",
+                    "xAxisLabel": "Specialty",
+                    "yAxisLabel": "Number of Licenses"
+                },
+                {
+                    "label": "Subspecialty",
+                    "name": "subspecialty",
+                    "type": "bar",
+                    "xAxisLabel": "Specialty",
+                    "yAxisLabel": "Number of Licenses"
+                },
+                {
+                    "label": "Institution Type",
+                    "name": "institution_type",
+                    "type": "bar",
+                    "xAxisLabel": "Institution Type",
+                    "yAxisLabel": "Number of Licenses"
+                },
+                {
+                    "label": "College Membership",
+                    "name": "college_membership",
+                    "type": "bar",
+                    "xAxisLabel": "College Membership",
+                    "yAxisLabel": "Number of Licenses"
+                },
+                {
+                    "label": "Region",
+                    "name": "region",
+                    "type": "bar",
+                    "xAxisLabel": "College Membership",
+                    "yAxisLabel": "Number of Licenses"
+                },
+                {
+                    "label": "District",
+                    "name": "district",
+                    "type": "bar",
+                    "xAxisLabel": "College Membership",
+                    "yAxisLabel": "Number of Licenses"
+                }
+            ],
+            "renewalBasicStatisticsFilterFields": [
+                {
+                    "label": "Practitioner Type",
+                    "name": "practitioner_type",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/practitioners_renewal/practitioner_type",
+                    "apiKeyProperty": "practitioner_type",
+                    "apiLabelProperty": "practitioner_type",
+                    "apiType": "select"
+                },
+                {
+                    "label": "Specialty",
+                    "name": "specialty",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/practitioners_renewal/specialty",
+                    "apiKeyProperty": "specialty",
+                    "apiLabelProperty": "specialty",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                },
+                {
+                    "label": "Sub-specialty",
+                    "name": "subspecialty",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/practitioners_renewal/subspecialty",
+                    "apiKeyProperty": "subspecialty",
+                    "apiLabelProperty": "subspecialty",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                },
+                {
+                    "label": "Register Type",
+                    "name": "register_type",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/practitioners_renewal/register_type",
+                    "apiKeyProperty": "register_type",
+                    "apiLabelProperty": "register_type",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                },
+                {
+                    "label": "College Membership",
+                    "name": "college_membership",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/practitioners_renewal/college_membership",
+                    "apiKeyProperty": "college_membership",
+                    "apiLabelProperty": "college_membership",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                },
+                {
+                    "label": "Category",
+                    "name": "category",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/practitioners_renewal/category",
+                    "apiKeyProperty": "category",
+                    "apiLabelProperty": "category",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
                 }
             ]
         }
