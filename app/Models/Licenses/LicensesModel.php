@@ -77,7 +77,6 @@ class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormIn
     }
 
     public $searchFields = [
-
         'license_number',
         'email',
         'phone',
@@ -142,6 +141,15 @@ class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormIn
     {
 
         $default = [
+            [
+                "label" => "Search",
+                "name" => "param",
+                "type" => "text",
+                "hint" => "Search names, emails, phone numbers",
+                "options" => [],
+                "value" => "",
+                "required" => false
+            ],
             [
                 "label" => "License Number",
                 "name" => "license_number",
@@ -648,27 +656,4 @@ class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormIn
     }
 }
 
-class BasicStatisticsField
-{
-    public $label;
-    public $name;
-    public $type;
-    public $data;
 
-    public $xAxisLabel;
-    public $yAxisLabel;
-
-    public $valueProperty;
-    public $labelProperty;
-
-    public function __construct($label, $name, $type, $xAxisLabel = '', $yAxisLabel = '', $valueProperty = '', $labelProperty = '')
-    {
-        $this->label = $label;
-        $this->name = $name;
-        $this->type = $type;
-        $this->xAxisLabel = $xAxisLabel;
-        $this->yAxisLabel = $yAxisLabel;
-        $this->valueProperty = $valueProperty;
-        $this->labelProperty = $labelProperty;
-    }
-}

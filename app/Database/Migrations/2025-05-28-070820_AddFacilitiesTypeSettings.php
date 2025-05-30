@@ -4,14 +4,14 @@ namespace App\Database\Migrations;
 
 use CodeIgniter\Database\Migration;
 
-class AddInstitutionTypesSettings extends Migration
+class AddFacilitiesTypeSettings extends Migration
 {
     public function up()
     {
         $this->db->table("settings")->insert([
-            "class" => "Practitioners",
-            "key" => "work_institution_types",
-            "value" => "CHAG;Government;Private",
+            "class" => "Facilities",
+            "key" => "business_types",
+            "value" => "Manufacturing;Manufacturing Wholesale;Retail;Wholesale;Wholesale/Retail;Hospital;Clinic;Other",
             "type" => "string",
             "control_type" => "list",
         ]);

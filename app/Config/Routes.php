@@ -178,14 +178,22 @@ $routes->group("licenses", ["namespace" => "App\Controllers", "filter" => "apiau
     $routes->put("renewal", [LicensesController::class, "updateBulkRenewals"], ["filter" => ["hasPermission:Update_License_Renewal"]]);
     $routes->delete("renewal/(:segment)", [LicensesController::class, "deleteRenewal/$1"], ["filter" => ["hasPermission:Delete_License_Renewal"]]);
     $routes->get("renewal", [LicensesController::class, "getRenewals"], ["filter" => ["hasPermission:View_License_Renewal"]]);
+    $routes->post("renewal/filter", [LicensesController::class, "getRenewals"], ["filter" => ["hasPermission:View_License_Renewal"]]);
+
     $routes->get("renewal-form-fields/(:segment)", [LicensesController::class, "getLicenseRenewalFormFields"], ["filter" => ["hasPermission:Create_License_Renewal"]], );
     $routes->get("renewal-count", [LicensesController::class, "countRenewals"], ["filter" => ["hasPermission:View_License_Renewal"]], );
+    $routes->post("renewal-count", [LicensesController::class, "countRenewals"], ["filter" => ["hasPermission:View_License_Renewal"]], );
+
     $routes->get("renewal/license/(:segment)", [LicensesController::class, "getRenewals/$1"], ["filter" => ["hasPermission:View_License_Renewal"]], );
     $routes->get("renewal/(:segment)", [LicensesController::class, "getRenewal/$1"], ["filter" => ["hasPermission:View_License_Renewal"]], );
     $routes->post("renewal", [LicensesController::class, "createRenewal"], ["filter" => ["hasPermission:Create_License_Renewal"]]);
 
     $routes->get("reports/basic-statistics/(:segment)", [LicensesController::class, "getBasicStatistics/$1"], ["filter" => ["hasPermission:View_License_Details"]]);
     $routes->post("reports/basic-statistics/(:segment)", [LicensesController::class, "getBasicStatistics/$1"], ["filter" => ["hasPermission:View_License_Details"]]);
+
+    $routes->get("renewal-reports/basic-statistics/(:segment)", [LicensesController::class, "getRenewalBasicStatistics/$1"], ["filter" => ["hasPermission:View_License_Renewal"]]);
+    $routes->post("renewal-reports/basic-statistics/(:segment)", [LicensesController::class, "getRenewalBasicStatistics/$1"], ["filter" => ["hasPermission:View_License_Renewal"]]);
+
 });
 
 
@@ -253,6 +261,7 @@ $routes->group("housemanship", ["namespace" => "App\Controllers", "filter" => "a
     $routes->delete("posting/(:segment)", [HousemanshipController::class, "deleteHousemanshipPosting/$1"], ["filter" => ["hasPermission:Delete_Housemanship_Postings"]]);
     $routes->post("posting", [HousemanshipController::class, "createHousemanshipPosting"], ["filter" => ["hasPermission:Create_Or_Update_Housemanship_Postings"]]);
     $routes->get("posting", [HousemanshipController::class, "getHousemanshipPostings"], ["filter" => ["hasPermission:View_Housemanship_Postings"]]);
+    $routes->get("posting-count", [HousemanshipController::class, "countHousemanshipPostings"], ["filter" => ["hasPermission:View_Housemanship_Postings"]]);
     $routes->get("posting/(:segment)", [HousemanshipController::class, "getHousemanshipPosting/$1"], ["filter" => ["hasPermission:View_Housemanship_Postings"]]);
     $routes->put("posting/(:segment)", [HousemanshipController::class, "updateHousemanshipPosting/$1"], ["filter" => ["hasPermission:Create_Or_Update_Housemanship_Postings"]]);
 
@@ -260,7 +269,7 @@ $routes->group("housemanship", ["namespace" => "App\Controllers", "filter" => "a
     $routes->delete("posting-application/(:segment)", [HousemanshipController::class, "deleteHousemanshipPostingApplication/$1"], ["filter" => ["hasPermission:Delete_Housemanship_Posting_Applications"]]);
     $routes->post("posting-application", [HousemanshipController::class, "createHousemanshipPostingApplication"], ["filter" => ["hasPermission:Create_Or_Update_Housemanship_Posting_Applications"]]);
     $routes->get("posting-application", [HousemanshipController::class, "getHousemanshipPostingApplications"], ["filter" => ["hasPermission:View_Housemanship_Posting_Applications"]]);
-    $routes->get("posting-application/count/", [HousemanshipController::class, "getHousemanshipPostingApplicationsCount"], ["filter" => ["hasPermission:View_Housemanship_Posting_Applications"]]);
+    $routes->get("posting-application-count/", [HousemanshipController::class, "getHousemanshipPostingApplicationsCount"], ["filter" => ["hasPermission:View_Housemanship_Posting_Applications"]]);
     $routes->post("posting-application/approve", [HousemanshipController::class, "approveHousemanshipPostingApplications"], ["filter" => ["hasPermission:Create_Or_Update_Housemanship_Postings"]]);
     $routes->get("posting-application/(:segment)", [HousemanshipController::class, "getHousemanshipPostingApplication/$1"], ["filter" => ["hasPermission:View_Housemanship_Posting_Applications"]]);
     $routes->put("posting-application/(:segment)", [HousemanshipController::class, "updateHousemanshipPostingApplication/$1"], ["filter" => ["hasPermission:Create_Or_Update_Housemanship_Posting_Applications"]]);
