@@ -5,7 +5,7 @@
 INSERT INTO
     ci4_mdc4.`settings` (
         `key`,
-        ß `value`,
+        `value`,
         `class`,
         `type`,
         `context`,
