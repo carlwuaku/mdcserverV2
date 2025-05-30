@@ -328,13 +328,11 @@ class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormIn
                     $data->$name = $formData[$name];
                 }
             }
-            log_message('info', print_r($data, true));
             $license = $this->builder($table)->where('license_number', $formData['license_number'])->get()->getFirstRow('array');
 
             if (count(get_object_vars($data)) > 0) {
                 if ($license) {
                     $this->builder($table)->set((array) $data)->where(['license_number' => $formData['license_number']])->update();
-                    log_message('info', print_r($this->db->getLastQuery(), true));
                 } else {
                     $this->builder($table)->insert($data);
                 }

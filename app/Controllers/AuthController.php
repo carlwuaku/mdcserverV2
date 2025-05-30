@@ -332,7 +332,6 @@ class AuthController extends ResourceController
                 'message' => 'Invalid verification code'
             ], ResponseInterface::HTTP_BAD_REQUEST);
         }
-        log_message('info', $secret . ' Code is valid');
         // Code is valid, save the secret to the user's record
 
         // $userData->google_auth_secret = $secret;

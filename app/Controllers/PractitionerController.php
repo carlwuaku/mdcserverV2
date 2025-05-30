@@ -87,7 +87,6 @@ class PractitionerController extends ResourceController
         $model = new PractitionerModel();
         $oldData = $model->where(["uuid" => $uuid])->first();
         $changes = implode(", ", Utils::compareObjects($oldData, $data));
-        log_message('info', print_r($data, true));
         if (!$model->builder()->where(['uuid' => $uuid])->update($data)) {
             return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
         }
