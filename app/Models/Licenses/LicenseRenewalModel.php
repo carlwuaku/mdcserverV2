@@ -156,15 +156,15 @@ class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, 
 
         $default = [
 
-            // [
-            //     "label" => "License Type",
-            //     "name" => "license_type",
-            //     "type" => "select",
-            //     "hint" => "",
-            //     "options" => $this->getDistinctValuesAsKeyValuePairs('license_type'),
-            //     "value" => "",
-            //     "required" => false
-            // ],
+            [
+                "label" => "Search",
+                "name" => "param",
+                "type" => "text",
+                "hint" => "Search names, emails, phone numbers",
+                "options" => [],
+                "value" => "",
+                "required" => false
+            ],
             [
                 "label" => "Start Date",
                 "name" => "start_date",
@@ -245,6 +245,11 @@ class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, 
 
 
 
+    /**
+     * gets the table name for the renewal sub table from app.settings.json
+     * @param string $licenseType the license type
+     * @return string the table name
+     */
     public function getChildRenewalTable(string $licenseType): string
     {
         $licenseDef = Utils::getLicenseSetting($licenseType);
@@ -253,24 +258,37 @@ class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, 
     }
 
 
-    public function addLicenseDetails(BaseBuilder $builder, string $licenseType, string $licenseJoinConditions = '', string $renewalJoinConditions = ''): BaseBuilder
+    /**
+     * add license details to the builder
+     * @param BaseBuilder $builder
+     * @param string $licenseType
+     * @param bool $addLicenseJoin in some cases a join may have been added already, particularly if there is a search operation
+     * @param bool $addRenewalJoin in some cases a join may have been added already, particularly if there is a search operation
+     * @param string $licenseJoinConditions if there are any additional join conditions for the license table
+     * @param string $renewalJoinConditions if there are any additional join conditions for the renewal table
+     * @param bool $addSelectClause in some cases we may not want to add the select clause, for example when getting a gazette as they are not needed
+     * @return BaseBuilder
+     */
+    public function addLicenseDetails(BaseBuilder $builder, string $licenseType, bool $addLicenseJoin = true, bool $addRenewalJoin = true, string $licenseJoinConditions = '', string $renewalJoinConditions = '', bool $addSelectClause = true): BaseBuilder
     {
         try {
             $licenseDef = Utils::getLicenseSetting($licenseType);
-            // $licenseTypeFields = $licenseDef->fields;//we now have the data_snapshot field which holds all the data from the 
+            //we now have the data_snapshot field which holds all the data from the 
             //license type table at the time of renewal
             $licenseTypeTable = $licenseDef->table;
             //get the sub table for that license type
             $renewalSubTable = $licenseDef->renewalTable;
             $renewalSubFields = $licenseDef->renewalFields;
-            $extraColumns = [];
-            // for ($i = 0; $i < count($licenseTypeFields); $i++) {
-            //     $extraColumns[] = $licenseTypeTable . "." . $licenseTypeFields[$i]['name'];
-            // }
-            for ($i = 0; $i < count($renewalSubFields); $i++) {
-                $extraColumns[] = $renewalSubTable . "." . $renewalSubFields[$i]['name'];
+
+            //in some cases we may not want to add the select clause, for example when getting a gazette as they are not needed
+            if ($addSelectClause) {
+                $extraColumns = [];
+
+                for ($i = 0; $i < count($renewalSubFields); $i++) {
+                    $extraColumns[] = $renewalSubTable . "." . $renewalSubFields[$i]['name'];
+                }
+                $builder->select(array_merge(["{$this->table}.*"], $extraColumns, ["licenses.region", "licenses.district", "licenses.phone", "licenses.email", "licenses.postal_address"]));
             }
-            $builder->select(array_merge(["{$this->table}.*"], $extraColumns, ["licenses.region", "licenses.district", "licenses.phone", "licenses.email", "licenses.postal_address"]));
             $builder->join("licenses", $this->table . '.license_number = licenses.license_number', 'left');
 
             $fullLicenseJoinConditions = $this->table . ".license_number = $licenseTypeTable.license_number ";
@@ -282,8 +300,17 @@ class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, 
             if ($renewalJoinConditions) {
                 $builder->where($renewalJoinConditions);
             }
-            $builder->join($licenseTypeTable, $fullLicenseJoinConditions, 'left');
-            $builder->join($renewalSubTable, $fullRenewalJoinConditions, 'left');
+
+            // in some cases we may not want to add the renewal join, for example when we are doing a search as it would have been added already
+            // in the search method
+            if ($addLicenseJoin) {
+                $builder->join($licenseTypeTable, $fullLicenseJoinConditions, 'left');
+            }
+            // in some cases we may not want to add the renewal join, for example when we are doing a search as it would have been added already
+            // in the search method
+            if ($addRenewalJoin) {
+                $builder->join($renewalSubTable, $fullRenewalJoinConditions, 'left');
+            }
             return $builder;
         } catch (\Throwable $th) {
             log_message('error', $th->getMessage());
@@ -533,4 +560,119 @@ class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, 
 
         ];
     }
+
+    /**
+     * get the fields for the basic statistics
+     * @param string $licenseType
+     * @return array{default: BasicStatisticsField[], custom: BasicStatisticsField[]}
+     */
+    public function getBasicStatisticsFields($licenseType = '')
+    {
+        if (!empty($licenseType)) {
+            $licenseDef = Utils::getLicenseSetting($licenseType);
+            $fields = $licenseDef->renewalBasicStatisticsFields ?? [];
+            $fields = array_map(function ($field) {
+                return new BasicStatisticsField($field['label'], $field['name'], $field['type'], $field['xAxisLabel'], $field['yAxisLabel']);
+            }, $fields);
+        } else {
+            $fields = [];
+        }
+        $defaultFields = [
+            new BasicStatisticsField("Status", "status", "bar", "Status", "Number of licenses")
+        ];
+
+        return [
+            "default" => $defaultFields,
+            "custom" => $fields
+        ];
+    }
+
+    public function getBasicStatisticsFilterFields($licenseType = '')
+    {
+        if (!empty($licenseType)) {
+            $licenseDef = Utils::getLicenseSetting($licenseType);
+            $fields = $licenseDef->basicStatisticsFilterFields ?? [];
+        } else {
+            $fields = [
+
+                [
+                    "label" => "Region",
+                    "name" => "region",
+                    "type" => "api",
+                    "hint" => "",
+                    "options" => [],
+                    "value" => "",
+                    "required" => false,
+                    "api_url" => "regions/regions",
+                    "apiKeyProperty" => "name",
+                    "apiLabelProperty" => "name",
+                    "apiType" => "select",
+                ],
+                [
+                    "label" => "District",
+                    "name" => "district",
+                    "type" => "api",
+                    "hint" => "",
+                    "options" => [],
+                    "value" => "",
+                    "required" => false,
+                    "api_url" => "regions/districts",
+                    "apiKeyProperty" => "district",
+                    "apiLabelProperty" => "district",
+                    "apiType" => "select",
+                ],
+
+                [
+                    "label" => "Register Type",
+                    "name" => "register_type",
+                    "type" => "select",
+                    "hint" => "",
+                    "options" => [
+                        [
+                            "key" => "Provisional",
+                            "value" => "Provisional"
+                        ],
+                        [
+                            "key" => "Permanent",
+                            "value" => "Permanent"
+                        ],
+                        [
+                            "key" => "Temporary",
+                            "value" => "Temporary"
+                        ]
+                    ],
+                    "value" => "",
+                    "required" => true
+                ]
+            ];
+        }
+        $defaultFields = [
+            [
+                "label" => "Date Created",
+                "name" => "created_on",
+                "type" => "date-range",
+                "hint" => "",
+                "options" => [
+
+                ],
+                "value" => "",
+                "required" => true
+            ],
+            [
+                "label" => "Status",
+                "name" => "status",
+                "type" => "select",
+                "hint" => "",
+                "options" => $this->getDistinctValuesAsKeyValuePairs('status'),
+                "value" => "",
+                "required" => true
+            ]
+        ];
+        return [
+            "default" => $defaultFields,
+            "custom" => $fields
+        ];
+    }
 }
+
+

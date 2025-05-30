@@ -4,7 +4,7 @@ namespace App\Database\Migrations;
 
 use CodeIgniter\Database\Migration;
 
-class MakePostingDetailsDisciplineNullable extends Migration
+class MakePostingApplicationDetailsDisciplineNullable extends Migration
 {
     public function up()
     {
