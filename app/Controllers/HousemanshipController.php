@@ -934,7 +934,7 @@ class HousemanshipController extends ResourceController
             $param = $this->request->getVar('param');
             $sortBy = $this->request->getVar('sortBy') ?? "id";
             $sortOrder = $this->request->getVar('sortOrder') ?? "asc";
-
+            $facilityName = $this->request->getVar('facility_name');
             $model = new HousemanshipPostingsModel();
             $detailsModel = new HousemanshipPostingDetailsModel();
 
@@ -943,6 +943,10 @@ class HousemanshipController extends ResourceController
             $tableName = $model->table;
             $builder = $param ? $model->search($param)->select("$tableName.*") : $model->builder()->select("$tableName.*");
             $builder = $model->addPractitionerDetailsFields($builder);
+            if ($facilityName) {
+                $builder->join($detailsModel->table, "{$detailsModel->table}.posting_uuid = " . $tableName . '.uuid');
+                $builder->where("{$detailsModel->table}.facility_name", $facilityName);
+            }
             array_map(function ($value, $key) use ($builder, $tableName) {
                 $builder->where($tableName . "." . $key, $value);
             }, $filterArray, array_keys($filterArray));
