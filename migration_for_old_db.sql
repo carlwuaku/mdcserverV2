@@ -5,7 +5,7 @@
 INSERT INTO
     ci4_mdc4.`settings` (
         `key`,
-        `value`,
+        ß `value`,
         `class`,
         `type`,
         `context`,
@@ -471,7 +471,9 @@ SET
                 'category',
                 `category`,
                 'picture',
-                `picture`
+                `picture`,
+                'postal_address',
+                `postal_address`
             ) as data_snapshot
         FROM
             mdc.`bf_doctor`
@@ -524,7 +526,9 @@ SET
                 'category',
                 `category`,
                 'picture',
-                `picture`
+                `picture`,
+                'postal_address',
+                `postal_address`
             ) as data_snapshot
         FROM
             mdc.`bf_doctor` d1
@@ -538,7 +542,7 @@ SET
                 WHERE
                     d2.`provisional_number` = `license_renewal`.`license_number`
                     AND d2.`id` != d1.`id`
-            )
+            ) # this is to check if there is more than one record with the same provisional number. we can't just arbitrarily pick one since it could belong to the wrong person
     )
 WHERE
     `data_snapshot` IS NULL;

@@ -36,8 +36,8 @@ class AuthController extends ResourceController
         //read the data from app-settings.json at the root of the project
         try {
             $fileName = Utils::getAppSettingsFileName();
-
             $data = json_decode(file_get_contents($fileName), true);
+
             //if logo is set, append the base url to it
             if (isset($data['logo'])) {
                 $data['logo'] = base_url() . $data['logo'];
@@ -53,6 +53,7 @@ class AuthController extends ResourceController
             }
             return $this->respond($data, ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
+            log_message('error', $th);
             return $this->respond(['message' => 'App settings file not found'], ResponseInterface::HTTP_NOT_FOUND);
         }
 

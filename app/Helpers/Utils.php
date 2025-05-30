@@ -177,7 +177,7 @@ class Utils
      * onUpdateValidation: array, renewalFields: array, renewalTable: string, renewalStages: object, 
      * fieldsToUpdateOnRenewal: array, basicStatisticsFields: array,
      *  basicStatisticsFilterFields: array, advancedStatisticsFields: array, renewalFilterFields: array, 
-     *  renewalBasicStatisticsFields: array, renewalSearchFields: array}
+     *  renewalBasicStatisticsFields: array, renewalSearchFields: array, gazetteTableColumns: array, renewalJsonFields: array}
      */
     public static function getLicenseSetting(string $license): object
     {

@@ -245,6 +245,11 @@ class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, 
 
 
 
+    /**
+     * gets the table name for the renewal sub table from app.settings.json
+     * @param string $licenseType the license type
+     * @return string the table name
+     */
     public function getChildRenewalTable(string $licenseType): string
     {
         $licenseDef = Utils::getLicenseSetting($licenseType);
@@ -253,7 +258,18 @@ class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, 
     }
 
 
-    public function addLicenseDetails(BaseBuilder $builder, string $licenseType, bool $addLicenseJoin = true, bool $addRenewalJoin = true, string $licenseJoinConditions = '', string $renewalJoinConditions = ''): BaseBuilder
+    /**
+     * add license details to the builder
+     * @param BaseBuilder $builder
+     * @param string $licenseType
+     * @param bool $addLicenseJoin in some cases a join may have been added already, particularly if there is a search operation
+     * @param bool $addRenewalJoin in some cases a join may have been added already, particularly if there is a search operation
+     * @param string $licenseJoinConditions if there are any additional join conditions for the license table
+     * @param string $renewalJoinConditions if there are any additional join conditions for the renewal table
+     * @param bool $addSelectClause in some cases we may not want to add the select clause, for example when getting a gazette as they are not needed
+     * @return BaseBuilder
+     */
+    public function addLicenseDetails(BaseBuilder $builder, string $licenseType, bool $addLicenseJoin = true, bool $addRenewalJoin = true, string $licenseJoinConditions = '', string $renewalJoinConditions = '', bool $addSelectClause = true): BaseBuilder
     {
         try {
             $licenseDef = Utils::getLicenseSetting($licenseType);
@@ -263,12 +279,16 @@ class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, 
             //get the sub table for that license type
             $renewalSubTable = $licenseDef->renewalTable;
             $renewalSubFields = $licenseDef->renewalFields;
-            $extraColumns = [];
 
-            for ($i = 0; $i < count($renewalSubFields); $i++) {
-                $extraColumns[] = $renewalSubTable . "." . $renewalSubFields[$i]['name'];
+            //in some cases we may not want to add the select clause, for example when getting a gazette as they are not needed
+            if ($addSelectClause) {
+                $extraColumns = [];
+
+                for ($i = 0; $i < count($renewalSubFields); $i++) {
+                    $extraColumns[] = $renewalSubTable . "." . $renewalSubFields[$i]['name'];
+                }
+                $builder->select(array_merge(["{$this->table}.*"], $extraColumns, ["licenses.region", "licenses.district", "licenses.phone", "licenses.email", "licenses.postal_address"]));
             }
-            $builder->select(array_merge(["{$this->table}.*"], $extraColumns, ["licenses.region", "licenses.district", "licenses.phone", "licenses.email", "licenses.postal_address"]));
             $builder->join("licenses", $this->table . '.license_number = licenses.license_number', 'left');
 
             $fullLicenseJoinConditions = $this->table . ".license_number = $licenseTypeTable.license_number ";

@@ -342,9 +342,9 @@ class LicensesController extends ResourceController
             $param = $this->request->getVar('param') ?? $this->request->getVar('child_param');
             $sortBy = $this->request->getVar('sortBy') ?? "id";
             $sortOrder = $this->request->getVar('sortOrder') ?? "asc";
-
+            $isGazette = $this->request->getVar('isGazette') ?? null;
             $model = new LicenseRenewalModel();
-
+            $renewalTable = $model->getTableName();
             $license_number = $this->request->getVar('license_number');
             $status = $this->request->getVar('status');
             $start_date = $this->request->getVar('start_date'); //single date or 'date1 to date2'
@@ -352,16 +352,43 @@ class LicensesController extends ResourceController
             $licenseType = $this->request->getVar('license_type');
             $created_on = $this->request->getVar('created_on'); //single date or 'date1 to date2'
             $inPrintQueue = $this->request->getVar('in_print_queue') ?? null;
-
+            $licenseSettings = null;
+            /**
+             * @var string[]
+             */
+            $renewalSubTableJsonFields = [];
+            $renewalSubTable = "";
             if ($licenseType !== null) {
                 $licenseSettings = Utils::getLicenseSetting(license: $licenseType);
+                $renewalSubTable = $licenseSettings->renewalTable;
                 $searchFields = $licenseSettings->renewalSearchFields;
-                $searchFields['table'] = $licenseSettings->renewalTable;
+                $searchFields['table'] = $renewalSubTable;
                 $model->joinSearchFields = $searchFields;
+                $renewalSubTableJsonFields = $licenseSettings->renewalJsonFields;
             }
             $builder = $param ? $model->search($param) : $model->builder();
+            $addSelectClause = true;
+            //if isGazette is set to true, we only need the fields from the data_snapshot field, together with the columns from the subrenewal table
+            if ($isGazette) {
+                $gazetteColumns = $licenseSettings->gazetteTableColumns;
+                //get the object keys of the gazette columns
+                $gazetteColumnNames = array_keys($gazetteColumns);
+                $builder->select(["data_snapshot", $renewalTable . "." . "license_number"]);
+                if ($licenseSettings !== null) {
+
+                    $renewalSubFields = $licenseSettings->renewalFields;
+
+                    for ($i = 0; $i < count($renewalSubFields); $i++) {
+                        if (!in_array($renewalSubFields[$i]['name'], $renewalSubTableJsonFields)) {
+                            $builder->select("$renewalSubTable." . $renewalSubFields[$i]['name']);
+                        }
+                    }
+
+                }
+                $addSelectClause = false; //we don't need to add the select clause again
+            }
             // $builder = $model->addCustomFields($builder);
-            $renewalTable = $model->getTableName();
+
 
             if ($license_number !== null) {
                 $builder->where("$renewalTable.license_number", $license_number);
@@ -409,46 +436,18 @@ class LicensesController extends ResourceController
             /**
              * @var array
              */
-            $childParams = array_filter($this->request->getVar(), function ($key) {
+            $childParams = array_filter((array) $this->request->getVar(), function ($key) {
                 return strpos($key, 'child_') === 0;
             }, ARRAY_FILTER_USE_KEY);
 
             /**
              * @var array
              */
-            $renewalChildParams = array_filter($this->request->getVar(), function ($key) {
+            $renewalChildParams = array_filter((array) $this->request->getVar(), function ($key) {
                 return strpos($key, 'renewal_') === 0;
             }, ARRAY_FILTER_USE_KEY);
 
 
-            // $licenseJoinConditions = '';
-            // $renewalJoinConditions = '';
-            // // if childParams is not empty, 
-            // if (!empty($childParams)) {
-            //     $licenseDef = Utils::getLicenseSetting($licenseType);
-            //     $renewalSubTable = $licenseDef->renewalTable;
-            //     $licenseTypeTable = $licenseDef->table;
-            //     /**
-            //      * @var array
-            //      */
-            //     $joinConditions = [];
-            //     foreach ($childParams as $key => $value) {
-            //         $joinConditions[] = str_replace('child_', '', $licenseTypeTable . '.' . $key) . ' = ' . "'$value'";
-            //     }
-            //     $licenseJoinConditions = implode(" AND ", $joinConditions);
-            // }
-            // if (!empty($renewalChildParams)) {
-            //     $licenseDef = Utils::getLicenseSetting($licenseType);
-            //     $renewalSubTable = $licenseDef->renewalTable;
-            //     /**
-            //      * @var array
-            //      */
-            //     $joinConditions = [];
-            //     foreach ($renewalChildParams as $key => $value) {
-            //         $joinConditions[] = str_replace('renewal_', '', $renewalSubTable . '.' . $key) . ' = ' . "'$value'";
-            //     }
-            //     $renewalJoinConditions = implode(" AND ", $joinConditions);
-            // }
             // if childParams is not empty, 
             if (!empty($childParams)) {
                 $licenseDef = Utils::getLicenseSetting($licenseType);
@@ -481,18 +480,44 @@ class LicensesController extends ResourceController
             if ($param) {
                 $addJoin = false;
             }
-            $builder = $model->addLicenseDetails($builder, $licenseType, false, $addJoin);
+            $builder = $model->addLicenseDetails($builder, $licenseType, $addJoin, $addJoin, '', '', $addSelectClause);
+            //for the json fields we want to unquote them so that they are returned as objects
+            if (!empty($renewalSubTableJsonFields)) {
+                if (!empty($renewalSubTable)) {
+                    foreach ($renewalSubTableJsonFields as $jsonField) {
+                        $builder->select("JSON_UNQUOTE($renewalSubTable.$jsonField) as $jsonField");
+                    }
+                } else {
+                    log_message("error", "Renewal sub table for $licenseType is empty. Cannot select json fields");
+                }
+            }
             $builder->orderBy($model->getTableName() . ".$sortBy", $sortOrder);
-            $totalBuilder = clone $builder;
-            $total = $totalBuilder->countAllResults();
-            $result = $builder->get($per_page, $page)->getResult();
+            log_message("info", $builder->getCompiledSelect(false));
+            $total = $builder->countAllResults(false);
+            $builder->limit($per_page, $page);
+
+            $result = $builder->get()->getResult();
+
             //get the data_snapshot as a json object and use it to populate the data
-            $data = array_map(function ($item) {
-                $item->data_snapshot = empty($item->data_snapshot) ? [] : json_decode($item->data_snapshot, true);
+            $data = array_map(function ($item) use ($renewalSubTableJsonFields) {
+                if (property_exists($item, 'data_snapshot')) {
+                    $item->data_snapshot = empty($item->data_snapshot) ? [] : json_decode($item->data_snapshot, true);
+                }
+
+                //for the json fields convert them to objects
+                foreach ($renewalSubTableJsonFields as $jsonField) {
+                    if (property_exists($item, $jsonField)) {
+                        $item->$jsonField = empty($item->$jsonField) ? [] : json_decode($item->$jsonField, true);
+                    }
+                }
                 //merge the data_snapshot with the data, preserving the original data
                 $item = (object) array_merge($item->data_snapshot, (array) $item);
-                $item->in_print_queue = $item->in_print_queue == 1 ? "Yes" : "No";
-                unset($item->data_snapshot);
+                if (property_exists($item, 'in_print_queue')) {
+                    $item->in_print_queue = $item->in_print_queue == 1 ? "Yes" : "No";
+                }
+                if (property_exists($item, 'data_snapshot')) {
+                    unset($item->data_snapshot);
+                }
                 return $item;
 
             }, $result);
@@ -502,11 +527,11 @@ class LicensesController extends ResourceController
                 'total' => $total,
                 'displayColumns' => $model->getDisplayColumns(),
                 'columnLabels' => $model->getDisplayColumnLabels(),
-                'columnFilters' => $model->getDisplayColumnFilters()
+                'columnFilters' => $model->getDisplayColumnFilters() //we may want to use the gazette columns in some cases here
 
             ], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
@@ -776,6 +801,7 @@ class LicensesController extends ResourceController
                 }
             }
             $builder = $model->addLicenseDetails($builder, $licenseType);
+            log_message("info", $builder->getCompiledSelect(false));
             $total = $builder->countAllResults();
             return $this->respond([
                 'data' => $total
