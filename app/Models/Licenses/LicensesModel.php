@@ -289,7 +289,7 @@ class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormIn
                 $columns[] = $licenseTypeTable . "." . $fields[$i]['name'];
             }
             $builder->select($columns);
-            $fullLicenseJoinConditions = $this->table . ".license_number = $licenseTypeTable.license_number ";
+            $fullLicenseJoinConditions = $this->table . ".license_number = $licenseTypeTable." . $licenseDef->unique_key_field;
             if ($licenseJoinConditions) {
                 $builder->where($licenseJoinConditions);
             }

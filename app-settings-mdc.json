@@ -453,6 +453,7 @@
     "licenseTypes": {
         "practitioners": {
             "table": "practitioners",
+            "unique_key_field": "license_number",
             "fields": [
                 {
                     "label": "Practitioner Type",
@@ -1624,6 +1625,451 @@
                     "transformation": []
                 }
             }
+        },
+        "exam_candidates": {
+            "table": "exam_candidates",
+            "unique_key_field": "intern_code",
+            "fields": [
+                {
+                    "label": "Practitioner Type",
+                    "name": "practitioner_type",
+                    "hint": "",
+                    "options": [
+                        {
+                            "key": "Doctor",
+                            "value": "Doctor"
+                        },
+                        {
+                            "key": "Physician Assistant",
+                            "value": "Physician Assistant"
+                        }
+                    ],
+                    "type": "select",
+                    "value": "",
+                    "required": true
+                },
+                {
+                    "label": "Intern Code",
+                    "name": "intern_code",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": true
+                },
+                {
+                    "label": "First name",
+                    "name": "first_name",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": true
+                },
+                {
+                    "label": "Middle name",
+                    "name": "middle_name",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": false
+                },
+                {
+                    "label": "Last name",
+                    "name": "last_name",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": true
+                },
+                {
+                    "label": "Date of birth",
+                    "name": "date_of_birth",
+                    "hint": "",
+                    "options": [],
+                    "type": "date",
+                    "value": "",
+                    "required": true
+                },
+                {
+                    "label": "Sex",
+                    "name": "sex",
+                    "hint": "",
+                    "options": [
+                        {
+                            "key": "Male",
+                            "value": "Male"
+                        },
+                        {
+                            "key": "Female",
+                            "value": "Female"
+                        }
+                    ],
+                    "type": "select",
+                    "value": "",
+                    "required": true
+                },
+                {
+                    "label": "Natonality",
+                    "name": "nationality",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": false
+                },
+                {
+                    "label": "Training institution",
+                    "name": "training_institution",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": false
+                },
+                {
+                    "label": "Qualification",
+                    "name": "qualification",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": false
+                },
+                {
+                    "label": "Qualification date",
+                    "name": "qualification_date",
+                    "hint": "",
+                    "options": [],
+                    "type": "date",
+                    "value": "",
+                    "required": false
+                },
+                {
+                    "label": "Specialty",
+                    "name": "specialty",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "specialties/specialties",
+                    "apiKeyProperty": "name",
+                    "apiLabelProperty": "name",
+                    "apiType": "select",
+                    "onChange": ""
+                },
+                {
+                    "label": "Category",
+                    "name": "category",
+                    "hint": "",
+                    "options": [
+                        {
+                            "key": "Medical",
+                            "value": "Medical"
+                        },
+                        {
+                            "key": "Dental",
+                            "value": "Dental"
+                        }
+                    ],
+                    "type": "select",
+                    "value": "",
+                    "required": false,
+                    "api_url": "",
+                    "apiKeyProperty": "",
+                    "apiLabelProperty": "",
+                    "apiType": ""
+                }
+            ],
+            "onCreateValidation": {},
+            "onUpdateValidation": {},
+            "renewalFields": [],
+            "renewalTable": "",
+            "renewalStages": {},
+            "renewalSearchFields": {
+                "fields": [],
+                "joinCondition": ""
+            },
+            "renewalJsonFields": [
+                ""
+            ],
+            "fieldsToUpdateOnRenewal": [],
+            "renewalFilterFields": [],
+            "detailsPageHeaderTabs": [
+                {
+                    "label": "Practitioner Type",
+                    "key": "practitioner_type"
+                },
+                {
+                    "label": "Category",
+                    "key": "category"
+                },
+                {
+                    "label": "Status",
+                    "key": "status"
+                }
+            ],
+            "searchFields": {
+                "fields": [
+                    "first_name",
+                    "last_name",
+                    "middle_name"
+                ],
+                "joinCondition": "licenses.license_number = exam_candidates.intern_code"
+            },
+            "basicStatisticsFields": [
+                {
+                    "label": "Practitioner Type",
+                    "name": "practitioner_type",
+                    "type": "bar",
+                    "xAxisLabel": "Practitioner Type",
+                    "yAxisLabel": "Number of Licenses"
+                },
+                {
+                    "label": "Sex",
+                    "name": "sex",
+                    "type": "bar",
+                    "xAxisLabel": "Sex",
+                    "yAxisLabel": "Number of Licenses"
+                },
+                {
+                    "label": "Category",
+                    "name": "category",
+                    "type": "bar",
+                    "xAxisLabel": "Category",
+                    "yAxisLabel": "Number of Licenses"
+                },
+                {
+                    "label": "Nationality",
+                    "name": "nationality",
+                    "type": "bar",
+                    "xAxisLabel": "Nationality",
+                    "yAxisLabel": "Number of Licenses"
+                },
+                {
+                    "label": "Qualification at registration",
+                    "name": "qualification_at_registration",
+                    "type": "bar",
+                    "xAxisLabel": "Qualification at registration",
+                    "yAxisLabel": "Number of Licenses"
+                },
+                {
+                    "label": "Qualification date",
+                    "name": "year(qualification_date) as year",
+                    "type": "bar",
+                    "xAxisLabel": "Qualification date",
+                    "yAxisLabel": "Number of Licenses"
+                },
+                {
+                    "label": "Training Institution",
+                    "name": "training_institution",
+                    "type": "bar",
+                    "xAxisLabel": "Training Institution",
+                    "yAxisLabel": "Number of Licenses"
+                },
+                {
+                    "label": "Specialty",
+                    "name": "specialty",
+                    "type": "bar",
+                    "xAxisLabel": "Specialty",
+                    "yAxisLabel": "Number of Licenses"
+                }
+            ],
+            "basicStatisticsFilterFields": [
+                {
+                    "label": "Practitioner Type",
+                    "name": "practitioner_type",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/exam_candidates/practitioner_type",
+                    "apiKeyProperty": "practitioner_type",
+                    "apiLabelProperty": "practitioner_type",
+                    "apiType": "select"
+                },
+                {
+                    "label": "Specialty",
+                    "name": "specialty",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/exam_candidates/specialty",
+                    "apiKeyProperty": "specialty",
+                    "apiLabelProperty": "specialty",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                },
+                {
+                    "label": "Register Type",
+                    "name": "register_type",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/exam_candidates/register_type",
+                    "apiKeyProperty": "register_type",
+                    "apiLabelProperty": "register_type",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                },
+                {
+                    "label": "Category",
+                    "name": "category",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/exam_candidates/category",
+                    "apiKeyProperty": "category",
+                    "apiLabelProperty": "category",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                }
+            ],
+            "advancedStatisticsFields": [
+                {
+                    "label": "Practitioner Type",
+                    "name": "practitioner_type",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/exam_candidates/practitioner_type",
+                    "apiKeyProperty": "practitioner_type",
+                    "apiLabelProperty": "practitioner_type",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                },
+                {
+                    "label": "Date of birth",
+                    "name": "date_of_birth",
+                    "hint": "",
+                    "options": [],
+                    "type": "date-range",
+                    "value": "",
+                    "required": false
+                },
+                {
+                    "label": "Sex",
+                    "name": "sex",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/exam_candidates/sex",
+                    "apiKeyProperty": "sex",
+                    "apiLabelProperty": "sex",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                },
+                {
+                    "label": "Nationality",
+                    "name": "nationality",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/exam_candidates/nationality",
+                    "apiKeyProperty": "nationality",
+                    "apiLabelProperty": "nationality",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                },
+                {
+                    "label": "Training institution",
+                    "name": "training_institution",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/exam_candidates/training_institution",
+                    "apiKeyProperty": "training_institution",
+                    "apiLabelProperty": "training_institution",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                },
+                {
+                    "label": "Qualification date",
+                    "name": "qualification_date",
+                    "hint": "",
+                    "options": [],
+                    "type": "date-range",
+                    "value": "",
+                    "required": false
+                },
+                {
+                    "label": "Specialty",
+                    "name": "specialty",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/practitioners/specialty",
+                    "apiKeyProperty": "specialty",
+                    "apiLabelProperty": "specialty",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                },
+                {
+                    "label": "Category",
+                    "name": "category",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/exam_candidates/category",
+                    "apiKeyProperty": "category",
+                    "apiLabelProperty": "category",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                }
+            ],
+            "searchFormFields": [
+                {
+                    "label": "Search",
+                    "name": "param",
+                    "hint": "Search by first name, last name, middle name, email, phone number",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": false,
+                    "api_url": "",
+                    "apiKeyProperty": "",
+                    "apiLabelProperty": "",
+                    "apiType": ""
+                },
+                {
+                    "label": "Practitioner Type",
+                    "name": "practitioner_type",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/exam_candidates/practitioner_type",
+                    "apiKeyProperty": "practitioner_type",
+                    "apiLabelProperty": "practitioner_type",
+                    "apiType": "select"
+                }
+            ],
+            "renewalBasicStatisticsFields": [],
+            "renewalBasicStatisticsFilterFields": [],
+            "gazetteTableColumns": {}
         }
     },
     "dashboardMenu": [
@@ -1994,6 +2440,76 @@
                     {}
                 ],
                 "allowRepeatRegion": false
+            }
+        }
+    },
+    "examinations": {
+        "examination_types": {
+            "Regular": {
+                "name": "Regular",
+                "description": "Regular examinations for practitioners",
+                "required_previous_exam_result": [],
+                "available_for_license_types": {
+                    "exam_candidates": {
+                        "type": [
+                            "Physician Assistant"
+                        ]
+                    }
+                },
+                "result_fields": [
+                    "MCQ",
+                    "Problem Solving",
+                    "Orals"
+                ],
+                "candidate_state_after_result": {
+                    "Pass": "apply_for_migration",
+                    "Fail": "apply_for_an_examination"
+                }
+            },
+            "OSCE 1": {
+                "name": "OSCE 1",
+                "description": "Objective Structured Clinical Examination (OSCE) 1 for practitioners",
+                "required_previous_exam_result": [],
+                "available_for_license_types": {
+                    "exam_candidates": {
+                        "type": [
+                            "Doctor"
+                        ]
+                    }
+                },
+                "result_fields": [
+                    "Practical 1",
+                    "Practical 2"
+                ],
+                "candidate_state_after_result": {
+                    "Pass": "apply_for_an_examination",
+                    "Fail": "apply_for_an_examination"
+                }
+            },
+            "OSCE 2": {
+                "name": "OSCE 2",
+                "description": "Objective Structured Clinical Examination (OSCE) 2 for practitioners",
+                "required_previous_exam_result": [
+                    {
+                        "exam_type": "OSCE 1",
+                        "result": "Pass"
+                    }
+                ],
+                "available_for_license_types": {
+                    "exam_candidates": {
+                        "type": [
+                            "Doctor"
+                        ]
+                    }
+                },
+                "result_fields": [
+                    "Practical 1",
+                    "Practical 2"
+                ],
+                "candidate_state_after_result": {
+                    "Pass": "apply_for_migration",
+                    "Fail": "apply_for_an_examination"
+                }
             }
         }
     },
