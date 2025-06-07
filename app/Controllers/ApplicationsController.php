@@ -208,7 +208,12 @@ class ApplicationsController extends ResourceController
                 if (!empty($stage['actions'])) {
                     foreach ($stage['actions'] as $action) {
                         try {
-                            ApplicationFormActionHelper::runAction((object) $action, $application);
+                            //merge the form_data with the application data
+                            $formData = json_decode($application['form_data'], true);
+                            //unset the form_data field from the application data
+                            unset($application['form_data']);
+                            $applicationData = array_merge($application, $formData);
+                            ApplicationFormActionHelper::runAction((object) $action, $applicationData);
                         } catch (\Throwable $th) {
                             //possibly log the error for a retry
                             log_message('error', $th->getMessage());
@@ -1138,5 +1143,334 @@ class ApplicationsController extends ResourceController
             $stages = json_decode($template->stages, true);
         }
         return $this->respond(['data' => $stages, 'displayColumns' => ["form_type", "status", "count"]], ResponseInterface::HTTP_OK);
+    }
+
+    /**
+     * return a list of default configurations for application templates actions
+     * there will be one option  to create an instance of each license type. these will return the form fields for the license type and general license fields
+     * create invoice
+     * create document
+     * @return ResponseInterface
+     */
+    public function getApplicationTemplatesApiDefaultConfigs()
+    {
+        try {
+            //get the license types from app-settings.json
+            $licenseSettings = Utils::getAppSettings("licenseTypes");
+            //for each one, get the names from the form fields
+
+            //{"type":"api_call","config":{"endpoint":"/licenses/details","method":"POST","headers":{"Content-Type":"application/json"},"body_mapping":{"first_name":"@first_name","last_name":"@last_name","email":"@email","certificate":"@certificate"}}}
+            /**
+             * @var array 
+             */
+            $defaultMapping = [];
+            /**
+             * @var array
+             */
+            $defaultConfigs = [];
+            $licenseModel = new \App\Models\Licenses\LicensesModel();
+            $licenseFormFields = $licenseModel->getFormFields();
+            // map
+            foreach ($licenseFormFields as $field) {
+                $fieldName = $field['name'];
+                // Map the field to the body mapping
+                $defaultMapping[$fieldName] = '@' . $fieldName; // field names are prefixed with '@'
+            }
+
+            // Loop through each license type and create a default configuration
+            foreach ($licenseSettings as $key => $value) {
+                if (is_array($value)) {
+                    $bodyMapping = [];
+
+                    foreach ($value['fields'] as $field) {
+                        $fieldName = $field['name'];
+                        // Map the field to the body mapping
+                        $bodyMapping[$fieldName] = '@' . $fieldName; // field names are prefixed with '@'
+                    }
+                    $label = ucfirst(str_replace('_', ' ', $key)); // Convert key to a more readable label
+                    $defaultConfigs[] = [
+                        'name' => $key,
+                        'label' => "Create {$label} Instance",
+                        'type' => 'api_call',
+                        'config' => [
+                            'endpoint' => base_url("licenses/details"),
+                            'method' => 'POST',
+                            'headers' => [
+                                'Content-Type' => 'application/json'
+                            ],
+                            'auth_token' => '__self__', // Use __self__ to indicate the current user's token
+                            'body_mapping' => array_merge($bodyMapping, $defaultMapping) // merge with default mapping
+                        ]
+                    ];
+                }
+            }
+            return $this->respond([
+                'data' => $defaultConfigs,
+                'message' => "Default configurations for application templates actions"
+            ], ResponseInterface::HTTP_OK);
+        } catch (Exception $th) {
+            log_message("error", $th);
+            return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Test an action configuration
+     * This endpoint allows testing action configurations before saving them
+     */
+    public function testAction()
+    {
+        try {
+            $json = $this->request->getJSON(true);
+
+            if (!$json) {
+                return $this->respond([
+                    'success' => false,
+                    'message' => 'Invalid JSON payload'
+                ], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+
+            $action = $json['action'] ?? null;
+            $sampleData = $json['sample_data'] ?? [];
+
+            if (!$action || !isset($action['type']) || !isset($action['config'])) {
+                return $this->respond([
+                    'success' => false,
+                    'message' => 'Invalid action configuration. Must include type and config.'
+                ], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+
+            // Validate action type
+            $allowedTypes = ['email', 'admin_email', 'api_call'];
+            if (!in_array($action['type'], $allowedTypes)) {
+                return $this->respond([
+                    'success' => false,
+                    'message' => 'Invalid action type. Allowed types: ' . implode(', ', $allowedTypes)
+                ], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+
+            // Additional validation for API calls
+            if ($action['type'] === 'api_call') {
+                $config = $action['config'];
+
+                if (empty($config['endpoint'])) {
+                    return $this->respond([
+                        'success' => false,
+                        'message' => 'API call endpoint is required'
+                    ], ResponseInterface::HTTP_BAD_REQUEST);
+                }
+
+                if (empty($config['method'])) {
+                    return $this->respond([
+                        'success' => false,
+                        'message' => 'API call method is required'
+                    ], ResponseInterface::HTTP_BAD_REQUEST);
+                }
+
+                // Validate HTTP method
+                $allowedMethods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'];
+                if (!in_array(strtoupper($config['method']), $allowedMethods)) {
+                    return $this->respond([
+                        'success' => false,
+                        'message' => 'Invalid HTTP method. Allowed methods: ' . implode(', ', $allowedMethods)
+                    ], ResponseInterface::HTTP_BAD_REQUEST);
+                }
+
+                // Validate URL format
+                if (!filter_var($config['endpoint'], FILTER_VALIDATE_URL) && !$this->isRelativeUrl($config['endpoint'])) {
+                    return $this->respond([
+                        'success' => false,
+                        'message' => 'Invalid endpoint URL format'
+                    ], ResponseInterface::HTTP_BAD_REQUEST);
+                }
+            }
+
+            // Add some default test data if sample data is empty
+            if (empty($sampleData)) {
+                $sampleData = [
+                    'first_name' => 'John',
+                    'last_name' => 'Doe',
+                    'email' => 'john.doe@example.com',
+                    'phone' => '+1234567890',
+                    'application_code' => 'TEST_' . uniqid(),
+                    'status' => 'pending',
+                    'created_at' => date('Y-m-d H:i:s'),
+                    'uuid' => uniqid()
+                ];
+            }
+
+            // Convert action array to object for the helper
+            $actionObject = (object) [
+                'type' => $action['type'],
+                'config' => (object) $action['config']
+            ];
+
+            // Test the action in a controlled environment
+            $testResult = $this->runTestAction($actionObject, $sampleData);
+
+            return $this->respond([
+                'success' => true,
+                'message' => 'Action test completed',
+                'test_result' => $testResult,
+                'sample_data_used' => $sampleData
+            ]);
+
+        } catch (\Throwable $e) {
+            log_message('error', 'Action test failed: ' . $e->getMessage());
+            log_message('error', 'Stack trace: ' . $e->getTraceAsString());
+
+            return $this->respond([
+                'success' => false,
+                'message' => 'Action test failed: ' . $e->getMessage(),
+                'error_details' => [
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine()
+                ]
+            ], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Run test action in a controlled environment
+     */
+    private function runTestAction($action, $data)
+    {
+        $startTime = microtime(true);
+
+        try {
+            // For API calls, we might want to add a test mode or use a sandbox endpoint
+            if ($action->type === 'api_call') {
+                $originalEndpoint = $action->config->endpoint;
+
+                // If this is a relative URL, make it absolute for testing
+                if ($this->isRelativeUrl($originalEndpoint)) {
+                    $baseUrl = base_url();
+                    $action->config->endpoint = rtrim($baseUrl, '/') . '/' . ltrim($originalEndpoint, '/');
+                }
+
+                log_message('info', 'Testing API call to: ' . $action->config->endpoint);
+            }
+
+            // Run the action
+            $result = ApplicationFormActionHelper::runAction($action, $data);
+
+            $endTime = microtime(true);
+            $executionTime = round(($endTime - $startTime) * 1000, 2); // milliseconds
+
+            return [
+                'status' => 'success',
+                'execution_time_ms' => $executionTime,
+                'action_type' => $action->type,
+                'endpoint_called' => $action->type === 'api_call' ? $action->config->endpoint : null,
+                'result' => $result
+            ];
+
+        } catch (\Throwable $e) {
+            $endTime = microtime(true);
+            $executionTime = round(($endTime - $startTime) * 1000, 2);
+
+            return [
+                'status' => 'error',
+                'execution_time_ms' => $executionTime,
+                'action_type' => $action->type,
+                'error' => $e->getMessage(),
+                'endpoint_called' => $action->type === 'api_call' ? $action->config->endpoint : null
+            ];
+        }
+    }
+
+    /**
+     * Check if URL is relative
+     */
+    private function isRelativeUrl($url)
+    {
+        return !preg_match('/^https?:\/\//', $url);
+    }
+
+    /**
+     * Example endpoint that can be used for testing API calls
+     * This creates a simple endpoint that accepts various HTTP methods
+     */
+    public function testEndpoint()
+    {
+        $method = $this->request->getMethod();
+        $headers = $this->request->getHeaders();
+        $body = $this->request->getJSON(true) ?: $this->request->getRawInput();
+        $queryParams = $this->request->getGet();
+
+        // Log the test request
+        log_message('info', "Test endpoint called with method: $method");
+        log_message('info', "Test endpoint headers: " . json_encode($headers));
+        log_message('info', "Test endpoint body: " . json_encode($body));
+        log_message('info', "Test endpoint query params: " . json_encode($queryParams));
+
+        // Simulate some processing time
+        usleep(100000); // 100ms delay
+
+        $response = [
+            'success' => true,
+            'message' => 'Test endpoint called successfully',
+            'received_data' => [
+                'method' => $method,
+                'headers' => $headers,
+                'body' => $body,
+                'query_params' => $queryParams,
+                'timestamp' => date('Y-m-d H:i:s')
+            ],
+            'simulated_response' => [
+                'id' => rand(1000, 9999),
+                'status' => 'processed',
+                'created_at' => date('Y-m-d H:i:s')
+            ]
+        ];
+
+        // Simulate different responses based on method
+        switch (strtoupper($method)) {
+            case 'POST':
+                $response['simulated_response']['action'] = 'created';
+                return $this->respond($response, ResponseInterface::HTTP_CREATED);
+
+            case 'PUT':
+                $response['simulated_response']['action'] = 'updated';
+                return $this->respond($response);
+
+            case 'DELETE':
+                $response['simulated_response']['action'] = 'deleted';
+                return $this->respond($response);
+
+            case 'GET':
+            default:
+                $response['simulated_response']['action'] = 'retrieved';
+                return $this->respond($response);
+        }
+    }
+
+    /**
+     * Retrieves common application templates from the application settings.
+     *
+     * This function fetches the common application templates configured in the 
+     * application settings and returns them in the response. If no templates 
+     * are found, it returns a 404 response. In case of an error, it logs the 
+     * error and returns a 500 response.
+     *
+     * @return \CodeIgniter\HTTP\Response
+     */
+
+    public function getCommonApplicationTemplates()
+    {
+        try {
+            $settings = Utils::getAppSettings("commonApplicationTemplates");
+            if (empty($settings)) {
+                return $this->respond(['message' => "No common application templates found"], ResponseInterface::HTTP_NOT_FOUND);
+            }
+            $data = [];
+            foreach ($settings as $key => $value) {
+                $data[] = $value;
+            }
+            return $this->respond(['data' => $data], ResponseInterface::HTTP_OK);
+        } catch (\Throwable $th) {
+            log_message('error', $th);
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 }

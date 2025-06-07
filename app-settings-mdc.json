@@ -453,7 +453,56 @@
     "licenseTypes": {
         "practitioners": {
             "table": "practitioners",
-            "unique_key_field": "license_number",
+            "uniqueKeyField": "license_number",
+            "selectionFields": [
+                "first_name",
+                "middle_name",
+                "last_name",
+                "date_of_birth",
+                "sex",
+                "practitioner_type",
+                "qualification_date",
+                "qualification_at_registration",
+                "training_institution",
+                "title",
+                "specialty",
+                "category",
+                "nationality",
+                "marital_status",
+                "maiden_name",
+                "provisional_number",
+                "register_type",
+                "college_membership",
+                "subspecialty"
+            ],
+            "displayColumns": [
+                "picture",
+                "license_number",
+                "first_name",
+                "middle_name",
+                "last_name",
+                "practitioner_type",
+                "email",
+                "phone",
+                "sex",
+                "type",
+                "in_good_standing",
+                "registration_date",
+                "status",
+                "postal_address",
+                "region",
+                "district",
+                "created_on",
+                "portal_access",
+                "date_of_birth",
+                "nationality",
+                "training_institution",
+                "qualification_at_registration",
+                "qualification_date",
+                "specialty",
+                "category",
+                "deleted_at"
+            ],
             "fields": [
                 {
                     "label": "Practitioner Type",
@@ -1628,7 +1677,49 @@
         },
         "exam_candidates": {
             "table": "exam_candidates",
-            "unique_key_field": "intern_code",
+            "uniqueKeyField": "intern_code",
+            "selectionFields": [
+                "intern_code",
+                "first_name",
+                "middle_name",
+                "last_name",
+                "date_of_birth",
+                "sex",
+                "number_of_exams",
+                "registration_date",
+                "practitioner_type",
+                "qualification_date",
+                "qualification",
+                "training_institution",
+                "state",
+                "specialty",
+                "category",
+                "nationality"
+            ],
+            "displayColumns": [
+                "picture",
+                "intern_code",
+                "first_name",
+                "middle_name",
+                "last_name",
+                "number_of_exams",
+                "registration_date",
+                "practitioner_type",
+                "email",
+                "phone",
+                "status",
+                "specialty",
+                "category",
+                "sex",
+                "postal_address",
+                "created_on",
+                "date_of_birth",
+                "nationality",
+                "training_institution",
+                "qualification",
+                "qualification_date",
+                "deleted_at"
+            ],
             "fields": [
                 {
                     "label": "Practitioner Type",
@@ -1984,6 +2075,20 @@
                     "api_url": "admin/distinct-values/exam_candidates/nationality",
                     "apiKeyProperty": "nationality",
                     "apiLabelProperty": "nationality",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                },
+                {
+                    "label": "Candidate State",
+                    "name": "state",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/exam_candidates/state",
+                    "apiKeyProperty": "state",
+                    "apiLabelProperty": "state",
                     "apiType": "select",
                     "selection_mode": "multiple"
                 },
@@ -2545,5 +2650,12 @@
             ],
             "description": "View or fill application forms. You may need to login as a guest"
         }
-    ]
+    ],
+    "commonApplicationTemplates": {
+        "exam_candidates": {
+            "label": "Examination Candidates Application",
+            "config_type": "url",
+            "form_url": "licenses/config/exam_candidates"
+        }
+    }
 }

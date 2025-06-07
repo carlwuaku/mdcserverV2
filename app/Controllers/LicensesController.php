@@ -33,7 +33,9 @@ class LicensesController extends ResourceController
     public function createLicense()
     {
         try {
-            $type = $this->request->getPost('type');
+            $type = $this->request->getVar('type');
+            log_message("info", "Creating license of type $type");
+            log_message("info", "Request data: " . json_encode($this->request->getVar()));
             $rules = [
                 "license_number" => "required|is_unique[licenses.license_number]",
                 "registration_date" => "required|valid_date",
@@ -45,13 +47,13 @@ class LicensesController extends ResourceController
                 $licenseValidation = Utils::getLicenseOnCreateValidation($type);
                 $rules = array_merge($rules, $licenseValidation);
             } catch (\Throwable $th) {
-                log_message("error", $th->getMessage());
+                log_message("error", $th);
             }
 
             if (!$this->validate($rules)) {
                 return $this->respond(['message' => $this->validator->getErrors()], ResponseInterface::HTTP_BAD_REQUEST);
             }
-            $data = $this->request->getPost();
+            $data = $this->request->getVar();
             $model = new LicensesModel($type);
             //get only the last part of the picture path
             // if (array_key_exists("picture", $data) && !empty($data['picture'])) {
@@ -66,12 +68,12 @@ class LicensesController extends ResourceController
             /** @var ActivitiesModel $activitiesModel */
             $activitiesModel = new ActivitiesModel();
 
-            $activitiesModel->logActivity("Created license {$data['license_number']}");
+            $activitiesModel->logActivity("Created license {$data->license_number}");
             //if registered this year, retain the person
             return $this->respond(['message' => 'License created successfully', 'data' => null], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
-            return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_BAD_REQUEST);
+            log_message("error", $th);
+            return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -93,7 +95,7 @@ class LicensesController extends ResourceController
                 $licenseValidation = Utils::getLicenseOnUpdateValidation($type);
                 $rules = array_merge($rules, $licenseValidation);
             } catch (\Throwable $th) {
-                log_message("error", $th->getMessage());
+                log_message("error", $th);
             }
 
             if (!$this->validate($rules)) {
@@ -121,7 +123,7 @@ class LicensesController extends ResourceController
 
             return $this->respond(['message' => 'License updated successfully'], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
@@ -141,7 +143,7 @@ class LicensesController extends ResourceController
 
             return $this->respond(['message' => 'License deleted successfully'], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
@@ -196,7 +198,7 @@ class LicensesController extends ResourceController
                 'data' => $total
             ], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -215,7 +217,7 @@ class LicensesController extends ResourceController
 
             return $this->respond(['message' => 'License restored successfully'], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
@@ -585,7 +587,7 @@ class LicensesController extends ResourceController
 
             return $this->respond(['message' => "Renewal created successfully", 'data' => ""], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
@@ -624,7 +626,7 @@ class LicensesController extends ResourceController
 
             return $this->respond(['message' => 'Renewal updated successfully'], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
@@ -681,7 +683,7 @@ class LicensesController extends ResourceController
 
             return $this->respond(['message' => 'Renewal updated successfully', 'data' => $results], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
@@ -702,7 +704,7 @@ class LicensesController extends ResourceController
 
             return $this->respond(['message' => 'License renewal deleted successfully'], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
@@ -823,7 +825,7 @@ class LicensesController extends ResourceController
                 'data' => $licenseFields
             ], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
@@ -840,7 +842,7 @@ class LicensesController extends ResourceController
                 'data' => $data
             ], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
@@ -876,7 +878,7 @@ class LicensesController extends ResourceController
                 'data' => $licenseFields
             ], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
@@ -951,7 +953,7 @@ class LicensesController extends ResourceController
 
             return $this->respond(['data' => $results], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
@@ -1051,7 +1053,7 @@ class LicensesController extends ResourceController
 
             return $this->respond(['data' => $results], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }

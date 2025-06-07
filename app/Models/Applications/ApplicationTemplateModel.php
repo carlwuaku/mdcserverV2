@@ -85,16 +85,14 @@ class ApplicationTemplateModel extends MyBaseModel implements TableDisplayInterf
         //return the $allowedFields without the uuid, created_on, updated_at, deleted_at
         return [
             'form_name',
+            'description',
             'open_date',
             'close_date',
-            'on_submit_email',
+            'guidelines',
             'on_submit_message',
-            'on_approve_email_template',
-            'on_deny_email_template',
-            'approve_url',
-            'deny_url',
             'initialStage',
             'finalStage',
+            'restrictions',
             'available_externally',
             'picture',
             'created_on',
@@ -106,7 +104,10 @@ class ApplicationTemplateModel extends MyBaseModel implements TableDisplayInterf
 
     public function getDisplayColumnLabels(): array
     {
-        return [];
+        return [
+            "initialStage" => "Initial Stage",
+            "finalStage" => "Final Stage",
+        ];
     }
 
 

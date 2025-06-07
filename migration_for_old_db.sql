@@ -2871,7 +2871,14 @@ select
     `specialty`,
     `category`,
     `type` as practitioner_type,
-    (SELECT COUNT(*) FROM mdc.bf_intern_exam_registration WHERE mdc.bf_intern_exam_registration.intern_code = mdc.bf_intern.intern_code) as number_of_exams,
+    (
+        SELECT
+            COUNT(*)
+        FROM
+            mdc.bf_intern_exam_registration
+        WHERE
+            mdc.bf_intern_exam_registration.intern_code = mdc.bf_intern.intern_code
+    ) as number_of_exams,
     JSON_OBJECT(
         'place_of_birth',
         `place_of_birth`,
@@ -2990,13 +2997,13 @@ select
         'current_license',
         `current_license`
     ) as metadata
-    
 from
-    mdc.bf_intern 
-WHERE 
+    mdc.bf_intern
+WHERE
     mdc.bf_intern.intern_code IS NOT NULL
     AND mdc.bf_intern.intern_code != ''
     AND mdc.bf_intern.status = 'Approved';
+
 #END MIGRATE EXAMINATION CANDIDATES DETAILS INTO THE exam_candidates TABLE##
 #UPDATE THE STATE FOR THE CANDIDATES.#
 #if the candidate has no records in the bf_intern_exam_registration table, then they have not registered for any exams and should be in the 'Apply for examination' state
@@ -3007,11 +3014,59 @@ UPDATE
     ci4_mdc4.`exam_candidates`
 SET
     `state` = CASE
-        WHEN (SELECT COUNT(*) FROM mdc.bf_intern_exam_registration JOIN mdc.bf_intern_exam ON mdc.bf_intern_exam.id = mdc.bf_intern_exam_registration.exam_id WHERE mdc.bf_intern_exam_registration.intern_code = ci4_mdc4.`exam_candidates`.intern_code) = 0 THEN 'Apply for examination'
-        WHEN (SELECT COUNT(*) FROM mdc.bf_intern_exam_registration JOIN mdc.bf_intern_exam ON mdc.bf_intern_exam.id = mdc.bf_intern_exam_registration.exam_id WHERE mdc.bf_intern_exam_registration.intern_code = ci4_mdc4.`exam_candidates`.intern_code AND mdc.bf_intern_exam_registration.result = 'Pass' AND mdc.bf_intern_exam.exam_type = 'Regular') > 0 THEN 'Apply for migration'
-        WHEN (SELECT COUNT(*) FROM mdc.bf_intern_exam_registration JOIN mdc.bf_intern_exam ON mdc.bf_intern_exam.id = mdc.bf_intern_exam_registration.exam_id WHERE mdc.bf_intern_exam_registration.intern_code = ci4_mdc4.`exam_candidates`.intern_code AND mdc.bf_intern_exam_registration.result = 'Pass' AND mdc.bf_intern_exam.exam_type = 'OSCE 1') > 0
-            AND (SELECT COUNT(*) FROM mdc.bf_intern_exam_registration JOIN mdc.bf_intern_exam ON mdc.bf_intern_exam.id = mdc.bf_intern_exam_registration.exam_id WHERE mdc.bf_intern_exam_registration.intern_code = ci4_mdc4.`exam_candidates`.intern_code AND mdc.bf_intern_exam_registration.result = 'Pass' AND mdc.bf_intern_exam.exam_type = 'OSCE 2') = 0 THEN 'Apply for examination'
-        WHEN (SELECT COUNT(*) FROM mdc.bf_intern_exam_registration JOIN mdc.bf_intern_exam ON mdc.bf_intern_exam.id = mdc.bf_intern_exam_registration.exam_id WHERE mdc.bf_intern_exam_registration.intern_code = ci4_mdc4.`exam_candidates`.intern_code AND mdc.bf_intern_exam_registration.result = 'Pass' AND mdc.bf_intern_exam.exam_type = 'OSCE 2') > 0 THEN 'Apply for migration'
+        WHEN (
+            SELECT
+                COUNT(*)
+            FROM
+                mdc.bf_intern_exam_registration
+                JOIN mdc.bf_intern_exam ON mdc.bf_intern_exam.id = mdc.bf_intern_exam_registration.exam_id
+            WHERE
+                mdc.bf_intern_exam_registration.intern_code = ci4_mdc4.`exam_candidates`.intern_code
+        ) = 0 THEN 'Apply for examination'
+        WHEN (
+            SELECT
+                COUNT(*)
+            FROM
+                mdc.bf_intern_exam_registration
+                JOIN mdc.bf_intern_exam ON mdc.bf_intern_exam.id = mdc.bf_intern_exam_registration.exam_id
+            WHERE
+                mdc.bf_intern_exam_registration.intern_code = ci4_mdc4.`exam_candidates`.intern_code
+                AND mdc.bf_intern_exam_registration.result = 'Pass'
+                AND mdc.bf_intern_exam.exam_type = 'Regular'
+        ) > 0 THEN 'Apply for migration'
+        WHEN (
+            SELECT
+                COUNT(*)
+            FROM
+                mdc.bf_intern_exam_registration
+                JOIN mdc.bf_intern_exam ON mdc.bf_intern_exam.id = mdc.bf_intern_exam_registration.exam_id
+            WHERE
+                mdc.bf_intern_exam_registration.intern_code = ci4_mdc4.`exam_candidates`.intern_code
+                AND mdc.bf_intern_exam_registration.result = 'Pass'
+                AND mdc.bf_intern_exam.exam_type = 'OSCE 1'
+        ) > 0
+        AND (
+            SELECT
+                COUNT(*)
+            FROM
+                mdc.bf_intern_exam_registration
+                JOIN mdc.bf_intern_exam ON mdc.bf_intern_exam.id = mdc.bf_intern_exam_registration.exam_id
+            WHERE
+                mdc.bf_intern_exam_registration.intern_code = ci4_mdc4.`exam_candidates`.intern_code
+                AND mdc.bf_intern_exam_registration.result = 'Pass'
+                AND mdc.bf_intern_exam.exam_type = 'OSCE 2'
+        ) = 0 THEN 'Apply for examination'
+        WHEN (
+            SELECT
+                COUNT(*)
+            FROM
+                mdc.bf_intern_exam_registration
+                JOIN mdc.bf_intern_exam ON mdc.bf_intern_exam.id = mdc.bf_intern_exam_registration.exam_id
+            WHERE
+                mdc.bf_intern_exam_registration.intern_code = ci4_mdc4.`exam_candidates`.intern_code
+                AND mdc.bf_intern_exam_registration.result = 'Pass'
+                AND mdc.bf_intern_exam.exam_type = 'OSCE 2'
+        ) > 0 THEN 'Apply for migration'
         ELSE `state` -- keep the current state if none of the conditions match
     END;
 
@@ -3032,4 +3087,187 @@ WHERE
             AND ci4_mdc4.`practitioners`.last_name = ci4_mdc4.`exam_candidates`.last_name
             AND ci4_mdc4.`practitioners`.date_of_birth = ci4_mdc4.`exam_candidates`.date_of_birth
     );
+
 #END UPDATE THE STATE FOR THE CANDIDATES.#
+#MIGRATE EXAM CANDIDATES PENDING APPROVAL INTO THE APPLICATIONS TABLE##
+INSERT INTO
+    ci4_mdc4.`application_forms` (
+        picture,
+        first_name,
+        last_name,
+        middle_name,
+        email,
+        status,
+        application_code,
+        practitioner_type,
+        phone,
+        created_on,
+        form_data,
+        form_type
+    )
+SELECT
+    `picture`,
+    `first_name`,
+    `last_name`,
+    `middle_name`,
+    `email`,
+    `status`,
+    `intern_code` as application_code,
+    `type` as practitioner_type,
+    `phone`,
+    `created_on`,
+    JSON_OBJECT(
+        'picture',
+        `picture`,
+        'first_name',
+        `first_name`,
+        'middle_name',
+        `middle_name`,
+        'last_name',
+        `last_name`,
+        'date_of_birth',
+        `date_of_birth`,
+        'intern_code',
+        `intern_code`,
+        'sex',
+        `sex`,
+        'registration_date',
+        `registration_date`,
+        'nationality',
+        `nationality`,
+        'qualification',
+        `qualification`,
+        'training_institution',
+        `training_institution`,
+        'date_of_graduation',
+        `date_of_graduation`,
+        'specialty',
+        `specialty`,
+        'category',
+        `category`,
+        'type',
+        `type`,
+        'place_of_birth',
+        `place_of_birth`,
+        'mailing_city',
+        `mailing_city`,
+        'mailing_region',
+        `mailing_region`,
+        'residential_address',
+        `residential_address`,
+        'residential_city',
+        `residential_city`,
+        'residential_region',
+        `residential_region`,
+        'criminal_offense',
+        `criminal_offense`,
+        'crime_details',
+        `crime_details`,
+        'referee1_name',
+        `referee1_name`,
+        'referee1_phone',
+        `referee1_phone`,
+        'referee1_email',
+        `referee1_email`,
+        'referee2_name',
+        `referee2_name`,
+        'referee2_phone',
+        `referee2_phone`,
+        'referee2_email',
+        `referee2_email`,
+        'referee1_letter_attachment',
+        `referee1_letter_attachment`,
+        'referee2_letter_attachment',
+        `referee2_letter_attachment`,
+        'certificate',
+        `certificate`,
+        'cv_attachment',
+        `cv_attachment`,
+        'passport_attachment',
+        `passport_attachment`,
+        'wassce_attachment',
+        `wassce_attachment`,
+        'transcript_attachment',
+        `transcript_attachment`,
+        'residence_permit',
+        `residence_permit`,
+        'start_1',
+        `start_1`,
+        'end_1',
+        `end_1`,
+        'hospital_1',
+        `hospital_1`,
+        'specialty_1',
+        `specialty_1`,
+        'rank_1',
+        `rank_1`,
+        'start_2',
+        `start_2`,
+        'end_2',
+        `end_2`,
+        'hospital_2',
+        `hospital_2`,
+        'specialty_2',
+        `specialty_2`,
+        'rank_2',
+        `rank_2`,
+        'start_3',
+        `start_3`,
+        'end_3',
+        `end_3`,
+        'hospital_3',
+        `hospital_3`,
+        'specialty_3',
+        `specialty_3`,
+        'rank_3',
+        `rank_3`,
+        'start_4',
+        `start_4`,
+        'end_4',
+        `end_4`,
+        'hospital_4',
+        `hospital_4`,
+        'specialty_4',
+        `specialty_4`,
+        'other_start_1',
+        `other_start_1`,
+        'other_end_1',
+        `other_end_1`,
+        'other_hospital_1',
+        `other_hospital_1`,
+        'other_specialty_1',
+        `other_specialty_1`,
+        'other_start_2',
+        `other_start_2`,
+        'other_end_2',
+        `other_end_2`,
+        'other_hospital_2',
+        `other_hospital_2`,
+        'other_specialty_2',
+        `other_specialty_2`,
+        'other_start_3',
+        `other_start_3`,
+        'other_end_3',
+        `other_end_3`,
+        'other_hospital_3',
+        `other_hospital_3`,
+        'other_specialty_3',
+        `other_specialty_3`,
+        'remarks',
+        `remarks`,
+        'is_specialist',
+        `is_specialist`,
+        'specialist_qualification',
+        `specialist_qualification`,
+        'specialist_qualification_attachment',
+        `specialist_qualification_attachment`,
+        'current_license',
+        `current_license`
+    ) as form_data,
+    'Examination Candidates Registration Application' as form_type
+FROM
+    mdc.bf_intern
+WHERE
+    mdc.bf_intern.intern_code IS NOT NULL
+    AND mdc.bf_intern.intern_code != ''
+    AND mdc.bf_intern.status != 'Approved';

@@ -150,6 +150,8 @@ $routes->group("applications", ["namespace" => "App\Controllers", "filter" => "a
     $routes->get("types/(:segment)", [ApplicationsController::class, "getApplicationFormTypes"], ["filter" => ["hasPermission:View_Application_Forms"]]);
 
     $routes->get("templates", [ApplicationsController::class, "getApplicationTemplates"], ["filter" => ["hasPermission:View_Application_Form_Templates"]], );
+    $routes->get("templates/config/defaultActions", [ApplicationsController::class, "getApplicationTemplatesApiDefaultConfigs"], ["filter" => ["hasPermission:View_Application_Form_Templates"]], );
+    $routes->get("templates/config/commonTemplates", [ApplicationsController::class, "getCommonApplicationTemplates"], ["filter" => ["hasPermission:View_Application_Form_Templates"]], );
     $routes->put("templates/(:segment)", [ApplicationsController::class, "updateApplicationTemplate/$1"], ["filter" => ["hasPermission:Update_Application_Form_Templates"]]);
     $routes->delete("templates/(:segment)", [ApplicationsController::class, "deleteApplicationTemplate/$1"], ["filter" => ["hasPermission:Delete_Application_Form_Templates"]]);
     $routes->get("templates/(:segment)", [ApplicationsController::class, "getApplicationTemplate/$1"], ["filter" => ["hasPermission:View_Application_Form_Templates"]]);
@@ -159,6 +161,8 @@ $routes->group("applications", ["namespace" => "App\Controllers", "filter" => "a
     $routes->get("config", [ApplicationsController::class, "getApplicationConfig"], ["filter" => ["hasPermission:View_Application_Form_Templates"]]);
     $routes->get("status/(:segment)", [ApplicationsController::class, "getApplicationStatusTransitions"], ["filter" => ["hasPermission:View_Application_Form_Templates"]], );
     $routes->put("status", [ApplicationsController::class, "updateApplicationStatus"], ["filter" => ["hasPermission:Update_Application_Forms"]]);
+    $routes->post("templates/test-action", [ApplicationsController::class, "testAction"], ["filter" => ["hasPermission:Create_Application_Form_Templates"]]);
+
 });
 
 $routes->group("licenses", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
