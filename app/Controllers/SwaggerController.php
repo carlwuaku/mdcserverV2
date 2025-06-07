@@ -1,3 +1,4 @@
+<?php
 /**
  * @OA\Info(
  *     version="1.0.0",
@@ -54,7 +55,7 @@ class SwaggerController extends Controller
     public function index()
     {
         $config = new SwaggerConfig();
-        
+
         return view('swagger/index', [
             'title' => $config->openapi['title'],
             'specUrl' => base_url('swagger/spec')
@@ -85,7 +86,7 @@ class SwaggerController extends Controller
     {
         $config = new SwaggerConfig();
         $specPath = $config->outputDir . '/openapi.json';
-        
+
         if (!file_exists($specPath)) {
             return $this->response->setJSON(['error' => 'Swagger specification not found'])->setStatusCode(404);
         }
@@ -96,4 +97,4 @@ class SwaggerController extends Controller
             ->setHeader('Content-Type', 'application/json')
             ->setHeader('Access-Control-Allow-Origin', '*');
     }
-} 
+}
