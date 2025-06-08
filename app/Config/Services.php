@@ -3,6 +3,10 @@
 namespace Config;
 
 use CodeIgniter\Config\BaseService;
+use App\Services\LicenseService;
+use App\Services\LicenseRenewalService;
+use App\Services\ApplicationService;
+use App\Services\ApplicationTemplateService;
 
 /**
  * Services Configuration file.
@@ -29,4 +33,50 @@ class Services extends BaseService
      *     return new \CodeIgniter\Example();
      * }
      */
+
+    /**
+     * License Service
+     */
+    public static function licenseService(bool $getShared = true): LicenseService
+    {
+        if ($getShared) {
+            return static::getSharedInstance('licenseService');
+        }
+
+        return new LicenseService();
+    }
+
+    /**
+     * License Renewal Service
+     */
+    public static function licenseRenewalService(bool $getShared = true): LicenseRenewalService
+    {
+        if ($getShared) {
+            return static::getSharedInstance('licenseRenewalService');
+        }
+
+        return new LicenseRenewalService();
+    }
+
+    /**
+     * Application Service
+     */
+    public static function applicationService(bool $getShared = true): ApplicationService
+    {
+        if ($getShared) {
+            return static::getSharedInstance('applicationService');
+        }
+        return new ApplicationService();
+    }
+
+    /**
+     * Application Template Service
+     */
+    public static function applicationTemplateService(bool $getShared = true): ApplicationTemplateService
+    {
+        if ($getShared) {
+            return static::getSharedInstance('applicationTemplateService');
+        }
+        return new ApplicationTemplateService();
+    }
 }

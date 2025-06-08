@@ -152,6 +152,7 @@ $routes->group("applications", ["namespace" => "App\Controllers", "filter" => "a
     $routes->get("templates", [ApplicationsController::class, "getApplicationTemplates"], ["filter" => ["hasPermission:View_Application_Form_Templates"]], );
     $routes->get("templates/config/defaultActions", [ApplicationsController::class, "getApplicationTemplatesApiDefaultConfigs"], ["filter" => ["hasPermission:View_Application_Form_Templates"]], );
     $routes->get("templates/config/commonTemplates", [ApplicationsController::class, "getCommonApplicationTemplates"], ["filter" => ["hasPermission:View_Application_Form_Templates"]], );
+    $routes->get("templates/config/actionTypes", [ApplicationsController::class, "getApplicationTemplateActionTypes"], ["filter" => ["hasPermission:View_Application_Form_Templates"]], );
     $routes->put("templates/(:segment)", [ApplicationsController::class, "updateApplicationTemplate/$1"], ["filter" => ["hasPermission:Update_Application_Form_Templates"]]);
     $routes->delete("templates/(:segment)", [ApplicationsController::class, "deleteApplicationTemplate/$1"], ["filter" => ["hasPermission:Delete_Application_Form_Templates"]]);
     $routes->get("templates/(:segment)", [ApplicationsController::class, "getApplicationTemplate/$1"], ["filter" => ["hasPermission:View_Application_Form_Templates"]]);

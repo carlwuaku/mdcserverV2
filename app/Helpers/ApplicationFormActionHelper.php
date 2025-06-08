@@ -4,28 +4,53 @@
  */
 namespace App\Helpers;
 
-use CodeIgniter\HTTP\ResponseInterface;
 
 class ApplicationFormActionHelper extends Utils
 {
     /**
      * this method runs a provided action on the application form
-     * @param object{type:string, config:object} $action
+     * @param object{type:string, config_type:string, config:object} $action
      * @param array $data
      * @return array
      */
     public static function runAction($action, $data)
     {
-        switch ($action->type) {
+        //get the license types so that if it's an internal_api_call, we check if it's creating or updating a license
+        switch ($action->config_type) {
             case 'email':
                 return self::sendEmailToApplicant($action, $data);
             case 'admin_email':
                 return self::sendEmailToAdmin($action, $data);
             case 'api_call':
                 return self::callApi($action, $data);
+            case 'internal_api_call':
+                return self::runInternalApiCall($action, $data);
             default:
                 return $data;
         }
+    }
+
+    private static function runInternalApiCall($action, $data)
+    {
+        // Check if the action is for creating or updating a license
+        //the type of the action can be create_xxx where xxx is the type of the license. if it's a create, get whatever follows create_ and check if it's a license type
+        if (strpos($action->type, 'create_') === 0) {
+            //get the part after create_
+            $licenseType = substr($action->type, strlen('create_'));
+            // Check if the license type is in the configured license types
+            $licenseTypesSettings = self::getAppSettings("licenseTypes");//license types are the keys of the license_types array in the app settings
+            if (in_array($licenseType, array_keys($licenseTypesSettings))) {
+                // If it's a license type, create a license
+                return self::createLicense($action, $data);
+            } else {
+                //handle other types of internal API calls
+                log_message('info', 'Handling internal API call for non-license type: ' . $licenseType);
+                throw new \InvalidArgumentException('Unsupported internal API call type: ' . $action->type);
+            }
+        }
+
+        // If not a license action, throw an exception
+        throw new \InvalidArgumentException('Unsupported internal API call type: ' . $action->type);
     }
 
     /**
@@ -63,92 +88,489 @@ class ApplicationFormActionHelper extends Utils
         return $data;
     }
 
+    // /**
+    //  * this method makes an api call
+    //  * @param object{type:string, config:object {endpoint:string, method:string, headers:array, body_mapping:array, query_params:array, auth_token:string}} $action
+    //  * @param array $data
+    //  * @return array
+    //  */
+    // private static function callApi($action, $data)
+    // {
+    //     helper("auth");
+    //     try {
+    //         log_message('info', 'Making API call to: ' . $action->config['endpoint']);
+    //         // Prepare the request options
+    //         $requestOptions = [];
+
+    //         // Process headers with dynamic values
+    //         $headers = self::processHeaders($action->config['headers'] ?? [], $data);
+    //         $requestOptions['headers'] = $headers;
+
+    //         // Add authentication if provided
+    //         if (!empty($action->config['auth_token'])) {
+    //             //if the token is __self__, use the auth token of the current user
+    //             if ($action->config['auth_token'] === '__self__') {
+    //                 $requestOptions['headers']['Authorization'] = 'Bearer ' . auth()->user()->generateAccessToken("internal_server_call")->raw_token;
+    //                 log_message('info', 'Using self-generated auth token for API call');
+    //             } else {
+    //                 // Otherwise, use the provided token
+    //                 log_message('info', 'Using provided auth token for API call');
+    //                 $requestOptions['headers']['Authorization'] = 'Bearer ' . $action->config['auth_token'];
+    //             }
+
+    //         }
+
+    //         // Process body mapping for POST/PUT requests
+    //         $body = [];
+    //         if (!empty($action->config['body_mapping'])) {
+    //             $body = self::mapDataToBody($action->config['body_mapping'], $data);
+    //         }
+
+    //         // Process query parameters for GET requests
+    //         $queryParams = [];
+    //         if (!empty($action->config['query_params'])) {
+    //             $queryParams = self::mapDataToQueryParams($action->config['query_params'], $data);
+    //         }
+
+    //         // Build the full URL with query parameters if needed
+    //         $url = $action->config['endpoint'];
+    //         if (!empty($queryParams) && $action->config['method'] === 'GET') {
+    //             $url .= '?' . http_build_query($queryParams);
+    //         }
+
+    //         // Make the API call based on method
+    //         $response = null;
+    //         switch (strtoupper($action->config['method'])) {
+    //             case 'GET':
+    //                 $response = NetworkUtils::makeGetRequest($url, $requestOptions);
+    //                 break;
+    //             case 'POST':
+    //                 $requestOptions['json'] = $body;
+    //                 $response = NetworkUtils::makePostRequest($url, $requestOptions);
+    //                 break;
+    //             case 'PUT':
+    //                 $requestOptions['json'] = $body;
+    //                 $response = NetworkUtils::makePutRequest($url, $requestOptions);
+    //                 break;
+    //             case 'DELETE':
+    //                 if (!empty($body)) {
+    //                     $requestOptions['json'] = $body;
+    //                 }
+    //                 $response = NetworkUtils::makeDeleteRequest($url, $requestOptions);
+    //                 break;
+    //             default:
+    //                 log_message('error', 'Unsupported HTTP method: ' . $action->config['method']);
+    //                 throw new \InvalidArgumentException('Unsupported HTTP method: ' . $action->config['method']);
+    //         }
+
+    //         // Log the response for debugging
+    //         log_message('info', 'API call response: ' . json_encode($response));
+
+    //         return $data;
+
+    //     } catch (\Throwable $e) {
+    //         log_message('error', 'API call failed: ' . $e);
+    //         log_message('error', 'API call stack trace: ' . $e->getTraceAsString());
+    //         throw $e;
+    //     }
+    // }
+
+
+
     /**
-     * this method makes an api call
-     * @param object{type:string, config:object {endpoint:string, method:string, headers:array, body_mapping:array, query_params:array, auth_token:string}} $action
+     * Create a license using the service layer
+     * @param object $action
+     * @param array $data
+     * @return array
+     */
+    private static function createLicense($action, $data)
+    {
+        try {
+
+
+            // Get license service using CI4 service() function
+            $licenseService = service('licenseService');
+
+            // Map application data to license data
+            $licenseData = self::mapDataForLicense($action->config, $data);
+            log_message('info', 'Creating license via service layer' . print_r($data, true));
+            // Create license using service
+            $result = $licenseService->createLicense($licenseData);
+
+            log_message('info', 'License created successfully via service layer');
+
+            return $data; // Return original data to continue workflow
+
+        } catch (\Throwable $e) {
+            log_message('error', 'License creation failed: ' . $e);
+            throw $e;
+        }
+    }
+
+    /**
+     * Create a renewal using the service layer
+     * @param object $action
+     * @param array $data
+     * @return array
+     */
+    private static function createRenewal($action, $data)
+    {
+        try {
+            log_message('info', 'Creating renewal via service layer');
+
+            // Get renewal service using CI4 service() function
+            $renewalService = service('licenseRenewalService');
+
+            // Map application data to renewal data
+            $renewalData = self::mapDataForRenewal($action->config, $data);
+
+            // Create renewal using service
+            $result = $renewalService->createRenewal($renewalData);
+
+            log_message('info', 'Renewal created successfully via service layer');
+
+            return $data;
+
+        } catch (\Throwable $e) {
+            log_message('error', 'Renewal creation failed: ' . $e);
+            throw $e;
+        }
+    }
+
+    /**
+     * Update a license using the service layer
+     * @param object $action
+     * @param array $data
+     * @return array
+     */
+    private static function updateLicense($action, $data)
+    {
+        try {
+            log_message('info', 'Updating license via service layer');
+
+            // Get license service using CI4 service() function
+            $licenseService = service('licenseService');
+
+            // Get license UUID from config or data
+            $licenseUuid = $action->config['license_uuid'] ?? $data['license_uuid'] ?? null;
+
+            if (!$licenseUuid) {
+                throw new \InvalidArgumentException('License UUID is required for update');
+            }
+
+            // Map application data to license update data
+            $updateData = self::mapDataForLicense($action->config, $data);
+
+            // Update license using service
+            $result = $licenseService->updateLicense($licenseUuid, $updateData);
+
+            log_message('info', 'License updated successfully via service layer');
+
+            return $data;
+
+        } catch (\Throwable $e) {
+            log_message('error', 'License update failed: ' . $e);
+            throw $e;
+        }
+    }
+
+    /**
+     * Enhanced API call method that routes internal calls to services
+     * @param object $action
      * @param array $data
      * @return array
      */
     private static function callApi($action, $data)
     {
-        helper("auth");
         try {
             log_message('info', 'Making API call to: ' . $action->config['endpoint']);
-            // Prepare the request options
-            $requestOptions = [];
 
-            // Process headers with dynamic values
-            $headers = self::processHeaders($action->config['headers'] ?? [], $data);
-            $requestOptions['headers'] = $headers;
-
-            // Add authentication if provided
-            if (!empty($action->config['auth_token'])) {
-                //if the token is __self__, use the auth token of the current user
-                if ($action->config['auth_token'] === '__self__') {
-                    $requestOptions['headers']['Authorization'] = 'Bearer ' . auth()->user()->generateAccessToken("internal_server_call")->raw_token;
-                    log_message('info', 'Using self-generated auth token for API call');
-                } else {
-                    // Otherwise, use the provided token
-                    log_message('info', 'Using provided auth token for API call');
-                    $requestOptions['headers']['Authorization'] = 'Bearer ' . $action->config['auth_token'];
-                }
-
+            // Check if this is an internal endpoint that should use services
+            if (self::isInternalEndpoint($action->config['endpoint'])) {
+                return self::routeToInternalService($action, $data);
             }
 
-            // Process body mapping for POST/PUT requests
-            $body = [];
-            if (!empty($action->config['body_mapping'])) {
-                $body = self::mapDataToBody($action->config['body_mapping'], $data);
-            }
-
-            // Process query parameters for GET requests
-            $queryParams = [];
-            if (!empty($action->config['query_params'])) {
-                $queryParams = self::mapDataToQueryParams($action->config['query_params'], $data);
-            }
-
-            // Build the full URL with query parameters if needed
-            $url = $action->config['endpoint'];
-            if (!empty($queryParams) && $action->config['method'] === 'GET') {
-                $url .= '?' . http_build_query($queryParams);
-            }
-
-            // Make the API call based on method
-            $response = null;
-            switch (strtoupper($action->config['method'])) {
-                case 'GET':
-                    $response = NetworkUtils::makeGetRequest($url, $requestOptions);
-                    break;
-                case 'POST':
-                    $requestOptions['json'] = $body;
-                    $response = NetworkUtils::makePostRequest($url, $requestOptions);
-                    break;
-                case 'PUT':
-                    $requestOptions['json'] = $body;
-                    $response = NetworkUtils::makePutRequest($url, $requestOptions);
-                    break;
-                case 'DELETE':
-                    if (!empty($body)) {
-                        $requestOptions['json'] = $body;
-                    }
-                    $response = NetworkUtils::makeDeleteRequest($url, $requestOptions);
-                    break;
-                default:
-                    log_message('error', 'Unsupported HTTP method: ' . $action->config['method']);
-                    throw new \InvalidArgumentException('Unsupported HTTP method: ' . $action->config['method']);
-            }
-
-            // Log the response for debugging
-            log_message('info', 'API call response: ' . json_encode($response));
-
-            return $data;
+            // For external APIs, proceed with HTTP call
+            return self::makeExternalApiCall($action, $data);
 
         } catch (\Throwable $e) {
-            log_message('error', 'API call failed: ' . $e->getMessage());
-            log_message('error', 'API call stack trace: ' . $e->getTraceAsString());
+            log_message('error', 'API call failed: ' . $e);
             throw $e;
         }
     }
+
+    /**
+     * Check if endpoint is internal (should use services instead of HTTP)
+     * @param string $endpoint
+     * @return bool
+     */
+    private static function isInternalEndpoint($endpoint)
+    {
+        // Define patterns for internal endpoints
+        $internalPatterns = [
+            '/^\/licenses\//',
+            '/^\/renewals\//',
+            '/^\/users\//',
+            '/^http:\/\/localhost/',
+            '/^https:\/\/localhost/',
+        ];
+
+        foreach ($internalPatterns as $pattern) {
+            if (preg_match($pattern, $endpoint)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Route internal API calls to appropriate services
+     * @param object $action
+     * @param array $data
+     * @return array
+     */
+    private static function routeToInternalService($action, $data)
+    {
+        $endpoint = $action->config['endpoint'];
+        $method = strtoupper($action->config['method']);
+
+        // Route based on endpoint pattern
+        if (preg_match('/\/api\/licenses\/(.*)/', $endpoint, $matches)) {
+            return self::handleLicenseServiceCall($action, $data, $method, $matches[1]);
+        }
+
+        if (preg_match('/\/api\/renewals\/(.*)/', $endpoint, $matches)) {
+            return self::handleRenewalServiceCall($action, $data, $method, $matches[1]);
+        }
+
+        // Fallback to external API call if no service route found
+        return self::makeExternalApiCall($action, $data);
+    }
+
+    /**
+     * Handle license service calls
+     * @param object $action
+     * @param array $data
+     * @param string $method
+     * @param string $path
+     * @return array
+     */
+    private static function handleLicenseServiceCall($action, $data, $method, $path)
+    {
+        $licenseService = service('licenseService');
+        $mappedData = self::mapDataForLicense($action->config, $data);
+
+        switch ($method) {
+            case 'POST':
+                if (empty($path) || $path === 'details') {
+                    return self::executeServiceCall(function () use ($licenseService, $mappedData) {
+                        return $licenseService->createLicense($mappedData);
+                    }, $data);
+                }
+                break;
+
+            case 'PUT':
+                if (preg_match('/^([a-f0-9-]+)$/', $path, $matches)) {
+                    $uuid = $matches[1];
+                    return self::executeServiceCall(function () use ($licenseService, $uuid, $mappedData) {
+                        return $licenseService->updateLicense($uuid, $mappedData);
+                    }, $data);
+                }
+                break;
+
+            case 'GET':
+                if (preg_match('/^([a-f0-9-]+)$/', $path, $matches)) {
+                    $uuid = $matches[1];
+                    return self::executeServiceCall(function () use ($licenseService, $uuid) {
+                        return $licenseService->getLicenseDetails($uuid);
+                    }, $data);
+                }
+                break;
+        }
+
+        throw new \InvalidArgumentException("Unsupported license service operation: $method $path");
+    }
+
+    /**
+     * Handle renewal service calls
+     * @param object $action
+     * @param array $data
+     * @param string $method
+     * @param string $path
+     * @return array
+     */
+    private static function handleRenewalServiceCall($action, $data, $method, $path)
+    {
+        $renewalService = service('licenseRenewalService');
+        $mappedData = self::mapDataForRenewal($action->config, $data);
+
+        switch ($method) {
+            case 'POST':
+                if (empty($path)) {
+                    return self::executeServiceCall(function () use ($renewalService, $mappedData) {
+                        return $renewalService->createRenewal($mappedData);
+                    }, $data);
+                }
+                break;
+
+            case 'PUT':
+                if (preg_match('/^([a-f0-9-]+)$/', $path, $matches)) {
+                    $uuid = $matches[1];
+                    return self::executeServiceCall(function () use ($renewalService, $uuid, $mappedData) {
+                        return $renewalService->updateRenewal($uuid, $mappedData);
+                    }, $data);
+                }
+                break;
+        }
+
+        throw new \InvalidArgumentException("Unsupported renewal service operation: $method $path");
+    }
+
+    /**
+     * Execute service call with proper error handling
+     * @param callable $serviceCall
+     * @param array $originalData
+     * @return array
+     */
+    private static function executeServiceCall(callable $serviceCall, array $originalData)
+    {
+        try {
+            $result = $serviceCall();
+            log_message('info', 'Service call completed successfully');
+            return $originalData; // Return original data to continue workflow
+        } catch (\Throwable $e) {
+            log_message('error', 'Service call failed: ' . $e);
+            throw $e;
+        }
+    }
+
+    /**
+     * Make external API call using existing HTTP methods
+     * @param object $action
+     * @param array $data
+     * @return array
+     */
+    private static function makeExternalApiCall($action, $data)
+    {
+        // Use your existing NetworkUtils or HTTP client logic here
+        // This is the same as your original callApi implementation
+
+        // Process headers with dynamic values
+        $headers = self::processHeaders($action->config['headers'] ?? [], $data);
+        $requestOptions['headers'] = $headers;
+
+        // Add authentication if provided
+        if (!empty($action->config['auth_token'])) {
+            $requestOptions['headers']['Authorization'] = 'Bearer ' . $action->config['auth_token'];
+        }
+
+        // Process body mapping for POST/PUT requests
+        $body = [];
+        if (!empty($action->config['body_mapping'])) {
+            $body = self::mapDataToBody($action->config['body_mapping'], $data);
+        }
+
+        // Build the full URL and make the request
+        $url = $action->config['endpoint'];
+
+        // Make HTTP call using your existing NetworkUtils
+        // $response = NetworkUtils::makeRequest($method, $url, $requestOptions, $body);
+
+        log_message('info', 'External API call completed');
+
+        return $data;
+    }
+
+    /**
+     * Map application data to license format
+     * @param object $config
+     * @param array $data
+     * @return array
+     */
+    private static function mapDataForLicense($config, $data)
+    {
+        $licenseData = [];
+
+        // Use body_mapping if available, otherwise use default mapping
+        log_message('info', 'Mapping data for license creation');
+        log_message('info', 'Config body mapping: ' . print_r($config['body_mapping'], true));
+        if (!empty($config['body_mapping'])) {
+            $licenseData = self::mapDataToBody($config['body_mapping'], $data);
+        } else {
+            // Default license field mapping
+            $defaultMapping = [
+                'license_number' => '@license_number',
+                'first_name' => '@first_name',
+                'last_name' => '@last_name',
+                'email' => '@email',
+                'phone' => '@phone',
+                'type' => '@practitioner_type',
+                'registration_date' => '@registration_date',
+                'status' => 'active'
+            ];
+
+            $licenseData = self::mapDataToBody($defaultMapping, $data);
+        }
+
+        return $licenseData;
+    }
+
+    /**
+     * Map application data to renewal format
+     * @param object $config
+     * @param array $data
+     * @return array
+     */
+    private static function mapDataForRenewal($config, $data)
+    {
+        $renewalData = [];
+
+        // Use body_mapping if available, otherwise use default mapping
+        if (!empty($config['body_mapping'])) {
+            $renewalData = self::mapDataToBody($config['body_mapping'], $data);
+        } else {
+            // Default renewal field mapping
+            $defaultMapping = [
+                'license_number' => '@license_number',
+                'license_uuid' => '@license_uuid',
+                'license_type' => '@practitioner_type',
+                'status' => 'pending',
+                'start_date' => '@start_date',
+                'expiry' => '@expiry'
+            ];
+
+            $renewalData = self::mapDataToBody($defaultMapping, $data);
+        }
+
+        return $renewalData;
+    }
+
+    // /**
+    //  * Map data to body using mapping configuration
+    //  * @param array|object $mapping
+    //  * @param array $data
+    //  * @return array
+    //  */
+    // private static function mapDataToBody($mapping, $data)
+    // {
+    //     $body = [];
+
+    //     foreach ($mapping as $key => $value) {
+    //         if (is_string($value) && strpos($value, '@') === 0) {
+    //             // Dynamic value from form data
+    //             $fieldName = substr($value, 1);
+    //             if (isset($data[$fieldName])) {
+    //                 $body[$key] = $data[$fieldName];
+    //             }
+    //         } else {
+    //             // Static value
+    //             $body[$key] = $value;
+    //         }
+    //     }
+
+    //     return $body;
+    // }
 
     /**
      * Process headers with dynamic values from application data

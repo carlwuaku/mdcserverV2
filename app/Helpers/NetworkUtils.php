@@ -70,44 +70,24 @@ class NetworkUtils
         }
     }
 
-    /**
-     * Make a POST request
-     * @param string $url
-     * @param array $options
-     * @return array
-     */
+
     public static function makePostRequest($url, $options = [])
     {
         try {
             log_message('info', 'Making POST request to: ' . $url);
-            log_message('info', 'POST request data: ' . print_r($options, true));
 
-            $client = \Config\Services::curlrequest([
-                'timeout' => 30,
-                'connect_timeout' => 10,
-                'verify' => false, // For internal endpoints
-            ]);
 
-            // Prepare request options
-            $requestOptions = [];
+            $client = self::getClient();
 
-            if (isset($options['json'])) {
-                $requestOptions['json'] = $options['json'];
-            } elseif (isset($options['form_params'])) {
-                $requestOptions['form_params'] = $options['form_params'];
-            } elseif (isset($options['body'])) {
-                $requestOptions['body'] = $options['body'];
-            }
+            // Add default timeout if not specified
+            // if (!isset($options['timeout'])) {
+            //     $options['timeout'] = 30;
+            // }
 
-            if (isset($options['headers'])) {
-                $requestOptions['headers'] = $options['headers'];
-            }
-
-            log_message('info', 'Executing request...');
-            $response = $client->post($url, $requestOptions);
-
+            $response = $client->post($url, $options);
+            log_message('info', 'POST res data: ' . print_r($response, true));
             $statusCode = $response->getStatusCode();
-            $body = $response->getBody();
+            $body = $response->getBody()->getContents();
 
             $result = [
                 'status_code' => $statusCode,
@@ -125,10 +105,17 @@ class NetworkUtils
             }
 
             log_message('info', 'POST request completed. Status: ' . $statusCode);
-            log_message('info', 'Response body: ' . $body);
+
+            // Log error responses for debugging
+            if (!$result['success']) {
+                log_message('error', 'POST request returned error status: ' . $statusCode . ', Body: ' . $body);
+            }
 
             return $result;
 
+        } catch (RequestException $e) {
+            log_message('error', 'POST request failed: ' . $e->getMessage());
+            return self::handleRequestException($e);
         } catch (\Throwable $e) {
             log_message('error', 'POST request error: ' . $e->getMessage());
             return [
@@ -138,60 +125,6 @@ class NetworkUtils
             ];
         }
     }
-    // public static function makePostRequest($url, $options = [])
-    // {
-    //     try {
-    //         log_message('info', 'Making POST request to: ' . $url);
-
-
-    //         $client = self::getClient();
-
-    //         // Add default timeout if not specified
-    //         // if (!isset($options['timeout'])) {
-    //         //     $options['timeout'] = 30;
-    //         // }
-
-    //         $response = $client->post($url, $options);
-    //         log_message('info', 'POST res data: ' . print_r($response, true));
-    //         $statusCode = $response->getStatusCode();
-    //         $body = $response->getBody()->getContents();
-
-    //         $result = [
-    //             'status_code' => $statusCode,
-    //             'headers' => $response->getHeaders(),
-    //             'body' => $body,
-    //             'success' => $statusCode >= 200 && $statusCode < 400
-    //         ];
-
-    //         // Try to decode JSON response
-    //         if (!empty($body)) {
-    //             $jsonData = json_decode($body, true);
-    //             if (json_last_error() === JSON_ERROR_NONE) {
-    //                 $result['data'] = $jsonData;
-    //             }
-    //         }
-
-    //         log_message('info', 'POST request completed. Status: ' . $statusCode);
-
-    //         // Log error responses for debugging
-    //         if (!$result['success']) {
-    //             log_message('error', 'POST request returned error status: ' . $statusCode . ', Body: ' . $body);
-    //         }
-
-    //         return $result;
-
-    //     } catch (RequestException $e) {
-    //         log_message('error', 'POST request failed: ' . $e->getMessage());
-    //         return self::handleRequestException($e);
-    //     } catch (\Throwable $e) {
-    //         log_message('error', 'POST request error: ' . $e->getMessage());
-    //         return [
-    //             'success' => false,
-    //             'error' => $e->getMessage(),
-    //             'status_code' => 500
-    //         ];
-    //     }
-    // }
 
     /**
      * Make a PUT request

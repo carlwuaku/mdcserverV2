@@ -343,20 +343,25 @@ class LicenseService
 
     private function getLicenseValidationRules(string $type, string $operation, ?string $uuid = null): array
     {
-        $baseRules = [
-            "license_number" => $operation === 'create'
-                ? "required|is_unique[licenses.license_number]"
-                : "if_exist|is_unique[licenses.license_number,uuid,$uuid]",
-            "registration_date" => "required|valid_date",
-            "email" => "required|valid_email",
-            "phone" => "required",
-            "type" => "required"
-        ];
-
-        if ($operation === 'update') {
-            $baseRules["uuid"] = "required";
-            $baseRules["registration_date"] = "if_exist|required|valid_date";
+        $baseRules = [];
+        if ($operation === 'create') {
+            $baseRules = [
+                "license_number" => $operation === 'create'
+                    ? "required|is_unique[licenses.license_number]"
+                    : "if_exist|is_unique[licenses.license_number,uuid,$uuid]",
+                "registration_date" => "required|valid_date",
+                "email" => "required|valid_email",
+                "phone" => "required",
+                "type" => "required"
+            ];
+        } else if ($operation === 'update') {
+            $baseRules = [
+                "uuid" => "required",
+                "registration_date" => "if_exist|valid_date",
+                "email" => "if_exist|valid_email"
+            ];
         }
+
 
         try {
             $licenseValidation = $operation === 'create'
@@ -365,7 +370,7 @@ class LicenseService
 
             return array_merge($baseRules, $licenseValidation);
         } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $baseRules;
         }
     }

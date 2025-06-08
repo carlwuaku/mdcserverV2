@@ -109,7 +109,7 @@ class AssetController extends ResourceController
                 ->setBody($image)
                 ->send();
         } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "Invalid file"], ResponseInterface::HTTP_BAD_REQUEST);
         }
 

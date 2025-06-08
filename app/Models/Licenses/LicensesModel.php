@@ -327,11 +327,15 @@ class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormIn
                     $data->$name = $formData[$name];
                 }
             }
+            //check if the unique key field is present in the form data. if not use license_number
+            if (!array_key_exists($uniqueKeyField, $formData)) {
+                $formData[$uniqueKeyField] = $formData['license_number'];
+            }
             $license = $this->builder($table)->where($uniqueKeyField, $formData[$uniqueKeyField])->get()->getFirstRow('array');
 
             if (count(get_object_vars($data)) > 0) {
                 if ($license) {
-                    $this->builder($table)->set((array) $data)->where([$uniqueKeyField => $formData[$uniqueKeyField]])->update();
+                    $this->builder($table)->set((array) $data)->where([$uniqueKeyField => $formData['license_number']])->update();
                 } else {
                     $this->builder($table)->insert($data);
                 }
@@ -350,8 +354,23 @@ class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormIn
         if (empty($type)) {
             $type = $data['type'];
         }
-        $table = Utils::getLicenseTable(license: $type);
-        $builder = $this->builder($table)->where('license_number', $data['license_number']);
+        if (empty($type)) {
+            throw new \Exception("License type not specified");
+        }
+        $licenseDef = Utils::getLicenseSetting($type);
+        if (!$licenseDef) {
+            throw new \Exception("License type not found in app settings");
+        }
+        if (!isset($licenseDef->table) || empty($licenseDef->table)) {
+            throw new \Exception("License table not defined in app settings for type: $type");
+        }
+        if (!isset($licenseDef->uniqueKeyField) || empty($licenseDef->uniqueKeyField)) {
+            throw new \Exception("No unique key defined for license type: $type");
+        }
+
+        $table = $licenseDef->table;
+        $uniqueKeyField = $licenseDef->uniqueKeyField;
+        $builder = $this->builder($table)->where($uniqueKeyField, $data['license_number']);
 
         $data = $builder->get()->getFirstRow('array');
         if (!$data) {

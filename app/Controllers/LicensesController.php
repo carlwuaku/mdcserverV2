@@ -22,8 +22,8 @@ class LicensesController extends ResourceController
 
     public function __construct()
     {
-        $this->licenseService = new LicenseService();
-        $this->renewalService = new LicenseRenewalService();
+        $this->licenseService = \Config\Services::licenseService();
+        $this->renewalService = \Config\Services::licenseRenewalService();
     }
 
     // License CRUD Operations
@@ -39,7 +39,7 @@ class LicensesController extends ResourceController
         } catch (\InvalidArgumentException $e) {
             return $this->respond(['message' => $e->getMessage()], ResponseInterface::HTTP_BAD_REQUEST);
         } catch (\Throwable $e) {
-            log_message("error", $e->getMessage());
+            log_message("error", $e);
             return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -47,7 +47,7 @@ class LicensesController extends ResourceController
     public function updateLicense($uuid)
     {
         try {
-            $data = $this->request->getVar();
+            $data = (array) $this->request->getVar();
             $result = $this->licenseService->updateLicense($uuid, $data);
 
             return $this->respond($result, ResponseInterface::HTTP_OK);
@@ -57,7 +57,7 @@ class LicensesController extends ResourceController
         } catch (\RuntimeException $e) {
             return $this->respond(['message' => $e->getMessage()], ResponseInterface::HTTP_NOT_FOUND);
         } catch (\Throwable $e) {
-            log_message("error", $e->getMessage());
+            log_message("error", $e);
             return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -71,7 +71,7 @@ class LicensesController extends ResourceController
         } catch (\RuntimeException $e) {
             return $this->respond(['message' => $e->getMessage()], ResponseInterface::HTTP_NOT_FOUND);
         } catch (\Throwable $e) {
-            log_message("error", $e->getMessage());
+            log_message("error", $e);
             return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -85,7 +85,7 @@ class LicensesController extends ResourceController
         } catch (\RuntimeException $e) {
             return $this->respond(['message' => $e->getMessage()], ResponseInterface::HTTP_BAD_REQUEST);
         } catch (\Throwable $e) {
-            log_message("error", $e->getMessage());
+            log_message("error", $e);
             return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -102,7 +102,7 @@ class LicensesController extends ResourceController
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
         } catch (\Throwable $e) {
-            log_message("error", $e->getMessage());
+            log_message("error", $e);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -116,7 +116,7 @@ class LicensesController extends ResourceController
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
         } catch (\Throwable $e) {
-            log_message("error", $e->getMessage());
+            log_message("error", $e);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -130,7 +130,7 @@ class LicensesController extends ResourceController
             return $this->respond(['data' => $total], ResponseInterface::HTTP_OK);
 
         } catch (\Throwable $e) {
-            log_message("error", $e->getMessage());
+            log_message("error", $e);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -142,7 +142,7 @@ class LicensesController extends ResourceController
             return $this->respond(['data' => $fields], ResponseInterface::HTTP_OK);
 
         } catch (\Throwable $e) {
-            log_message("error", $e->getMessage());
+            log_message("error", $e);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -156,7 +156,7 @@ class LicensesController extends ResourceController
             return $this->respond(['data' => $results], ResponseInterface::HTTP_OK);
 
         } catch (\Throwable $e) {
-            log_message("error", $e->getMessage());
+            log_message("error", $e);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -174,7 +174,7 @@ class LicensesController extends ResourceController
         } catch (\InvalidArgumentException $e) {
             return $this->respond(['message' => $e->getMessage()], ResponseInterface::HTTP_BAD_REQUEST);
         } catch (\Throwable $e) {
-            log_message("error", $e->getMessage());
+            log_message("error", $e);
             return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -190,7 +190,7 @@ class LicensesController extends ResourceController
         } catch (\InvalidArgumentException $e) {
             return $this->respond(['message' => $e->getMessage()], ResponseInterface::HTTP_BAD_REQUEST);
         } catch (\Throwable $e) {
-            log_message("error", $e->getMessage());
+            log_message("error", $e);
             return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -206,7 +206,7 @@ class LicensesController extends ResourceController
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
         } catch (\Throwable $e) {
-            log_message("error", $e->getMessage());
+            log_message("error", $e);
             return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -220,7 +220,7 @@ class LicensesController extends ResourceController
         } catch (\RuntimeException $e) {
             return $this->respond(['message' => $e->getMessage()], ResponseInterface::HTTP_NOT_FOUND);
         } catch (\Throwable $e) {
-            log_message("error", $e->getMessage());
+            log_message("error", $e);
             return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -237,7 +237,7 @@ class LicensesController extends ResourceController
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
         } catch (\Throwable $e) {
-            log_message("error", $e->getMessage());
+            log_message("error", $e);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -253,7 +253,7 @@ class LicensesController extends ResourceController
         } catch (\InvalidArgumentException $e) {
             return $this->respond(['message' => $e->getMessage()], ResponseInterface::HTTP_BAD_REQUEST);
         } catch (\Throwable $e) {
-            log_message("error", $e->getMessage());
+            log_message("error", $e);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -267,7 +267,7 @@ class LicensesController extends ResourceController
             return $this->respond(['data' => $total], ResponseInterface::HTTP_OK);
 
         } catch (\Throwable $e) {
-            log_message("error", $e->getMessage());
+            log_message("error", $e);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -279,7 +279,7 @@ class LicensesController extends ResourceController
             return $this->respond(['data' => $fields], ResponseInterface::HTTP_OK);
 
         } catch (\Throwable $e) {
-            log_message("error", $e->getMessage());
+            log_message("error", $e);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -291,7 +291,7 @@ class LicensesController extends ResourceController
             return $this->respond(['data' => $data], ResponseInterface::HTTP_OK);
 
         } catch (\Throwable $e) {
-            log_message("error", $e->getMessage());
+            log_message("error", $e);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -305,7 +305,7 @@ class LicensesController extends ResourceController
             return $this->respond(['data' => $results], ResponseInterface::HTTP_OK);
 
         } catch (\Throwable $e) {
-            log_message("error", $e->getMessage());
+            log_message("error", $e);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -377,7 +377,7 @@ class LicensesController extends ResourceController
             return $this->respond(['message' => $e->getMessage()], $statusCode);
         }
 
-        log_message("error", $e->getMessage());
+        log_message("error", $e);
         return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
     }
 }
