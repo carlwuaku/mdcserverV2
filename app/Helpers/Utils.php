@@ -719,4 +719,47 @@ class Utils
         }
         return $builder;
     }
+
+    /**
+     * Filters an array by keys.
+     *
+     * The function takes an associative array and an array of keys as input.
+     * It returns a new associative array which contains only the key-value pairs
+     * from the input array where the key is one of the given keys.
+     *
+     * @param array $array The input array to be filtered.
+     * @param array $keys The array of keys to filter by.
+     * @return array The filtered array.
+     */
+    public static function filterArrayByKeys(array $array, array $keys): array
+    {
+        return array_filter(
+            $array,
+            function ($key) use ($keys) {
+                return in_array($key, $keys);
+            },
+            ARRAY_FILTER_USE_KEY
+        );
+    }
+    /**
+     * Filters an array by keys, excluding the specified keys.
+     *
+     * The function takes an associative array and an array of keys as input.
+     * It returns a new associative array which contains only the key-value pairs
+     * from the input array where the key is not one of the given keys.
+     *
+     * @param array $array The input array to be filtered.
+     * @param array $keys The array of keys to exclude.
+     * @return array The filtered array excluding specified keys.
+     */
+    public static function filterOutArrayByKeys(array $array, array $keys): array
+    {
+        return array_filter(
+            $array,
+            function ($key) use ($keys) {
+                return !in_array($key, $keys);
+            },
+            ARRAY_FILTER_USE_KEY
+        );
+    }
 }

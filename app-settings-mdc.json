@@ -280,6 +280,45 @@
             ]
         },
         {
+            "title": "Examinations",
+            "active_children": false,
+            "url": "",
+            "icon": "auto_stories_outlined",
+            "children": [
+                {
+                    "title": "View/Search Exams",
+                    "url": "/examinations",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Add New Exam",
+                    "url": "/examinations/add",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Applications to be candidates",
+                    "url": "/applications/application-types",
+                    "icon": "",
+                    "children": [],
+                    "urlParams": {
+                        "form_type": "Examination Candidates Registration Application",
+                        "status": "Pending approval"
+                    }
+                },
+                {
+                    "title": "Applications to sit for exams",
+                    "url": "/applications",
+                    "icon": "",
+                    "children": [],
+                    "urlParams": {
+                        "form_type": ""
+                    }
+                }
+            ]
+        },
+        {
             "title": "Messaging",
             "active_children": false,
             "url": "",
@@ -2561,7 +2600,7 @@
                         ]
                     }
                 },
-                "result_fields": [
+                "score_fields": [
                     "MCQ",
                     "Problem Solving",
                     "Orals"
@@ -2582,14 +2621,107 @@
                         ]
                     }
                 },
-                "result_fields": [
+                "score_fields": [
                     "Practical 1",
                     "Practical 2"
                 ],
                 "candidate_state_after_result": {
                     "Pass": "apply_for_an_examination",
                     "Fail": "apply_for_an_examination"
-                }
+                },
+                "metadata_fields": [
+                    {
+                        "label": "Venue",
+                        "name": "venue",
+                        "hint": "",
+                        "options": [],
+                        "type": "textarea",
+                        "value": "",
+                        "required": false,
+                        "api_url": "",
+                        "apiKeyProperty": "",
+                        "apiLabelProperty": "",
+                        "apiType": ""
+                    },
+                    {
+                        "label": "Oral Location",
+                        "name": "oral_location",
+                        "hint": "",
+                        "options": [],
+                        "type": "textarea",
+                        "value": "",
+                        "required": false,
+                        "api_url": "",
+                        "apiKeyProperty": "",
+                        "apiLabelProperty": "",
+                        "apiType": ""
+                    },
+                    {
+                        "label": "Oral Date",
+                        "name": "oral_date",
+                        "hint": "",
+                        "options": [],
+                        "type": "date",
+                        "value": "",
+                        "required": false,
+                        "api_url": "",
+                        "apiKeyProperty": "",
+                        "apiLabelProperty": "",
+                        "apiType": ""
+                    },
+                    {
+                        "label": "Written Location",
+                        "name": "written_location",
+                        "hint": "",
+                        "options": [],
+                        "type": "textarea",
+                        "value": "",
+                        "required": false,
+                        "api_url": "",
+                        "apiKeyProperty": "",
+                        "apiLabelProperty": "",
+                        "apiType": ""
+                    },
+                    {
+                        "label": "Written Date",
+                        "name": "written_date",
+                        "hint": "",
+                        "options": [],
+                        "type": "date",
+                        "value": "",
+                        "required": false,
+                        "api_url": "",
+                        "apiKeyProperty": "",
+                        "apiLabelProperty": "",
+                        "apiType": ""
+                    },
+                    {
+                        "label": "Duration",
+                        "name": "duration",
+                        "hint": "",
+                        "options": [],
+                        "type": "text",
+                        "value": "",
+                        "required": false,
+                        "api_url": "",
+                        "apiKeyProperty": "",
+                        "apiLabelProperty": "",
+                        "apiType": ""
+                    },
+                    {
+                        "label": "Specialist Date",
+                        "name": "specialist_date",
+                        "hint": "",
+                        "options": [],
+                        "type": "text",
+                        "value": "",
+                        "required": false,
+                        "api_url": "",
+                        "apiKeyProperty": "",
+                        "apiLabelProperty": "",
+                        "apiType": ""
+                    }
+                ]
             },
             "OSCE 2": {
                 "name": "OSCE 2",
@@ -2607,16 +2739,338 @@
                         ]
                     }
                 },
-                "result_fields": [
+                "score_fields": [
                     "Practical 1",
                     "Practical 2"
                 ],
                 "candidate_state_after_result": {
                     "Pass": "apply_for_migration",
                     "Fail": "apply_for_an_examination"
-                }
+                },
+                "metadata_fields": [
+                    {
+                        "label": "Venue",
+                        "name": "venue",
+                        "hint": "",
+                        "options": [],
+                        "type": "textarea",
+                        "value": "",
+                        "required": false,
+                        "api_url": "",
+                        "apiKeyProperty": "",
+                        "apiLabelProperty": "",
+                        "apiType": ""
+                    },
+                    {
+                        "label": "Oral Location",
+                        "name": "oral_location",
+                        "hint": "",
+                        "options": [],
+                        "type": "textarea",
+                        "value": "",
+                        "required": false,
+                        "api_url": "",
+                        "apiKeyProperty": "",
+                        "apiLabelProperty": "",
+                        "apiType": ""
+                    },
+                    {
+                        "label": "Oral Date",
+                        "name": "oral_date",
+                        "hint": "",
+                        "options": [],
+                        "type": "date",
+                        "value": "",
+                        "required": false,
+                        "api_url": "",
+                        "apiKeyProperty": "",
+                        "apiLabelProperty": "",
+                        "apiType": ""
+                    },
+                    {
+                        "label": "Written Location",
+                        "name": "written_location",
+                        "hint": "",
+                        "options": [],
+                        "type": "textarea",
+                        "value": "",
+                        "required": false,
+                        "api_url": "",
+                        "apiKeyProperty": "",
+                        "apiLabelProperty": "",
+                        "apiType": ""
+                    },
+                    {
+                        "label": "Written Date",
+                        "name": "written_date",
+                        "hint": "",
+                        "options": [],
+                        "type": "date",
+                        "value": "",
+                        "required": false,
+                        "api_url": "",
+                        "apiKeyProperty": "",
+                        "apiLabelProperty": "",
+                        "apiType": ""
+                    },
+                    {
+                        "label": "Duration",
+                        "name": "duration",
+                        "hint": "",
+                        "options": [],
+                        "type": "text",
+                        "value": "",
+                        "required": false,
+                        "api_url": "",
+                        "apiKeyProperty": "",
+                        "apiLabelProperty": "",
+                        "apiType": ""
+                    },
+                    {
+                        "label": "Specialist Date",
+                        "name": "specialist_date",
+                        "hint": "",
+                        "options": [],
+                        "type": "text",
+                        "value": "",
+                        "required": false,
+                        "api_url": "",
+                        "apiKeyProperty": "",
+                        "apiLabelProperty": "",
+                        "apiType": ""
+                    }
+                ],
+                "default_letter_types": []
             }
-        }
+        },
+        "defaultLetterTypes": [
+            {
+                "type": "registration",
+                "name": "Index number letter - All",
+                "criteria": []
+            },
+            {
+                "type": "registration",
+                "name": "Index number letter - Medical",
+                "criteria": [
+                    {
+                        "field": "category",
+                        "value": [
+                            "Medical"
+                        ]
+                    }
+                ]
+            },
+            {
+                "type": "registration",
+                "name": "Index number letter - Specialists",
+                "criteria": [
+                    {
+                        "field": "specialty",
+                        "value": [
+                            1
+                        ]
+                    }
+                ]
+            },
+            {
+                "type": "registration",
+                "name": "Index number letter - Dental",
+                "criteria": [
+                    {
+                        "field": "category",
+                        "value": [
+                            "Dental"
+                        ]
+                    }
+                ]
+            },
+            {
+                "type": "pass",
+                "name": "Pass letter - All",
+                "criteria": []
+            },
+            {
+                "type": "pass",
+                "name": "Pass letter - Specialists",
+                "criteria": [
+                    {
+                        "field": "specialty",
+                        "value": [
+                            1
+                        ]
+                    }
+                ]
+            },
+            {
+                "type": "pass",
+                "name": "Pass letter - Ghanaians",
+                "criteria": [
+                    {
+                        "field": "nationality",
+                        "value": [
+                            "Ghanaian",
+                            "Ghana"
+                        ]
+                    }
+                ]
+            },
+            {
+                "type": "fail",
+                "name": "Fail letter - All",
+                "criteria": []
+            },
+            {
+                "type": "fail",
+                "name": "Fail letter - All",
+                "criteria": [
+                    {
+                        "field": "specialty",
+                        "value": [
+                            1
+                        ]
+                    }
+                ]
+            }
+        ],
+        "metadataFields": [
+            {
+                "label": "Venue",
+                "name": "venue",
+                "hint": "",
+                "options": [],
+                "type": "textarea",
+                "value": "",
+                "required": false,
+                "api_url": "",
+                "apiKeyProperty": "",
+                "apiLabelProperty": "",
+                "apiType": ""
+            },
+            {
+                "label": "Oral Location",
+                "name": "oral_location",
+                "hint": "",
+                "options": [],
+                "type": "textarea",
+                "value": "",
+                "required": false,
+                "api_url": "",
+                "apiKeyProperty": "",
+                "apiLabelProperty": "",
+                "apiType": ""
+            },
+            {
+                "label": "Oral Date",
+                "name": "oral_date",
+                "hint": "",
+                "options": [],
+                "type": "date",
+                "value": "",
+                "required": false,
+                "api_url": "",
+                "apiKeyProperty": "",
+                "apiLabelProperty": "",
+                "apiType": ""
+            },
+            {
+                "label": "Written Location",
+                "name": "written_location",
+                "hint": "",
+                "options": [],
+                "type": "textarea",
+                "value": "",
+                "required": false,
+                "api_url": "",
+                "apiKeyProperty": "",
+                "apiLabelProperty": "",
+                "apiType": ""
+            },
+            {
+                "label": "Written Date",
+                "name": "written_date",
+                "hint": "",
+                "options": [],
+                "type": "date",
+                "value": "",
+                "required": false,
+                "api_url": "",
+                "apiKeyProperty": "",
+                "apiLabelProperty": "",
+                "apiType": ""
+            },
+            {
+                "label": "Duration",
+                "name": "duration",
+                "hint": "",
+                "options": [],
+                "type": "text",
+                "value": "",
+                "required": false,
+                "api_url": "",
+                "apiKeyProperty": "",
+                "apiLabelProperty": "",
+                "apiType": ""
+            },
+            {
+                "label": "Specialist Date",
+                "name": "specialist_date",
+                "hint": "",
+                "options": [],
+                "type": "text",
+                "value": "",
+                "required": false,
+                "api_url": "",
+                "apiKeyProperty": "",
+                "apiLabelProperty": "",
+                "apiType": ""
+            }
+        ],
+        "filterFields": [
+            {
+                "label": "Search",
+                "name": "param",
+                "hint": "Search by title",
+                "options": [],
+                "type": "text",
+                "value": "",
+                "required": false,
+                "api_url": "",
+                "apiKeyProperty": "",
+                "apiLabelProperty": "",
+                "apiType": ""
+            },
+            {
+                "label": "Exam Type",
+                "name": "exam_type",
+                "hint": "",
+                "options": [],
+                "type": "api",
+                "value": "",
+                "required": false,
+                "api_url": "admin/distinct-values/examinations/exam_type",
+                "apiKeyProperty": "exam_type",
+                "apiLabelProperty": "exam_type",
+                "apiType": "select"
+            },
+            {
+                "label": "Candidate Type",
+                "name": "type",
+                "hint": "",
+                "options": [],
+                "type": "api",
+                "value": "",
+                "required": false,
+                "api_url": "admin/distinct-values/examinations/type",
+                "apiKeyProperty": "type",
+                "apiLabelProperty": "type",
+                "apiType": "select"
+            }
+        ],
+        "practitionerTypes": [
+            "Doctor",
+            "Physician Assistant"
+        ]
     },
     "portalHomeMenu": [
         {

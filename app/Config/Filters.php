@@ -89,6 +89,7 @@ class Filters extends BaseConfig
                 'print-queue/*',
                 'guest/*',
                 'housemanship/*',
+                'examinations/*',
                 'activities/*',
             ],
             'after' => [
@@ -105,6 +106,7 @@ class Filters extends BaseConfig
                 'print-queue/*',
                 'guest/*',
                 'housemanship/*',
+                'examinations/*',
                 'activities/*',
                 'activities',
             ]

@@ -7,6 +7,7 @@ use App\Services\LicenseService;
 use App\Services\LicenseRenewalService;
 use App\Services\ApplicationService;
 use App\Services\ApplicationTemplateService;
+use App\Services\ExaminationService;
 
 /**
  * Services Configuration file.
@@ -78,5 +79,16 @@ class Services extends BaseService
             return static::getSharedInstance('applicationTemplateService');
         }
         return new ApplicationTemplateService();
+    }
+
+    /**
+     * Examination Service
+     */
+    public static function examinationService(bool $getShared = true): ExaminationService
+    {
+        if ($getShared) {
+            return static::getSharedInstance('examinationService');
+        }
+        return new ExaminationService();
     }
 }

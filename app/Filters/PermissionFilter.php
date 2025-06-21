@@ -39,6 +39,7 @@ class PermissionFilter implements FilterInterface
             $rpModel = new RolePermissionsModel();
             foreach ($arguments as $permission) {
                 if (!$rpModel->hasPermission(auth()->getUser()->role_name, $permission)) {
+                    log_message("error", "User " . auth()->getUser()->username . " attempted to perform an action without the required permission: $permission");
                     return $response->setStatusCode(401)->setJSON(["message" => "You are not permitted to perform this action"]);
                     // $response->setStatusCode(ResponseInterface::HTTP_UNAUTHORIZED)->setJSON(["message" => 'You are not permitted to perform this action'])->send();
                     // exit();

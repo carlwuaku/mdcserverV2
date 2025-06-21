@@ -47,9 +47,10 @@ class LicenseRenewalService
         $model = new LicenseRenewalModel($licenseType);
 
         // Use database transaction
-        $model->db->transException(true)->transStart();
+
 
         try {
+            $model->db->transException(true)->transStart();
             LicenseUtils::retainLicense($license_uuid, $data);
             $model->db->transComplete();
 
