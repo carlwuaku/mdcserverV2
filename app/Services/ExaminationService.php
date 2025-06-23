@@ -61,7 +61,8 @@ class ExaminationService
             "exam_type" => "required",
             "open_from" => "required|valid_date",
             "open_to" => "required|valid_date",
-            "type" => "required"
+            "type" => "required",
+            "scores_names" => "required|array",
         ];
 
         $validator = \Config\Services::validation();
@@ -81,6 +82,7 @@ class ExaminationService
             }
         }
         $examData['metadata'] = json_encode($metadata); // Store metadata as JSON
+        $examData['scores_names'] = json_encode($data['scores_names']);
         $this->examinationsModel->db->transException(true)->transStart();
         $examId = $this->examinationsModel->insert($examData);
         if (!$examId) {
@@ -201,7 +203,6 @@ class ExaminationService
         $metadataUpdates = [];
 
         // Only collect metadata that actually exists in the incoming data
-        log_message("debug", print_r($data, true));
         foreach ($metadataFields as $field) {
             $fieldName = $field['name'] ?? $field; // Handle both array and string field definitions
             log_message("debug", $data[$fieldName]);
@@ -209,12 +210,14 @@ class ExaminationService
                 $metadataUpdates[$fieldName] = $data[$fieldName];
             }
         }
-        log_message("debug", print_r($metadataUpdates, true));
         unset($data['id']);
         $changes = implode(", ", Utils::compareObjects($oldData, $data));
 
         $this->examinationsModel->db->transException(true)->transStart();
-
+        //if the score names are updated, encode them
+        if (array_key_exists('scores_names', $data)) {
+            $examData['scores_names'] = json_encode($data['scores_names']);
+        }
         // Update main exam data
         $this->examinationsModel->builder()->where(['uuid' => $uuid])->update($examData);
 
@@ -234,6 +237,7 @@ class ExaminationService
                 ->where(['uuid' => $uuid])
                 ->update(['metadata' => json_encode($updatedMetadata)]);
         }
+
 
         if ($letters !== null) {
             // Delete the letters and re-insert them
@@ -291,8 +295,9 @@ class ExaminationService
         $builder = $this->examinationsModel->builder();
         $builder = $this->examinationsModel->addCustomFields($builder);
         $data = $builder->where(["examinations.uuid" => $uuid])->get()->getRow();
-
+        $data->scores_names = $data->scores_names ? json_decode($data->scores_names) : [];
         $metadata = json_decode($data->metadata);
+
         //merge the metadata fields with the data
         $data = (object) array_merge((array) $data, (array) $metadata);
 
@@ -336,6 +341,7 @@ class ExaminationService
         $result = $builder->get($per_page, $page)->getResult();
         foreach ($result as &$row) {
             $row->metadata = json_decode($row->metadata);
+            $row->scores_names = $row->scores_names ? json_decode($row->scores_names) : [];
             //merge the metadata fields with the data
             $row = array_merge((array) $row, (array) $row->metadata);
         }
@@ -499,7 +505,7 @@ class ExaminationService
         $param = $filters['param'] ?? $filters['child_param'] ?? null;
         $sortBy = $filters['sortBy'] ?? "created_at";
         $sortOrder = $filters['sortOrder'] ?? "asc";
-        log_message("debug", "filters: " . json_encode($filters));
+
         // Build query
         $builder = $param ? $this->examinationRegistrationsModel->search($param) : $this->examinationRegistrationsModel->builder();
         $builder = $this->examinationRegistrationsModel->addCustomFields($builder);
@@ -511,6 +517,11 @@ class ExaminationService
         }
         if (isset($filters['exam_id']) && $filters['exam_id'] !== '') {
             $builder->where("$tableName.exam_id", $filters['exam_id']);
+        }
+        if (isset($filters['result'])) {
+            $value = Utils::parseParam($filters['result']);
+            $builder = Utils::parseWhereClause($builder, "result", $value);
+
         }
 
         if ($withDeleted) {
@@ -583,17 +594,6 @@ class ExaminationService
 
     public function updateExamRegistration(string $id, array $data, $userId)
     {
-        // Validate and process the data
-        // $rules = [
-
-        // ];
-        // $validator = \Config\Services::validation();
-        // $validator->setRules($rules);
-        // if (!$validator->run($data)) {
-        //     $message = implode(" ", array_values($validator->getErrors()));
-        //     throw new \InvalidArgumentException("Validation failed: . $message");
-        // }
-
         // Update the exam registration in the database. createArrayFromAllowedFields removes fields that are null
         $registrationData = $this->examinationRegistrationsModel->createArrayFromAllowedFields($data);
         //some fields are not allowed to be updated, or need to be updated specially, so we need to unset them
@@ -605,11 +605,14 @@ class ExaminationService
         //some fields are nullable. we may want to set these to null if they're present and have a null value
         $nullableFields = ['registration_letter', 'result_letter'];
         foreach ($nullableFields as $field) {
-            if (isset($data[$field]) && $data[$field] === null) {
+
+            if (array_key_exists($field, $data) && empty($data[$field])) {
                 $registrationData[$field] = null;
             }
         }
-        $registrationData['scores'] = json_encode($data['scores'] ?? []);
+        if (isset($data['scores'])) {
+            $registrationData['scores'] = json_encode($data['scores']);
+        }
         return $this->examinationRegistrationsModel->builder()->where(['id' => $id])->update($registrationData);
     }
 
@@ -659,12 +662,12 @@ class ExaminationService
         $builder->select('result, COUNT(*) as count');
         $builder->where('exam_id', $examId);
         $builder->groupBy('result');
-        $results = $builder->get()->getResultArray();
 
+        $results = $builder->get()->getResultArray();
         // Convert the results to a more usable format
         $counts = [];
         foreach ($results as $result) {
-            $key = empty($result) ? strtolower($result['result']) : 'not_set'; // Handle null or empty results
+            $key = !empty($result['result']) ? strtolower($result['result']) : 'not_set'; // Handle null or empty results
             $counts[$key] = (int) $result['count'];
         }
 
@@ -689,7 +692,7 @@ class ExaminationService
             "index_number" => "required|is_not_unique[examination_registrations.index_number]",
             "intern_code" => "required|is_not_unique[examination_registrations.intern_code]",
             "result" => "required|in_list[Pass,Fail]",
-            "scores" => "required|array"
+            "scores" => "required"
         ];
         $updateData = [];
         $activityLogMessages = [];
@@ -729,13 +732,41 @@ class ExaminationService
      * @param object{uuid:string, index_number:string, intern_code:string}[] $data The list of data required to set the results
      * @return int
      */
-    public function removeExaminationResults($data)
+    public function removeExaminationResults($uuid)
     {
+        $oldData = $this->examinationRegistrationsModel->where(['uuid' => $uuid])->first();
+        if (!$oldData) {
+            throw new \InvalidArgumentException("Registration not found");
+        }
+        // Update the exam registration in the database. createArrayFromAllowedFields removes fields that are null
+        $registrationData = [
+            'result' => null,
+            'scores' => null
+        ];
+
+        $update = $this->examinationRegistrationsModel->builder()->where(['uuid' => $uuid])->update($registrationData);
+        try {
+            $this->activitiesModel->logActivity("Removed result for  exam registration for intern code {$oldData['intern_code']} index number {$oldData['index_number']}", null, "Examination");
+        } catch (\Throwable $th) {
+            log_message("error", $th);
+        }
+        return $update;
+
+    }
+
+    /**
+     * Set the scores and results for a set of examination registrations.
+     * @param object{uuid:string, index_number:string, publish_result_date:string}[] $data The list of data required to set the publish date
+     * @return int
+     */
+    public function publishResults(array $data): int
+    {
+        // Validate and process the data
         $rules = [
             "uuid" => "required|is_not_unique[examination_registrations.uuid]",
-            "index_number" => "required|is_not_unique[examination_registrations.index_number]",
-            "intern_code" => "required|is_not_unique[examination_registrations.intern_code]"
-
+            "index_number" => "required",
+            "intern_code" => "required",
+            "publish_result_date" => "required|valid_date"
         ];
         $updateData = [];
         $activityLogMessages = [];
@@ -750,12 +781,11 @@ class ExaminationService
 
             $registrationData = [
                 'uuid' => $registration['uuid'],
-                'result' => null,
-                'scores' => null
+                'publish_result_date' => $registration['publish_result_date']
             ];
 
             $updateData[] = $registrationData;
-            $activityLogMessages[] = "Removed result for  exam registration for intern code {$registration['intern_code']} index number {$registration['index_number']}";
+            $activityLogMessages[] = "Published result for  exam registration for intern code {$registration['intern_code']} index number {$registration['index_number']}";
         }
         $this->examinationRegistrationsModel->db->transException(true)->transStart();
         $numRows = $this->examinationRegistrationsModel->updateBatch($updateData, 'uuid', count($updateData));
@@ -768,6 +798,52 @@ class ExaminationService
 
 
         return $numRows;
+    }
+
+    /**
+     * Set the publish result date  set of examination registrations to null.
+     * @param object{uuid:string, index_number:string, intern_code:string}[] $data The list of data required to set the results
+     * @return int
+     */
+    public function unpublishResults($data)
+    {
+        // Validate and process the data
+        $rules = [
+            "uuid" => "required|is_not_unique[examination_registrations.uuid]",
+            "index_number" => "required",
+            "intern_code" => "required"
+        ];
+        $updateData = [];
+        $activityLogMessages = [];
+        $validator = \Config\Services::validation();
+        $validator->setRules($rules);
+        for ($i = 0; $i < count($data); $i++) {
+            $registration = (array) $data[$i];
+            if (!$validator->run($registration)) {
+                $message = implode(" ", array_values($validator->getErrors()));
+                throw new \InvalidArgumentException("Validation failed for " . $registration['index_number'] . ": . $message");
+            }
+
+            $registrationData = [
+                'uuid' => $registration['uuid'],
+                'publish_result_date' => null
+            ];
+
+            $updateData[] = $registrationData;
+            $activityLogMessages[] = "Unpublished result for  exam registration for intern code {$registration['intern_code']} index number {$registration['index_number']}";
+        }
+        $this->examinationRegistrationsModel->db->transException(true)->transStart();
+        $numRows = $this->examinationRegistrationsModel->updateBatch($updateData, 'uuid', count($updateData));
+        $this->examinationRegistrationsModel->db->transComplete();
+        try {
+            $this->activitiesModel->logActivity($activityLogMessages, null, "Examination");
+        } catch (\Throwable $th) {
+            log_message("error", $th);
+        }
+
+
+        return $numRows;
+
     }
 
 }

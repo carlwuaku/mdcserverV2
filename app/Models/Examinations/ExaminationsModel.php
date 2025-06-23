@@ -29,7 +29,8 @@ class ExaminationsModel extends MyBaseModel implements TableDisplayInterface, Fo
         'created_at',
         'updated_at',
         'next_exam_month',
-        'metadata'
+        'metadata',
+        'scores_names'
     ];
 
     protected bool $allowEmptyInserts = false;
@@ -79,6 +80,7 @@ class ExaminationsModel extends MyBaseModel implements TableDisplayInterface, Fo
             'number_of_candidates',
             'open_to',
             'type',
+            'scores_names',
             'publish_scores',
             'publish_score_date',
             'deleted_at',
@@ -201,6 +203,15 @@ class ExaminationsModel extends MyBaseModel implements TableDisplayInterface, Fo
                 "required" => true
             ],
             [
+                "label" => "Score Names",
+                "name" => "scores_names",
+                "type" => "list",
+                "hint" => "e.g. Oral, Problem Solving, MCQ. Separate by commas(,). The names entered here will be used to display scores when submitting results and will be seen by the candidates in their result slips.",
+                "options" => [],
+                "value" => "",
+                "required" => true
+            ],
+            [
                 "label" => "Publish Scores",
                 "name" => "publish_scores",
                 "type" => "select",
@@ -263,7 +274,6 @@ class ExaminationsModel extends MyBaseModel implements TableDisplayInterface, Fo
             join($registrationsModel->table, "{$this->table}.id = {$registrationsModel->table}.exam_id", "left")
             ->groupBy("{$this->table}.id");
         ;
-        log_message("debug", $builder->getCompiledSelect(false));
         return $builder;
     }
 }

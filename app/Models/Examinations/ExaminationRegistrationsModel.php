@@ -26,7 +26,8 @@ class ExaminationRegistrationsModel extends MyBaseModel implements TableDisplayI
         'uuid',
         'index_number',
         'result',
-        'publish_result_date'
+        'publish_result_date',
+        'scores',
     ];
 
     protected bool $allowEmptyInserts = false;
@@ -75,7 +76,7 @@ class ExaminationRegistrationsModel extends MyBaseModel implements TableDisplayI
             'middle_name',
             'index_number',
             'result',
-            'type',
+            'practitioner_type',
             'intern_code',
             'publish_result_date',
             'registration_letter',
@@ -143,7 +144,7 @@ class ExaminationRegistrationsModel extends MyBaseModel implements TableDisplayI
         $fields = $licenseDef->selectionFields;
         $licenseTypeTable = $licenseDef->table;
 
-        $builder->select("{$this->table}.*, first_name, middle_name, last_name, picture, email, phone, category, specialty")->
+        $builder->select("{$this->table}.*, first_name, middle_name, last_name, picture, email, phone, category, specialty, practitioner_type")->
             join($licenseTypeTable, "{$this->table}.intern_code = {$licenseTypeTable}.intern_code", "left")
             ->join($licensesModel->table, "{$this->table}.intern_code = {$licensesModel->table}.license_number", "left")
         ;

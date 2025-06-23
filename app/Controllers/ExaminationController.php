@@ -210,11 +210,30 @@ class ExaminationController extends ResourceController
         }
     }
 
-    public function removeExaminationResults()
+    public function removeExaminationResults($uuid)
+    {
+        try {
+
+
+
+            $result = $this->examinationService->removeExaminationResults($uuid);
+
+            return $this->respond($result, ResponseInterface::HTTP_OK);
+
+        } catch (\InvalidArgumentException $e) {
+            log_message("error", $e);
+            return $this->respond(['message' => $e->getMessage()], ResponseInterface::HTTP_BAD_REQUEST);
+        } catch (\Throwable $e) {
+            log_message("error", $e);
+            return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function publishExaminationRegistrationResults()
     {
         try {
             /**
-             * @var  object{uuid:string, index_number:string, intern_code:string}[] $data
+             * @var  object{uuid:string, index_number:string, publish_result_date:string}[] $data
              */
             $data = $this->request->getVar('data');
             if (empty($data)) {
@@ -222,7 +241,32 @@ class ExaminationController extends ResourceController
             }
 
 
-            $result = $this->examinationService->removeExaminationResults($data);
+            $result = $this->examinationService->publishResults($data);
+
+            return $this->respond($result, ResponseInterface::HTTP_OK);
+
+        } catch (\InvalidArgumentException $e) {
+            log_message("error", $e);
+            return $this->respond(['message' => $e->getMessage()], ResponseInterface::HTTP_BAD_REQUEST);
+        } catch (\Throwable $e) {
+            log_message("error", $e);
+            return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function unpublishExaminationRegistrationResults()
+    {
+        try {
+            /**
+             * @var  object{uuid:string, index_number:string, publish_result_date:string}[] $data
+             */
+            $data = $this->request->getVar('data');
+            if (empty($data)) {
+                throw new \InvalidArgumentException("Invalid data provided");
+            }
+
+
+            $result = $this->examinationService->unpublishResults($data);
 
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
@@ -317,7 +361,8 @@ class ExaminationController extends ResourceController
             'type',
             'exam_type',
             'exam_id',
-            'created_on'
+            'created_on',
+            'result'
         ];
 
         foreach ($commonParams as $param) {

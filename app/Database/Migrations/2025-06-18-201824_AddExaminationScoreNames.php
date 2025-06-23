@@ -8,9 +8,9 @@ class AddExaminationScoreNames extends Migration
 {
     public function up()
     {
-        if (!$this->db->fieldExists('scores', 'examination_registrations')) {
-            $this->forge->addColumn('examination_registrations', [
-                'scores' => [
+        if (!$this->db->fieldExists('scores_names', 'examinations')) {
+            $this->forge->addColumn('examinations', [
+                'scores_names' => [
                     'type' => 'JSON',
                     'null' => true,
                     'default' => NULL,

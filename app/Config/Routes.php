@@ -297,11 +297,14 @@ $routes->group("examinations", ["namespace" => "App\Controllers", "filter" => "a
     $routes->post("registrations", [ExaminationController::class, "createExaminationRegistrations"], ["filter" => ["hasPermission:Manage_Examination_Candidates"]]);
     $routes->put("registrations/(:segment)", [ExaminationController::class, "updateExaminationRegistrations/$1"], ["filter" => ["hasPermission:Manage_Examination_Data"]]);
     $routes->delete("registrations/(:segment)", [ExaminationController::class, "deleteExaminationRegistration/$1"], ["filter" => ["hasPermission:Manage_Examination_Data"]]);
+    $routes->delete("registrations/(:segment)/result", [ExaminationController::class, "removeExaminationResults/$1"], ["filter" => ["hasPermission:Manage_Examination_Data"]]);
+
     $routes->get("registrations/(:segment)/letter/registration", [ExaminationController::class, "getCandidateRegistrationLetter/$1"], ["filter" => ["hasPermission:Manage_Examination_Candidates"]]);
     $routes->get("registrations/(:segment)/letter/result", [ExaminationController::class, "getCandidateResultLetter/$1"], ["filter" => ["hasPermission:Manage_Examination_Candidates"]]);
     $routes->get("registrations/(:segment)/result-count", [ExaminationController::class, "getExaminationRegistrationResultCounts/$1"], ["filter" => ["hasPermission:Manage_Examination_Candidates"]]);
     $routes->post("registrations/result", [ExaminationController::class, "setExaminationRegistrationResults"], ["filter" => ["hasPermission:Manage_Examination_Candidates"]]);
-    $routes->put("registrations/result/remove", [ExaminationController::class, "removeExaminationResults"], ["filter" => ["hasPermission:Manage_Examination_Candidates"]]);
+    $routes->put("registrations/result/publish", [ExaminationController::class, "publishExaminationRegistrationResults"], ["filter" => ["hasPermission:Manage_Examination_Candidates"]]);
+    $routes->put("registrations/result/unpublish", [ExaminationController::class, "unpublishExaminationRegistrationResults"], ["filter" => ["hasPermission:Manage_Examination_Candidates"]]);
 
     $routes->get("applications", [ExaminationController::class, "getExaminationApplications"], ["filter" => ["hasPermission:Approve_Or_Deny_Examination_Applications"]]);
     $routes->post("applications", [ExaminationController::class, "createExaminationApplications"], ["filter" => ["hasPermission:Approve_Or_Deny_Examination_Applications"]]);

@@ -50,23 +50,29 @@ class Utils
      */
     public static function compareObjects($oldObject, $newObject)
     {
-        if (is_array($oldObject)) {
-            $oldObject = (object) $oldObject;
-        }
-
-        if (is_array($newObject)) {
-            $newObject = (object) $newObject;
-        }
-        $obj1Vars = get_object_vars($oldObject);
-        $obj2Vars = get_object_vars($newObject);
-        $differentKeys = [];
-        foreach ($obj2Vars as $key => $value) {
-            if ($key !== "qr_code" && isset($obj1Vars[$key]) && $obj1Vars[$key] !== $value) {
-                $differentKeys[] = $key . ": {$obj1Vars[$key]} -> $value";
+        try {
+            if (is_array($oldObject)) {
+                $oldObject = (object) $oldObject;
             }
+
+            if (is_array($newObject)) {
+                $newObject = (object) $newObject;
+            }
+            $obj1Vars = get_object_vars($oldObject);
+            $obj2Vars = get_object_vars($newObject);
+            $differentKeys = [];
+            foreach ($obj2Vars as $key => $value) {
+                if ($key !== "qr_code" && isset($obj1Vars[$key]) && $obj1Vars[$key] !== $value) {
+                    $differentKeys[] = $key . ": {$obj1Vars[$key]} -> $value";
+                }
+            }
+
+            return $differentKeys;
+        } catch (\Throwable $th) {
+            log_message('error', "Error comparing objects: " . $th);
+            return [];
         }
 
-        return $differentKeys;
     }
 
 
