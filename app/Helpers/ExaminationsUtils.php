@@ -192,7 +192,7 @@ class ExaminationsUtils extends Utils
      */
     public static function generateCandidateLetter($uuid, $letterType = "registration")
     {
-        // This function should generate a registration letter for the candidate based on the UUID.
+        // This function should generate a registration/result letter for the candidate based on the UUID.
         // each exam has different templates for the registration letter. one that applies to all, and others that apply to specific values of the candidate's details. e.g. there may be one set for those who have category set to Dental, specialty set to 1 (any specialty) etc.
         // additionally, each registration also has a registration letter template that is used to generate the letter. if this is null, then we use the exam's letter template. for the exam templates, 
         // we check if there's a letter that's specific to the candidate's details, and if not, we use the default letter template for the exam.
@@ -218,16 +218,22 @@ class ExaminationsUtils extends Utils
         if (empty($examId)) {
             throw new \InvalidArgumentException("No exam ID found for registration with UUID: $uuid");
         }
-        $examLetterTemplates = self::getExaminationLettersWithCriteria($examId, $letterType);
+        //for result letters, it has to be either a pass or fail. so we need to check if the result is pass or fail. if there's no result, no letter can be generated.
+        $examinationLetterType = $letterType === "registration" ? "registration" : "";
+        if ($letterType === "result") {
+            if ($registration['result'] !== "Pass" && $registration['result'] !== "Fail") {
+                throw new \InvalidArgumentException("Result not set for candidate");
+            }
+            $examinationLetterType = strtolower($registration['result']);
+        }
+        $examLetterTemplates = self::getExaminationLettersWithCriteria($examId, $examinationLetterType);
         $selectedLetterTemplate = "No letter template found for this exam. Please contact support for assistance.";
         //if there is a default letter template it will overwrite the above. if there is a more specific one that matches the criteria, then it will be returned.
-        log_message('info', print_r($registration, true));
         foreach ($examLetterTemplates as $row) {
             $criteria = $row['criteria'];// json_decode($row['criteria'], true);
             //for each exam letter template type there's one with no criteria, which is the default one.
             //we use it if the others with criteria do not match the registration details.
-
-            if (empty($criteria)) {
+            if (count($criteria) === 0) {
                 $selectedLetterTemplate = $row['content'];
                 continue;
             }
@@ -235,18 +241,36 @@ class ExaminationsUtils extends Utils
             // Check if the criteria match the registration details
             $criteriaMatch = true;
             foreach ($criteria as $criterion) {
-
                 $field = $criterion['field'] ?? '';
-                $values = $criterion['values'] ?? [];
-                // Check if the field exists in the registration and if its value is in the allowed values
-                log_message('info', print_r($values, true));
+                $values = $criterion['value'] ?? [];
+                // Check if the field exists in the registration and if its value is in the allowed values.
+                //the allowed values may be an integer 1 [1]. this means any value that's not empty should match. if it's [0], 
+                //then only empty values should match i.e. empty strings or null. to keep things simple, if the first item in the 
+                //values array is 1 or 0, anything else is ignored
                 if (!array_key_exists($field, $registration)) {
                     $criteriaMatch = false;
                     break;
                 }
-                if (array_key_exists($field, $registration) && !in_array($registration[$field], $values)) {
-                    $criteriaMatch = false;
-                    break;
+                // log_message("debug", "values empty: " . print_r(!empty($values)) . "int val of first value:" . intval($values[0]) . "registration value:" . $registration[$field] . print_r($values, true));
+                if (count($values) > 0) {
+                    if (intval($values[0]) === 1) {
+                        if ($registration[$field] === null || trim($registration[$field]) === "") {
+                            $criteriaMatch = false;
+                            break;
+                        }
+                        continue;
+                    }
+                    if (intval($values[0]) === 0) {
+                        if (!($registration[$field] === null || trim($registration[$field]) === "")) {
+                            $criteriaMatch = false;
+                            break;
+                        }
+                        continue;
+                    }
+                    if (count($values) > 0 && !in_array($registration[$field], $values)) {
+                        $criteriaMatch = false;
+                        break;
+                    }
                 }
             }
             // If all criteria match, process the letter template

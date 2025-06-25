@@ -293,6 +293,12 @@ class ExaminationController extends ResourceController
         }
     }
 
+    /**
+     * Returns the registration letter for a candidate.
+     * 
+     * @param string $uuid The UUID of the candidate
+     * @return ResponseInterface
+     */
     public function getCandidateRegistrationLetter($uuid)
     {
         try {
@@ -309,7 +315,6 @@ class ExaminationController extends ResourceController
     /**
      * Returns the result letter for a candidate.
      * 
-     * This endpoint is protected by the "View_CPD_Details" permission.
      * 
      * TODO: if the user is an admin, they can get any candidate's letter, even if the score is not published.
      * else, they can only get their own letter if the score is published.
@@ -323,7 +328,7 @@ class ExaminationController extends ResourceController
             //TODO: if the user is an admin, they can get any candidate's letter, even if the score is not published.
             // else, they can only get their own letter if the score is published.
 
-            $result = $this->examinationService->getCandidateLetter($uuid, "registration");
+            $result = $this->examinationService->getCandidateLetter($uuid, "result");
 
             return $this->respond($result, ResponseInterface::HTTP_OK);
 

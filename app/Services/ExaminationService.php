@@ -340,7 +340,7 @@ class ExaminationService
         $total = $builder->countAllResults(false);
         $result = $builder->get($per_page, $page)->getResult();
         foreach ($result as &$row) {
-            $row->metadata = json_decode($row->metadata);
+            $row->metadata = $row->metadata ? json_decode($row->metadata) : [];
             $row->scores_names = $row->scores_names ? json_decode($row->scores_names) : [];
             //merge the metadata fields with the data
             $row = array_merge((array) $row, (array) $row->metadata);

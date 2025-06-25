@@ -81,7 +81,7 @@ class ExaminationRegistrationsModel extends MyBaseModel implements TableDisplayI
             'publish_result_date',
             'registration_letter',
             'result_letter',
-            'speciality',
+            'specialty',
             'category',
             'phone',
             'email',
