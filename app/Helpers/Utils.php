@@ -42,6 +42,23 @@ class Utils
     }
 
     /**
+     * Get the contents of a file in the app/Templates folder
+     * @param string $fileName
+     * @return string
+     * @throws \Exception
+     */
+    public static function getTemplateFileContent($fileName)
+    {
+        //get the contents of a file in the app/Templates folder
+        $file = APPPATH . DIRECTORY_SEPARATOR . 'Templates' . DIRECTORY_SEPARATOR . $fileName;
+        if (!file_exists($file)) {
+            log_message('error', "Template file not found: $file");
+            throw new \Exception("Template file not found", 1);
+        }
+        return file_get_contents($file);
+    }
+
+    /**
      * Compares two objects and returns the keys with different values.
      *
      * @param mixed $oldObject The first object to compare
@@ -711,7 +728,7 @@ class Utils
             }
         } else {
             // Single value logic remains the same
-            if (strpos($columnName, 'date') !== false) {
+            if (self::fieldIsDateField($columnName)) {
                 $dateRange = Utils::getDateRange($value);
                 $builder->where($columnName . ' >=', $dateRange['start']);
                 $builder->where($columnName . ' <=', $dateRange['end']);
@@ -719,6 +736,10 @@ class Utils
                 $builder->where($columnName . ' IS NULL');
             } else if ($value === "--Empty Value--") {
                 $builder->where($columnName . ' = ""');
+            } else if ($value === "--Not Null--") {
+                $builder->where($columnName . ' IS NOT NULL AND ' . $columnName . ' != ""');
+            } else if ($value === "--Null Or Empty--") {
+                $builder->where($columnName . ' IS NULL OR ' . $columnName . ' = ""');
             } else {
                 $builder->where($columnName, $value);
             }
@@ -767,5 +788,107 @@ class Utils
             },
             ARRAY_FILTER_USE_KEY
         );
+    }
+
+    /**
+     * Create a table from a two-dimensional array.
+     *
+     * The function takes a PhpWord object, a two-dimensional array of data, and an optional array of column widths.
+     * It returns a Table object.
+     *
+     * The first row of the array is used as the header row of the table.
+     * The function will automatically capitalize the header row column names and replace any underscores with spaces.
+     * The column widths are set based on the optional array of column widths. If a column width is not specified, it defaults to 2000.
+     *
+     * The function will add each row of the array to the table as a new row.
+     * If the value of a cell is null, it is replaced with an empty string.
+     *
+     * @param \PhpOffice\PhpWord\PhpWord $phpWord The PhpWord object to add the table to.
+     * @param array $data A two-dimensional array of data to add to the table.
+     * @param array $headers An optional array of column headers.
+     * @param array $columnWidths An optional array of column widths.
+     * @return void.
+     */
+    public static function createTableFromArray($phpWord, $data, $headers = [], $columnWidths = null)
+    {
+        $section = $phpWord->addSection([
+            'orientation' => 'landscape',
+        ]);
+
+        $table = $section->addTable(
+            [
+                'width' => '100',
+                'unit' => \PhpOffice\PhpWord\SimpleType\TblWidth::PERCENT
+            ]
+        );
+
+        if (empty($data)) {
+            return;
+        }
+
+        // Calculate column width based on number of columns
+        $columnCount = count((array) $data[0]);
+        $availableWidth = (11 * 1440); // Total available width in twips
+        $defaultWidth = intval($availableWidth / $columnCount);
+
+
+        // Add header row
+        $headerRow = $table->addRow();
+        $headers = $headers ?: array_keys($data[0]);
+
+        foreach ($headers as $header) {
+            $width = is_array($columnWidths) ? ($columnWidths[$header] ?? $defaultWidth) : $defaultWidth;
+            $headerRow->addCell($width)->addText(ucfirst(str_replace('_', ' ', $header)));
+        }
+
+        // Add data rows
+        foreach ($data as $item) {
+            $row = $table->addRow();
+            foreach ($headers as $header) {
+                $value = property_exists($item, $header) ? $item->$header : "";
+                $width = is_array($columnWidths) ? ($columnWidths[$header] ?? $defaultWidth) : $defaultWidth;
+                $row->addCell($width)->addText($value ?? '');
+            }
+        }
+
+        return;
+    }
+
+    /**
+     * Wrap the given letter content with some default styling
+     * This function fetches the letterContainer template from the app settings and replaces the [##content##] placeholder with the given content
+     * @param string $content
+     * @return string
+     */
+    public static function addLetterStyling(string $content)
+    {
+        /** the letterContainer is an array with an html key that contains the template with some styling and a placeholder [##content##] that will be replaced with the letter content
+         * @var string
+         */
+        $template = self::getTemplateFileContent("letter-container.html");
+        return str_replace("[##content##]", $content, $template);
+    }
+
+    public static function fieldIsDateField(string $fieldName): bool
+    {
+        return in_array($fieldName, DATABASE_DATE_FIELDS);
+    }
+
+    /**
+     * Returns a user-friendly error message based on the given error message from the database
+     * If the error is a duplicate entry error, return a more specific message
+     * Otherwise, return a generic error message
+     * @param string $errorMessage the error message from the database
+     * @return string a user-friendly error message
+     */
+    public static function getUserDatabaseErrorMessage(string $errorMessage)
+    {
+        //get a sensible but secure message for the UI based on the error message
+        //if it's a duplicate entry error, return a more specific message
+        if (strpos($errorMessage, "Duplicate entry") !== false) {
+            return "Duplicate entry";
+        } else {
+            return "An error occurred. Please make sure the data is valid and is not a duplicate operation, and try again. ";
+        }
     }
 }

@@ -478,6 +478,21 @@ class ExaminationService
         if (isset($filters['exam_id']) && $filters['exam_id'] !== '') {
             $builder->where("$tableName.exam_id", $filters['exam_id']);
         }
+        $childParams = $this->extractChildParams($filters);
+        if (!empty($childParams)) {
+            $examCandidatesTable = "exam_candidates";
+            foreach ($childParams as $key => $value) {
+                if ($key === "child_param") {
+                    continue;
+                }
+
+                $value = Utils::parseParam($value);
+                $columnName = $examCandidatesTable . "." . str_replace('child_', '', $key);
+                $builder = Utils::parseWhereClause($builder, $columnName, $value);
+            }
+        }
+
+
 
         if ($withDeleted) {
             $this->examinationApplicationsModel->withDeleted();
@@ -493,9 +508,60 @@ class ExaminationService
     }
 
     /**
-     * Retrieves all exam applications.
+     * Counts all exam applications.
      * may be filtered by intern code, exam ID
-     * @return array Returns an array of all exam applications.
+     * @param array $filters An associative array of filters.
+     * @return int Returns the total number of exam applications.
+     */
+    public function countExamApplications(array $filters = []): int
+    {
+
+        $param = $filters['param'] ?? $filters['child_param'] ?? null;
+
+        // Build query
+        $builder = $param ? $this->examinationApplicationsModel->search($param) : $this->examinationApplicationsModel->builder();
+        $builder = $this->examinationApplicationsModel->addCustomFields($builder);
+        $tableName = $this->examinationApplicationsModel->table;
+
+        $filterArray = $this->examinationApplicationsModel->createArrayFromAllowedFields($filters);
+        array_map(function ($value, $key) use ($builder, $tableName) {
+            $builder->where($tableName . "." . $key, $value);
+        }, $filterArray, array_keys($filterArray));
+        // Apply other filters
+        foreach ($filterArray as $key => $value) {
+            if (strpos($key, 'child_') !== 0) {
+                $value = Utils::parseParam($value);
+                $builder = Utils::parseWhereClause($builder, $key, $value);
+            }
+        }
+        // Apply filters
+        if (isset($filters['intern_code']) && $filters['intern_code'] !== '') {
+            $builder->where("$tableName.intern_code", $filters['intern_code']);
+        }
+        if (isset($filters['exam_id']) && $filters['exam_id'] !== '') {
+            $builder->where("$tableName.exam_id", $filters['exam_id']);
+        }
+        $childParams = $this->extractChildParams($filters);
+        if (!empty($childParams)) {
+            $examCandidatesTable = "exam_candidates";
+            foreach ($childParams as $key => $value) {
+                if ($key === "child_param") {
+                    continue;
+                }
+
+                $value = Utils::parseParam($value);
+                $columnName = $examCandidatesTable . "." . str_replace('child_', '', $key);
+                $builder = Utils::parseWhereClause($builder, $columnName, $value);
+            }
+        }
+        $total = $builder->countAllResults(false);
+        return $total;
+    }
+
+    /**
+     * Retrieves all exam registrations.
+     * may be filtered by intern code, exam ID
+     * @return array Returns an array of all exam registrations.
      */
     public function getExamRegistrations(array $filters = []): array
     {
@@ -523,12 +589,33 @@ class ExaminationService
             $builder = Utils::parseWhereClause($builder, "result", $value);
 
         }
+        $childParams = $this->extractChildParams($filters);
+        if (!empty($childParams)) {
+            $examCandidatesTable = "exam_candidates";
+            foreach ($childParams as $key => $value) {
+                if ($key === "child_param") {
+                    continue;
+                }
+
+                $value = Utils::parseParam($value);
+                $columnName = $examCandidatesTable . "." . str_replace('child_', '', $key);
+                $builder = Utils::parseWhereClause($builder, $columnName, $value);
+            }
+        }
 
         if ($withDeleted) {
             $this->examinationRegistrationsModel->withDeleted();
         }
         $total = $builder->countAllResults(false);
         $result = $builder->get($per_page, $page)->getResult();
+        foreach ($result as &$resultItem) {
+            $scoreString = [];
+            $scores = json_decode($resultItem->scores) ?? [];
+            foreach ($scores as $score) {
+                $scoreString[] = $score->title . ": " . $score->score;
+            }
+            $resultItem->scores = implode(", ", $scoreString);
+        }
         return [
             'data' => $result,
             'total' => $total,
@@ -570,9 +657,9 @@ class ExaminationService
                 throw new \InvalidArgumentException("Validation failed for " . $registration['index_number'] . ": . $message");
             }
             //check if the candidate is eligible for the exam
-            if (!ExaminationsUtils::candidateIsEligibleForExamination($registration['intern_code'], $registration['exam_id'], false)) {
-                throw new \InvalidArgumentException("Candidate with intern code {$registration['intern_code']} is not eligible for exam ID {$registration['exam_id']}");
-            }
+
+            ExaminationsUtils::candidateIsEligibleForExamination($registration['intern_code'], $registration['exam_id'], false);
+
             $registrationData = $this->examinationRegistrationsModel->createArrayFromAllowedFields($registration);
             $registrationData['scores'] = json_encode($data['scores'] ?? []);
             $insertData[] = $registrationData;
@@ -638,6 +725,28 @@ class ExaminationService
         return [
             'success' => true,
             'message' => 'Registration deleted successfully'
+        ];
+    }
+
+    public function deleteExaminationApplication(string $id): array
+    {
+        $model = $this->examinationApplicationsModel;
+        $data = $model->where(["id" => $id])->first();
+
+        if (!$data) {
+            throw new \RuntimeException("Application not found");
+        }
+
+        if (!$model->where('id', $id)->delete()) {
+            throw new \RuntimeException('Failed to delete application: ' . json_encode($model->errors()));
+        }
+
+        // Log activity
+        $this->activitiesModel->logActivity("Deleted application for {$data['intern_code']}.", null, "Examination");
+
+        return [
+            'success' => true,
+            'message' => 'Application deleted successfully'
         ];
     }
 
@@ -846,4 +955,123 @@ class ExaminationService
 
     }
 
+    /**
+     * Updates the status of a set of examination applications.
+     * @param array{id:string, intern_code:string, status:string} $data The list of data required to set the status
+     * @return array an array containing a message
+     * @throws \InvalidArgumentException If the validation fails
+     * @throws \Throwable
+     */
+    public function bulkUpdateExaminationApplications(array $data): array
+    {
+        // Validate and process the data
+        $rules = [
+            "id" => "numeric|required|is_not_unique[examination_applications.id]",
+            "intern_code" => "required|is_not_unique[examination_applications.intern_code]",
+            "status" => "required"
+        ];
+        $updateData = [];
+        $activityLogMessages = [];
+        $validator = \Config\Services::validation();
+        $validator->setRules($rules);
+        for ($i = 0; $i < count($data); $i++) {
+            $application = (array) $data[$i];
+            if (!$validator->run($application)) {
+                $message = implode(" ", array_values($validator->getErrors()));
+                throw new \InvalidArgumentException("Validation failed : . $message");
+            }
+
+            $applicationData = [
+                'id' => $application['id'],
+                'application_status' => $application['status']
+            ];
+
+            $updateData[] = $applicationData;
+            $activityLogMessages[] = "Set status for  exam registration for intern code {$application['intern_code']}";
+        }
+        $this->examinationApplicationsModel->db->transException(true)->transStart();
+        log_message("debug", print_r($updateData, true));
+        $numRows = $this->examinationApplicationsModel->updateBatch($updateData, 'id', count($updateData));
+        $this->examinationApplicationsModel->db->transComplete();
+        try {
+            $this->activitiesModel->logActivity($activityLogMessages, null, "Examination");
+        } catch (\Throwable $th) {
+            log_message("error", $th);
+        }
+
+
+        return ["message" => "Updated successfully"];
+    }
+
+    /**
+     * Deletes a batch of examination applications by their IDs.
+     *
+     * @param array $data An array of application IDs to be deleted.
+     * @return array An array containing a message indicating successful deletion.
+     * @throws \RuntimeException If an error occurs during the deletion process.
+     */
+
+    public function bulkDeleteExaminationApplications(array $data): array
+    {
+        // Validate and process the data
+        $oldData = $this->examinationApplicationsModel->whereIn("id", $data)->findAll();
+        for ($i = 0; $i < count($oldData); $i++) {
+            $application = (array) $oldData[$i];
+            $activityLogMessages[] = "Deleted examination application for intern code {$application['intern_code']}";
+        }
+        $this->examinationApplicationsModel->db->transException(true)->transStart();
+        $numRows = $this->examinationApplicationsModel->whereIn("id", $data)->delete();
+        $this->examinationApplicationsModel->db->transComplete();
+        try {
+            $this->activitiesModel->logActivity($activityLogMessages, null, "Examination");
+        } catch (\Throwable $th) {
+            log_message("error", $th);
+        }
+
+
+        return ["message" => "Updated successfully"];
+    }
+
+    /**
+     * Retrieves all exam applications as a Word document.
+     *
+     * @param int $examId The ID of the exam whose applications are to be retrieved.
+     * @return array An array containing the path and filename of the generated Word document.
+     * @throws \InvalidArgumentException If the exam ID does not exist.
+     */
+    public function getExaminationApplicationsInWord($examId)
+    {
+        $data = $this->getExamApplications(['exam_id' => $examId, "limit" => 10000]);
+        $examDetails = $this->examinationsModel->where("id", $examId)->first();
+        if (!$examDetails) {
+            throw new \InvalidArgumentException("No such exam exists");
+        }
+        $title = $examDetails['title'];
+
+        $phpWord = new \PhpOffice\PhpWord\PhpWord();
+        $headers = Utils::getAppSettings('examinations')['applicantsDownloadFields'] ?? [
+            "last_name",
+            "first_name",
+            "middle_name",
+            "qualification",
+            "training_institution",
+            "number_of_exams"
+        ];
+        Utils::createTableFromArray($phpWord, $data['data'], $headers);
+
+        $filename = "$title-applicants.docx";
+        $filepath = WRITEPATH . 'uploads/' . $filename;
+
+        $writer = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
+        $writer->save($filepath);
+
+        return ["path" => $filepath, "name" => $filename];
+    }
+
+    private function extractChildParams(array $filters): array
+    {
+        return array_filter($filters, function ($key) {
+            return strpos($key, 'child_') === 0;
+        }, ARRAY_FILTER_USE_KEY);
+    }
 }

@@ -104,4 +104,19 @@ define("QRCODES_ASSETS_FOLDER", "qr_codes");
 define("UPLOADS_FOLDER", "uploads");
 define("PRIORITY_FIELDS", ["picture", "license_number", "name", "first_name", "middle_name", "last_name", "status", "facility_type", "email", "phone_number"]);
 define("USER_TYPES", ['admin', 'license', 'cpd', 'student_index', 'guest', 'housemanship_facility', 'exam_candidate']);
+define("DATABASE_DATE_FIELDS", [
+    'date_of_birth',
+    'registration_date',
+    'qualification_date',
+    'date_of_graduation',
+    'date_of_expiry',
+    'expiry_date',
+    'start_date',
+    'end_date',
+    'from_date',
+    'to_date',
+    'open_from',
+    'open_to',
+    'publish_score_date'
+]);
 

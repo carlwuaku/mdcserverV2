@@ -103,8 +103,6 @@ class ExaminationsUtils extends Utils
                 $exams = $examModel->where('type', $candidate['practitioner_type'])
                     ->whereIn('exam_type', $permittedExamTypes)
                     ->findAll();
-                //get the last query
-                $lastQuery = $examModel->getLastQuery();
 
                 return [
                     'message' => 'Apply for examination',
@@ -157,12 +155,24 @@ class ExaminationsUtils extends Utils
         return $result;
     }
 
+    /**
+     * This function checks if a candidate is eligible to apply for a given examination.
+     * It takes the intern code and exam ID as parameters and an optional boolean parameter to indicate whether to use the application dates.
+     * It first calls the function getValidExaminationsForApplication to get the valid examinations for the given intern code and parameters.
+     * It then checks if the examId is in the array of valid examinations.
+     * If it is, it returns true, otherwise it throws an InvalidArgumentException.
+     * @param string $internCode the intern code of the candidate
+     * @param string $examId the ID of the examination
+     * @param bool $useApplicationDates whether to use the application dates when checking eligibility
+     * @return bool whether the candidate is eligible for the given examination
+     * @throws \InvalidArgumentException if the candidate is not eligible for the given examination
+     */
     public static function candidateIsEligibleForExamination(string $internCode, string $examId, bool $useApplicationDates = true): bool
     {
         try {
             $validExams = self::getValidExaminationsForApplication($internCode, $useApplicationDates);
             if ($validExams['message'] !== 'Apply for examination') {
-                return false;
+                throw new \InvalidArgumentException("Intern code is not in a valid state to apply for examination");
             }
             $exams = $validExams['exams'] ?? [];
             //check if the examId is in the exams array
@@ -171,10 +181,11 @@ class ExaminationsUtils extends Utils
                     return true;
                 }
             }
-            return false;
+            throw new \InvalidArgumentException("The candidate is not eligible for this examination. They may be in a different category or have not met the requirements.");
+        } catch (\InvalidArgumentException $th) {
+            throw $th;
         } catch (\Throwable $th) {
-            log_message('error', $th);
-            return false;
+            throw $th;
         }
     }
 
@@ -280,11 +291,13 @@ class ExaminationsUtils extends Utils
 
             }
         }
-
-        return $templateEngine->process(
+        $content = $templateEngine->process(
             $selectedLetterTemplate,
             $registration
         );
+
+
+        return self::addLetterStyling($content);
     }
 
     public static function getExaminationLettersWithCriteria($examId, $letterType = "registration")

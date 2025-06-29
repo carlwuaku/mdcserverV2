@@ -2,9 +2,12 @@
 
 namespace App\Controllers;
 
+use App\Helpers\Utils;
 use CodeIgniter\HTTP\ResponseInterface;
 use App\Services\ExaminationService;
 use CodeIgniter\RESTful\ResourceController;
+use CodeIgniter\Database\Exceptions\DatabaseException;
+
 
 class ExaminationController extends ResourceController
 {
@@ -117,6 +120,7 @@ class ExaminationController extends ResourceController
     public function getExaminationApplications()
     {
         try {
+
             $filters = $this->extractRequestFilters();
             $result = $this->examinationService->getExamApplications($filters);
 
@@ -141,6 +145,20 @@ class ExaminationController extends ResourceController
         }
     }
 
+    public function countExaminationApplications()
+    {
+        try {
+            $filters = $this->extractRequestFilters();
+            $total = $this->examinationService->countExamApplications($filters);
+
+            return $this->respond(['data' => $total], ResponseInterface::HTTP_OK);
+
+        } catch (\Throwable $e) {
+            log_message("error", $e);
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     public function createExaminationRegistrations()
     {
         try {
@@ -157,6 +175,9 @@ class ExaminationController extends ResourceController
         } catch (\InvalidArgumentException $e) {
             log_message("error", $e);
             return $this->respond(['message' => $e->getMessage()], ResponseInterface::HTTP_BAD_REQUEST);
+        } catch (DatabaseException $e) {
+            log_message("error", $e);
+            return $this->respond(['message' => Utils::getUserDatabaseErrorMessage($e->getMessage())], ResponseInterface::HTTP_BAD_REQUEST);
         } catch (\Throwable $e) {
             log_message("error", $e);
             return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
@@ -332,6 +353,9 @@ class ExaminationController extends ResourceController
 
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
+        } catch (\InvalidArgumentException $e) {
+            log_message("error", $e);
+            return $this->respond(['message' => $e->getMessage()], ResponseInterface::HTTP_BAD_REQUEST);
         } catch (\Throwable $e) {
             log_message("error", $e);
             return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
@@ -347,6 +371,93 @@ class ExaminationController extends ResourceController
         } catch (\Throwable $e) {
             log_message("error", $e);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function updateExaminationApplicationStatus()
+    {
+        try {
+            /**
+             * @var  array{id:string, intern_code:string, status:string} $data
+             */
+            $data = $this->request->getVar('data');
+            if (empty($data)) {
+                throw new \InvalidArgumentException("Invalid data provided");
+            }
+
+
+            $result = $this->examinationService->bulkUpdateExaminationApplications($data);
+
+            return $this->respond($result, ResponseInterface::HTTP_OK);
+
+        } catch (\InvalidArgumentException $e) {
+            log_message("error", $e);
+            return $this->respond(['message' => $e->getMessage()], ResponseInterface::HTTP_BAD_REQUEST);
+        } catch (\Throwable $e) {
+            log_message("error", $e);
+            return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
+    public function deleteExaminationApplications()
+    {
+        try {
+            /**
+             * @var  string[] $data
+             */
+            $data = $this->request->getVar('data');
+            if (empty($data)) {
+                throw new \InvalidArgumentException("Invalid data provided");
+            }
+
+            $result = $this->examinationService->bulkDeleteExaminationApplications($data);
+
+            return $this->respond($result, ResponseInterface::HTTP_OK);
+
+        } catch (\Throwable $e) {
+            log_message("error", $e);
+            return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function downnloadExaminationApplicants($examId)
+    {
+        try {
+            $fileDetails = $this->examinationService->getExaminationApplicationsInWord($examId);
+
+            $filepath = $fileDetails['path'];
+            $filename = $fileDetails['name'];
+            $this->response->setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+            $this->response->setHeader('Content-Disposition', 'attachment; filename="' . $filename . '"');
+            $this->response->setHeader('Content-Length', filesize($filepath));
+
+            // Read and return file content
+            $fileContent = file_get_contents($filepath);
+
+            // Clean up temporary file
+            unlink($filepath);
+
+            return $this->response->setBody($fileContent);
+
+
+        } catch (\Throwable $e) {
+            log_message("error", $e);
+            return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+
+    }
+
+    public function deleteExaminationApplication($uuid)
+    {
+        try {
+            $result = $this->examinationService->deleteExaminationApplication($uuid);
+
+            return $this->respond($result, ResponseInterface::HTTP_OK);
+
+        } catch (\Throwable $e) {
+            log_message("error", $e);
+            return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -378,14 +489,14 @@ class ExaminationController extends ResourceController
         }
 
         // Get all child_ and renewal_ parameters
-        // $allParams = $this->request->getVar();
-        // if (is_array($allParams)) {
-        //     foreach ($allParams as $key => $value) {
-        //         if (strpos($key, 'child_') === 0 || strpos($key, 'renewal_') === 0) {
-        //             $filters[$key] = $value;
-        //         }
-        //     }
-        // }
+        $allParams = $this->request->getVar();
+        if (is_array($allParams)) {
+            foreach ($allParams as $key => $value) {
+                if (strpos($key, 'child_') === 0) {
+                    $filters[$key] = $value;
+                }
+            }
+        }
 
         return $filters;
     }

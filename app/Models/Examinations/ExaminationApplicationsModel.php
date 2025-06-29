@@ -54,8 +54,15 @@ class ExaminationApplicationsModel extends MyBaseModel implements TableDisplayIn
     protected $beforeDelete = [];
     protected $afterDelete = [];
 
+
+
     public $searchFields = [
         'intern_code',
+        'exam_candidates.first_name',
+        'exam_candidates.last_name',
+        'exam_candidates.middle_name',
+        'licenses.email',
+        'licenses.phone'
     ];
 
 
@@ -68,7 +75,12 @@ class ExaminationApplicationsModel extends MyBaseModel implements TableDisplayIn
             'first_name',
             'middle_name',
             'intern_code',
-            'type',
+            'application_status',
+            'practitioner_type',
+            'qualification',
+            'training_institution',
+            'number_of_exams',
+            'category',
             'speciality',
             'phone',
             'email',
@@ -106,7 +118,7 @@ class ExaminationApplicationsModel extends MyBaseModel implements TableDisplayIn
             ],
             [
                 "label" => "Category",
-                "name" => "candidate_category",
+                "name" => "child_category",
                 "type" => "api",
                 "hint" => "",
                 "options" => [],
@@ -119,16 +131,38 @@ class ExaminationApplicationsModel extends MyBaseModel implements TableDisplayIn
             ],
             [
                 "label" => "Practitioner Type",
-                "name" => "type",
+                "name" => "child_practitioner_type",
                 "type" => "api",
                 "hint" => "",
                 "options" => [],
                 "value" => "",
                 "required" => false,
-                "api_url" => "admin/distinct-values/exam_candidates/type",
-                "apiKeyProperty" => "type",
-                "apiLabelProperty" => "type",
+                "api_url" => "admin/distinct-values/exam_candidates/practitioner_type",
+                "apiKeyProperty" => "practitioner_type",
+                "apiLabelProperty" => "practitioner_type",
                 "apiType" => "select"
+            ],
+            [
+                "label" => "Is Specialist",
+                "name" => "child_specialty",
+                "type" => "select",
+                "hint" => "",
+                "options" => [
+                    [
+                        "key" => "Yes",
+                        "value" => "--Not Null--"
+                    ],
+                    [
+                        "key" => "No",
+                        "value" => "--Null Or Empty--"
+                    ],
+                ],
+                "value" => "",
+                "required" => false,
+                "api_url" => "",
+                "apiKeyProperty" => "",
+                "apiLabelProperty" => "",
+                "apiType" => ""
             ]
         ];
 
@@ -158,7 +192,7 @@ class ExaminationApplicationsModel extends MyBaseModel implements TableDisplayIn
         $fields = $licenseDef->selectionFields;
         $licenseTypeTable = $licenseDef->table;
 
-        $builder->select("{$this->table}.*, first_name, middle_name, last_name, picture, email, phone, category, specialty")->
+        $builder->select("{$this->table}.*, first_name, middle_name, last_name, picture, email, phone, category, specialty, practitioner_type, qualification, training_institution, number_of_exams")->
             join($licenseTypeTable, "{$this->table}.intern_code = {$licenseTypeTable}.intern_code", "left")
             ->join($licensesModel->table, "{$this->table}.intern_code = {$licensesModel->table}.license_number", "left")
         ;

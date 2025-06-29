@@ -292,6 +292,7 @@ $routes->group("examinations", ["namespace" => "App\Controllers", "filter" => "a
     $routes->put("details/(:segment)/restore", [ExaminationController::class, "restoreExamination/$1"], ["filter" => ["hasPermission:Manage_Examination_Data"]]);
     $routes->get("count", [ExaminationController::class, "countExaminations"], ["filter" => ["hasPermission:Manage_Examination_Data"]], );
     $routes->get("config/form", [ExaminationController::class, "getFormFields"], ["filter" => ["hasPermission:Manage_Examination_Data"]]);
+    $routes->get("details/(:segment)/applicants", [ExaminationController::class, "downnloadExaminationApplicants"], ["filter" => ["hasPermission:Approve_Or_Deny_Examination_Applications"]]);
 
     $routes->get("registrations", [ExaminationController::class, "getExaminationRegistrations"], ["filter" => ["hasPermission:Manage_Examination_Candidates"]]);
     $routes->post("registrations", [ExaminationController::class, "createExaminationRegistrations"], ["filter" => ["hasPermission:Manage_Examination_Candidates"]]);
@@ -308,8 +309,12 @@ $routes->group("examinations", ["namespace" => "App\Controllers", "filter" => "a
 
     $routes->get("applications", [ExaminationController::class, "getExaminationApplications"], ["filter" => ["hasPermission:Approve_Or_Deny_Examination_Applications"]]);
     $routes->post("applications", [ExaminationController::class, "createExaminationApplications"], ["filter" => ["hasPermission:Approve_Or_Deny_Examination_Applications"]]);
+    $routes->delete("applications/(:segment)", [ExaminationController::class, "deleteExaminationApplication/$1"], ["filter" => ["hasPermission:Approve_Or_Deny_Examination_Applications"]]);
+    $routes->post("applications/delete", [ExaminationController::class, "deleteExaminationApplications"], ["filter" => ["hasPermission:Approve_Or_Deny_Examination_Applications"]]);
+    $routes->put("applications/update-status", [ExaminationController::class, "updateExaminationApplicationStatus"], ["filter" => ["hasPermission:Approve_Or_Deny_Examination_Applications"]]);
+    $routes->get("applications/count", [ExaminationController::class, "countExaminationApplications"], ["filter" => ["hasPermission:Approve_Or_Deny_Examination_Applications"]]);
     $routes->put("applications/(:segment)", [ExaminationController::class, "updateApplication/$1"], ["filter" => ["hasPermission:Approve_Or_Deny_Examination_Applications"]]);
-    $routes->delete("applications/(:segment)", [ExaminationController::class, "deleteApplication/$1"], ["filter" => ["hasPermission:Approve_Or_Deny_Examination_Applications"]]);
+
 
 });
 

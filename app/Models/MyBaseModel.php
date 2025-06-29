@@ -48,7 +48,7 @@ class MyBaseModel extends Model
             $fields = [];
             $originalFields = $this->searchFields ?? $this->allowedFields;
             foreach ($originalFields as $originalField) {
-                $fields[] = "$this->table.$originalField";
+                $fields[] = str_contains($originalField, ".") ? $originalField : "$this->table.$originalField";
             }
 
             // Handle joins if specified
