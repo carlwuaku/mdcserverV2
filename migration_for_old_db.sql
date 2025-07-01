@@ -3271,3 +3271,318 @@ WHERE
     mdc.bf_intern.intern_code IS NOT NULL
     AND mdc.bf_intern.intern_code != ''
     AND mdc.bf_intern.status != 'Approved';
+
+#END MIGRATE EXAMINATION CANDIDATES DETAILS INTO THE exam_candidates TABLE##
+#MIGRATE EXAMINATIONS INTO EXAMINATIONS TABLE##
+INSERT INTO
+    ci4_mdc4.`examinations` (
+        uuid,
+        title,
+        exam_type,
+        open_from,
+        open_to,
+        type,
+        publish_scores,
+        publish_score_date,
+        next_exam_month,
+        scores_names,
+        metadata
+    )
+SELECT
+    '',
+    `title`,
+    `exam_type`,
+    `open_from`,
+    `open_to`,
+    `type`,
+    `publish_scores`,
+    `publish_score_date`,
+    `next_exam_month`,
+    JSON_ARRAY('MCQ', 'PROBLEM SOLVING', 'ORALS') as scores_names,
+    JSON_OBJECT(
+        'venue',
+        `venue`,
+        'oral_location',
+        `oral_location`,
+        'oral_date',
+        `oral_date`,
+        'written_location',
+        `written_location`,
+        'written_date',
+        `written_date`,
+        'duration',
+        `duration`,
+        'specialist_date',
+        `specialist_date`
+    ) as metadata
+FROM
+    mdc.`bf_intern_exam`;
+
+#END MIGRATE EXAMINATIONS INTO EXAMINATIONS TABLE##
+#MIGRATE EXAMINATION LETTERS INTO EXAMINATION LETTERS TABLE##
+INSERT INTO
+    ci4_mdc4.`examination_letter_templates` (
+        name,
+        exam_id,
+        type,
+        content
+    )
+SELECT
+    'Index number letter - All',
+    examinations.`id`,
+    'registration',
+    COALESCE(index_number_letter, '')
+FROM
+    mdc.`bf_intern_exam`
+    JOIN ci4_mdc4.`examinations` examinations ON mdc.`bf_intern_exam`.title = examinations.`title`;
+
+INSERT INTO
+    ci4_mdc4.`examination_letter_templates` (
+        name,
+        exam_id,
+        type,
+        content
+    )
+SELECT
+    'Pass letter - All',
+    examinations.`id`,
+    'pass',
+    COALESCE(pass_letter, '')
+FROM
+    mdc.`bf_intern_exam`
+    JOIN ci4_mdc4.`examinations` examinations ON mdc.`bf_intern_exam`.title = examinations.`title`;
+
+INSERT INTO
+    ci4_mdc4.`examination_letter_templates` (
+        name,
+        exam_id,
+        type,
+        content
+    )
+SELECT
+    'Fail letter - All',
+    examinations.`id`,
+    'fail',
+    COALESCE(fail_letter, '')
+FROM
+    mdc.`bf_intern_exam`
+    JOIN ci4_mdc4.`examinations` examinations ON mdc.`bf_intern_exam`.title = examinations.`title`;
+
+INSERT INTO
+    ci4_mdc4.`examination_letter_templates` (
+        name,
+        exam_id,
+        type,
+        content
+    )
+SELECT
+    'Index number letter - Specialists',
+    examinations.`id`,
+    'registration',
+    COALESCE(specialist_index_number_letter, '')
+FROM
+    mdc.`bf_intern_exam`
+    JOIN ci4_mdc4.`examinations` examinations ON mdc.`bf_intern_exam`.title = examinations.`title`;
+
+INSERT INTO
+    ci4_mdc4.`examination_letter_templates` (
+        name,
+        exam_id,
+        type,
+        content
+    )
+SELECT
+    'Pass letter - Specialists',
+    examinations.`id`,
+    'pass',
+    COALESCE(specialist_pass_letter, '')
+FROM
+    mdc.`bf_intern_exam`
+    JOIN ci4_mdc4.`examinations` examinations ON mdc.`bf_intern_exam`.title = examinations.`title`;
+
+INSERT INTO
+    ci4_mdc4.`examination_letter_templates` (
+        name,
+        exam_id,
+        type,
+        content
+    )
+SELECT
+    'Fail letter - Specialists',
+    examinations.`id`,
+    'fail',
+    COALESCE(specialist_fail_letter, '')
+FROM
+    mdc.`bf_intern_exam`
+    JOIN ci4_mdc4.`examinations` examinations ON mdc.`bf_intern_exam`.title = examinations.`title`;
+
+INSERT INTO
+    ci4_mdc4.`examination_letter_templates` (
+        name,
+        exam_id,
+        type,
+        content
+    )
+SELECT
+    'Index number letter - Dental',
+    examinations.`id`,
+    'registration',
+    COALESCE(dental_index_number_letter, '')
+FROM
+    mdc.`bf_intern_exam`
+    JOIN ci4_mdc4.`examinations` examinations ON mdc.`bf_intern_exam`.title = examinations.`title`;
+
+INSERT INTO
+    ci4_mdc4.`examination_letter_templates` (
+        name,
+        exam_id,
+        type,
+        content
+    )
+SELECT
+    'Pass letter - Ghanaian Doctors',
+    examinations.`id`,
+    'pass',
+    COALESCE(ghanaian_doctors_pass_letter, '')
+FROM
+    mdc.`bf_intern_exam`
+    JOIN ci4_mdc4.`examinations` examinations ON mdc.`bf_intern_exam`.title = examinations.`title`;
+
+#END MIGRATE EXAMINATION LETTERS INTO EXAMINATION LETTERS TABLE##
+#INSERT LETTER TEMPLATE CRITERIA##
+INSERT INTO
+    ci4_mdc4.`examination_letter_template_criteria` (
+        `letter_id`,
+        `field`,
+        `value`
+    )
+SELECT
+    `id`,
+    'category',
+    JSON_ARRAY('Dental')
+FROM
+    ci4_mdc4.`examination_letter_templates`
+WHERE
+    name LIKE '%Dental%';
+
+INSERT INTO
+    ci4_mdc4.`examination_letter_template_criteria` (
+        `letter_id`,
+        `field`,
+        `value`
+    )
+SELECT
+    `id`,
+    'specialty',
+    JSON_ARRAY('1')
+FROM
+    ci4_mdc4.`examination_letter_templates`
+WHERE
+    name LIKE '%Specialists%';
+
+INSERT INTO
+    ci4_mdc4.`examination_letter_template_criteria` (
+        `letter_id`,
+        `field`,
+        `value`
+    )
+SELECT
+    `id`,
+    'nationality',
+    JSON_ARRAY('Ghana', 'Ghanaian')
+FROM
+    ci4_mdc4.`examination_letter_templates`
+WHERE
+    name LIKE '%Ghanaian%';
+
+#END INSERT LETTER TEMPLATE CRITERIA##
+#IMPORT EXAM REGISTRATIONS##
+CREATE TEMPORARY TABLE temp_exam_registration_title_mapping AS
+SELECT
+    ie.id as old_id,
+    ex.id as new_id,
+    ex.title AS title,
+    ie.publish_score_date as publish_score_date
+FROM
+    mdc.bf_intern_exam ie
+    JOIN ci4_mdc4.examinations ex ON ie.title = ex.title;
+
+INSERT INTO
+    ci4_mdc4.`examination_registrations` (
+        uuid,
+        intern_code,
+        exam_id,
+        index_number,
+        result,
+        created_at,
+        registration_letter,
+        result_letter,
+        publish_result_date,
+        scores
+    )
+SELECT
+    uuid,
+    intern_code,
+    new_id,
+    index_number,
+    result,
+    date as created_at,
+    registration_letter,
+    result_letter,
+    publish_score_date,
+    JSON_ARRAY(
+        JSON_OBJECT(
+            'title',
+            'MCQ',
+            'score',
+            `mcq_score`
+        ),
+        JSON_OBJECT(
+            'title',
+            'PROBLEM SOLVING',
+            'score',
+            `problem_solving_score`
+        ),
+        JSON_OBJECT(
+            'title',
+            'ORALS',
+            'score',
+            `orals_score`
+        )
+    )
+FROM
+    mdc.`bf_intern_exam_registration`
+    JOIN temp_exam_registration_title_mapping temp ON mdc.`bf_intern_exam_registration`.exam_id = temp.`old_id`;
+
+DROP TABLE temp_exam_registration_title_mapping;
+
+#END IMPORT EXAM REGISTRATIONS##
+#IMPORT EXAM APPLICATIONS##
+CREATE TEMPORARY TABLE temp_exam_registration_title_mapping AS
+SELECT
+    ie.id as old_id,
+    ex.id as new_id,
+    ex.title AS title
+FROM
+    mdc.bf_intern_exam ie
+    JOIN ci4_mdc4.examinations ex ON ie.title = ex.title;
+
+INSERT INTO
+    ci4_mdc4.`examination_applications` (
+        intern_code,
+        exam_id,
+        application_status,
+        created_at
+    )
+SELECT
+    intern_code,
+    new_id,
+    application_status,
+    created_on
+FROM
+    mdc.`bf_intern_exam_application`
+    JOIN temp_exam_registration_title_mapping temp ON mdc.`bf_intern_exam_application`.exam_id = temp.`old_id`;
+
+DROP TABLE temp_exam_registration_title_mapping;
+
+#END IMPORT EXAM APPLICATIONS##

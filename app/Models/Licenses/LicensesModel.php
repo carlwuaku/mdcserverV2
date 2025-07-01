@@ -335,7 +335,7 @@ class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormIn
 
             if (count(get_object_vars($data)) > 0) {
                 if ($license) {
-                    $this->builder($table)->set((array) $data)->where([$uniqueKeyField => $formData['license_number']])->update();
+                    $this->builder($table)->set((array) $data)->where([$uniqueKeyField => $formData[$uniqueKeyField]])->update();
                 } else {
                     $this->builder($table)->insert($data);
                 }

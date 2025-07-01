@@ -71,28 +71,43 @@ class ExaminationRegistrationsModel extends MyBaseModel implements TableDisplayI
     ];
 
 
-    public function getDisplayColumns(): array
+    public function getDisplayColumns(string $mode = 'candidate'): array
     {
 
-        return [
-            'picture',
-            'last_name',
-            'first_name',
-            'middle_name',
-            'index_number',
-            'result',
-            'scores',
-            'practitioner_type',
-            'intern_code',
-            'publish_result_date',
-            'registration_letter',
-            'result_letter',
-            'specialty',
-            'category',
-            'phone',
-            'email',
-            'created_at'
-        ];
+        return $mode === 'candidate' ?
+            [
+                'picture',
+                'title',
+                'exam_type',
+                'index_number',
+                'result',
+                'scores',
+                'intern_code',
+                'publish_result_date',
+                'registration_letter',
+                'result_letter',
+                'created_at'
+            ]
+            : [
+                'picture',
+                'last_name',
+                'first_name',
+                'middle_name',
+                'index_number',
+                'number_of_exams',
+                'result',
+                'scores',
+                'practitioner_type',
+                'intern_code',
+                'publish_result_date',
+                'registration_letter',
+                'result_letter',
+                'specialty',
+                'category',
+                'phone',
+                'email',
+                'created_at'
+            ];
     }
 
     public function getDisplayColumnLabels(): array
@@ -254,12 +269,14 @@ class ExaminationRegistrationsModel extends MyBaseModel implements TableDisplayI
     public function addCustomFields(BaseBuilder $builder): BaseBuilder
     {
         $licensesModel = new LicensesModel();
+        $examModel = new ExaminationsModel();
         $licenseDef = Utils::getLicenseSetting("exam_candidates");
         $fields = $licenseDef->selectionFields;
         $licenseTypeTable = $licenseDef->table;
 
-        $builder->select("{$this->table}.*, first_name, middle_name, last_name, picture, email, phone, category, specialty, practitioner_type")->
-            join($licenseTypeTable, "{$this->table}.intern_code = {$licenseTypeTable}.intern_code", "left")
+        $builder->select("{$this->table}.*, first_name, middle_name, last_name, picture, email, phone, category, specialty, practitioner_type, number_of_exams, title, exam_type")
+            ->join($examModel->getTableName(), "{$this->table}.exam_id = {$examModel->getTableName()}.id", "left")
+            ->join($licenseTypeTable, "{$this->table}.intern_code = {$licenseTypeTable}.intern_code", "left")
             ->join($licensesModel->table, "{$this->table}.intern_code = {$licensesModel->table}.license_number", "left")
         ;
 

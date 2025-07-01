@@ -17,7 +17,9 @@ use App\Models\Cpd\CpdModel;
 use App\Models\Cpd\ExternalCpdsModel;
 use App\Models\Cpd\CpdAttendanceModel;
 use App\Helpers\Enums\HousemanshipSetting;
-
+use App\Models\Licenses\LicenseRenewalModel;
+use App\Models\Licenses\LicensesModel;
+use Exception;
 
 class Utils
 {
@@ -890,5 +892,69 @@ class Utils
         } else {
             return "An error occurred. Please make sure the data is valid and is not a duplicate operation, and try again. ";
         }
+    }
+
+    /**
+     * Get license details by UUID.
+     *
+     * @param string $uuid The UUID/license number of the license
+     * @return array The license data if found, 
+     * @throws Exception If license is not found
+     */
+    public static function getLicenseDetails(string $uuid, string $field = null, string $type = null): array
+    {
+        $model = new LicensesModel();
+        $builder = $model->builder();
+        $builder->select($model->getTableName() . '.*');
+
+        $builder = $model->addCustomFields($builder);
+        $builder->where($model->getTableName() . '.uuid', $uuid);
+        $builder->orWhere($model->getTableName() . '.license_number', $uuid);
+        if (!empty($field)) {
+            $builder->orWhere($field, $uuid);
+        }
+        if (!empty($type)) {
+            //if a type was provided, do a join to the sub table
+            $licenseDef = Utils::getLicenseSetting($type);
+            $subTableSelectionFields = $model->getTableName() . '.*';
+            if (!$licenseDef) {
+                throw new Exception("License type not found in app settings");
+            }
+            if (!isset($licenseDef->table) || empty($licenseDef->table)) {
+                throw new Exception("License table not defined in app settings for type: $type");
+            }
+            if (!isset($licenseDef->uniqueKeyField) || empty($licenseDef->uniqueKeyField)) {
+                throw new Exception("No unique key defined for license type: $type");
+            }
+            $subtable = $licenseDef->table;
+            if (isset($licenseDef->selectionFields) && !empty($licenseDef->selectionFields)) {
+                $subTableSelectionFields = implode(',', array_map(function ($fieldName) use ($subtable) {
+                    return $subtable . '.' . $fieldName;
+                }, $licenseDef->selectionFields));
+            }
+            $builder->select($subTableSelectionFields);
+
+            $uniqueKeyField = $licenseDef->uniqueKeyField;
+            $builder->join($subtable, $model->getTableName() . '.license_number = ' . $subtable . '.' . $uniqueKeyField);
+            $data = $model->first();
+        } else {
+            $data = $model->first();
+            $licenseType = $data['type'];
+            try {
+                $subModel = new LicensesModel();
+                $licenseDetails = $subModel->getLicenseDetailsFromSubTable($uuid, $licenseType);
+                $data = array_merge($data, $licenseDetails);
+            } catch (\Throwable $th) {
+                log_message('error', "License with no details {{$data['license_number']} }" . $th->getMessage());
+            }
+        }
+
+
+
+        if (!$data) {
+            throw new Exception("License not found");
+        }
+
+        return $data;
     }
 }

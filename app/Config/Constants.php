@@ -119,4 +119,9 @@ define("DATABASE_DATE_FIELDS", [
     'open_to',
     'publish_score_date'
 ]);
+define("EXAM_CANDIDATES_VALID_STATES", ['Apply for examination', 'Apply for migration', 'Migrated']);
+define("APPLY_FOR_MIGRATION", "Apply for migration");
+define("APPLY_FOR_EXAMINATION", "Apply for examination");
+define("MIGRATED", "Migrated");
+
 

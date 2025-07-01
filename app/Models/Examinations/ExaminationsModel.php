@@ -211,33 +211,33 @@ class ExaminationsModel extends MyBaseModel implements TableDisplayInterface, Fo
                 "value" => "",
                 "required" => true
             ],
-            [
-                "label" => "Publish Scores",
-                "name" => "publish_scores",
-                "type" => "select",
-                "hint" => "",
-                "options" => [
-                    [
-                        "key" => "Yes",
-                        "value" => "yes"
-                    ],
-                    [
-                        "key" => "No",
-                        "value" => "no"
-                    ]
-                ],
-                "value" => 0,
-                "required" => false
-            ],
-            [
-                "label" => "Publish Score Date",
-                "name" => "publish_score_date",
-                "type" => "date",
-                "hint" => "",
-                "options" => [],
-                "value" => "",
-                "required" => false
-            ],
+            // [
+            //     "label" => "Publish Scores",
+            //     "name" => "publish_scores",
+            //     "type" => "select",
+            //     "hint" => "",
+            //     "options" => [
+            //         [
+            //             "key" => "Yes",
+            //             "value" => "yes"
+            //         ],
+            //         [
+            //             "key" => "No",
+            //             "value" => "no"
+            //         ]
+            //     ],
+            //     "value" => 0,
+            //     "required" => false
+            // ],
+            // [
+            //     "label" => "Publish Score Date",
+            //     "name" => "publish_score_date",
+            //     "type" => "date",
+            //     "hint" => "",
+            //     "options" => [],
+            //     "value" => "",
+            //     "required" => false
+            // ],
             [
                 "label" => "Next Exam Month",
                 "name" => "next_exam_month",

@@ -478,7 +478,8 @@ class ExaminationController extends ResourceController
             'exam_type',
             'exam_id',
             'created_on',
-            'result'
+            'result',
+            'intern_code'
         ];
 
         foreach ($commonParams as $param) {

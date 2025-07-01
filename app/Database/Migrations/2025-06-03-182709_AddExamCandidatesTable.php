@@ -78,9 +78,9 @@ class AddExamCandidatesTable extends Migration
             ],
             'state' => [
                 'type' => 'ENUM',
-                'constraint' => ['Apply for examination', 'Apply for migration', 'Migrated'],
+                'constraint' => [APPLY_FOR_EXAMINATION, APPLY_FOR_MIGRATION, MIGRATED],
                 'null' => false,
-                'default' => 'Apply for examination'
+                'default' => APPLY_FOR_EXAMINATION
             ],
             'specialty' => [
                 'type' => 'VARCHAR',

@@ -14,6 +14,7 @@ use CodeIgniter\Database\BaseBuilder;
 use App\Models\ActivitiesModel;
 use App\Helpers\Types\ExaminationLetterCriteriaType;
 use App\Helpers\Types\ExaminationLetterType;
+use App\Models\Licenses\LicensesModel;
 
 
 /**
@@ -571,7 +572,7 @@ class ExaminationService
         $param = $filters['param'] ?? $filters['child_param'] ?? null;
         $sortBy = $filters['sortBy'] ?? "created_at";
         $sortOrder = $filters['sortOrder'] ?? "asc";
-
+        $mode = "exam";
         // Build query
         $builder = $param ? $this->examinationRegistrationsModel->search($param) : $this->examinationRegistrationsModel->builder();
         $builder = $this->examinationRegistrationsModel->addCustomFields($builder);
@@ -580,6 +581,7 @@ class ExaminationService
         // Apply filters
         if (isset($filters['intern_code']) && $filters['intern_code'] !== '') {
             $builder->where("$tableName.intern_code", $filters['intern_code']);
+            $mode = "candidate";
         }
         if (isset($filters['exam_id']) && $filters['exam_id'] !== '') {
             $builder->where("$tableName.exam_id", $filters['exam_id']);
@@ -619,7 +621,7 @@ class ExaminationService
         return [
             'data' => $result,
             'total' => $total,
-            'displayColumns' => $this->examinationRegistrationsModel->getDisplayColumns(),
+            'displayColumns' => $this->examinationRegistrationsModel->getDisplayColumns($mode),
             'columnFilters' => $this->examinationRegistrationsModel->getDisplayColumnFilters()
         ];
     }
@@ -714,10 +716,17 @@ class ExaminationService
         if (!$data) {
             throw new \RuntimeException("Registration not found");
         }
+        $this->examinationRegistrationsModel->db->transException(true)->transStart();
+        //update the candidate state in the exam_candidates table
+        $candidateStateData = [
+            'state' => ExaminationsUtils::determineCandidateState($data['intern_code']),
+            'intern_code' => $data['intern_code']
+        ];
+        $licenseModel = new LicensesModel('exam_candidates');
+        $licenseModel->createOrUpdateLicenseDetails("exam_candidates", $candidateStateData);
+        $model->where('uuid', $uuid)->delete();
 
-        if (!$model->where('uuid', $uuid)->delete()) {
-            throw new \RuntimeException('Failed to delete registration: ' . json_encode($model->errors()));
-        }
+        $this->examinationRegistrationsModel->db->transComplete();
 
         // Log activity
         $this->activitiesModel->logActivity("Deleted registration {$data['index_number']} for {$data['intern_code']}.", $userId, "Examination");
@@ -804,7 +813,9 @@ class ExaminationService
             "scores" => "required"
         ];
         $updateData = [];
+        $candidateStateData = [];
         $activityLogMessages = [];
+        $uuids = [];
         $validator = \Config\Services::validation();
         $validator->setRules($rules);
         for ($i = 0; $i < count($data); $i++) {
@@ -821,10 +832,22 @@ class ExaminationService
             ];
 
             $updateData[] = $registrationData;
+            $uuids[] = "'{$registration['uuid']}'";
             $activityLogMessages[] = "Set result for  exam registration for intern code {$registration['intern_code']} index number {$registration['index_number']}";
         }
+        $examinationRegistrations = $this->examinationRegistrationsModel->select("{$this->examinationRegistrationsModel->table}.*, {$this->examinationsModel->table}.exam_type")->join($this->examinationsModel->table, "{$this->examinationsModel->table}.id = {$this->examinationRegistrationsModel->table}.exam_id")->whereIn('uuid', $uuids)->findAll();
         $this->examinationRegistrationsModel->db->transException(true)->transStart();
         $numRows = $this->examinationRegistrationsModel->updateBatch($updateData, 'uuid', count($updateData));
+        //get all the examination registrations for the uuids
+        foreach ($examinationRegistrations as $examinationRegistration) {
+            $candidateStateData = [
+                'intern_code' => $examinationRegistration['intern_code'],
+                'state' => ExaminationsUtils::getExamCandidateStateFromExamResult($examinationRegistration['exam_type'], $examinationRegistration['result'])
+            ];
+            $licenseModel = new LicensesModel('exam_candidates');
+            $licenseModel->createOrUpdateLicenseDetails("exam_candidates", $candidateStateData);
+        }
+        //update the exam_candidates table with the state
         $this->examinationRegistrationsModel->db->transComplete();
         try {
             $this->activitiesModel->logActivity($activityLogMessages, null, "Examination");
@@ -847,13 +870,21 @@ class ExaminationService
         if (!$oldData) {
             throw new \InvalidArgumentException("Registration not found");
         }
-        // Update the exam registration in the database. createArrayFromAllowedFields removes fields that are null
+        // Update the exam registration in the database. 
         $registrationData = [
             'result' => null,
             'scores' => null
         ];
-
+        $this->examinationRegistrationsModel->db->transException(true)->transStart();
         $update = $this->examinationRegistrationsModel->builder()->where(['uuid' => $uuid])->update($registrationData);
+        //update the candidate state in the exam_candidates table
+        $candidateStateData = [
+            'state' => ExaminationsUtils::determineCandidateState($oldData['intern_code']),
+            'intern_code' => $oldData['intern_code']
+        ];
+        $licenseModel = new LicensesModel('exam_candidates');
+        $licenseModel->createOrUpdateLicenseDetails("exam_candidates", $candidateStateData);
+        $this->examinationRegistrationsModel->db->transComplete();
         try {
             $this->activitiesModel->logActivity("Removed result for  exam registration for intern code {$oldData['intern_code']} index number {$oldData['index_number']}", null, "Examination");
         } catch (\Throwable $th) {

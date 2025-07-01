@@ -2707,8 +2707,8 @@
                     "Orals"
                 ],
                 "candidate_state_after_result": {
-                    "Pass": "apply_for_migration",
-                    "Fail": "apply_for_an_examination"
+                    "Pass": "Apply for migration",
+                    "Fail": "Apply for examination"
                 }
             },
             "OSCE 1": {
@@ -2727,8 +2727,8 @@
                     "Practical 2"
                 ],
                 "candidate_state_after_result": {
-                    "Pass": "apply_for_an_examination",
-                    "Fail": "apply_for_an_examination"
+                    "Pass": "Apply for examination",
+                    "Fail": "Apply for examination"
                 },
                 "metadata_fields": [
                     {
@@ -2845,8 +2845,8 @@
                     "Practical 2"
                 ],
                 "candidate_state_after_result": {
-                    "Pass": "apply_for_migration",
-                    "Fail": "apply_for_an_examination"
+                    "Pass": "Apply for migration",
+                    "Fail": "Apply for examination"
                 },
                 "metadata_fields": [
                     {

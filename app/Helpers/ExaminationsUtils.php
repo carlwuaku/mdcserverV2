@@ -16,7 +16,7 @@ class ExaminationsUtils extends Utils
     {
         try {
             $candidate = LicenseUtils::getLicenseDetails($internCode);
-            if (array_key_exists('state', $candidate) && $candidate['state'] === 'Apply for examination') {
+            if (array_key_exists('state', $candidate) && $candidate['state'] === APPLY_FOR_EXAMINATION) {
 
 
                 //get the exam registrations for the intern code
@@ -105,7 +105,7 @@ class ExaminationsUtils extends Utils
                     ->findAll();
 
                 return [
-                    'message' => 'Apply for examination',
+                    'message' => APPLY_FOR_EXAMINATION,
                     'exams' => $exams
                 ];
             } else {
@@ -151,6 +151,7 @@ class ExaminationsUtils extends Utils
             }
         }
         $builder->join($examModel->table, "$examModel->table.id = $model->table.exam_id", 'left');
+        $builder->orderBy($model->table->created_at, 'asc');
         $result = $builder->get()->getResultArray();
         return $result;
     }
@@ -171,7 +172,7 @@ class ExaminationsUtils extends Utils
     {
         try {
             $validExams = self::getValidExaminationsForApplication($internCode, $useApplicationDates);
-            if ($validExams['message'] !== 'Apply for examination') {
+            if ($validExams['message'] !== APPLY_FOR_EXAMINATION) {
                 throw new \InvalidArgumentException("Intern code is not in a valid state to apply for examination");
             }
             $exams = $validExams['exams'] ?? [];
@@ -379,5 +380,109 @@ class ExaminationsUtils extends Utils
 
         }
         return $registration;
+    }
+
+    /**
+     * Returns the state that a candidate should be in after an examination result is set.
+     *
+     * The function takes an exam type and a result as parameters and returns the state that the candidate should be in.
+     * The state is determined by the configuration setting 'candidate_state_after_result' in the examination settings.
+     * The structure of the configuration setting is expected to be an associative array with the keys as the result and the values as the state.
+     * The function throws an InvalidArgumentException if the exam type is invalid or the configuration setting is invalid.
+     * The function throws a ConfigException if the state is invalid.
+     *
+     * @param string $examType The type of the exam
+     * @param string $result The result of the exam
+     * @return string The state that the candidate should be in
+     * @throws \InvalidArgumentException If the exam type is invalid or the configuration setting is invalid
+     * @throws \CodeIgniter\Exceptions\ConfigException If the state is invalid
+     */
+    public static function getExamCandidateStateFromExamResult(string $examType, string $result): string
+    {
+        //get the exam type from app settings.
+        $examSettings = Utils::getAppSettings('examinations');
+        $examTypes = array_keys($examSettings['examination_types']);
+        if (!in_array($examType, $examTypes)) {
+            throw new \InvalidArgumentException("Invalid exam type: $examType");
+        }
+        //get the candidate_state_after_result property
+        $examSetting = $examSettings['examination_types'][$examType];
+        if (!array_key_exists('candidate_state_after_result', $examSetting)) {
+            throw new \InvalidArgumentException("Invalid exam type config for results: $examType");
+        }
+        $examStateSettings = $examSetting['candidate_state_after_result'];
+        /** expected structure of examStateSettings
+         * "candidate_state_after_result": {
+         *          "Pass": "apply_for_migration",
+         *         "Fail": "apply_for_an_examination"
+         *    }
+         *
+         */
+        if (!array_key_exists($result, $examStateSettings)) {
+            throw new \CodeIgniter\Exceptions\ConfigException("No state defined for result: $result");
+        }
+        $state = $examType['required_previous_exam_result'][$result];
+        if (!in_array($state, EXAM_CANDIDATES_VALID_STATES)) {
+            throw new \CodeIgniter\Exceptions\ConfigException("Invalid state: $state");
+        }
+        return $state;
+    }
+
+    /**
+     * Determine the state of a candidate given their intern code.
+     *
+     * This function is mostly used when a registration is deleted so we can choose the appropriate state for the candidate.
+     * The steps taken are as follows:
+     * 1. Look in the practitioners table if the intern code is in there. if it is, set the state to 'migrated'. else proceed
+     * 2. Get the exam registrations for the intern code
+     * 3. If there's none, set the state to 'apply_for_examination'.
+     * 4. If there's a pass, look in the config for what state to set based on the exam type
+     * 5. If there's no pass, set the state to 'apply_for_examination'
+     *
+     * @param string $internCode The intern code to determine the state for
+     * @return string The state of the candidate
+     * @throws \InvalidArgumentException If the exam type is invalid or the configuration setting is invalid
+     * @throws \CodeIgniter\Exceptions\ConfigException If the state is invalid
+     */
+    public static function determineCandidateState(string $internCode)
+    {
+        //this would mostly be used when a registration is deleted so we can choose the appropriate state for the candidate
+
+        //1. look in the practitioners table if the intern code is in there. if it is, set the state to 'migrated'. else proceed
+        //2. get the exam registrations for the intern code
+        //3. if there's none, set the state to 'apply_for_examination'.
+        //4. if there's a pass, look in the config for what state to set based on the exam type
+        //5. if there's no pass, set the state to 'apply_for_examination'
+        try {
+            self::getLicenseDetails($internCode, 'intern_code', 'exam_candidates');
+            return MIGRATED;
+        } catch (\Exception $th) {
+            //not migrated, check for the results
+            $examRegistrations = self::getExaminationRegistrations(["intern_code" => $internCode]);
+            if (empty($registrations)) {
+                return APPLY_FOR_EXAMINATION;
+            }
+            foreach ($examRegistrations as $registration) {
+                if (strtolower($registration['result']) === 'pass' || !$registration['result']) {
+                    $excludedExamTypes[] = $registration['exam_type'];
+                }
+                if (strtolower($registration['result']) === 'pass') {
+                    $passedExamTypes[] = $registration['exam_type'];
+                } else if (strtolower($registration['result']) === 'fail') {
+                    $failedExamTypes[] = $registration['exam_type'];
+                }
+                if (!$registration['result']) {
+                    $hasPendingRegistration = true;
+                }
+            }
+            $lastExam = $examRegistrations[count($examRegistrations) - 1];
+            $examType = $lastExam[0]['exam_type'];
+            $result = $lastExam[0]['result'];
+            $state = self::getExamCandidateStateFromExamResult($examType, $result);
+            return $state;
+        }
+
+
+
     }
 }
