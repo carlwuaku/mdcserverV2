@@ -88,7 +88,7 @@ class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormIn
 
     public function getDisplayColumns(): array
     {
-        //get the fields for the selected type and merge with the default fields
+        //get the fields for the selected type, if present, or go with the default fields if not available
         $defaultColumns = [
             'picture',
             'type',
@@ -114,11 +114,9 @@ class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormIn
                 return $defaultColumns;
             }
             $licenseDef = $licenseTypes[$this->licenseType];
-            $fields = $licenseDef['fields'];
-            $columns = array_map(function ($field) {
-                return $field['name'];
-            }, $fields);
-            return Utils::reorderPriorityColumns(array_merge($defaultColumns, $columns, ['deleted_at']));
+            $displayColumns = $licenseDef['displayColumns'];
+
+            return $displayColumns;
         }
         return Utils::reorderPriorityColumns($defaultColumns);
     }
@@ -282,14 +280,14 @@ class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormIn
     {
         try {
             $licenseDef = Utils::getLicenseSetting($licenseType);
-            $fields = $licenseDef->fields;
+            $fields = $licenseDef->selectionFields;
             $licenseTypeTable = $licenseDef->table;
             $columns = [];
             for ($i = 0; $i < count($fields); $i++) {
-                $columns[] = $licenseTypeTable . "." . $fields[$i]['name'];
+                $columns[] = $licenseTypeTable . "." . $fields[$i];
             }
             $builder->select($columns);
-            $fullLicenseJoinConditions = $this->table . ".license_number = $licenseTypeTable.license_number ";
+            $fullLicenseJoinConditions = $this->table . ".license_number = $licenseTypeTable." . $licenseDef->uniqueKeyField;
             if ($licenseJoinConditions) {
                 $builder->where($licenseJoinConditions);
             }
@@ -315,6 +313,7 @@ class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormIn
         try {
             $licenseDef = Utils::getLicenseSetting($licenseType);
             $table = $licenseDef->table;
+            $uniqueKeyField = $licenseDef->uniqueKeyField;
             $licenseFields = $licenseDef->fields;
             $data = new \stdClass();
             //make sure $formdata is an array
@@ -328,11 +327,15 @@ class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormIn
                     $data->$name = $formData[$name];
                 }
             }
-            $license = $this->builder($table)->where('license_number', $formData['license_number'])->get()->getFirstRow('array');
+            //check if the unique key field is present in the form data. if not use license_number
+            if (!array_key_exists($uniqueKeyField, $formData)) {
+                $formData[$uniqueKeyField] = $formData['license_number'];
+            }
+            $license = $this->builder($table)->where($uniqueKeyField, $formData[$uniqueKeyField])->get()->getFirstRow('array');
 
             if (count(get_object_vars($data)) > 0) {
                 if ($license) {
-                    $this->builder($table)->set((array) $data)->where(['license_number' => $formData['license_number']])->update();
+                    $this->builder($table)->set((array) $data)->where([$uniqueKeyField => $formData[$uniqueKeyField]])->update();
                 } else {
                     $this->builder($table)->insert($data);
                 }
@@ -351,8 +354,23 @@ class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormIn
         if (empty($type)) {
             $type = $data['type'];
         }
-        $table = Utils::getLicenseTable($type);
-        $builder = $this->builder($table)->where('license_number', $data['license_number']);
+        if (empty($type)) {
+            throw new \Exception("License type not specified");
+        }
+        $licenseDef = Utils::getLicenseSetting($type);
+        if (!$licenseDef) {
+            throw new \Exception("License type not found in app settings");
+        }
+        if (!isset($licenseDef->table) || empty($licenseDef->table)) {
+            throw new \Exception("License table not defined in app settings for type: $type");
+        }
+        if (!isset($licenseDef->uniqueKeyField) || empty($licenseDef->uniqueKeyField)) {
+            throw new \Exception("No unique key defined for license type: $type");
+        }
+
+        $table = $licenseDef->table;
+        $uniqueKeyField = $licenseDef->uniqueKeyField;
+        $builder = $this->builder($table)->where($uniqueKeyField, $data['license_number']);
 
         $data = $builder->get()->getFirstRow('array');
         if (!$data) {

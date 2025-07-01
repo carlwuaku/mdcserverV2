@@ -158,7 +158,14 @@ class EmailHelper
         }
         $method = getenv('EMAIL_METHOD');
         $result = null;
-
+        //if not production environment, only log the email and do not send it
+        if (getenv('CI_ENVIRONMENT') !== 'production') {
+            log_message('info', 'Email not sent in non-production environment');
+            $message = "Email not sent in non-production environment";
+            $emailQueueModel->updateStatus($emailId, 'sent', $message);
+            $emailQueueLogModel->logStatusChange($emailId, 'sent', $message);
+            return true;
+        }
         // Send via appropriate method
         try {
             switch ($method) {
@@ -170,8 +177,8 @@ class EmailHelper
                     break;
             }
             $message = $result === false ? "Sending failed" : $result ?? 'Email sent successfully';
-            ;
-            log_message('info', $message);
+
+
             // Update status to sent. we have to assume that the email was sent successfully. the actual sending is done by the selected method
             //and can only be verified by checking the logs of the email service provider
 

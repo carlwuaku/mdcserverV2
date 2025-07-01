@@ -17,7 +17,9 @@ use App\Models\Cpd\CpdModel;
 use App\Models\Cpd\ExternalCpdsModel;
 use App\Models\Cpd\CpdAttendanceModel;
 use App\Helpers\Enums\HousemanshipSetting;
-
+use App\Models\Licenses\LicenseRenewalModel;
+use App\Models\Licenses\LicensesModel;
+use Exception;
 
 class Utils
 {
@@ -42,6 +44,23 @@ class Utils
     }
 
     /**
+     * Get the contents of a file in the app/Templates folder
+     * @param string $fileName
+     * @return string
+     * @throws \Exception
+     */
+    public static function getTemplateFileContent($fileName)
+    {
+        //get the contents of a file in the app/Templates folder
+        $file = APPPATH . DIRECTORY_SEPARATOR . 'Templates' . DIRECTORY_SEPARATOR . $fileName;
+        if (!file_exists($file)) {
+            log_message('error', "Template file not found: $file");
+            throw new \Exception("Template file not found", 1);
+        }
+        return file_get_contents($file);
+    }
+
+    /**
      * Compares two objects and returns the keys with different values.
      *
      * @param mixed $oldObject The first object to compare
@@ -50,23 +69,29 @@ class Utils
      */
     public static function compareObjects($oldObject, $newObject)
     {
-        if (is_array($oldObject)) {
-            $oldObject = (object) $oldObject;
-        }
-
-        if (is_array($newObject)) {
-            $newObject = (object) $newObject;
-        }
-        $obj1Vars = get_object_vars($oldObject);
-        $obj2Vars = get_object_vars($newObject);
-        $differentKeys = [];
-        foreach ($obj2Vars as $key => $value) {
-            if ($key !== "qr_code" && isset($obj1Vars[$key]) && $obj1Vars[$key] !== $value) {
-                $differentKeys[] = $key . ": {$obj1Vars[$key]} -> $value";
+        try {
+            if (is_array($oldObject)) {
+                $oldObject = (object) $oldObject;
             }
+
+            if (is_array($newObject)) {
+                $newObject = (object) $newObject;
+            }
+            $obj1Vars = get_object_vars($oldObject);
+            $obj2Vars = get_object_vars($newObject);
+            $differentKeys = [];
+            foreach ($obj2Vars as $key => $value) {
+                if ($key !== "qr_code" && isset($obj1Vars[$key]) && $obj1Vars[$key] !== $value) {
+                    $differentKeys[] = $key . ": {$obj1Vars[$key]} -> $value";
+                }
+            }
+
+            return $differentKeys;
+        } catch (\Throwable $th) {
+            log_message('error', "Error comparing objects: " . $th);
+            return [];
         }
 
-        return $differentKeys;
     }
 
 
@@ -173,7 +198,7 @@ class Utils
     /**
      * get the table name, fields, other settings for a license type
      * @param string $license
-     * @return object {table: string, fields: array, onCreateValidation: array, 
+     * @return object {table: string, uniqueKeyField: string,selectionFields:array, displayColumns: array, fields: array, onCreateValidation: array, 
      * onUpdateValidation: array, renewalFields: array, renewalTable: string, renewalStages: object, 
      * fieldsToUpdateOnRenewal: array, basicStatisticsFields: array,
      *  basicStatisticsFilterFields: array, advancedStatisticsFields: array, renewalFilterFields: array, 
@@ -705,7 +730,7 @@ class Utils
             }
         } else {
             // Single value logic remains the same
-            if (strpos($columnName, 'date') !== false) {
+            if (self::fieldIsDateField($columnName)) {
                 $dateRange = Utils::getDateRange($value);
                 $builder->where($columnName . ' >=', $dateRange['start']);
                 $builder->where($columnName . ' <=', $dateRange['end']);
@@ -713,10 +738,223 @@ class Utils
                 $builder->where($columnName . ' IS NULL');
             } else if ($value === "--Empty Value--") {
                 $builder->where($columnName . ' = ""');
+            } else if ($value === "--Not Null--") {
+                $builder->where($columnName . ' IS NOT NULL AND ' . $columnName . ' != ""');
+            } else if ($value === "--Null Or Empty--") {
+                $builder->where($columnName . ' IS NULL OR ' . $columnName . ' = ""');
             } else {
                 $builder->where($columnName, $value);
             }
         }
         return $builder;
+    }
+
+    /**
+     * Filters an array by keys.
+     *
+     * The function takes an associative array and an array of keys as input.
+     * It returns a new associative array which contains only the key-value pairs
+     * from the input array where the key is one of the given keys.
+     *
+     * @param array $array The input array to be filtered.
+     * @param array $keys The array of keys to filter by.
+     * @return array The filtered array.
+     */
+    public static function filterArrayByKeys(array $array, array $keys): array
+    {
+        return array_filter(
+            $array,
+            function ($key) use ($keys) {
+                return in_array($key, $keys);
+            },
+            ARRAY_FILTER_USE_KEY
+        );
+    }
+    /**
+     * Filters an array by keys, excluding the specified keys.
+     *
+     * The function takes an associative array and an array of keys as input.
+     * It returns a new associative array which contains only the key-value pairs
+     * from the input array where the key is not one of the given keys.
+     *
+     * @param array $array The input array to be filtered.
+     * @param array $keys The array of keys to exclude.
+     * @return array The filtered array excluding specified keys.
+     */
+    public static function filterOutArrayByKeys(array $array, array $keys): array
+    {
+        return array_filter(
+            $array,
+            function ($key) use ($keys) {
+                return !in_array($key, $keys);
+            },
+            ARRAY_FILTER_USE_KEY
+        );
+    }
+
+    /**
+     * Create a table from a two-dimensional array.
+     *
+     * The function takes a PhpWord object, a two-dimensional array of data, and an optional array of column widths.
+     * It returns a Table object.
+     *
+     * The first row of the array is used as the header row of the table.
+     * The function will automatically capitalize the header row column names and replace any underscores with spaces.
+     * The column widths are set based on the optional array of column widths. If a column width is not specified, it defaults to 2000.
+     *
+     * The function will add each row of the array to the table as a new row.
+     * If the value of a cell is null, it is replaced with an empty string.
+     *
+     * @param \PhpOffice\PhpWord\PhpWord $phpWord The PhpWord object to add the table to.
+     * @param array $data A two-dimensional array of data to add to the table.
+     * @param array $headers An optional array of column headers.
+     * @param array $columnWidths An optional array of column widths.
+     * @return void.
+     */
+    public static function createTableFromArray($phpWord, $data, $headers = [], $columnWidths = null)
+    {
+        $section = $phpWord->addSection([
+            'orientation' => 'landscape',
+        ]);
+
+        $table = $section->addTable(
+            [
+                'width' => '100',
+                'unit' => \PhpOffice\PhpWord\SimpleType\TblWidth::PERCENT
+            ]
+        );
+
+        if (empty($data)) {
+            return;
+        }
+
+        // Calculate column width based on number of columns
+        $columnCount = count((array) $data[0]);
+        $availableWidth = (11 * 1440); // Total available width in twips
+        $defaultWidth = intval($availableWidth / $columnCount);
+
+
+        // Add header row
+        $headerRow = $table->addRow();
+        $headers = $headers ?: array_keys($data[0]);
+
+        foreach ($headers as $header) {
+            $width = is_array($columnWidths) ? ($columnWidths[$header] ?? $defaultWidth) : $defaultWidth;
+            $headerRow->addCell($width)->addText(ucfirst(str_replace('_', ' ', $header)));
+        }
+
+        // Add data rows
+        foreach ($data as $item) {
+            $row = $table->addRow();
+            foreach ($headers as $header) {
+                $value = property_exists($item, $header) ? $item->$header : "";
+                $width = is_array($columnWidths) ? ($columnWidths[$header] ?? $defaultWidth) : $defaultWidth;
+                $row->addCell($width)->addText($value ?? '');
+            }
+        }
+
+        return;
+    }
+
+    /**
+     * Wrap the given letter content with some default styling
+     * This function fetches the letterContainer template from the app settings and replaces the [##content##] placeholder with the given content
+     * @param string $content
+     * @return string
+     */
+    public static function addLetterStyling(string $content)
+    {
+        /** the letterContainer is an array with an html key that contains the template with some styling and a placeholder [##content##] that will be replaced with the letter content
+         * @var string
+         */
+        $template = self::getTemplateFileContent("letter-container.html");
+        return str_replace("[##content##]", $content, $template);
+    }
+
+    public static function fieldIsDateField(string $fieldName): bool
+    {
+        return in_array($fieldName, DATABASE_DATE_FIELDS);
+    }
+
+    /**
+     * Returns a user-friendly error message based on the given error message from the database
+     * If the error is a duplicate entry error, return a more specific message
+     * Otherwise, return a generic error message
+     * @param string $errorMessage the error message from the database
+     * @return string a user-friendly error message
+     */
+    public static function getUserDatabaseErrorMessage(string $errorMessage)
+    {
+        //get a sensible but secure message for the UI based on the error message
+        //if it's a duplicate entry error, return a more specific message
+        if (strpos($errorMessage, "Duplicate entry") !== false) {
+            return "Duplicate entry";
+        } else {
+            return "An error occurred. Please make sure the data is valid and is not a duplicate operation, and try again. ";
+        }
+    }
+
+    /**
+     * Get license details by UUID.
+     *
+     * @param string $uuid The UUID/license number of the license
+     * @return array The license data if found, 
+     * @throws Exception If license is not found
+     */
+    public static function getLicenseDetails(string $uuid, string $field = null, string $type = null): array
+    {
+        $model = new LicensesModel();
+        $builder = $model->builder();
+        $builder->select($model->getTableName() . '.*');
+
+        $builder = $model->addCustomFields($builder);
+        $builder->where($model->getTableName() . '.uuid', $uuid);
+        $builder->orWhere($model->getTableName() . '.license_number', $uuid);
+        if (!empty($field)) {
+            $builder->orWhere($field, $uuid);
+        }
+        if (!empty($type)) {
+            //if a type was provided, do a join to the sub table
+            $licenseDef = Utils::getLicenseSetting($type);
+            $subTableSelectionFields = $model->getTableName() . '.*';
+            if (!$licenseDef) {
+                throw new Exception("License type not found in app settings");
+            }
+            if (!isset($licenseDef->table) || empty($licenseDef->table)) {
+                throw new Exception("License table not defined in app settings for type: $type");
+            }
+            if (!isset($licenseDef->uniqueKeyField) || empty($licenseDef->uniqueKeyField)) {
+                throw new Exception("No unique key defined for license type: $type");
+            }
+            $subtable = $licenseDef->table;
+            if (isset($licenseDef->selectionFields) && !empty($licenseDef->selectionFields)) {
+                $subTableSelectionFields = implode(',', array_map(function ($fieldName) use ($subtable) {
+                    return $subtable . '.' . $fieldName;
+                }, $licenseDef->selectionFields));
+            }
+            $builder->select($subTableSelectionFields);
+
+            $uniqueKeyField = $licenseDef->uniqueKeyField;
+            $builder->join($subtable, $model->getTableName() . '.license_number = ' . $subtable . '.' . $uniqueKeyField);
+            $data = $model->first();
+        } else {
+            $data = $model->first();
+            $licenseType = $data['type'];
+            try {
+                $subModel = new LicensesModel();
+                $licenseDetails = $subModel->getLicenseDetailsFromSubTable($uuid, $licenseType);
+                $data = array_merge($data, $licenseDetails);
+            } catch (\Throwable $th) {
+                log_message('error', "License with no details {{$data['license_number']} }" . $th->getMessage());
+            }
+        }
+
+
+
+        if (!$data) {
+            throw new Exception("License not found");
+        }
+
+        return $data;
     }
 }

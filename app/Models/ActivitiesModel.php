@@ -96,9 +96,12 @@ class ActivitiesModel extends MyBaseModel implements TableDisplayInterface
     /**
      * save an activity to the database
      */
-    public function logActivity(string $activity, string|int|null $userId = null, string $module = "General")
+    public function logActivity(string|array $activity, string|int|null $userId = null, string $module = "General")
     {
         $ip = $_SERVER['REMOTE_ADDR'];
+        if (is_array($activity)) {
+            $activity = json_encode($activity);
+        }
         $this->insert([
             "user_id" => $userId ?? auth()->id(),
             "activity" => $activity,
@@ -106,6 +109,8 @@ class ActivitiesModel extends MyBaseModel implements TableDisplayInterface
             "ip_address" => $ip
         ]);
     }
+
+
 
     public function getDisplayColumnFilters(): array
     {

@@ -951,7 +951,7 @@ class AuthController extends ResourceController
                 } catch (\Exception $e) {
                     $results[] = [
                         'status' => 'error',
-                        'message' => $e->getMessage(),
+                        'message' => $e,
                         'data' => $userData['username'] ?? 'Unknown user'
                     ];
                 }
@@ -969,7 +969,7 @@ class AuthController extends ResourceController
             // Otherwise return success with details
             return $this->respond(['message' => 'Users processed', 'details' => $results], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
-            log_message('error', $th->getMessage());
+            log_message('error', $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
@@ -1013,7 +1013,7 @@ class AuthController extends ResourceController
 
             return $this->respond(['message' => 'User updated successfully'], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
-            log_message('error', $th->getMessage());
+            log_message('error', $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
@@ -1095,7 +1095,7 @@ class AuthController extends ResourceController
                 'displayColumns' => $model->getDisplayColumns()
             ], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
-            log_message('error', $th->getMessage());
+            log_message('error', $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
@@ -1114,7 +1114,7 @@ class AuthController extends ResourceController
             $user->ban($reason);
             return $this->respond(['message' => 'User banned successfully'], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
-            log_message('error', $th->getMessage());
+            log_message('error', $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
@@ -1132,7 +1132,7 @@ class AuthController extends ResourceController
             $user->unBan();
             return $this->respond(['message' => 'User unbanned successfully'], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
-            log_message('error', $th->getMessage());
+            log_message('error', $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
@@ -1150,7 +1150,7 @@ class AuthController extends ResourceController
             $migration->latest();
             echo "Migrations run successfully.";
         } catch (\Exception $e) {
-            echo "Error running migrations: " . $e->getMessage();
+            echo "Error running migrations: " . $e;
         }
     }
 
@@ -1244,7 +1244,7 @@ class AuthController extends ResourceController
                 'data' => $result,
             ], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
-            log_message('error', $th->getMessage());
+            log_message('error', $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }

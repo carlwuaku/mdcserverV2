@@ -14,35 +14,7 @@ class LicenseUtils extends Utils
     //     return implode([$license->first_name, $license->middle_name, $license->last_name]);
     // }
 
-    /**
-     * Get license details by UUID.
-     *
-     * @param string $uuid The UUID/license number of the license
-     * @return array The license data if found, 
-     * @throws Exception If license is not found
-     */
-    public static function getLicenseDetails(string $uuid): array
-    {
-        $model = new LicensesModel();
-        $builder = $model->builder();
-        $builder = $model->addCustomFields($builder);
-        $builder->where($model->getTableName() . '.uuid', $uuid);
-        $builder->orWhere($model->getTableName() . '.license_number', $uuid);
-        $data = $model->first();
 
-        if (!$data) {
-            throw new Exception("License not found");
-        }
-        $licenseType = $data['type'];
-        try {
-            $subModel = new LicensesModel();
-            $licenseDetails = $subModel->getLicenseDetailsFromSubTable($uuid, $licenseType);
-            $data = array_merge($data, $licenseDetails);
-        } catch (\Throwable $th) {
-            log_message('error', "License with no details {{$data['license_number']} }" . $th->getMessage());
-        }
-        return $data;
-    }
 
     /**
      * Retain a license.

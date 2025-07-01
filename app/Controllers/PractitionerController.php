@@ -634,7 +634,7 @@ class PractitionerController extends ResourceController
             $startDate = $this->request->getVar('year') ?? date("Y-m-d");
             $year = date('Y', strtotime($startDate));
             $expiry = $this->request->getVar('expiry');
-            $practitioner = $this->practitionerUtils->getPractitionerDetails($practitioner_uuid);
+            $practitioner = (array) $this->practitionerUtils->getPractitionerDetails($practitioner_uuid);
             if (empty($expiry)) {
                 $data->expiry = PractitionerUtils::generateRenewalExpiryDate($practitioner, $startDate);
             }

@@ -19,10 +19,10 @@ class PractitionerUtils
      * Get practitioner details by UUID.
      *
      * @param string $uuid The UUID of the practitioner
-     * @return PractitionerModel|null The practitioner data if found, null otherwise
+     * @return PractitionerModel The practitioner data if found
      * @throws Exception If practitioner is not found
      */
-    public static function getPractitionerDetails(string $uuid): array|object|null
+    public static function getPractitionerDetails(string $uuid): array|object
     {
         $model = new PractitionerModel();
         $builder = $model->builder();
@@ -67,13 +67,13 @@ class PractitionerUtils
 
         try {
             $model = new PractitionerRenewalModel();
-            $practitioner = self::getPractitionerDetails($practitioner_uuid);
+            $practitioner = (array) self::getPractitionerDetails($practitioner_uuid);
             $registration_number = $practitioner['registration_number'];
             if ($practitioner['in_good_standing'] === "yes") {
                 throw new Exception("Practitioner is already in good standing");
             }
-                $startDate = self::generateRenewalStartDate($practitioner);
-            
+            $startDate = self::generateRenewalStartDate($practitioner);
+
             $data['year'] = $startDate;
             if (empty($expiry)) {
                 $data['expiry'] = self::generateRenewalExpiryDate($practitioner, $startDate);
@@ -90,7 +90,7 @@ class PractitionerUtils
                 $data['qr_text'] = $qrText;
             }
             $data['practitioner_type'] = $practitioner['practitioner_type'];
-           
+
             $model->insert($data);
 
             $practitionerModel = new PractitionerModel();
@@ -118,7 +118,7 @@ class PractitionerUtils
 
         } catch (\Throwable $th) {
             log_message("error", $th->getMessage());
-            throw new Exception("Error inserting data.".$th->getMessage());
+            throw new Exception("Error inserting data." . $th->getMessage());
         }
 
     }
@@ -143,7 +143,7 @@ class PractitionerUtils
             return date("Y-m-d", strtotime($year . "-12-31"));
     }
 
-     /**
+    /**
      * Generate renewal start date based on practitioner.
      *
      * @param array $practitioner The practitioner details

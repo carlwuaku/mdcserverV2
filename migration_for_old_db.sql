@@ -2786,3 +2786,803 @@ FROM
 DROP TEMPORARY TABLE temp_housemanship_posting_application_uuid_map;
 
 #END IMPORT HOUSEMANSHIP POSTING APPLICATIONS DETAILS#
+#MIGRATE APPROVED EXAMINATION CANDIDATES INTO THE LICENSES TABLE. THOSE NOT APPROVED WILL BE MOVED TO THE APPLICATIONS TABLE##
+INSERT INTO
+    ci4_mdc4.`licenses`(
+        `uuid`,
+        `license_number`,
+        `name`,
+        `registration_date`,
+        `status`,
+        `email`,
+        `postal_address`,
+        `picture`,
+        `type`,
+        `phone`,
+        `portal_access`,
+        `created_on`,
+        `region`,
+        `district`,
+        `register_type`
+    )
+SELECT
+    '',
+    intern_code,
+    CONCAT_WS(
+        ' ',
+        COALESCE(first_name, ''),
+        COALESCE(middle_name, ''),
+        COALESCE(last_name, '')
+    ) as name,
+    registration_date,
+    status,
+    email,
+    postal_address,
+    picture,
+    'exam_candidates',
+    phone,
+    portal_access,
+    created_on,
+    NULL,
+    NULL,
+    NULL
+from
+    mdc.bf_intern
+WHERE
+    mdc.bf_intern.intern_code IS NOT NULL
+    AND mdc.bf_intern.intern_code != ''
+    AND mdc.bf_intern.status = 'Approved';
+
+########-END EXAMINATION CANDIDATES LICENSE MIGRATION#######- 
+##MIGRATE EXAMINATION CANDIDATES DETAILS INTO THE exam_candidates TABLE##
+INSERT INTO
+    ci4_mdc4.`exam_candidates`(
+        `first_name`,
+        `middle_name`,
+        `last_name`,
+        `date_of_birth`,
+        `intern_code`,
+        `sex`,
+        `registration_date`,
+        `nationality`,
+        `qualification`,
+        `training_institution`,
+        `qualification_date`,
+        `state`,
+        `specialty`,
+        `category`,
+        `practitioner_type`,
+        `number_of_exams`,
+        `metadata`
+    )
+select
+    `first_name`,
+    `middle_name`,
+    `last_name`,
+    `date_of_birth`,
+    `intern_code`,
+    `sex`,
+    `registration_date`,
+    `nationality`,
+    `qualification`,
+    `training_institution`,
+    `date_of_graduation` as qualification_date,
+    'Apply for examination' as state,
+    `specialty`,
+    `category`,
+    `type` as practitioner_type,
+    (
+        SELECT
+            COUNT(*)
+        FROM
+            mdc.bf_intern_exam_registration
+        WHERE
+            mdc.bf_intern_exam_registration.intern_code = mdc.bf_intern.intern_code
+    ) as number_of_exams,
+    JSON_OBJECT(
+        'place_of_birth',
+        `place_of_birth`,
+        'mailing_city',
+        `mailing_city`,
+        'mailing_region',
+        `mailing_region`,
+        'residential_address',
+        `residential_address`,
+        'residential_city',
+        `residential_city`,
+        'residential_region',
+        `residential_region`,
+        'criminal_offense',
+        `criminal_offense`,
+        'crime_details',
+        `crime_details`,
+        'referee1_name',
+        `referee1_name`,
+        'referee1_phone',
+        `referee1_phone`,
+        'referee1_email',
+        `referee1_email`,
+        'referee2_name',
+        `referee2_name`,
+        'referee2_phone',
+        `referee2_phone`,
+        'referee2_email',
+        `referee2_email`,
+        'referee1_letter_attachment',
+        `referee1_letter_attachment`,
+        'referee2_letter_attachment',
+        `referee2_letter_attachment`,
+        'certificate',
+        `certificate`,
+        'cv_attachment',
+        `cv_attachment`,
+        'passport_attachment',
+        `passport_attachment`,
+        'wassce_attachment',
+        `wassce_attachment`,
+        'transcript_attachment',
+        `transcript_attachment`,
+        'residence_permit',
+        `residence_permit`,
+        'start_1',
+        `start_1`,
+        'end_1',
+        `end_1`,
+        'hospital_1',
+        `hospital_1`,
+        'specialty_1',
+        `specialty_1`,
+        'rank_1',
+        `rank_1`,
+        'start_2',
+        `start_2`,
+        'end_2',
+        `end_2`,
+        'hospital_2',
+        `hospital_2`,
+        'specialty_2',
+        `specialty_2`,
+        'rank_2',
+        `rank_2`,
+        'start_3',
+        `start_3`,
+        'end_3',
+        `end_3`,
+        'hospital_3',
+        `hospital_3`,
+        'specialty_3',
+        `specialty_3`,
+        'rank_3',
+        `rank_3`,
+        'start_4',
+        `start_4`,
+        'end_4',
+        `end_4`,
+        'hospital_4',
+        `hospital_4`,
+        'specialty_4',
+        `specialty_4`,
+        'other_start_1',
+        `other_start_1`,
+        'other_end_1',
+        `other_end_1`,
+        'other_hospital_1',
+        `other_hospital_1`,
+        'other_specialty_1',
+        `other_specialty_1`,
+        'other_start_2',
+        `other_start_2`,
+        'other_end_2',
+        `other_end_2`,
+        'other_hospital_2',
+        `other_hospital_2`,
+        'other_specialty_2',
+        `other_specialty_2`,
+        'other_start_3',
+        `other_start_3`,
+        'other_end_3',
+        `other_end_3`,
+        'other_hospital_3',
+        `other_hospital_3`,
+        'other_specialty_3',
+        `other_specialty_3`,
+        'remarks',
+        `remarks`,
+        'is_specialist',
+        `is_specialist`,
+        'specialist_qualification',
+        `specialist_qualification`,
+        'specialist_qualification_attachment',
+        `specialist_qualification_attachment`,
+        'current_license',
+        `current_license`
+    ) as metadata
+from
+    mdc.bf_intern
+WHERE
+    mdc.bf_intern.intern_code IS NOT NULL
+    AND mdc.bf_intern.intern_code != ''
+    AND mdc.bf_intern.status = 'Approved';
+
+#END MIGRATE EXAMINATION CANDIDATES DETAILS INTO THE exam_candidates TABLE##
+#UPDATE THE STATE FOR THE CANDIDATES.#
+#if the candidate has no records in the bf_intern_exam_registration table, then they have not registered for any exams and should be in the 'Apply for examination' state
+#if there are records, and one of them has a result 'Pass' and the exam_type is 'Regular', then they get the state 'Apply for migration'.
+#if there are records and one of them has a result 'Pass' and exam_type 'OSCE 1', but no 'Pass' in 'OSCE 2', then they get the state 'Apply for examination'.
+#if there are records and one of them has a result 'Pass' in 'OSCE 2', then they get the state 'Apply for migration'.
+UPDATE
+    ci4_mdc4.`exam_candidates`
+SET
+    `state` = CASE
+        WHEN (
+            SELECT
+                COUNT(*)
+            FROM
+                mdc.bf_intern_exam_registration
+                JOIN mdc.bf_intern_exam ON mdc.bf_intern_exam.id = mdc.bf_intern_exam_registration.exam_id
+            WHERE
+                mdc.bf_intern_exam_registration.intern_code = ci4_mdc4.`exam_candidates`.intern_code
+        ) = 0 THEN 'Apply for examination'
+        WHEN (
+            SELECT
+                COUNT(*)
+            FROM
+                mdc.bf_intern_exam_registration
+                JOIN mdc.bf_intern_exam ON mdc.bf_intern_exam.id = mdc.bf_intern_exam_registration.exam_id
+            WHERE
+                mdc.bf_intern_exam_registration.intern_code = ci4_mdc4.`exam_candidates`.intern_code
+                AND mdc.bf_intern_exam_registration.result = 'Pass'
+                AND mdc.bf_intern_exam.exam_type = 'Regular'
+        ) > 0 THEN 'Apply for migration'
+        WHEN (
+            SELECT
+                COUNT(*)
+            FROM
+                mdc.bf_intern_exam_registration
+                JOIN mdc.bf_intern_exam ON mdc.bf_intern_exam.id = mdc.bf_intern_exam_registration.exam_id
+            WHERE
+                mdc.bf_intern_exam_registration.intern_code = ci4_mdc4.`exam_candidates`.intern_code
+                AND mdc.bf_intern_exam_registration.result = 'Pass'
+                AND mdc.bf_intern_exam.exam_type = 'OSCE 1'
+        ) > 0
+        AND (
+            SELECT
+                COUNT(*)
+            FROM
+                mdc.bf_intern_exam_registration
+                JOIN mdc.bf_intern_exam ON mdc.bf_intern_exam.id = mdc.bf_intern_exam_registration.exam_id
+            WHERE
+                mdc.bf_intern_exam_registration.intern_code = ci4_mdc4.`exam_candidates`.intern_code
+                AND mdc.bf_intern_exam_registration.result = 'Pass'
+                AND mdc.bf_intern_exam.exam_type = 'OSCE 2'
+        ) = 0 THEN 'Apply for examination'
+        WHEN (
+            SELECT
+                COUNT(*)
+            FROM
+                mdc.bf_intern_exam_registration
+                JOIN mdc.bf_intern_exam ON mdc.bf_intern_exam.id = mdc.bf_intern_exam_registration.exam_id
+            WHERE
+                mdc.bf_intern_exam_registration.intern_code = ci4_mdc4.`exam_candidates`.intern_code
+                AND mdc.bf_intern_exam_registration.result = 'Pass'
+                AND mdc.bf_intern_exam.exam_type = 'OSCE 2'
+        ) > 0 THEN 'Apply for migration'
+        ELSE `state` -- keep the current state if none of the conditions match
+    END;
+
+#if a candidate has a state of 'Apply for migration', then check if there is a record in the practitioners table with the same first_name, last_name, and date_of_birth.
+UPDATE
+    ci4_mdc4.`exam_candidates`
+SET
+    `state` = 'Migrated'
+WHERE
+    `state` = 'Apply for migration'
+    AND EXISTS (
+        SELECT
+            1
+        FROM
+            ci4_mdc4.`practitioners`
+        WHERE
+            ci4_mdc4.`practitioners`.first_name = ci4_mdc4.`exam_candidates`.first_name
+            AND ci4_mdc4.`practitioners`.last_name = ci4_mdc4.`exam_candidates`.last_name
+            AND ci4_mdc4.`practitioners`.date_of_birth = ci4_mdc4.`exam_candidates`.date_of_birth
+    );
+
+#END UPDATE THE STATE FOR THE CANDIDATES.#
+#MIGRATE EXAM CANDIDATES PENDING APPROVAL INTO THE APPLICATIONS TABLE##
+INSERT INTO
+    ci4_mdc4.`application_forms` (
+        picture,
+        first_name,
+        last_name,
+        middle_name,
+        email,
+        status,
+        application_code,
+        practitioner_type,
+        phone,
+        created_on,
+        form_data,
+        form_type
+    )
+SELECT
+    `picture`,
+    `first_name`,
+    `last_name`,
+    `middle_name`,
+    `email`,
+    `status`,
+    `intern_code` as application_code,
+    `type` as practitioner_type,
+    `phone`,
+    `created_on`,
+    JSON_OBJECT(
+        'picture',
+        `picture`,
+        'first_name',
+        `first_name`,
+        'middle_name',
+        `middle_name`,
+        'last_name',
+        `last_name`,
+        'date_of_birth',
+        `date_of_birth`,
+        'intern_code',
+        `intern_code`,
+        'sex',
+        `sex`,
+        'registration_date',
+        `registration_date`,
+        'nationality',
+        `nationality`,
+        'qualification',
+        `qualification`,
+        'training_institution',
+        `training_institution`,
+        'date_of_graduation',
+        `date_of_graduation`,
+        'specialty',
+        `specialty`,
+        'category',
+        `category`,
+        'type',
+        `type`,
+        'place_of_birth',
+        `place_of_birth`,
+        'mailing_city',
+        `mailing_city`,
+        'mailing_region',
+        `mailing_region`,
+        'residential_address',
+        `residential_address`,
+        'residential_city',
+        `residential_city`,
+        'residential_region',
+        `residential_region`,
+        'criminal_offense',
+        `criminal_offense`,
+        'crime_details',
+        `crime_details`,
+        'referee1_name',
+        `referee1_name`,
+        'referee1_phone',
+        `referee1_phone`,
+        'referee1_email',
+        `referee1_email`,
+        'referee2_name',
+        `referee2_name`,
+        'referee2_phone',
+        `referee2_phone`,
+        'referee2_email',
+        `referee2_email`,
+        'referee1_letter_attachment',
+        `referee1_letter_attachment`,
+        'referee2_letter_attachment',
+        `referee2_letter_attachment`,
+        'certificate',
+        `certificate`,
+        'cv_attachment',
+        `cv_attachment`,
+        'passport_attachment',
+        `passport_attachment`,
+        'wassce_attachment',
+        `wassce_attachment`,
+        'transcript_attachment',
+        `transcript_attachment`,
+        'residence_permit',
+        `residence_permit`,
+        'start_1',
+        `start_1`,
+        'end_1',
+        `end_1`,
+        'hospital_1',
+        `hospital_1`,
+        'specialty_1',
+        `specialty_1`,
+        'rank_1',
+        `rank_1`,
+        'start_2',
+        `start_2`,
+        'end_2',
+        `end_2`,
+        'hospital_2',
+        `hospital_2`,
+        'specialty_2',
+        `specialty_2`,
+        'rank_2',
+        `rank_2`,
+        'start_3',
+        `start_3`,
+        'end_3',
+        `end_3`,
+        'hospital_3',
+        `hospital_3`,
+        'specialty_3',
+        `specialty_3`,
+        'rank_3',
+        `rank_3`,
+        'start_4',
+        `start_4`,
+        'end_4',
+        `end_4`,
+        'hospital_4',
+        `hospital_4`,
+        'specialty_4',
+        `specialty_4`,
+        'other_start_1',
+        `other_start_1`,
+        'other_end_1',
+        `other_end_1`,
+        'other_hospital_1',
+        `other_hospital_1`,
+        'other_specialty_1',
+        `other_specialty_1`,
+        'other_start_2',
+        `other_start_2`,
+        'other_end_2',
+        `other_end_2`,
+        'other_hospital_2',
+        `other_hospital_2`,
+        'other_specialty_2',
+        `other_specialty_2`,
+        'other_start_3',
+        `other_start_3`,
+        'other_end_3',
+        `other_end_3`,
+        'other_hospital_3',
+        `other_hospital_3`,
+        'other_specialty_3',
+        `other_specialty_3`,
+        'remarks',
+        `remarks`,
+        'is_specialist',
+        `is_specialist`,
+        'specialist_qualification',
+        `specialist_qualification`,
+        'specialist_qualification_attachment',
+        `specialist_qualification_attachment`,
+        'current_license',
+        `current_license`
+    ) as form_data,
+    'Examination Candidates Registration Application' as form_type
+FROM
+    mdc.bf_intern
+WHERE
+    mdc.bf_intern.intern_code IS NOT NULL
+    AND mdc.bf_intern.intern_code != ''
+    AND mdc.bf_intern.status != 'Approved';
+
+#END MIGRATE EXAMINATION CANDIDATES DETAILS INTO THE exam_candidates TABLE##
+#MIGRATE EXAMINATIONS INTO EXAMINATIONS TABLE##
+INSERT INTO
+    ci4_mdc4.`examinations` (
+        uuid,
+        title,
+        exam_type,
+        open_from,
+        open_to,
+        type,
+        publish_scores,
+        publish_score_date,
+        next_exam_month,
+        scores_names,
+        metadata
+    )
+SELECT
+    '',
+    `title`,
+    `exam_type`,
+    `open_from`,
+    `open_to`,
+    `type`,
+    `publish_scores`,
+    `publish_score_date`,
+    `next_exam_month`,
+    JSON_ARRAY('MCQ', 'PROBLEM SOLVING', 'ORALS') as scores_names,
+    JSON_OBJECT(
+        'venue',
+        `venue`,
+        'oral_location',
+        `oral_location`,
+        'oral_date',
+        `oral_date`,
+        'written_location',
+        `written_location`,
+        'written_date',
+        `written_date`,
+        'duration',
+        `duration`,
+        'specialist_date',
+        `specialist_date`
+    ) as metadata
+FROM
+    mdc.`bf_intern_exam`;
+
+#END MIGRATE EXAMINATIONS INTO EXAMINATIONS TABLE##
+#MIGRATE EXAMINATION LETTERS INTO EXAMINATION LETTERS TABLE##
+INSERT INTO
+    ci4_mdc4.`examination_letter_templates` (
+        name,
+        exam_id,
+        type,
+        content
+    )
+SELECT
+    'Index number letter - All',
+    examinations.`id`,
+    'registration',
+    COALESCE(index_number_letter, '')
+FROM
+    mdc.`bf_intern_exam`
+    JOIN ci4_mdc4.`examinations` examinations ON mdc.`bf_intern_exam`.title = examinations.`title`;
+
+INSERT INTO
+    ci4_mdc4.`examination_letter_templates` (
+        name,
+        exam_id,
+        type,
+        content
+    )
+SELECT
+    'Pass letter - All',
+    examinations.`id`,
+    'pass',
+    COALESCE(pass_letter, '')
+FROM
+    mdc.`bf_intern_exam`
+    JOIN ci4_mdc4.`examinations` examinations ON mdc.`bf_intern_exam`.title = examinations.`title`;
+
+INSERT INTO
+    ci4_mdc4.`examination_letter_templates` (
+        name,
+        exam_id,
+        type,
+        content
+    )
+SELECT
+    'Fail letter - All',
+    examinations.`id`,
+    'fail',
+    COALESCE(fail_letter, '')
+FROM
+    mdc.`bf_intern_exam`
+    JOIN ci4_mdc4.`examinations` examinations ON mdc.`bf_intern_exam`.title = examinations.`title`;
+
+INSERT INTO
+    ci4_mdc4.`examination_letter_templates` (
+        name,
+        exam_id,
+        type,
+        content
+    )
+SELECT
+    'Index number letter - Specialists',
+    examinations.`id`,
+    'registration',
+    COALESCE(specialist_index_number_letter, '')
+FROM
+    mdc.`bf_intern_exam`
+    JOIN ci4_mdc4.`examinations` examinations ON mdc.`bf_intern_exam`.title = examinations.`title`;
+
+INSERT INTO
+    ci4_mdc4.`examination_letter_templates` (
+        name,
+        exam_id,
+        type,
+        content
+    )
+SELECT
+    'Pass letter - Specialists',
+    examinations.`id`,
+    'pass',
+    COALESCE(specialist_pass_letter, '')
+FROM
+    mdc.`bf_intern_exam`
+    JOIN ci4_mdc4.`examinations` examinations ON mdc.`bf_intern_exam`.title = examinations.`title`;
+
+INSERT INTO
+    ci4_mdc4.`examination_letter_templates` (
+        name,
+        exam_id,
+        type,
+        content
+    )
+SELECT
+    'Fail letter - Specialists',
+    examinations.`id`,
+    'fail',
+    COALESCE(specialist_fail_letter, '')
+FROM
+    mdc.`bf_intern_exam`
+    JOIN ci4_mdc4.`examinations` examinations ON mdc.`bf_intern_exam`.title = examinations.`title`;
+
+INSERT INTO
+    ci4_mdc4.`examination_letter_templates` (
+        name,
+        exam_id,
+        type,
+        content
+    )
+SELECT
+    'Index number letter - Dental',
+    examinations.`id`,
+    'registration',
+    COALESCE(dental_index_number_letter, '')
+FROM
+    mdc.`bf_intern_exam`
+    JOIN ci4_mdc4.`examinations` examinations ON mdc.`bf_intern_exam`.title = examinations.`title`;
+
+INSERT INTO
+    ci4_mdc4.`examination_letter_templates` (
+        name,
+        exam_id,
+        type,
+        content
+    )
+SELECT
+    'Pass letter - Ghanaian Doctors',
+    examinations.`id`,
+    'pass',
+    COALESCE(ghanaian_doctors_pass_letter, '')
+FROM
+    mdc.`bf_intern_exam`
+    JOIN ci4_mdc4.`examinations` examinations ON mdc.`bf_intern_exam`.title = examinations.`title`;
+
+#END MIGRATE EXAMINATION LETTERS INTO EXAMINATION LETTERS TABLE##
+#INSERT LETTER TEMPLATE CRITERIA##
+INSERT INTO
+    ci4_mdc4.`examination_letter_template_criteria` (
+        `letter_id`,
+        `field`,
+        `value`
+    )
+SELECT
+    `id`,
+    'category',
+    JSON_ARRAY('Dental')
+FROM
+    ci4_mdc4.`examination_letter_templates`
+WHERE
+    name LIKE '%Dental%';
+
+INSERT INTO
+    ci4_mdc4.`examination_letter_template_criteria` (
+        `letter_id`,
+        `field`,
+        `value`
+    )
+SELECT
+    `id`,
+    'specialty',
+    JSON_ARRAY('1')
+FROM
+    ci4_mdc4.`examination_letter_templates`
+WHERE
+    name LIKE '%Specialists%';
+
+INSERT INTO
+    ci4_mdc4.`examination_letter_template_criteria` (
+        `letter_id`,
+        `field`,
+        `value`
+    )
+SELECT
+    `id`,
+    'nationality',
+    JSON_ARRAY('Ghana', 'Ghanaian')
+FROM
+    ci4_mdc4.`examination_letter_templates`
+WHERE
+    name LIKE '%Ghanaian%';
+
+#END INSERT LETTER TEMPLATE CRITERIA##
+#IMPORT EXAM REGISTRATIONS##
+CREATE TEMPORARY TABLE temp_exam_registration_title_mapping AS
+SELECT
+    ie.id as old_id,
+    ex.id as new_id,
+    ex.title AS title,
+    ie.publish_score_date as publish_score_date
+FROM
+    mdc.bf_intern_exam ie
+    JOIN ci4_mdc4.examinations ex ON ie.title = ex.title;
+
+INSERT INTO
+    ci4_mdc4.`examination_registrations` (
+        uuid,
+        intern_code,
+        exam_id,
+        index_number,
+        result,
+        created_at,
+        registration_letter,
+        result_letter,
+        publish_result_date,
+        scores
+    )
+SELECT
+    uuid,
+    intern_code,
+    new_id,
+    index_number,
+    result,
+    date as created_at,
+    registration_letter,
+    result_letter,
+    publish_score_date,
+    JSON_ARRAY(
+        JSON_OBJECT(
+            'title',
+            'MCQ',
+            'score',
+            `mcq_score`
+        ),
+        JSON_OBJECT(
+            'title',
+            'PROBLEM SOLVING',
+            'score',
+            `problem_solving_score`
+        ),
+        JSON_OBJECT(
+            'title',
+            'ORALS',
+            'score',
+            `orals_score`
+        )
+    )
+FROM
+    mdc.`bf_intern_exam_registration`
+    JOIN temp_exam_registration_title_mapping temp ON mdc.`bf_intern_exam_registration`.exam_id = temp.`old_id`;
+
+DROP TABLE temp_exam_registration_title_mapping;
+
+#END IMPORT EXAM REGISTRATIONS##
+#IMPORT EXAM APPLICATIONS##
+CREATE TEMPORARY TABLE temp_exam_registration_title_mapping AS
+SELECT
+    ie.id as old_id,
+    ex.id as new_id,
+    ex.title AS title
+FROM
+    mdc.bf_intern_exam ie
+    JOIN ci4_mdc4.examinations ex ON ie.title = ex.title;
+
+INSERT INTO
+    ci4_mdc4.`examination_applications` (
+        intern_code,
+        exam_id,
+        application_status,
+        created_at
+    )
+SELECT
+    intern_code,
+    new_id,
+    application_status,
+    created_on
+FROM
+    mdc.`bf_intern_exam_application`
+    JOIN temp_exam_registration_title_mapping temp ON mdc.`bf_intern_exam_application`.exam_id = temp.`old_id`;
+
+DROP TABLE temp_exam_registration_title_mapping;
+
+#END IMPORT EXAM APPLICATIONS##

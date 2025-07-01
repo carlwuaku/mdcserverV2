@@ -6,6 +6,7 @@ use App\Controllers\AssetController;
 use App\Controllers\AuthController;
 use App\Controllers\CpdController;
 use App\Controllers\EmailController;
+use App\Controllers\ExaminationController;
 use App\Controllers\HousemanshipController;
 use App\Controllers\LicensesController;
 use App\Controllers\PrintQueueController;
@@ -150,6 +151,9 @@ $routes->group("applications", ["namespace" => "App\Controllers", "filter" => "a
     $routes->get("types/(:segment)", [ApplicationsController::class, "getApplicationFormTypes"], ["filter" => ["hasPermission:View_Application_Forms"]]);
 
     $routes->get("templates", [ApplicationsController::class, "getApplicationTemplates"], ["filter" => ["hasPermission:View_Application_Form_Templates"]], );
+    $routes->get("templates/config/defaultActions", [ApplicationsController::class, "getApplicationTemplatesApiDefaultConfigs"], ["filter" => ["hasPermission:View_Application_Form_Templates"]], );
+    $routes->get("templates/config/commonTemplates", [ApplicationsController::class, "getCommonApplicationTemplates"], ["filter" => ["hasPermission:View_Application_Form_Templates"]], );
+    $routes->get("templates/config/actionTypes", [ApplicationsController::class, "getApplicationTemplateActionTypes"], ["filter" => ["hasPermission:View_Application_Form_Templates"]], );
     $routes->put("templates/(:segment)", [ApplicationsController::class, "updateApplicationTemplate/$1"], ["filter" => ["hasPermission:Update_Application_Form_Templates"]]);
     $routes->delete("templates/(:segment)", [ApplicationsController::class, "deleteApplicationTemplate/$1"], ["filter" => ["hasPermission:Delete_Application_Form_Templates"]]);
     $routes->get("templates/(:segment)", [ApplicationsController::class, "getApplicationTemplate/$1"], ["filter" => ["hasPermission:View_Application_Form_Templates"]]);
@@ -159,6 +163,8 @@ $routes->group("applications", ["namespace" => "App\Controllers", "filter" => "a
     $routes->get("config", [ApplicationsController::class, "getApplicationConfig"], ["filter" => ["hasPermission:View_Application_Form_Templates"]]);
     $routes->get("status/(:segment)", [ApplicationsController::class, "getApplicationStatusTransitions"], ["filter" => ["hasPermission:View_Application_Form_Templates"]], );
     $routes->put("status", [ApplicationsController::class, "updateApplicationStatus"], ["filter" => ["hasPermission:Update_Application_Forms"]]);
+    $routes->post("templates/test-action", [ApplicationsController::class, "testAction"], ["filter" => ["hasPermission:Create_Application_Form_Templates"]]);
+
 });
 
 $routes->group("licenses", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
@@ -273,6 +279,41 @@ $routes->group("housemanship", ["namespace" => "App\Controllers", "filter" => "a
     $routes->post("posting-application/approve", [HousemanshipController::class, "approveHousemanshipPostingApplications"], ["filter" => ["hasPermission:Create_Or_Update_Housemanship_Postings"]]);
     $routes->get("posting-application/(:segment)", [HousemanshipController::class, "getHousemanshipPostingApplication/$1"], ["filter" => ["hasPermission:View_Housemanship_Posting_Applications"]]);
     $routes->put("posting-application/(:segment)", [HousemanshipController::class, "updateHousemanshipPostingApplication/$1"], ["filter" => ["hasPermission:Create_Or_Update_Housemanship_Posting_Applications"]]);
+
+
+});
+
+$routes->group("examinations", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
+    $routes->put("details/(:segment)", [ExaminationController::class, "updateExamination/$1"], ["filter" => ["hasPermission:Manage_Examination_Data"]]);
+    $routes->delete("details/(:segment)", [ExaminationController::class, "deleteExamination/$1"], ["filter" => ["hasPermission:Manage_Examination_Data"]]);
+    $routes->get("details/(:segment)", [ExaminationController::class, "getExamination/$1"], ["filter" => ["hasPermission:Manage_Examination_Data"]]);
+    $routes->get("details", [ExaminationController::class, "getExaminations"], ["filter" => ["hasPermission:Manage_Examination_Data"]]);
+    $routes->post("details", [ExaminationController::class, "createExamination"], ["filter" => ["hasPermission:Manage_Examination_Data"]]);
+    $routes->put("details/(:segment)/restore", [ExaminationController::class, "restoreExamination/$1"], ["filter" => ["hasPermission:Manage_Examination_Data"]]);
+    $routes->get("count", [ExaminationController::class, "countExaminations"], ["filter" => ["hasPermission:Manage_Examination_Data"]], );
+    $routes->get("config/form", [ExaminationController::class, "getFormFields"], ["filter" => ["hasPermission:Manage_Examination_Data"]]);
+    $routes->get("details/(:segment)/applicants", [ExaminationController::class, "downnloadExaminationApplicants"], ["filter" => ["hasPermission:Approve_Or_Deny_Examination_Applications"]]);
+
+    $routes->get("registrations", [ExaminationController::class, "getExaminationRegistrations"], ["filter" => ["hasPermission:Manage_Examination_Candidates"]]);
+    $routes->post("registrations", [ExaminationController::class, "createExaminationRegistrations"], ["filter" => ["hasPermission:Manage_Examination_Candidates"]]);
+    $routes->put("registrations/(:segment)", [ExaminationController::class, "updateExaminationRegistrations/$1"], ["filter" => ["hasPermission:Manage_Examination_Data"]]);
+    $routes->delete("registrations/(:segment)", [ExaminationController::class, "deleteExaminationRegistration/$1"], ["filter" => ["hasPermission:Manage_Examination_Data"]]);
+    $routes->delete("registrations/(:segment)/result", [ExaminationController::class, "removeExaminationResults/$1"], ["filter" => ["hasPermission:Manage_Examination_Data"]]);
+
+    $routes->get("registrations/(:segment)/letter/registration", [ExaminationController::class, "getCandidateRegistrationLetter/$1"], ["filter" => ["hasPermission:Manage_Examination_Candidates"]]);
+    $routes->get("registrations/(:segment)/letter/result", [ExaminationController::class, "getCandidateResultLetter/$1"], ["filter" => ["hasPermission:Manage_Examination_Candidates"]]);
+    $routes->get("registrations/(:segment)/result-count", [ExaminationController::class, "getExaminationRegistrationResultCounts/$1"], ["filter" => ["hasPermission:Manage_Examination_Candidates"]]);
+    $routes->post("registrations/result", [ExaminationController::class, "setExaminationRegistrationResults"], ["filter" => ["hasPermission:Manage_Examination_Candidates"]]);
+    $routes->put("registrations/result/publish", [ExaminationController::class, "publishExaminationRegistrationResults"], ["filter" => ["hasPermission:Manage_Examination_Candidates"]]);
+    $routes->put("registrations/result/unpublish", [ExaminationController::class, "unpublishExaminationRegistrationResults"], ["filter" => ["hasPermission:Manage_Examination_Candidates"]]);
+
+    $routes->get("applications", [ExaminationController::class, "getExaminationApplications"], ["filter" => ["hasPermission:Approve_Or_Deny_Examination_Applications"]]);
+    $routes->post("applications", [ExaminationController::class, "createExaminationApplications"], ["filter" => ["hasPermission:Approve_Or_Deny_Examination_Applications"]]);
+    $routes->delete("applications/(:segment)", [ExaminationController::class, "deleteExaminationApplication/$1"], ["filter" => ["hasPermission:Approve_Or_Deny_Examination_Applications"]]);
+    $routes->post("applications/delete", [ExaminationController::class, "deleteExaminationApplications"], ["filter" => ["hasPermission:Approve_Or_Deny_Examination_Applications"]]);
+    $routes->put("applications/update-status", [ExaminationController::class, "updateExaminationApplicationStatus"], ["filter" => ["hasPermission:Approve_Or_Deny_Examination_Applications"]]);
+    $routes->get("applications/count", [ExaminationController::class, "countExaminationApplications"], ["filter" => ["hasPermission:Approve_Or_Deny_Examination_Applications"]]);
+    $routes->put("applications/(:segment)", [ExaminationController::class, "updateApplication/$1"], ["filter" => ["hasPermission:Approve_Or_Deny_Examination_Applications"]]);
 
 
 });

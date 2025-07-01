@@ -51,7 +51,7 @@ class CpdController extends ResourceController
 
             return $this->respond(['message' => 'Cpd topic created successfully', 'data' => $id], ResponseInterface::HTTP_OK);
         } catch (Exception $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -89,7 +89,7 @@ class CpdController extends ResourceController
 
             return $this->respond(['message' => 'CPD updated successfully'], ResponseInterface::HTTP_OK);
         } catch (Exception $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -109,7 +109,7 @@ class CpdController extends ResourceController
 
             return $this->respond(['message' => 'CPD deleted successfully'], ResponseInterface::HTTP_OK);
         } catch (Exception $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
 
@@ -134,7 +134,7 @@ class CpdController extends ResourceController
                 'data' => $total
             ], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -153,7 +153,7 @@ class CpdController extends ResourceController
 
             return $this->respond(['message' => 'Cpd restored successfully'], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_BAD_REQUEST);
         }
 
@@ -214,7 +214,7 @@ class CpdController extends ResourceController
                 'columnFilters' => $model->getDisplayColumnFilters()
             ], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
@@ -245,7 +245,7 @@ class CpdController extends ResourceController
 
             return $this->respond(['message' => 'Cpd provider created successfully', 'data' => $id], ResponseInterface::HTTP_OK);
         } catch (Exception $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -282,7 +282,7 @@ class CpdController extends ResourceController
 
             return $this->respond(['message' => 'CPD updated successfully'], ResponseInterface::HTTP_OK);
         } catch (Exception $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -305,7 +305,7 @@ class CpdController extends ResourceController
 
             return $this->respond(['message' => 'CPD provider deleted successfully'], ResponseInterface::HTTP_OK);
         } catch (Exception $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
 
@@ -330,7 +330,7 @@ class CpdController extends ResourceController
                 'data' => $total
             ], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -349,7 +349,7 @@ class CpdController extends ResourceController
 
             return $this->respond(['message' => 'Cpd provider restored successfully'], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_BAD_REQUEST);
         }
 
@@ -399,7 +399,7 @@ class CpdController extends ResourceController
                 'columnFilters' => $model->getDisplayColumnFilters()
             ], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
@@ -440,7 +440,7 @@ class CpdController extends ResourceController
                         $activitiesModel = new ActivitiesModel();
                         $activitiesModel->logActivity("Created cpd attendance for {$license} {$cpd['topic']}.", null, "cpd");
                     } catch (Exception $e) {
-                        log_message("error", $e->getMessage());
+                        log_message("error", $e);
                     }
                 }
             }
@@ -451,7 +451,7 @@ class CpdController extends ResourceController
 
             return $this->respond(['message' => $message, 'data' => $id], ResponseInterface::HTTP_OK);
         } catch (Exception $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -491,7 +491,7 @@ class CpdController extends ResourceController
 
             return $this->respond(['message' => 'CPD attendance updated successfully'], ResponseInterface::HTTP_OK);
         } catch (Exception $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -511,7 +511,7 @@ class CpdController extends ResourceController
 
             return $this->respond(['message' => 'CPD attendance deleted successfully'], ResponseInterface::HTTP_OK);
         } catch (Exception $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
 
@@ -536,7 +536,7 @@ class CpdController extends ResourceController
                 'data' => $total
             ], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -555,7 +555,7 @@ class CpdController extends ResourceController
 
             return $this->respond(['message' => 'Cpd attendance restored successfully'], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_BAD_REQUEST);
         }
 
@@ -616,7 +616,7 @@ class CpdController extends ResourceController
                 'columnFilters' => $model->getDisplayColumnFilters()
             ], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
@@ -643,7 +643,7 @@ class CpdController extends ResourceController
                 'columnFilters' => $model->getDisplayColumnFilters()
             ], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
