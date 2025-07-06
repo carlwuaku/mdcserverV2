@@ -48,7 +48,6 @@ class ExaminationLetterType
         $this->createdAt = date('Y-m-d H:i:s'); // Default to current time if not provided
 
         if (isset($object->criteria) && is_array($object->criteria)) {
-            log_message('debug', 'Processing criteria: ' . json_encode($object->criteria));
             foreach ($object->criteria as $criterion) {
                 $this->criteria[] = new ExaminationLetterCriteriaType(
                     letterId: 0, // Placeholder, will be set later

@@ -320,7 +320,7 @@ class ExaminationService
         $page = $filters['page'] ?? 0;
         $withDeleted = ($filters['withDeleted'] ?? '') === "yes";
         $param = $filters['param'] ?? $filters['child_param'] ?? null;
-        $sortBy = $filters['sortBy'] ?? "created_at";
+        $sortBy = $filters['sortBy'] ?? "id";
         $sortOrder = $filters['sortOrder'] ?? "desc";
         // Build query
         $builder = $param ? $this->examinationsModel->search($param) : $this->examinationsModel->builder();
@@ -612,7 +612,7 @@ class ExaminationService
         $result = $builder->get($per_page, $page)->getResult();
         foreach ($result as &$resultItem) {
             $scoreString = [];
-            $scores = json_decode($resultItem->scores) ?? [];
+            $scores = $resultItem->scores ? json_decode($resultItem->scores) : [];
             foreach ($scores as $score) {
                 $scoreString[] = $score->title . ": " . $score->score;
             }
@@ -642,7 +642,7 @@ class ExaminationService
             "intern_code" => "required|is_not_unique[exam_candidates.intern_code]",
             "exam_id" => "required|is_not_unique[examinations.id]",
             "index_number" => "required",
-            "result" => "permit_empty|in_list[Pass,Fail]",
+            "result" => "permit_empty|in_list[Pass,Fail,Absent]",
             "registration_letter" => "permit_empty",
             "result_letter" => "permit_empty",
             "publish_result_date" => "permit_empty|valid_date",
@@ -784,11 +784,14 @@ class ExaminationService
         $results = $builder->get()->getResultArray();
         // Convert the results to a more usable format
         $counts = [];
+        $total = 0;
         foreach ($results as $result) {
             $key = !empty($result['result']) ? strtolower($result['result']) : 'not_set'; // Handle null or empty results
             $counts[$key] = (int) $result['count'];
+            $total += $result['count'];
         }
 
+        $counts['total'] = $total;
         return $counts;
     }
 
@@ -809,7 +812,7 @@ class ExaminationService
             "uuid" => "required|is_not_unique[examination_registrations.uuid]",
             "index_number" => "required|is_not_unique[examination_registrations.index_number]",
             "intern_code" => "required|is_not_unique[examination_registrations.intern_code]",
-            "result" => "required|in_list[Pass,Fail]",
+            "result" => "required|in_list[Pass,Fail,Absent]",
             "scores" => "required"
         ];
         $updateData = [];
@@ -835,7 +838,7 @@ class ExaminationService
             $uuids[] = "'{$registration['uuid']}'";
             $activityLogMessages[] = "Set result for  exam registration for intern code {$registration['intern_code']} index number {$registration['index_number']}";
         }
-        $examinationRegistrations = $this->examinationRegistrationsModel->select("{$this->examinationRegistrationsModel->table}.*, {$this->examinationsModel->table}.exam_type")->join($this->examinationsModel->table, "{$this->examinationsModel->table}.id = {$this->examinationRegistrationsModel->table}.exam_id")->whereIn('uuid', $uuids)->findAll();
+        $examinationRegistrations = $this->examinationRegistrationsModel->select("{$this->examinationRegistrationsModel->table}.*, {$this->examinationsModel->table}.exam_type")->join($this->examinationsModel->table, "{$this->examinationsModel->table}.id = {$this->examinationRegistrationsModel->table}.exam_id")->whereIn("{$this->examinationRegistrationsModel->table}.uuid", $uuids)->findAll();
         $this->examinationRegistrationsModel->db->transException(true)->transStart();
         $numRows = $this->examinationRegistrationsModel->updateBatch($updateData, 'uuid', count($updateData));
         //get all the examination registrations for the uuids
@@ -1104,5 +1107,86 @@ class ExaminationService
         return array_filter($filters, function ($key) {
             return strpos($key, 'child_') === 0;
         }, ARRAY_FILTER_USE_KEY);
+    }
+
+    /**
+     * Parses a CSV file and returns an array of examination results
+     *
+     * The CSV file should contain the index numbers of the candidates in the first column, and the scores in the subsequent columns.
+     * The scores should be in the same order as the scores names in the exam settings.
+     * The function checks that the index numbers are valid for the exam, and throws an InvalidArgumentException if they are not.
+     * The function returns an array of arrays, each containing the exam ID, index number, intern code and scores.
+     * @param string $examId The ID of the exam whose results are to be parsed.
+     * @param string $filename The path to the CSV file.
+     * @return array An array of arrays, each containing the exam ID, index number, intern code and scores.
+     * @throws \InvalidArgumentException If any index number is invalid.
+     * @throws \RuntimeException If there is an error opening the file.
+     */
+    public function parseResultsFromCsvFile(string $examId, string $filename)
+    {
+        $handle = fopen($filename, "r");
+        $examDetails = $this->examinationsModel->where("id", $examId)->first();
+        if (!$examDetails) {
+            throw new \InvalidArgumentException("No such exam exists");
+        }
+        //get the valid index numbers for this exam, making sure all index numbers are in this list
+        $registrations = $this->examinationRegistrationsModel->select("index_number, intern_code, uuid")->where("exam_id", $examId)->findAll();
+        $validIndexNumbers = [];
+        foreach ($registrations as $registration) {
+            $validIndexNumbers[$registration['index_number']] = ["intern_code" => $registration['intern_code'], "uuid" => $registration['uuid']];
+        }
+        $data = [];
+        $examScores = $examDetails['scores_names'] ? json_decode($examDetails['scores_names']) : [];
+        if ($handle !== false) {
+            while (($filesop = fgetcsv($handle, 1000, ",")) !== false) {
+
+                //the first column should contain the index numbers
+                $indexNumber = trim(strtoupper($filesop[0]));
+                $internCode = $validIndexNumbers[$indexNumber]['intern_code'] ?? null;
+                $uuid = $validIndexNumbers[$indexNumber]['uuid'] ?? null;
+                if (!$internCode) {
+                    throw new \InvalidArgumentException("Index number $indexNumber not found");
+                }
+                $scores = [];
+                $result = "";
+                //the other columns should contain the scores in the order of $examScores
+                for ($i = 1; $i <= count($examScores); $i++) {
+                    $score = trim($filesop[$i]);
+                    $scores[] = ["title" => $examScores[$i - 1], "score" => $score];
+                }
+                //the last one should be the remarks. Pass, Fail or Absent
+                try {
+                    $resultField = trim($filesop[count($examScores) + 1]);
+                    if (strtolower($resultField) === "pass" || strtolower($resultField) === "passed") {
+                        $result = "Pass";
+                    } elseif (strtolower($resultField) === "fail" || strtolower($resultField) === "failed") {
+                        $result = "Fail";
+                    } elseif (strtolower($resultField) === "absent") {
+                        $result = "Absent";
+                    }
+
+                    if (!in_array($result, VALID_EXAMINATION_RESULTS)) {
+                        throw new \InvalidArgumentException("Result/remark '$resultField' is not a valid result for $indexNumber. Results must be one of the following: " . implode(", ", VALID_EXAMINATION_RESULTS));
+                    }
+                } catch (\InvalidArgumentException $th) {
+                    throw $th;
+                } catch (\Throwable $th) {
+                    throw new \InvalidArgumentException("Result/remarks field not found. Please make sure the result/remarks field is the last column in the CSV file");
+                }
+
+                $data[] = [
+                    "exam_id" => $examId,
+                    "index_number" => $indexNumber,
+                    "intern_code" => $internCode,
+                    "scores" => $scores,
+                    "result" => $result,
+                    "uuid" => $uuid
+                ];
+            }
+            fclose($handle);
+            return $data;
+        } else {
+            throw new \RuntimeException("Failed to open file");
+        }
     }
 }

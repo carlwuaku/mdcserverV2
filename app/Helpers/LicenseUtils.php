@@ -126,7 +126,6 @@ class LicenseUtils extends Utils
                 return $status['label'];
             }, self::getPrintableRenewalStatuses($licenseType));
 
-            log_message('info', print_r($printableStatuses, true));
             //if the status allows the license to be printed, generate the qr code
             if (empty($renewal['qr_code']) && isset($data['status']) && in_array($data['status'], $printableStatuses)) {
                 //check for the terminal status from the app settings for that license type

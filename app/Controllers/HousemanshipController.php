@@ -1507,7 +1507,7 @@ class HousemanshipController extends ResourceController
                         $application->session,
                         $application->year,
                         $application->letter_template,
-                        $application->tags,
+                        $application->tags ?? "",
                         json_encode($license),
                         $application->details
                     );

@@ -23,7 +23,7 @@ class ExaminationsUtils extends Utils
                 $examRegistrations = self::getExaminationRegistrations(['intern_code' => $internCode]);
                 //if the person has passed any exam_type, then they cannot apply for the same exam_type again. So we need to filter out those exam types from the applicable exams.
                 //also, if there is currently a registration for an exam_type (the result has not been set), then they cannot apply for the same exam_type again. So we need to filter out those exam types from the applicable exams.
-                //so basically they can only apply for exam types that they have taken before and failed, or have never taken before.
+                //so basically they can only apply for exam types that they have taken before and failed or been absent for, or have never taken before.
                 /**
                  * @var string[]
                  */
@@ -46,7 +46,7 @@ class ExaminationsUtils extends Utils
                     }
                     if (strtolower($registration['result']) === 'pass') {
                         $passedExamTypes[] = $registration['exam_type'];
-                    } else if (strtolower($registration['result']) === 'fail') {
+                    } else if (strtolower($registration['result']) === 'fail' || strtolower($registration['result']) === 'absent') {
                         $failedExamTypes[] = $registration['exam_type'];
                     }
                     if (!$registration['result']) {
@@ -151,7 +151,7 @@ class ExaminationsUtils extends Utils
             }
         }
         $builder->join($examModel->table, "$examModel->table.id = $model->table.exam_id", 'left');
-        $builder->orderBy($model->table->created_at, 'asc');
+        $builder->orderBy('created_at', 'asc');
         $result = $builder->get()->getResultArray();
         return $result;
     }
@@ -230,9 +230,12 @@ class ExaminationsUtils extends Utils
         if (empty($examId)) {
             throw new \InvalidArgumentException("No exam ID found for registration with UUID: $uuid");
         }
-        //for result letters, it has to be either a pass or fail. so we need to check if the result is pass or fail. if there's no result, no letter can be generated.
+        //for result letters, it has to be either a pass or fail. so we need to check if the result is pass or fail. if there's no result, or it's absent, no letter can be generated.
         $examinationLetterType = $letterType === "registration" ? "registration" : "";
         if ($letterType === "result") {
+            if ($registration['result'] === "Absent") {
+                throw new \InvalidArgumentException("Candidate was marked absent for this examination");
+            }
             if ($registration['result'] !== "Pass" && $registration['result'] !== "Fail") {
                 throw new \InvalidArgumentException("Result not set for candidate");
             }
@@ -462,19 +465,7 @@ class ExaminationsUtils extends Utils
             if (empty($registrations)) {
                 return APPLY_FOR_EXAMINATION;
             }
-            foreach ($examRegistrations as $registration) {
-                if (strtolower($registration['result']) === 'pass' || !$registration['result']) {
-                    $excludedExamTypes[] = $registration['exam_type'];
-                }
-                if (strtolower($registration['result']) === 'pass') {
-                    $passedExamTypes[] = $registration['exam_type'];
-                } else if (strtolower($registration['result']) === 'fail') {
-                    $failedExamTypes[] = $registration['exam_type'];
-                }
-                if (!$registration['result']) {
-                    $hasPendingRegistration = true;
-                }
-            }
+
             $lastExam = $examRegistrations[count($examRegistrations) - 1];
             $examType = $lastExam[0]['exam_type'];
             $result = $lastExam[0]['result'];

@@ -461,6 +461,41 @@ class ExaminationController extends ResourceController
         }
     }
 
+    public function parseResultsFromCsvFile(string $examId)
+    {
+        try {
+            $mimes = "text/csv";
+
+            $validationRule = [
+                'uploadFile' => [
+                    'label' => 'Uploaded File',
+                    'rules' => [
+                        'uploaded[uploadFile]',
+                        "mime_in[uploadFile,$mimes]",
+                        "max_size[uploadFile,5000]",
+                    ],
+                ],
+            ];
+            if (!$this->validate($validationRule)) {
+                $message = implode(" ", array_values($this->validator->getErrors()));
+                return $this->respond(['message' => $message], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+            $file = $this->request->getFile('uploadFile');
+            $result = $this->examinationService->parseResultsFromCsvFile($examId, $file->getTempName());
+            return $this->respond(["data" => $result, "message" => "Results read successfully"], ResponseInterface::HTTP_OK);
+        } catch (\InvalidArgumentException $e) {
+            log_message("error", $e);
+            return $this->respond(['message' => $e->getMessage()], ResponseInterface::HTTP_BAD_REQUEST);
+
+        } catch (\Throwable $e) {
+            log_message("error", $e);
+            return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+
+
+
+    }
+
     private function extractRequestFilters(): array
     {
         $filters = [];
