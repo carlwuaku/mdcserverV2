@@ -123,5 +123,6 @@ define("EXAM_CANDIDATES_VALID_STATES", ['Apply for examination', 'Apply for migr
 define("APPLY_FOR_MIGRATION", "Apply for migration");
 define("APPLY_FOR_EXAMINATION", "Apply for examination");
 define("MIGRATED", "Migrated");
+define("VALID_EXAMINATION_RESULTS", ["Pass", "Fail", "Absent"]);
 
 

@@ -201,6 +201,10 @@ class ExaminationRegistrationsModel extends MyBaseModel implements TableDisplayI
                         "value" => "Fail"
                     ],
                     [
+                        "key" => "Absent",
+                        "value" => "Absent"
+                    ],
+                    [
                         "key" => "Not Set",
                         "value" => "--Null Or Empty--"
                     ],

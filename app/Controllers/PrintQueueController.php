@@ -614,7 +614,7 @@ class PrintQueueController extends ResourceController
             }
             $documentType = $this->request->getVar('document_type');
             if (!$documentType) {
-                return $this->respond(['message' => "Document type is required"], ResponseInterface::HTTP_BAD_REQUEST);
+                $documentType = $template->template_name;//THIS IS supposed to indicate the type of document. if not provided, it will be the name of the template
             }
 
             // Check if user has access to this template
@@ -633,14 +633,14 @@ class PrintQueueController extends ResourceController
                 $document = [
                     "type" => $documentType,
                     "content" => $html,
-                    "department" => auth('tokens')->user()->position,
+                    "department" => auth('tokens')->user()->position ?? auth('tokens')->user()->role ?? "N/A",
                     "unique_id" => $object->unique_id ?? null,
                     "table_name" => $object->table_name ?? null,
                     "table_row_uuid" => $object->table_row_uuid ?? null
                 ];
                 $result = $documentVerificationModel->generateSecureDocument($document);
                 //append the qr code to the content
-                $html .= "<img src='{$result['qr_path']}' alt='QR Code' />";
+                // $html .= "<img src='{$result['qr_path']}' alt='QR Code' />";
                 $finishedTemplates[] = '<div style="page-break-after: always;">' . $html . '</div>';
             }
 
@@ -686,9 +686,9 @@ class PrintQueueController extends ResourceController
             foreach ($documentData as $document) {
                 $document = (array) $document;
                 $document['department'] = auth('tokens')->user()->position || auth('tokens')->user()->role_name; // Ensure department is set from the authenticated user
-                // log_message('info', print_r(auth('tokens')->user(), true));
                 if (!isset($document['type']) || empty($document['type'])) {
-                    return $this->respond(['message' => "Document type is required"], ResponseInterface::HTTP_BAD_REQUEST);
+                    // return $this->respond(['message' => "Document type is required"], ResponseInterface::HTTP_BAD_REQUEST);
+                    $document['type'] = "N/A";//THIS IS supposed to indicate the type of document. if not provided, it will be N/A
                 }
 
                 if (!isset($document['content']) || empty($document['content'])) {

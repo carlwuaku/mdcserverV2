@@ -102,7 +102,7 @@ class TemplateEngineHelper
     /**
      * Format a date value
      */
-    private function formatDate(string $value, ?string $format = null): string
+    private function formatDate(?string $value, ?string $format = null): string
     {
         // Skip empty values
         if (empty($value)) {

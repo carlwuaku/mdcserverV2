@@ -2708,7 +2708,8 @@
                 ],
                 "candidate_state_after_result": {
                     "Pass": "Apply for migration",
-                    "Fail": "Apply for examination"
+                    "Fail": "Apply for examination",
+                    "Absent": "Apply for examination"
                 }
             },
             "OSCE 1": {
@@ -2728,7 +2729,8 @@
                 ],
                 "candidate_state_after_result": {
                     "Pass": "Apply for examination",
-                    "Fail": "Apply for examination"
+                    "Fail": "Apply for examination",
+                    "Absent": "Apply for examination"
                 },
                 "metadata_fields": [
                     {
@@ -2846,7 +2848,8 @@
                 ],
                 "candidate_state_after_result": {
                     "Pass": "Apply for migration",
-                    "Fail": "Apply for examination"
+                    "Fail": "Apply for examination",
+                    "Absent": "Apply for examination"
                 },
                 "metadata_fields": [
                     {

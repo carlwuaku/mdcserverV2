@@ -349,12 +349,10 @@ class LicensesController extends ResourceController
         }
 
         // Get all child_ and renewal_ parameters
-        $allParams = $this->request->getVar();
-        if (is_array($allParams)) {
-            foreach ($allParams as $key => $value) {
-                if (strpos($key, 'child_') === 0 || strpos($key, 'renewal_') === 0) {
-                    $filters[$key] = $value;
-                }
+        $allParams = (array) $this->request->getVar();
+        foreach ($allParams as $key => $value) {
+            if (strpos($key, 'child_') === 0 || strpos($key, 'renewal_') === 0) {
+                $filters[$key] = $value;
             }
         }
 

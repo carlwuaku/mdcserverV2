@@ -193,11 +193,9 @@ class ApplicationFormActionHelper extends Utils
 
             // Map application data to license data
             $licenseData = self::mapDataForLicense($action->config, $data);
-            log_message('info', 'Creating license via service layer' . print_r($data, true));
             // Create license using service
             $result = $licenseService->createLicense($licenseData);
 
-            log_message('info', 'License created successfully via service layer');
 
             return $data; // Return original data to continue workflow
 
@@ -216,7 +214,6 @@ class ApplicationFormActionHelper extends Utils
     private static function createRenewal($action, $data)
     {
         try {
-            log_message('info', 'Creating renewal via service layer');
 
             // Get renewal service using CI4 service() function
             $renewalService = service('licenseRenewalService');
@@ -227,7 +224,6 @@ class ApplicationFormActionHelper extends Utils
             // Create renewal using service
             $result = $renewalService->createRenewal($renewalData);
 
-            log_message('info', 'Renewal created successfully via service layer');
 
             return $data;
 
@@ -246,7 +242,6 @@ class ApplicationFormActionHelper extends Utils
     private static function updateLicense($action, $data)
     {
         try {
-            log_message('info', 'Updating license via service layer');
 
             // Get license service using CI4 service() function
             $licenseService = service('licenseService');
@@ -264,7 +259,6 @@ class ApplicationFormActionHelper extends Utils
             // Update license using service
             $result = $licenseService->updateLicense($licenseUuid, $updateData);
 
-            log_message('info', 'License updated successfully via service layer');
 
             return $data;
 
@@ -283,7 +277,6 @@ class ApplicationFormActionHelper extends Utils
     private static function callApi($action, $data)
     {
         try {
-            log_message('info', 'Making API call to: ' . $action->config['endpoint']);
 
             // Check if this is an internal endpoint that should use services
             if (self::isInternalEndpoint($action->config['endpoint'])) {
@@ -437,7 +430,6 @@ class ApplicationFormActionHelper extends Utils
     {
         try {
             $result = $serviceCall();
-            log_message('info', 'Service call completed successfully');
             return $originalData; // Return original data to continue workflow
         } catch (\Throwable $e) {
             log_message('error', 'Service call failed: ' . $e);
@@ -477,7 +469,6 @@ class ApplicationFormActionHelper extends Utils
         // Make HTTP call using your existing NetworkUtils
         // $response = NetworkUtils::makeRequest($method, $url, $requestOptions, $body);
 
-        log_message('info', 'External API call completed');
 
         return $data;
     }
@@ -493,8 +484,6 @@ class ApplicationFormActionHelper extends Utils
         $licenseData = [];
 
         // Use body_mapping if available, otherwise use default mapping
-        log_message('info', 'Mapping data for license creation');
-        log_message('info', 'Config body mapping: ' . print_r($config['body_mapping'], true));
         if (!empty($config['body_mapping'])) {
             $licenseData = self::mapDataToBody($config['body_mapping'], $data);
         } else {

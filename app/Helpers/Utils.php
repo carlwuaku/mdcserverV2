@@ -82,7 +82,9 @@ class Utils
             $differentKeys = [];
             foreach ($obj2Vars as $key => $value) {
                 if ($key !== "qr_code" && isset($obj1Vars[$key]) && $obj1Vars[$key] !== $value) {
-                    $differentKeys[] = $key . ": {$obj1Vars[$key]} -> $value";
+                    $oldValue = is_array($obj1Vars[$key]) ? json_encode($obj1Vars[$key]) : $obj1Vars[$key];
+                    $newValue = is_array($value) ? json_encode($value) : $value;
+                    $differentKeys[] = $key . ": $oldValue -> $newValue";
                 }
             }
 
