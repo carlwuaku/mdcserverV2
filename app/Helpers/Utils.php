@@ -37,7 +37,7 @@ class Utils
         $fileName = getenv('APP_SETTINGS_FILE') ?? 'app-settings.json';
         if (!file_exists(ROOTPATH . $fileName)) {
             log_message('error', "Settings file not found: $fileName");
-            throw new \Exception("No settings file found", 1);
+            throw new Exception("No settings file found", 1);
 
         }
         return ROOTPATH . $fileName;
@@ -536,7 +536,7 @@ class Utils
             $isForeign = array_key_exists("country_of_practice", $person) && strtolower($person['country_of_practice']) !== "ghana";
             $provisionalNumber = null;
             if (
-                $person && array_key_exists("register_type", $person) && strtolower($person['register_type']) === "permanent"
+                $person && array_key_exists("register_type", $person) && $person['register_type'] !== null && strtolower($person['register_type']) === "permanent"
                 && array_key_exists("provisional_number", $person)
                 && !empty($person['provisional_number'])
             ) {
@@ -733,6 +733,8 @@ class Utils
         } else {
             // Single value logic remains the same
             if (self::fieldIsDateField($columnName)) {
+                log_message('info', "Date range: " . $columnName);
+
                 $dateRange = Utils::getDateRange($value);
                 $builder->where($columnName . ' >=', $dateRange['start']);
                 $builder->where($columnName . ' <=', $dateRange['end']);
@@ -874,7 +876,13 @@ class Utils
     }
 
     public static function fieldIsDateField(string $fieldName): bool
-    {
+    {//some fields may be qualified by their table name e.g. license.expiry_date so we need to check for that
+        if (strpos($fieldName, '.') !== false) {
+            $arr = explode('.', $fieldName);
+            $fieldName = array_pop($arr);
+        }
+        log_message('debug', "fieldName date: $fieldName");
+        log_message('debug', print_r(DATABASE_DATE_FIELDS, true));
         return in_array($fieldName, DATABASE_DATE_FIELDS);
     }
 

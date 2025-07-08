@@ -285,7 +285,7 @@ class LicenseRenewalService
 
         // Add license details
         $addJoin = !$param; // If param exists, join might already be added
-        $builder = $model->addLicenseDetails($builder, $licenseType, $addJoin, $addJoin, '', '', $addSelectClause);
+        $builder = $model->addLicenseDetails($builder, $licenseType, true, $addJoin, '', '', $addSelectClause);
 
         // Handle JSON fields
         if (!empty($renewalSubTableJsonFields) && !empty($renewalSubTable)) {

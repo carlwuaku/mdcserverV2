@@ -285,7 +285,7 @@ class AuthController extends ResourceController
         $userObject->update($userData->id, [
             'two_fa_setup_token' => $secret
         ]);
-
+        //TODO: Send email to user
         return $this->respond([
             'secret' => $secret, // User can manually enter this if they can't scan QR
             'qr_code_url' => $qrCodeUrl,
@@ -362,6 +362,18 @@ class AuthController extends ResourceController
 
         return $this->respond([
             'message' => '2FA has been successfully disabled for this account'
+        ], ResponseInterface::HTTP_OK);
+    }
+
+    public function resetPassword()
+    {
+        $userId = $this->request->getVar('user_id');
+        $userObject = new UsersModel();
+        $userData = $userObject->findById($userId);
+        $userData->password = password_hash($this->request->getVar('password'), PASSWORD_DEFAULT);
+        $userObject->save($userData);
+        return $this->respond([
+            'message' => 'Password has been successfully reset for this account'
         ], ResponseInterface::HTTP_OK);
     }
 
@@ -452,7 +464,7 @@ class AuthController extends ResourceController
         $is2faVerification = $this->request->getVar('verification_mode') === '2fa';
         // Validate credentials
         $rules = setting('Validation.login') ?? [
-            'email' => config('auth')->emailValidationRules,
+            // 'email' => config('auth')->emailValidationRules,
             'password' => [
                 'label' => 'Auth.password',
                 'rules' => 'required',

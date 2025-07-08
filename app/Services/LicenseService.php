@@ -217,6 +217,14 @@ class LicenseService
 
         // Build query
         $builder = $param ? $model->search($param) : $model->builder();
+        $tableName = $model->table;
+        $filterArray = $model->createArrayFromAllowedFields($filters);
+
+        array_map(function ($value, $key) use ($builder, $tableName) {
+            $value = Utils::parseParam($value);
+            $columnName = $tableName . "." . $key;
+            $builder = Utils::parseWhereClause($builder, $columnName, $value);
+        }, $filterArray, array_keys($filterArray));
 
         // Apply child parameters if license type is specified
         if ($licenseType) {
@@ -248,7 +256,6 @@ class LicenseService
         // Get total count
         $totalBuilder = clone $builder;
         $total = $totalBuilder->countAllResults();
-
         // Get paginated results
         $result = $builder->get($per_page, $page)->getResult();
 
@@ -321,6 +328,7 @@ class LicenseService
         });
 
         $parentParams = $model->createArrayFromAllowedFields($filters);
+        log_message('debug', print_r($filters, true));
         $results = [];
 
         if ($licenseType) {
@@ -330,6 +338,7 @@ class LicenseService
 
             foreach ($allFields as $field) {
                 $builder = $this->buildStatisticsQuery($model, $field, $parentParams, $licenseType, $licenseTypeTable, $childParams);
+                log_message('debug', $builder->getCompiledSelect(false));
                 $result = $builder->get()->getResult();
 
                 $results[$field->name] = $this->formatStatisticsResult($field, $result);

@@ -641,7 +641,7 @@ class PrintQueueController extends ResourceController
                 $result = $documentVerificationModel->generateSecureDocument($document);
                 //append the qr code to the content
                 // $html .= "<img src='{$result['qr_path']}' alt='QR Code' />";
-                $finishedTemplates[] = '<div style="page-break-after: always;">' . $html . '</div>';
+                $finishedTemplates[] = '<div style="page-break-before: always; break-before: always;page-break-after: always; break-after: always; border: 1px solid #000">' . $html . '</div>';
             }
 
             return $this->respond(['data' => implode("", $finishedTemplates)], ResponseInterface::HTTP_OK);

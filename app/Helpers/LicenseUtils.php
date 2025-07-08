@@ -140,6 +140,10 @@ class LicenseUtils extends Utils
                 $data['qr_text'] = $qrText;
             }
             $formData = $model->createArrayFromAllowedFields($data, false);
+            //if the online_print_template is an empty string, set it to null
+            if (empty($data['online_print_template'])) {
+                $formData['online_print_template'] = null;
+            }
             // log_message('info', print_r($formData, true));
 
             $model->where("uuid", $renewal_uuid)->set($formData)->update();

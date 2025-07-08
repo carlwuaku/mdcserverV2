@@ -489,6 +489,76 @@
             "selection_mode": "multiple"
         }
     ],
+    "advancedStatisticsFilterFields": [
+        {
+            "label": "Region",
+            "name": "region",
+            "hint": "",
+            "options": [],
+            "type": "api",
+            "value": "",
+            "required": false,
+            "api_url": "admin/distinct-values/licenses/region",
+            "apiKeyProperty": "region",
+            "apiLabelProperty": "region",
+            "apiType": "select"
+        },
+        {
+            "label": "District",
+            "name": "district",
+            "hint": "",
+            "options": [],
+            "type": "api",
+            "value": "",
+            "required": false,
+            "api_url": "admin/distinct-values/licenses/district",
+            "apiKeyProperty": "district",
+            "apiLabelProperty": "district",
+            "apiType": "select"
+        },
+        {
+            "label": "Date Created",
+            "name": "created_on",
+            "hint": "",
+            "options": [],
+            "type": "date-range",
+            "value": "",
+            "required": false,
+            "api_url": "",
+            "apiKeyProperty": "",
+            "apiLabelProperty": "",
+            "apiType": "",
+            "selection_mode": ""
+        },
+        {
+            "label": "Registration Date",
+            "name": "registration_date",
+            "hint": "",
+            "options": [],
+            "type": "date-range",
+            "value": "",
+            "required": false,
+            "api_url": "",
+            "apiKeyProperty": "",
+            "apiLabelProperty": "",
+            "apiType": "",
+            "selection_mode": ""
+        },
+        {
+            "label": "Country",
+            "name": "country_of_practice",
+            "hint": "",
+            "options": [],
+            "type": "api",
+            "value": "",
+            "required": false,
+            "api_url": "admin/distinct-values/licenses/country_of_practice",
+            "apiKeyProperty": "country_of_practice",
+            "apiLabelProperty": "country_of_practice",
+            "apiType": "select",
+            "selection_mode": "multiple"
+        }
+    ],
     "licenseTypes": {
         "practitioners": {
             "table": "practitioners",
@@ -1121,13 +1191,6 @@
                     "name": "practitioner_type",
                     "type": "bar",
                     "xAxisLabel": "Practitioner Type",
-                    "yAxisLabel": "Number of Licenses"
-                },
-                {
-                    "label": "Register Type",
-                    "name": "register_type",
-                    "type": "bar",
-                    "xAxisLabel": "Register Type",
                     "yAxisLabel": "Number of Licenses"
                 },
                 {
