@@ -110,7 +110,7 @@ class LicensesController extends ResourceController
     public function getLicenses()
     {
         try {
-            $filters = (array) $this->request->getVar();
+            $filters = $this->extractRequestFilters();
             $result = $this->licenseService->getLicenses($filters);
 
             return $this->respond($result, ResponseInterface::HTTP_OK);
@@ -319,7 +319,48 @@ class LicensesController extends ResourceController
     private function extractRequestFilters(): array
     {
 
-        return (array) $this->request->getVar();
+        $filters = [];
+
+        // Get common parameters
+        // $commonParams = [
+        //     'limit',
+        //     'page',
+        //     'withDeleted',
+        //     'param',
+        //     'child_param',
+        //     'sortBy',
+        //     'sortOrder',
+        //     'licenseType',
+        //     'renewalDate',
+        //     'license_type',
+        //     'license_number',
+        //     'status',
+        //     'start_date',
+        //     'expiry',
+        //     'created_on',
+        //     'isGazette',
+        //     'in_print_queue',
+        //     'fields'
+        // ];
+
+        // foreach ($commonParams as $param) {
+        //     $value = $this->request->getVar($param);
+        //     if ($value !== null) {
+        //         $filters[$param] = $value;
+        //     }
+        // }
+        //merge get and post data
+        $filters = array_merge($this->request->getGet(), (array) $this->request->getVar());
+
+        // Get all child_ and renewal_ parameters
+        // $allParams = (array) $this->request->getVar();
+        // foreach ($allParams as $key => $value) {
+        //     if (strpos($key, 'child_') === 0 || strpos($key, 'renewal_') === 0) {
+        //         $filters[$key] = $value;
+        //     }
+        // }
+
+        return $filters;
     }
 
     /**

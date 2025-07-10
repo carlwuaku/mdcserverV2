@@ -516,23 +516,24 @@ class ExaminationController extends ResourceController
             'result',
             'intern_code'
         ];
+        $filters = array_merge($this->request->getGet(), (array) $this->request->getVar());
 
-        foreach ($commonParams as $param) {
-            $value = $this->request->getVar($param);
-            if ($value !== null) {
-                $filters[$param] = $value;
-            }
-        }
+        // foreach ($commonParams as $param) {
+        //     $value = $this->request->getVar($param);
+        //     if ($value !== null) {
+        //         $filters[$param] = $value;
+        //     }
+        // }
 
-        // Get all child_ and renewal_ parameters
-        $allParams = $this->request->getVar();
-        if (is_array($allParams)) {
-            foreach ($allParams as $key => $value) {
-                if (strpos($key, 'child_') === 0) {
-                    $filters[$key] = $value;
-                }
-            }
-        }
+        // // Get all child_ and renewal_ parameters
+        // $allParams = $this->request->getVar();
+        // if (is_array($allParams)) {
+        //     foreach ($allParams as $key => $value) {
+        //         if (strpos($key, 'child_') === 0) {
+        //             $filters[$key] = $value;
+        //         }
+        //     }
+        // }
 
         return $filters;
     }

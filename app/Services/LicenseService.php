@@ -257,7 +257,8 @@ class LicenseService
         $totalBuilder = clone $builder;
         $total = $totalBuilder->countAllResults();
         // Get paginated results
-        $result = $builder->get($per_page, $page)->getResult();
+        $builder->limit($per_page)->offset($page);
+        $result = $builder->get()->getResult();
 
         return [
             'data' => $result,
@@ -328,7 +329,6 @@ class LicenseService
         });
 
         $parentParams = $model->createArrayFromAllowedFields($filters);
-        log_message('debug', print_r($filters, true));
         $results = [];
 
         if ($licenseType) {
@@ -338,7 +338,6 @@ class LicenseService
 
             foreach ($allFields as $field) {
                 $builder = $this->buildStatisticsQuery($model, $field, $parentParams, $licenseType, $licenseTypeTable, $childParams);
-                log_message('debug', $builder->getCompiledSelect(false));
                 $result = $builder->get()->getResult();
 
                 $results[$field->name] = $this->formatStatisticsResult($field, $result);

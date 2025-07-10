@@ -80,89 +80,235 @@
             ]
         },
         {
-            "title": "Pharmacists",
-            "active_children": false,
-            "url": "",
-            "icon": "person_outlined",
-            "children": [
-                {
-                    "title": "View/Search Licenses",
-                    "url": "/licenses/list",
-                    "icon": "",
-                    "children": [],
-                    "urlParams": {
-                        "licenseType": "practitioners",
-                        "child_practitioner_type": "Pharmacist"
-                    }
-                },
-                {
-                    "title": "Add New Pharmacist",
-                    "url": "/licenses/form/create/practitioners",
-                    "icon": "",
-                    "children": []
-                },
-                {
-                    "title": "Basic Reports",
-                    "url": "/licenses/reports",
-                    "icon": "",
-                    "children": [],
-                    "urlParams": {
-                        "licenseType": "practitioners",
-                        "child_practitioner_type": "Pharmacist"
-                    }
-                },
-                {
-                    "title": "Advanced Reports",
-                    "url": "/licenses/advanced-reports",
-                    "icon": "",
-                    "children": [],
-                    "urlParams": {
-                        "licenseType": "practitioners",
-                        "child_practitioner_type": "Pharmacist"
-                    }
-                }
-            ]
-        },
-        {
             "title": "Pharmacy Technicians",
             "active_children": false,
             "url": "",
             "icon": "person_outlined",
             "children": [
                 {
-                    "title": "View/Search Licenses",
-                    "url": "/licenses/list",
+                    "title": "View/Search Pharmacist/Technician",
+                    "url": "/licenses/list/practitioners",
                     "icon": "",
                     "children": [],
                     "urlParams": {
-                        "licenseType": "practitioners",
-                        "child_practitioner_type": "Pharmacy Technician"
+                        "licenseType": "practitioners"
                     }
                 },
                 {
-                    "title": "Add New Pharmacy Technician",
+                    "title": "Add New Pharmacist/Technician",
                     "url": "/licenses/form/create/practitioners",
                     "icon": "",
                     "children": []
                 },
                 {
+                    "title": "Renewals",
+                    "url": "",
+                    "icon": "",
+                    "children": [
+                        {
+                            "title": "Dashboard",
+                            "url": "/licenses/renewal-dashboard/practitioners",
+                            "icon": "",
+                            "children": []
+                        },
+                        {
+                            "title": "Add New Renewal",
+                            "url": "/licenses/renewal-form/practitioners",
+                            "icon": "",
+                            "children": []
+                        },
+                        {
+                            "title": "Renewal Print Queue",
+                            "url": "/licenses/renewal-print-queue/practitioners",
+                            "icon": "",
+                            "children": []
+                        },
+                        {
+                            "title": "Renewal Reports",
+                            "url": "/licenses/renewal-reports/practitioners",
+                            "icon": "",
+                            "children": []
+                        },
+                        {
+                            "title": "Gazette",
+                            "url": "/licenses/gazette/practitioners",
+                            "icon": "",
+                            "children": []
+                        }
+                    ]
+                },
+                {
                     "title": "Basic Reports",
-                    "url": "/licenses/reports",
+                    "url": "/licenses/reports/practitioners",
                     "icon": "",
                     "children": [],
                     "urlParams": {
-                        "licenseType": "practitioners",
-                        "child_practitioner_type": "Pharmacy Technician"
+                        "licenseType": "practitioners"
                     }
                 },
                 {
                     "title": "Advanced Reports",
-                    "url": "/licenses/advanced-reports",
+                    "url": "/licenses/advanced-reports/practitioners",
                     "icon": "",
                     "children": [],
                     "urlParams": {
-                        "licenseType": "practitioners",
-                        "child_practitioner_type": "Pharmacy Technician"
+                        "licenseType": "practitioners"
+                    }
+                }
+            ]
+        },
+        {
+            "title": "Pharmacies",
+            "active_children": false,
+            "url": "",
+            "icon": "person_outlined",
+            "children": [
+                {
+                    "title": "View/Search Pharmacies",
+                    "url": "/licenses/list/facilities",
+                    "icon": "",
+                    "children": [],
+                    "urlParams": {
+                        "licenseType": "facilities"
+                    }
+                },
+                {
+                    "title": "Add New Pharmacy",
+                    "url": "/licenses/form/create/facilities",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Renewals",
+                    "url": "",
+                    "icon": "",
+                    "children": [
+                        {
+                            "title": "Dashboard",
+                            "url": "/licenses/renewal-dashboard/facilities",
+                            "icon": "",
+                            "children": []
+                        },
+                        {
+                            "title": "Add New Renewal",
+                            "url": "/licenses/renewal-form/facilities",
+                            "icon": "",
+                            "children": []
+                        },
+                        {
+                            "title": "Renewal Print Queue",
+                            "url": "/licenses/renewal-print-queue/facilities",
+                            "icon": "",
+                            "children": []
+                        },
+                        {
+                            "title": "Renewal Reports",
+                            "url": "/licenses/renewal-reports/facilities",
+                            "icon": "",
+                            "children": []
+                        },
+                        {
+                            "title": "Gazette",
+                            "url": "/licenses/gazette/facilities",
+                            "icon": "",
+                            "children": []
+                        }
+                    ]
+                },
+                {
+                    "title": "Basic Reports",
+                    "url": "/licenses/reports/facilities",
+                    "icon": "",
+                    "children": [],
+                    "urlParams": {
+                        "licenseType": "facilities"
+                    }
+                },
+                {
+                    "title": "Advanced Reports",
+                    "url": "/licenses/advanced-reports/facilities",
+                    "icon": "",
+                    "children": [],
+                    "urlParams": {
+                        "licenseType": "facilities"
+                    }
+                }
+            ]
+        },
+        {
+            "title": "OTCMS",
+            "active_children": false,
+            "url": "",
+            "icon": "person_outlined",
+            "children": [
+                {
+                    "title": "View/Search OTCMS",
+                    "url": "/licenses/list/otcms",
+                    "icon": "",
+                    "children": [],
+                    "urlParams": {
+                        "licenseType": "otcms"
+                    }
+                },
+                {
+                    "title": "Add New OTCMS",
+                    "url": "/licenses/form/create/otcms",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Renewals",
+                    "url": "",
+                    "icon": "",
+                    "children": [
+                        {
+                            "title": "Dashboard",
+                            "url": "/licenses/renewal-dashboard/otcms",
+                            "icon": "",
+                            "children": []
+                        },
+                        {
+                            "title": "Add New Renewal",
+                            "url": "/licenses/renewal-form/otcms",
+                            "icon": "",
+                            "children": []
+                        },
+                        {
+                            "title": "Renewal Print Queue",
+                            "url": "/licenses/renewal-print-queue/otcms",
+                            "icon": "",
+                            "children": []
+                        },
+                        {
+                            "title": "Renewal Reports",
+                            "url": "/licenses/renewal-reports/otcms",
+                            "icon": "",
+                            "children": []
+                        },
+                        {
+                            "title": "Gazette",
+                            "url": "/licenses/gazette/otcms",
+                            "icon": "",
+                            "children": []
+                        }
+                    ]
+                },
+                {
+                    "title": "Basic Reports",
+                    "url": "/licenses/reports/otcms",
+                    "icon": "",
+                    "children": [],
+                    "urlParams": {
+                        "licenseType": "otcms"
+                    }
+                },
+                {
+                    "title": "Advanced Reports",
+                    "url": "/licenses/advanced-reports/otcms",
+                    "icon": "",
+                    "children": [],
+                    "urlParams": {
+                        "licenseType": "otcms"
                     }
                 }
             ]
@@ -182,12 +328,6 @@
                 {
                     "title": "Add New Renewal",
                     "url": "/licenses/renewal-form",
-                    "icon": "",
-                    "children": []
-                },
-                {
-                    "title": "Renewal History",
-                    "url": "/licenses/renewals",
                     "icon": "",
                     "children": []
                 },
@@ -2203,8 +2343,8 @@
             "onUpdateValidation": {},
             "renewalFields": [
                 {
-                    "label": "Place of Work",
-                    "name": "place_of_work",
+                    "label": "Batch number",
+                    "name": "batch_number",
                     "hint": "",
                     "options": [],
                     "type": "text",
@@ -2213,169 +2353,30 @@
                     "api_url": "",
                     "apiKeyProperty": "",
                     "apiLabelProperty": ""
-                },
-                {
-                    "label": "Institution Type",
-                    "name": "institution_type",
-                    "hint": "",
-                    "options": [],
-                    "type": "api",
-                    "value": "",
-                    "required": false,
-                    "api_url": "admin/settings/Pharmacists.work_institution_types",
-                    "apiKeyProperty": "name",
-                    "apiLabelProperty": "name",
-                    "apiType": "datalist"
-                },
-                {
-                    "label": "Region",
-                    "name": "region",
-                    "hint": "",
-                    "options": [],
-                    "type": "api",
-                    "value": "",
-                    "required": false,
-                    "api_url": "regions/regions",
-                    "apiKeyProperty": "name",
-                    "apiLabelProperty": "name",
-                    "apiType": "select"
-                },
-                {
-                    "label": "District",
-                    "name": "district",
-                    "hint": "",
-                    "options": [],
-                    "type": "api",
-                    "value": "",
-                    "required": false,
-                    "api_url": "regions/districts",
-                    "apiKeyProperty": "district",
-                    "apiLabelProperty": "district",
-                    "apiType": "select"
-                },
-                {
-                    "label": "Specialty",
-                    "name": "specialty",
-                    "hint": "",
-                    "options": [],
-                    "type": "api",
-                    "value": "",
-                    "required": false,
-                    "api_url": "specialties/specialties",
-                    "apiKeyProperty": "name",
-                    "apiLabelProperty": "name",
-                    "apiType": "select",
-                    "onChange": ""
-                },
-                {
-                    "label": "Subspecialty",
-                    "name": "subspecialty",
-                    "hint": "",
-                    "options": [],
-                    "type": "api",
-                    "value": "",
-                    "required": false,
-                    "api_url": "specialties/subspecialties",
-                    "apiKeyProperty": "subspecialty",
-                    "apiLabelProperty": "subspecialty",
-                    "apiType": "select"
-                },
-                {
-                    "label": "College Membership",
-                    "name": "college_membership",
-                    "hint": "",
-                    "options": [],
-                    "type": "api",
-                    "value": "",
-                    "required": false,
-                    "api_url": "admin/settings/Practitioners.college_membership_types",
-                    "apiKeyProperty": "name",
-                    "apiLabelProperty": "name",
-                    "apiType": "select"
                 }
             ],
             "renewalTable": "otcms_renewal",
             "renewalStages": {
-                "Pending Payment": {
-                    "label": "Pending Payment",
-                    "allowedTransitions": [
-                        "Pending Approval",
-                        "Approved"
-                    ],
-                    "fields": [
-                        {
-                            "label": "Renewal Date",
-                            "name": "renewal_date",
-                            "hint": "",
-                            "options": [],
-                            "type": "date",
-                            "value": "",
-                            "required": true
-                        },
-                        {
-                            "label": "Renewal Fee",
-                            "name": "renewal_fee",
-                            "hint": "",
-                            "options": [],
-                            "type": "text",
-                            "value": "",
-                            "required": true
-                        }
-                    ],
-                    "permission": "Mark_Practitioners_Renewal_Pending_Payment",
-                    "printable": false,
-                    "onlineCertificatePrintable": false,
-                    "title": "Pending Payment",
-                    "active_children": false,
-                    "url": "/licenses/renewal",
-                    "urlParams": {
-                        "license_type": "practitioners",
-                        "status": "Pending Payment"
-                    },
-                    "icon": "list_alt",
-                    "children": [],
-                    "description": "View/Print approved applications",
-                    "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Pending Payment",
-                    "apiCountText": "Renewals"
-                },
-                "Pending Approval": {
+                "Pending Authorization": {
+                    "label": "Pending Authorization",
                     "allowedTransitions": [
                         "Approved"
                     ],
-                    "fields": [
-                        {
-                            "label": "Renewal Date",
-                            "name": "renewal_date",
-                            "hint": "",
-                            "options": [],
-                            "type": "date",
-                            "value": "",
-                            "required": true
-                        },
-                        {
-                            "label": "Renewal Fee",
-                            "name": "renewal_fee",
-                            "hint": "",
-                            "options": [],
-                            "type": "text",
-                            "value": "",
-                            "required": true
-                        }
-                    ],
-                    "permission": "Mark_Practitioners_Renewal_Pending_Approval",
+                    "fields": [],
+                    "permission": "Mark_Otcms_Renewal_Pending_Authorization",
                     "printable": false,
                     "onlineCertificatePrintable": false,
-                    "title": "Pending Approval",
+                    "title": "Pending Authorization",
                     "active_children": false,
                     "url": "/licenses/renewal",
                     "urlParams": {
-                        "license_type": "practitioners",
-                        "status": "Pending Approval"
+                        "license_type": "otcms",
+                        "status": "Pending Authorization"
                     },
                     "icon": "list_alt",
                     "children": [],
-                    "description": "Manage submitted applications",
-                    "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Pending Approval",
+                    "description": "Renewals pending authorization",
+                    "apiCountUrl": "/licenses/renewal-count?license_type=otcms&status=Pending Authorization",
                     "apiCountText": "Renewals"
                 },
                 "Approved": {
@@ -2431,20 +2432,20 @@
                             "apiType": ""
                         }
                     ],
-                    "permission": "Mark_Practitioners_Renewal_Approved",
+                    "permission": "Mark_Otcms_Renewal_Approved",
                     "printable": true,
                     "onlineCertificatePrintable": true,
                     "title": "Approved",
                     "active_children": false,
                     "url": "/licenses/renewal",
                     "urlParams": {
-                        "license_type": "practitioners",
+                        "license_type": "otcms",
                         "status": "Approved"
                     },
                     "icon": "list_alt",
                     "children": [],
-                    "description": "View/Print approved applications",
-                    "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Approved",
+                    "description": "View/Print approved renewal applications",
+                    "apiCountUrl": "/licenses/renewal-count?license_type=otcms&status=Approved",
                     "apiCountText": "Renewals"
                 }
             },
