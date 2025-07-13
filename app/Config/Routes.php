@@ -27,6 +27,8 @@ use App\Controllers\PortalsController;
 $routes->group("api", ["namespace" => "App\Controllers"], function (RouteCollection $routes) {
     $routes->get("app-settings", [AuthController::class, "appSettings"]);
     $routes->post("register", [AuthController::class, "register"]);
+    $routes->post("send-reset-token", [AuthController::class, "sendResetToken"]);
+    $routes->post("reset-password", [AuthController::class, "resetPassword"]);
     $routes->post("login", [AuthController::class, "login"]);
     $routes->post("mobile-login", [AuthController::class, "mobileLogin"]);
     $routes->post("practitioner-login", [AuthController::class, "practitionerLogin"]);

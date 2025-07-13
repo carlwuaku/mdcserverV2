@@ -80,7 +80,7 @@
             ]
         },
         {
-            "title": "Pharmacy Technicians",
+            "title": "Pharmacists/Pharmacy Technicians",
             "active_children": false,
             "url": "",
             "icon": "person_outlined",
@@ -180,7 +180,7 @@
                 },
                 {
                     "title": "Renewals",
-                    "url": "",
+                    "url": "/licenses/renewal-dashboard/facilities",
                     "icon": "",
                     "children": [
                         {
@@ -1717,6 +1717,7 @@
                 "region": "required",
                 "district": "required"
             },
+            "renewalJsonFields": [],
             "onUpdateValidation": {},
             "renewalFields": [
                 {
@@ -1962,6 +1963,12 @@
                     "required": true
                 }
             ],
+            "renewalSearchFields": {
+                "fields": [
+                    "practitioner_in_charge"
+                ],
+                "joinCondition": "facility_renewal.renewal_id = license_renewal.id"
+            },
             "fieldsToUpdateOnRenewal": [],
             "detailsPageHeaderTabs": [
                 {
@@ -2449,9 +2456,7 @@
                     "apiCountText": "Renewals"
                 }
             },
-            "renewalJsonFields": [
-                ""
-            ],
+            "renewalJsonFields": [],
             "renewalSearchFields": {
                 "fields": [
                     "first_name",
@@ -2815,9 +2820,7 @@
                 "fields": [],
                 "joinCondition": ""
             },
-            "renewalJsonFields": [
-                ""
-            ],
+            "renewalJsonFields": [],
             "fieldsToUpdateOnRenewal": [],
             "renewalFilterFields": [],
             "detailsPageHeaderTabs": [

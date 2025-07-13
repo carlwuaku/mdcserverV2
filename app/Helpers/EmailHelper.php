@@ -160,7 +160,6 @@ class EmailHelper
         $result = null;
         //if not production environment, only log the email and do not send it
         if (getenv('CI_ENVIRONMENT') !== 'production') {
-            log_message('info', 'Email not sent in non-production environment');
             $message = "Email not sent in non-production environment";
             $emailQueueModel->updateStatus($emailId, 'sent', $message);
             $emailQueueLogModel->logStatusChange($emailId, 'sent', $message);

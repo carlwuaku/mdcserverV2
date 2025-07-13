@@ -289,7 +289,6 @@ class Utils
             /** @var array {label: string, name: string, hint: string, options: array, type: string, value: string, required: bool} */
 
             $fields = $licenseDef->renewalStages[$stage]['fields'];
-            log_message('info', "Fields: " . $stage . $license . json_encode($fields));
             return self::getRulesFromFormGeneratorFields($fields);
         } catch (\Throwable $th) {
             throw $th;
@@ -881,8 +880,6 @@ class Utils
             $arr = explode('.', $fieldName);
             $fieldName = array_pop($arr);
         }
-        log_message('debug', "fieldName date: $fieldName");
-        log_message('debug', print_r(DATABASE_DATE_FIELDS, true));
         return in_array($fieldName, DATABASE_DATE_FIELDS);
     }
 
@@ -966,5 +963,35 @@ class Utils
         }
 
         return $data;
+    }
+    /**
+     * Generate a secure 6-digit numeric token
+     * Uses cryptographically secure random number generation
+     * 
+     * @return string 6-digit numeric token
+     */
+    public static function generateSecure6DigitToken(
+    ): string {
+        // Generate a random number between 100000 and 999999
+        $token = random_int(100000, 999999);
+        return (string) $token;
+    }
+
+    /**
+     * Generate a 6-digit token with expiration time
+     * Returns both token and expiration timestamp
+     * 
+     * @param int $expirationMinutes Minutes until token expires (default: 15)
+     * @return array ['token' => string, 'expires_at' => int]
+     */
+    public static function generate6DigitTokenWithExpiration(int $expirationMinutes = 15): array
+    {
+        $token = self::generateSecure6DigitToken();
+        $expiresAt = time() + ($expirationMinutes * 60);
+
+        return [
+            'token' => $token,
+            'expires_at' => $expiresAt
+        ];
     }
 }
