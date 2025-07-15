@@ -24,7 +24,8 @@ class CreateHousemanshipFacilityAvailability extends Migration
                 'null' => true,
             ],
             'category' => [
-                'type' => 'TEXT',
+                'type' => 'VARCHAR',
+                'constraint' => '255',
                 'null' => false,
             ],
             'available' => [

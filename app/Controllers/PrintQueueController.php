@@ -118,6 +118,7 @@ class PrintQueueController extends ResourceController
 
             // Convert to HTML
             $htmlWriter = IOFactory::createWriter($phpWord, 'HTML');
+            $htmlWriter->setUseDiskCaching(true);
             $htmlWriter->save($htmlPath);
 
             // Read the generated HTML file
@@ -641,7 +642,7 @@ class PrintQueueController extends ResourceController
                 $result = $documentVerificationModel->generateSecureDocument($document);
                 //append the qr code to the content
                 // $html .= "<img src='{$result['qr_path']}' alt='QR Code' />";
-                $finishedTemplates[] = '<div style="page-break-after: always;">' . $html . '</div>';
+                $finishedTemplates[] = '<div class="page-break">' . $html . '</div>';
             }
 
             return $this->respond(['data' => implode("", $finishedTemplates)], ResponseInterface::HTTP_OK);

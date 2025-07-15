@@ -16,6 +16,11 @@ use ReCaptcha\ReCaptcha as ReCaptchaReCaptcha;
 use App\Helpers\CacheHelper;
 use Vectorface\GoogleAuthenticator;
 use CodeIgniter\I18n\Time;
+use App\Models\Auth\PasswordResetTokenModel;
+use App\Models\Auth\PasswordResetAttemptModel;
+use App\Helpers\EmailConfig;
+use App\Helpers\EmailHelper;
+
 
 /**
  * @OA\Tag(
@@ -29,6 +34,17 @@ use CodeIgniter\I18n\Time;
  */
 class AuthController extends ResourceController
 {
+    protected $passwordResetTokenModel;
+    protected $passwordResetAttemptModel;
+
+    protected $userModel;
+
+    public function __construct()
+    {
+        $this->passwordResetTokenModel = new PasswordResetTokenModel();
+        $this->passwordResetAttemptModel = new PasswordResetAttemptModel();
+        $this->userModel = new UsersModel();
+    }
 
     public function appSettings()
     {
@@ -285,7 +301,7 @@ class AuthController extends ResourceController
         $userObject->update($userData->id, [
             'two_fa_setup_token' => $secret
         ]);
-
+        //TODO: Send email to user
         return $this->respond([
             'secret' => $secret, // User can manually enter this if they can't scan QR
             'qr_code_url' => $qrCodeUrl,
@@ -364,6 +380,7 @@ class AuthController extends ResourceController
             'message' => '2FA has been successfully disabled for this account'
         ], ResponseInterface::HTTP_OK);
     }
+
 
     /**
      * @OA\Get(
@@ -446,13 +463,154 @@ class AuthController extends ResourceController
         return $this->respond(['message' => "You're not logged in"], ResponseInterface::HTTP_UNAUTHORIZED);
     }
 
+    // public function mobileLogin()
+    // {
+    //     // Check if 2FA code is required for this request
+    //     $is2faVerification = $this->request->getVar('verification_mode') === '2fa';
+    //     // Validate credentials
+    //     $rules = setting('Validation.login') ?? [
+    //         // 'email' => config('auth')->emailValidationRules,
+    //         'password' => [
+    //             'label' => 'Auth.password',
+    //             'rules' => 'required',
+    //         ],
+    //         'device_name' => [
+    //             'label' => 'Device Name',
+    //             'rules' => "required|string|in_list[admin portal,practitioners portal]",
+    //             'errors' => [
+    //                 'in_list' => 'Invalid request',
+    //             ],
+    //         ],
+    //         'user_type' => [
+    //             'label' => 'User Type',
+    //             'rules' => 'required|string',
+    //         ],
+    //     ];
+
+    //     if ($is2faVerification) {
+    //         // When verifying 2FA, we need the code and token
+    //         $rules = [
+    //             'token' => 'required',
+    //             'code' => 'required|min_length[6]|max_length[6]|numeric',
+    //             'device_name' => [
+    //                 'label' => 'Device Name',
+    //                 'rules' => "required|string|in_list['admin portal','practitioners portal']",
+    //             ],
+    //         ];
+    //     }
+
+
+    //     if (!$this->validateData($this->request->getPost(), $rules, [], config('Auth')->DBGroup)) {
+    //         return $this->response
+    //             ->setJSON(['errors' => $this->validator->getErrors()])
+    //             ->setStatusCode(401);
+    //     }
+    //     //make sure the user_type is a valid one
+    //     $userType = $this->request->getVar('user_type');
+    //     $deviceName = $this->request->getVar('device_name');
+    //     if (!in_array($userType, USER_TYPES)) {
+    //         return $this->respond(['message' => 'Invalid user type'], ResponseInterface::HTTP_BAD_REQUEST);
+    //     }
+    //     if ($is2faVerification) {
+    //         // 2FA VERIFICATION FLOW
+    //         $token = $this->request->getVar('token');
+    //         $code = $this->request->getVar('code');
+
+    //         $userObject = new UsersModel();
+    //         $userData = $userObject->where(["two_fa_verification_token" => $token])->first();
+
+    //         if (!$userData) {
+    //             return $this->respond(["message" => "User not found"], ResponseInterface::HTTP_NOT_FOUND);
+    //         }
+
+    //         // Verify Google Authenticator code
+    //         $authenticator = new GoogleAuthenticator();
+    //         $secret = $userData->google_auth_secret;
+
+    //         if (!$secret) {
+    //             return $this->respond(["message" => "2FA not set up for this account"], ResponseInterface::HTTP_BAD_REQUEST);
+    //         }
+
+    //         if (!$authenticator->verifyCode($secret, $code, 2)) {
+    //             return $this->respond(["message" => "Invalid verification code"], ResponseInterface::HTTP_BAD_REQUEST);
+    //         }
+
+    //         // 2FA succeeded, log the user in
+    //         auth()->login($userData);
+    //         $userObject->update($userData->id, [
+    //             'two_fa_verification_token' => null
+    //         ]);
+    //     } else {
+    //         // Get the credentials for login
+    //         $credentials = $this->request->getPost(setting('Auth.validFields'));
+    //         $credentials = array_filter($credentials);
+    //         $credentials['password'] = $this->request->getPost('password');
+
+    //         // Attempt to login
+    //         $result = auth()->attempt($credentials);
+    //         if (!$result->isOK()) {
+    //             return $this->response
+    //                 ->setJSON(['message' => $result->reason()])
+    //                 ->setStatusCode(401);
+    //         }
+    //         //check if the user is the correct type
+    //         $userObject = new UsersModel();
+    //         $userData = $userObject->findById(auth()->id());
+    //         if ($userData->user_type !== $userType) {
+    //             return $this->respond(['message' => 'Invalid user type'], ResponseInterface::HTTP_BAD_REQUEST);
+    //         }
+    //         // if the device name is admin portal, check if the user is an admin
+    //         if ($deviceName === 'admin portal' && $userData->user_type !== 'admin') {
+    //             return $this->respond(['message' => 'Invalid user type'], ResponseInterface::HTTP_BAD_REQUEST);
+    //         }
+
+    //         // if the device name is practitioners portal, make sure the user is not an admin
+    //         if ($deviceName === 'practitioners portal' && $userData->user_type === 'admin') {
+    //             return $this->respond(['message' => 'Invalid user type'], ResponseInterface::HTTP_BAD_REQUEST);
+    //         }
+
+
+    //         // check if the user's two_fa_deadline is set and if it is in the past and has not set up 2FA
+    //         if ($userData->two_fa_deadline && $userData->two_fa_deadline < date('Y-m-d') && empty($userData->google_auth_secret)) {
+    //             return $this->respond(['message' => 'The deadline to enable 2 factor authentication has passed. Please contact our office for support.'], ResponseInterface::HTTP_BAD_REQUEST);
+    //         }
+    //         // Check if 2FA is enabled for this user
+    //         if (!empty($userData->google_auth_secret)) {
+    //             // Don't actually log them in yet - require 2FA verification
+    //             auth()->logout();
+    //             //generate a new random token
+    //             $token = bin2hex(random_bytes(16));
+    //             // Store the token in the session or database for later verification
+    //             $userObject->update($userData->id, [
+    //                 'two_fa_verification_token' => $token
+    //             ]);
+    //             return $this->respond([
+    //                 "message" => "2FA verification required",
+    //                 "requires_2fa" => true,
+    //                 "token" => $token,
+    //             ], ResponseInterface::HTTP_OK);
+    //         }
+    //     }
+
+
+    //     // Generate token and return to client
+    //     $token = auth()->user()->generateAccessToken(service('request')->getVar('device_name'));
+
+    //     return $this->response
+    //         ->setJSON(['token' => $token->raw_token]);
+    // }
+
     public function mobileLogin()
     {
         // Check if 2FA code is required for this request
         $is2faVerification = $this->request->getVar('verification_mode') === '2fa';
+
         // Validate credentials
         $rules = setting('Validation.login') ?? [
-            'email' => config('auth')->emailValidationRules,
+            'username' => [
+                'label' => 'Auth.username',
+                'rules' => 'required|string|min_length[3]|max_length[50]',
+            ],
             'password' => [
                 'label' => 'Auth.password',
                 'rules' => 'required',
@@ -477,23 +635,27 @@ class AuthController extends ResourceController
                 'code' => 'required|min_length[6]|max_length[6]|numeric',
                 'device_name' => [
                     'label' => 'Device Name',
-                    'rules' => "required|string|in_list['admin portal','practitioners portal']",
+                    'rules' => "required|string|in_list[admin portal,practitioners portal]",
+                    'errors' => [
+                        'in_list' => 'Invalid request'
+                    ],
                 ],
             ];
         }
-
-
         if (!$this->validateData($this->request->getPost(), $rules, [], config('Auth')->DBGroup)) {
+            log_message('error', print_r($this->validator->getErrors(), true));
             return $this->response
                 ->setJSON(['errors' => $this->validator->getErrors()])
                 ->setStatusCode(401);
         }
-        //make sure the user_type is a valid one
+
+        // Make sure the user_type is a valid one
         $userType = $this->request->getVar('user_type');
         $deviceName = $this->request->getVar('device_name');
         if (!in_array($userType, USER_TYPES)) {
             return $this->respond(['message' => 'Invalid user type'], ResponseInterface::HTTP_BAD_REQUEST);
         }
+
         if ($is2faVerification) {
             // 2FA VERIFICATION FLOW
             $token = $this->request->getVar('token');
@@ -524,10 +686,11 @@ class AuthController extends ResourceController
                 'two_fa_verification_token' => null
             ]);
         } else {
-            // Get the credentials for login
-            $credentials = $this->request->getPost(setting('Auth.validFields'));
-            $credentials = array_filter($credentials);
-            $credentials['password'] = $this->request->getPost('password');
+            // Get the credentials for login - now using username instead of email
+            $credentials = [
+                'username' => $this->request->getPost('username'),
+                'password' => $this->request->getPost('password')
+            ];
 
             // Attempt to login
             $result = auth()->attempt($credentials);
@@ -536,32 +699,34 @@ class AuthController extends ResourceController
                     ->setJSON(['message' => $result->reason()])
                     ->setStatusCode(401);
             }
-            //check if the user is the correct type
+
+            // Check if the user is the correct type
             $userObject = new UsersModel();
             $userData = $userObject->findById(auth()->id());
             if ($userData->user_type !== $userType) {
                 return $this->respond(['message' => 'Invalid user type'], ResponseInterface::HTTP_BAD_REQUEST);
             }
-            // if the device name is admin portal, check if the user is an admin
+
+            // If the device name is admin portal, check if the user is an admin
             if ($deviceName === 'admin portal' && $userData->user_type !== 'admin') {
                 return $this->respond(['message' => 'Invalid user type'], ResponseInterface::HTTP_BAD_REQUEST);
             }
 
-            // if the device name is practitioners portal, make sure the user is not an admin
+            // If the device name is practitioners portal, make sure the user is not an admin
             if ($deviceName === 'practitioners portal' && $userData->user_type === 'admin') {
                 return $this->respond(['message' => 'Invalid user type'], ResponseInterface::HTTP_BAD_REQUEST);
             }
 
-
-            // check if the user's two_fa_deadline is set and if it is in the past and has not set up 2FA
+            // Check if the user's two_fa_deadline is set and if it is in the past and has not set up 2FA
             if ($userData->two_fa_deadline && $userData->two_fa_deadline < date('Y-m-d') && empty($userData->google_auth_secret)) {
                 return $this->respond(['message' => 'The deadline to enable 2 factor authentication has passed. Please contact our office for support.'], ResponseInterface::HTTP_BAD_REQUEST);
             }
+
             // Check if 2FA is enabled for this user
             if (!empty($userData->google_auth_secret)) {
                 // Don't actually log them in yet - require 2FA verification
                 auth()->logout();
-                //generate a new random token
+                // Generate a new random token
                 $token = bin2hex(random_bytes(16));
                 // Store the token in the session or database for later verification
                 $userObject->update($userData->id, [
@@ -575,12 +740,297 @@ class AuthController extends ResourceController
             }
         }
 
-
         // Generate token and return to client
         $token = auth()->user()->generateAccessToken(service('request')->getVar('device_name'));
 
         return $this->response
             ->setJSON(['token' => $token->raw_token]);
+    }
+
+    public function sendResetToken()
+    {
+        // Validation rules
+        $rules = [
+            'username' => 'required|min_length[3]|max_length[100]'
+        ];
+
+        if (!$this->validate($rules)) {
+            $message = implode(" ", array_values($this->validator->getErrors()));
+            return $this->respond(['message' => $message], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+
+        $username = $this->request->getPost('username');
+        $ipAddress = $this->request->getIPAddress();
+        $userAgent = $this->request->getUserAgent()->getAgentString();
+
+        // Check rate limiting (max 5 attempts per email per hour)
+        if (!$this->checkRateLimit($username, $ipAddress)) {
+            $this->logResetAttempt($username, $ipAddress, $userAgent, false);
+            return $this->respond([
+                'message' => 'Too many reset attempts. Please try again later.'
+            ], ResponseInterface::HTTP_TOO_MANY_REQUESTS);
+        }
+
+        // Find user by username or email
+        $user = $this->userModel->where('username', $username)
+            ->orWhere('email', $username)
+            ->first();
+
+        // Always return success message for security (don't reveal if user exists)
+        $successMessage = 'If an account with that username exists, a password reset link has been sent to the associated email address.';
+
+        if ($user === null) {
+            $this->logResetAttempt($username, $ipAddress, $userAgent, false);
+            return $this->respond(['message' => $successMessage], ResponseInterface::HTTP_OK);
+        }
+
+        try {
+            // Invalidate any existing tokens for this user
+            $this->passwordResetTokenModel->where('user_id', $user->id)
+                ->where('used_at', null)
+                ->where('expires_at >', Time::now())
+                ->set(['used_at' => Time::now()])
+                ->update();
+
+            // Generate secure token
+            $token = Utils::generateSecure6DigitToken();
+            $tokenHash = password_hash($token, PASSWORD_ARGON2ID);
+
+            // Set expiration
+            $timeout = 15;
+            $expiresAt = Time::now()->addMinutes($timeout);
+
+            // Save token to database
+            $tokenData = [
+                'user_id' => $user->id,
+                'token' => $token,
+                'token_hash' => $tokenHash,
+                'expires_at' => $expiresAt,
+                'ip_address' => $ipAddress,
+                'user_agent' => $userAgent,
+                'created_at' => Time::now(),
+                'updated_at' => Time::now()
+            ];
+
+            $this->passwordResetTokenModel->insert($tokenData);
+
+            // Send reset email
+            $this->sendResetEmail($user->email, $token, $user->username);
+
+            // Log successful attempt
+            $this->logResetAttempt($user->email, $ipAddress, $userAgent, true);
+
+            return $this->respond(['message' => $successMessage, 'data' => ['timeout' => $timeout]], ResponseInterface::HTTP_OK);
+
+        } catch (\Exception $e) {
+            log_message('error', 'Password reset error: ' . $e->getMessage());
+            $this->logResetAttempt($username, $ipAddress, $userAgent, false);
+
+            return $this->respond([
+                'message' => 'An error occurred while processing your request. Please try again later.'
+            ], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Reset password with 6-digit token
+     */
+    public function resetPassword()
+    {
+        //TODO: password strength check
+        $rules = [
+            'token' => 'required|exact_length[6]|numeric',
+            'username' => 'required|min_length[3]|max_length[100]',
+            "password" => "required|min_length[8]",
+            "password_confirm" => "required|matches[password]"
+        ];
+
+        if (!$this->validate($rules)) {
+            $message = implode(" ", array_values($this->validator->getErrors()));
+            return $this->respond(['message' => $message], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+        service('passwords');
+
+
+        $token = $this->request->getVar('token');
+        $password = $this->request->getVar('password');
+        $ipAddress = $this->request->getIPAddress();
+
+
+        // Find and verify token
+        $tokenBuilder = $this->passwordResetTokenModel->builder();
+        $tokenBuilder->where('token', $token)
+            ->where('used_at', null)
+            ->where('expires_at >', Time::now());
+        $tokenRecord = $tokenBuilder->get()->getRow();
+
+
+        if (!$tokenRecord) {
+            return $this->respond([
+                'message' => 'Invalid or expired token. Please request a new one.'
+            ], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+
+        // Verify token hash
+        if (!password_verify($token, $tokenRecord->token_hash)) {
+            return $this->respond([
+                'message' => 'Invalid token.'
+            ], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+
+        // Get user
+        $userObject = auth()->getProvider();
+
+        $user = $userObject->find($tokenRecord->user_id);
+        if (!$user || $user->username !== $this->request->getVar('username')) {
+            return $this->respond([
+                'message' => 'User not found.'
+            ], ResponseInterface::HTTP_NOT_FOUND);
+        }
+        try {
+            // Hash new password
+            $user->password = $password;
+            $userObject->save($user);
+
+            // Mark token as used
+            $this->passwordResetTokenModel->delete($tokenRecord->id);
+
+            // Optionally: Add to password history
+            // $this->addToPasswordHistory($user->id, $hashedPassword);
+
+            // Optionally: Send confirmation email
+            // $this->sendPasswordChangeConfirmation($user->email, $user->username);
+
+            return $this->respond([
+                'message' => 'Password reset successfully. Please login with your new credentials.',
+                'success' => true
+            ], ResponseInterface::HTTP_OK);
+
+        } catch (\Throwable $e) {
+            log_message('error', 'Password reset completion error: ' . $e->getMessage());
+
+            return $this->respond([
+                'message' => 'An error occurred while resetting your password. Please try again.'
+            ], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Verify 6-digit token
+     */
+    public function verifyResetToken()
+    {
+        $rules = [
+            'token' => 'required|exact_length[6]|numeric'
+        ];
+
+        if (!$this->validate($rules)) {
+            $message = implode(" ", array_values($this->validator->getErrors()));
+            return $this->respond(['message' => $message], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+
+        $token = $this->request->getPost('token');
+        $ipAddress = $this->request->getIPAddress();
+
+        // Find valid token
+        $tokenRecord = $this->passwordResetTokenModel
+            ->where('token', $token)
+            ->where('used_at', null)
+            ->where('expires_at >', Time::now())
+            ->first();
+
+        if (!$tokenRecord) {
+            return $this->respond([
+                'message' => 'Invalid or expired token. Please request a new one.'
+            ], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+
+        // Verify token hash
+        if (!password_verify($token, $tokenRecord->token_hash)) {
+            return $this->respond([
+                'message' => 'Invalid token.'
+            ], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+
+        return $this->respond([
+            'message' => 'Token verified successfully.',
+            'success' => true
+        ], ResponseInterface::HTTP_OK);
+    }
+
+    /**
+     * Check if user has exceeded rate limit
+     */
+    private function checkRateLimit($identifier, $ipAddress): bool
+    {
+        $oneHourAgo = Time::now()->subHours(1);
+
+        // Check attempts by email/username
+        $emailAttempts = $this->passwordResetAttemptModel
+            ->where('email', $identifier)
+            ->where('created_at >', $oneHourAgo)
+            ->countAllResults();
+
+        // Check attempts by IP
+        $ipAttempts = $this->passwordResetAttemptModel
+            ->where('ip_address', $ipAddress)
+            ->where('created_at >', $oneHourAgo)
+            ->countAllResults();
+
+        // Allow max 5 attempts per email and 10 per IP per hour
+        return $emailAttempts < 5 && $ipAttempts < 10;
+    }
+
+    /**
+     * Log password reset attempt
+     */
+    private function logResetAttempt($email, $ipAddress, $userAgent, $success): void
+    {
+        $this->passwordResetAttemptModel->insert([
+            'email' => $email,
+            'ip_address' => $ipAddress,
+            'user_agent' => $userAgent,
+            'success' => $success ? 1 : 0,
+            'created_at' => Time::now()
+        ]);
+    }
+
+
+
+    /**
+     * Send password reset email
+     */
+    private function sendResetEmail($email, $token, $username): void
+    {
+        //TODO: save template in settings
+
+        $message = "Hello {$username},\n\n";
+        $message .= "You have requested to reset your password. Please enter this code <b>$token</b> to proceed.";
+        $message .= "Please click the link below to reset your password:\n\n";
+        $message .= "This link will expire in 15 minutes.\n\n";
+        $message .= "If you did not request this password reset, please ignore this email.\n\n";
+
+        $emailConfig = new EmailConfig($message, "Password Reset Request", $email);
+
+
+        EmailHelper::sendEmail($emailConfig);
+
+    }
+
+    /**
+     * Clean up expired tokens (call this periodically)
+     */
+    public function cleanupExpiredTokens(): void
+    {
+        $this->passwordResetTokenModel
+            ->where('expires_at <', Time::now())
+            ->delete();
+
+        // Clean up old attempts (keep for 30 days)
+        $thirtyDaysAgo = Time::now()->subDays(30);
+        $this->passwordResetAttemptModel
+            ->where('created_at <', $thirtyDaysAgo)
+            ->delete();
     }
 
     public function practitionerLogin()
@@ -1083,6 +1533,14 @@ class AuthController extends ResourceController
 
             $builder->select("id, uuid, display_name, user_type, username, status, status_message, active, created_at, regionId, position, picture, phone, email, role_name, CASE WHEN google_auth_secret IS NOT NULL THEN 'yes' ELSE 'no' END AS google_authenticator_setup")
             ;
+            $filterArray = $model->createArrayFromAllowedFields($this->request->getVar());
+
+            // Apply other filters
+            foreach ($filterArray as $key => $value) {
+                $value = Utils::parseParam($value);
+                $builder = Utils::parseWhereClause($builder, $key, $value);
+
+            }
 
             $builder->orderBy($sortBy, $sortOrder);
             $totalBuilder = clone $builder;
@@ -1092,7 +1550,8 @@ class AuthController extends ResourceController
             return $this->respond([
                 'data' => $result,
                 'total' => $total,
-                'displayColumns' => $model->getDisplayColumns()
+                'displayColumns' => $model->getDisplayColumns(),
+                'columnFilters' => $model->getDisplayColumnFilters(),
             ], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
             log_message('error', $th);

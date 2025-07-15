@@ -1,1 +1,121 @@
-<html lang="en"><head><meta charset="utf-8"><title>Exam Registration Letter </title><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous"><style>label{ font-weight: bold;} .watermarked{ position: relative; overflow: hidden;} .bold{ font-weight: bold;} .font-20{ font-size: 20px;} .font-13{ font-size: 13px;} .weird-font{ font-size: 21px;} .watermarked::before{ position: absolute; top: 12cm; left: 6cm; display: block; width: 300%; height: 300%; opacity: 0.1; content: url('<?php echo base_url() . "assets/images/mdc_logo.png" ?>');} body{ background: #f7f7f7;} .page{ background: white; display: block; margin: 0 auto; margin-bottom: 0.5cm; box-shadow: 0 0 0.5cm rgba(0, 0, 0, 0.5); padding: 4%; font-family: Calibri, 'Trebuchet MS', sans-serif; font-size: 16px;} .align-right{ text-align: end;} .a4{ width: 21cm; page-break-after: always;} .caps{ text-transform: uppercase;} .break{ page-break-before: always;} @media print{ body, page{ margin: 0; box-shadow: 0;} .break{ page-break-before: always;} .a4{ width: unset !important; height: unset !important; page-break-after: always;} .no-print{ display: none;}} .margin-30{ margin-bottom: 30px;} .content{ margin-bottom: 30px !important;} .sticky-bottom{ position: sticky; bottom: 0; z-index: 1030;} </style><script src="https://code.jquery.com/jquery-3.5.1.js"></script></head><body><div id="letter" class="a4 page watermarked">[##content##] </div></body></html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title> </title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <style>
+        label {
+            font-weight: bold;
+        }
+
+        .watermarked {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .bold {
+            font-weight: bold;
+        }
+
+        .font-20 {
+            font-size: 20px;
+        }
+
+        .font-13 {
+            font-size: 13px;
+        }
+
+        .weird-font {
+            font-size: 21px;
+        }
+
+        .watermarked::before {
+            position: absolute;
+            top: 12cm;
+            left: 6cm;
+            display: block;
+            width: 300%;
+            height: 300%;
+            opacity: 0.1;
+            content: url('<?php echo base_url() . "assets/images/mdc_logo.png" ?>');
+        }
+
+        body {
+            background: #f7f7f7;
+        }
+
+        .page {
+            background: white;
+            display: block;
+            margin: 0 auto;
+            margin-bottom: 0.5cm;
+            box-shadow: 0 0 0.5cm rgba(0, 0, 0, 0.5);
+            padding: 4%;
+            font-family: Calibri, 'Trebuchet MS', sans-serif;
+            font-size: 16px;
+        }
+
+        .align-right {
+            text-align: end;
+        }
+
+        .a4 {
+            width: 21cm;
+            break-after: always;
+        }
+
+        .caps {
+            text-transform: uppercase;
+        }
+
+        .break {
+            break-before: always;
+        }
+
+        @media print {
+
+            body,
+            page {
+                margin: 0;
+                box-shadow: 0;
+            }
+
+            .break {
+                break-before: always;
+            }
+
+            .a4 {
+                width: unset !important;
+                height: unset !important;
+                break-after: always;
+            }
+
+            .no-print {
+                display: none;
+            }
+        }
+
+        .margin-30 {
+            margin-bottom: 30px;
+        }
+
+        .content {
+            margin-bottom: 30px !important;
+        }
+
+        .sticky-bottom {
+            position: sticky;
+            bottom: 0;
+            z-index: 1030;
+        }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
+</head>
+
+<body>
+    <div id="letter" class="a4 page watermarked">[##content##] </div>
+</body>
+
+</html>

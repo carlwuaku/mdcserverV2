@@ -110,7 +110,8 @@ class AdminController extends ResourceController
                 'license_renewal' => 'license_renewal',
                 'licenses' => 'licenses',
                 'exam_candidates' => 'exam_candidates',
-                'examinations' => 'examinations'
+                'examinations' => 'examinations',
+                'otcms' => 'otcms'
             ];
             //check if table is in the map
             if (!array_key_exists($table, $tableMap)) {

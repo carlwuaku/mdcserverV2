@@ -150,7 +150,8 @@ class LicensesController extends ResourceController
     public function getBasicStatistics($licenseType = null)
     {
         try {
-            $filters = $this->extractRequestFilters();
+            $filters = (array) $this->request->getVar();
+            ;
             $results = $this->licenseService->getBasicStatistics($licenseType, $filters);
 
             return $this->respond(['data' => $results], ResponseInterface::HTTP_OK);
@@ -299,7 +300,7 @@ class LicensesController extends ResourceController
     public function getRenewalBasicStatistics($licenseType)
     {
         try {
-            $filters = $this->extractRequestFilters();
+            $filters = (array) $this->request->getVar();
             $results = $this->renewalService->getRenewalBasicStatistics($licenseType, $filters);
 
             return $this->respond(['data' => $results], ResponseInterface::HTTP_OK);
@@ -317,44 +318,47 @@ class LicensesController extends ResourceController
      */
     private function extractRequestFilters(): array
     {
+
         $filters = [];
 
         // Get common parameters
-        $commonParams = [
-            'limit',
-            'page',
-            'withDeleted',
-            'param',
-            'child_param',
-            'sortBy',
-            'sortOrder',
-            'licenseType',
-            'renewalDate',
-            'license_type',
-            'license_number',
-            'status',
-            'start_date',
-            'expiry',
-            'created_on',
-            'isGazette',
-            'in_print_queue',
-            'fields'
-        ];
+        // $commonParams = [
+        //     'limit',
+        //     'page',
+        //     'withDeleted',
+        //     'param',
+        //     'child_param',
+        //     'sortBy',
+        //     'sortOrder',
+        //     'licenseType',
+        //     'renewalDate',
+        //     'license_type',
+        //     'license_number',
+        //     'status',
+        //     'start_date',
+        //     'expiry',
+        //     'created_on',
+        //     'isGazette',
+        //     'in_print_queue',
+        //     'fields'
+        // ];
 
-        foreach ($commonParams as $param) {
-            $value = $this->request->getVar($param);
-            if ($value !== null) {
-                $filters[$param] = $value;
-            }
-        }
+        // foreach ($commonParams as $param) {
+        //     $value = $this->request->getVar($param);
+        //     if ($value !== null) {
+        //         $filters[$param] = $value;
+        //     }
+        // }
+        //merge get and post data
+        $filters = array_merge($this->request->getGet(), (array) $this->request->getVar());
 
         // Get all child_ and renewal_ parameters
-        $allParams = (array) $this->request->getVar();
-        foreach ($allParams as $key => $value) {
-            if (strpos($key, 'child_') === 0 || strpos($key, 'renewal_') === 0) {
-                $filters[$key] = $value;
-            }
-        }
+        // $allParams = (array) $this->request->getVar();
+        // foreach ($allParams as $key => $value) {
+        //     if (strpos($key, 'child_') === 0 || strpos($key, 'renewal_') === 0) {
+        //         $filters[$key] = $value;
+        //     }
+        // }
 
         return $filters;
     }

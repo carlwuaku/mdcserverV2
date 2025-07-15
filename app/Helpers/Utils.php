@@ -37,7 +37,7 @@ class Utils
         $fileName = getenv('APP_SETTINGS_FILE') ?? 'app-settings.json';
         if (!file_exists(ROOTPATH . $fileName)) {
             log_message('error', "Settings file not found: $fileName");
-            throw new \Exception("No settings file found", 1);
+            throw new Exception("No settings file found", 1);
 
         }
         return ROOTPATH . $fileName;
@@ -289,7 +289,6 @@ class Utils
             /** @var array {label: string, name: string, hint: string, options: array, type: string, value: string, required: bool} */
 
             $fields = $licenseDef->renewalStages[$stage]['fields'];
-            log_message('info', "Fields: " . $stage . $license . json_encode($fields));
             return self::getRulesFromFormGeneratorFields($fields);
         } catch (\Throwable $th) {
             throw $th;
@@ -536,7 +535,7 @@ class Utils
             $isForeign = array_key_exists("country_of_practice", $person) && strtolower($person['country_of_practice']) !== "ghana";
             $provisionalNumber = null;
             if (
-                $person && array_key_exists("register_type", $person) && strtolower($person['register_type']) === "permanent"
+                $person && array_key_exists("register_type", $person) && $person['register_type'] !== null && strtolower($person['register_type']) === "permanent"
                 && array_key_exists("provisional_number", $person)
                 && !empty($person['provisional_number'])
             ) {
@@ -733,6 +732,8 @@ class Utils
         } else {
             // Single value logic remains the same
             if (self::fieldIsDateField($columnName)) {
+                log_message('info', "Date range: " . $columnName);
+
                 $dateRange = Utils::getDateRange($value);
                 $builder->where($columnName . ' >=', $dateRange['start']);
                 $builder->where($columnName . ' <=', $dateRange['end']);
@@ -874,7 +875,11 @@ class Utils
     }
 
     public static function fieldIsDateField(string $fieldName): bool
-    {
+    {//some fields may be qualified by their table name e.g. license.expiry_date so we need to check for that
+        if (strpos($fieldName, '.') !== false) {
+            $arr = explode('.', $fieldName);
+            $fieldName = array_pop($arr);
+        }
         return in_array($fieldName, DATABASE_DATE_FIELDS);
     }
 
@@ -958,5 +963,35 @@ class Utils
         }
 
         return $data;
+    }
+    /**
+     * Generate a secure 6-digit numeric token
+     * Uses cryptographically secure random number generation
+     * 
+     * @return string 6-digit numeric token
+     */
+    public static function generateSecure6DigitToken(
+    ): string {
+        // Generate a random number between 100000 and 999999
+        $token = random_int(100000, 999999);
+        return (string) $token;
+    }
+
+    /**
+     * Generate a 6-digit token with expiration time
+     * Returns both token and expiration timestamp
+     * 
+     * @param int $expirationMinutes Minutes until token expires (default: 15)
+     * @return array ['token' => string, 'expires_at' => int]
+     */
+    public static function generate6DigitTokenWithExpiration(int $expirationMinutes = 15): array
+    {
+        $token = self::generateSecure6DigitToken();
+        $expiresAt = time() + ($expirationMinutes * 60);
+
+        return [
+            'token' => $token,
+            'expires_at' => $expiresAt
+        ];
     }
 }

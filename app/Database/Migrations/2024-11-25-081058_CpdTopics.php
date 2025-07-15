@@ -84,7 +84,8 @@ class CpdTopics extends Migration
                 'comment' => 'category of the cpd, 1 or 2 or 3',
             ],
             'online' => [
-                'type' => 'TEXT',
+                'type' => 'VARCHAR',
+                'constraint' => '255',
                 'null' => false,
                 'default' => 'No',
             ],
@@ -94,12 +95,14 @@ class CpdTopics extends Migration
                 'null' => true,
             ],
             'start_month' => [
-                'type' => 'TEXT',
+                'type' => 'VARCHAR',
+                'constraint' => '100',
                 'null' => true,
                 'default' => 'January',
             ],
             'end_month' => [
-                'type' => 'TEXT',
+                'type' => 'VARCHAR',
+                'constraint' => '100',
                 'null' => true,
                 'default' => 'December',
             ],
