@@ -175,37 +175,37 @@
             "children": [
                 {
                     "title": "Dashboard",
-                    "url": "/licenses/renewal-dashboard",
+                    "url": "/licenses/renewal-dashboard/practitioners",
                     "icon": "",
                     "children": []
                 },
                 {
                     "title": "Add New Renewal",
-                    "url": "/licenses/renewal-form",
+                    "url": "/licenses/renewal-form/practitioners",
                     "icon": "",
                     "children": []
                 },
                 {
                     "title": "Renewal History",
-                    "url": "/licenses/renewals",
+                    "url": "/licenses/renewals/practitioners",
                     "icon": "",
                     "children": []
                 },
                 {
                     "title": "Renewal Print Queue",
-                    "url": "/licenses/renewal-print-queue",
+                    "url": "/licenses/renewal-print-queue/practitioners",
                     "icon": "",
                     "children": []
                 },
                 {
                     "title": "Renewal Reports",
-                    "url": "/licenses/renewal-reports",
+                    "url": "/licenses/renewal-reports/practitioners",
                     "icon": "",
                     "children": []
                 },
                 {
                     "title": "Gazette",
-                    "url": "/licenses/gazette",
+                    "url": "/licenses/gazette/practitioners",
                     "icon": "",
                     "children": []
                 }

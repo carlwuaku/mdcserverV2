@@ -41,11 +41,19 @@ class PractitionerRenewal extends Migration
                 'null' => true,
                 'default' => null
             ],
-            'modified_by' => ['type' => 'BIGINT', 'constraint' => '20', 'null' => true,
-                'default' => null],
-            'created_by' => ['type' => 'BIGINT', 'constraint' => '20', 'null' => true,
-                'default' => null],
-            
+            'modified_by' => [
+                'type' => 'BIGINT',
+                'constraint' => '20',
+                'null' => true,
+                'default' => null
+            ],
+            'created_by' => [
+                'type' => 'BIGINT',
+                'constraint' => '20',
+                'null' => true,
+                'default' => null
+            ],
+
             'created_on' => [
                 'type' => 'TIMESTAMP',
                 'null' => true,
@@ -68,140 +76,140 @@ class PractitionerRenewal extends Migration
                 'type' => 'VARCHAR',
                 'constraint' => '100',
                 'null' => true,
-                'default'=> null
+                'default' => null
             ],
             'qr_code' => [
                 'type' => 'TEXT',
                 'null' => true,
-                'default'=> null
+                'default' => null
             ],
             'qr_text' => [
-                'type' => 'TEXT',
+                'type' => 'VARCHAR',
+                'constraint' => '500',
                 'null' => true,
-                'default'=> null
+                'default' => null
             ],
             'expiry' => [
                 'type' => 'DATE',
                 'null' => true,
-                'default'=> null
+                'default' => null
             ],
             'specialty' => [
                 'type' => 'VARCHAR',
                 'constraint' => '500',
                 'null' => true,
-                'default'=> null
+                'default' => null
             ],
             'place_of_work' => [
                 'type' => 'VARCHAR',
                 'constraint' => '1000',
                 'null' => true,
-                'default'=> null
+                'default' => null
             ],
             'region' => [
                 'type' => 'VARCHAR',
                 'constraint' => '100',
                 'null' => true,
-                'default'=> null
+                'default' => null
             ],
             'institution_type' => [
                 'type' => 'VARCHAR',
                 'constraint' => '100',
                 'null' => true,
-                'default'=> null
+                'default' => null
             ],
             'district' => [
                 'type' => 'VARCHAR',
                 'constraint' => '100',
                 'null' => true,
-                'default'=> null
+                'default' => null
             ],
             'status' => [
                 'type' => 'ENUM',
-                'constraint' => ['Approved','Pending Payment','Pending Approval'],
+                'constraint' => ['Approved', 'Pending Payment', 'Pending Approval'],
                 'null' => true,
-                'default'=> null
+                'default' => null
             ],
             'payment_date' => [
                 'type' => 'DATE',
                 'null' => true,
-                'default'=> null
+                'default' => null
             ],
             'payment_file' => [
                 'type' => 'VARCHAR',
                 'constraint' => '1500',
                 'null' => true,
-                'default'=> null
+                'default' => null
             ],
             'payment_file_date' => [
                 'type' => 'DATE',
                 'null' => true,
-                'default'=> null
+                'default' => null
             ],
             'subspecialty' => [
                 'type' => 'VARCHAR',
                 'constraint' => '255',
                 'null' => true,
-                'default'=> null
+                'default' => null
             ],
             'college_membership' => [
                 'type' => 'VARCHAR',
                 'constraint' => '255',
                 'null' => true,
-                'default'=> null
+                'default' => null
             ],
             'payment_invoice_number' => [
                 'type' => 'VARCHAR',
                 'constraint' => '255',
                 'null' => true,
-                'default'=> null
+                'default' => null
             ],
-            'first_name'=> [
+            'first_name' => [
                 'type' => 'VARCHAR',
-               'constraint' => '255',
-               'null' => true,
-               'default'=> null,
+                'constraint' => '255',
+                'null' => true,
+                'default' => null,
             ],
-            'middle_name'=> [
+            'middle_name' => [
                 'type' => 'VARCHAR',
-               'constraint' => '255',
-               'null' => true,
-               'default' => null
+                'constraint' => '255',
+                'null' => true,
+                'default' => null
             ],
-            'last_name'=> [
+            'last_name' => [
                 'type' => 'VARCHAR',
-               'constraint' => '255',
-               'null' => true,
-               'default'=> null,
+                'constraint' => '255',
+                'null' => true,
+                'default' => null,
             ],
-            'title'=> [
+            'title' => [
                 'type' => 'VARCHAR',
-               'constraint' => '10',
-               'null' => true,
-               'default' => null
+                'constraint' => '10',
+                'null' => true,
+                'default' => null
             ],
-            'maiden_name'=> [
+            'maiden_name' => [
                 'type' => 'VARCHAR',
-               'constraint' => '255',
-               'null' => true,
-               'default' => null
+                'constraint' => '255',
+                'null' => true,
+                'default' => null
             ],
-            'marital_status'=> [
+            'marital_status' => [
                 'type' => 'VARCHAR',
-               'constraint' => '255',
-               'null' => true,
-               'default' => null
+                'constraint' => '255',
+                'null' => true,
+                'default' => null
             ],
-            'picture'=> [
+            'picture' => [
                 'type' => 'VARCHAR',
-               'constraint' => '5000',
-               'null' => true,
-               'default' => null
+                'constraint' => '5000',
+                'null' => true,
+                'default' => null
             ],
         ]);
         $this->forge->addKey('registration_number', false);
         $this->forge->addKey('created_on', false);
         $this->forge->addKey('receipt', false);
-        $this->forge->addKey('qr_code', false);
         $this->forge->addKey('qr_text', false);
         $this->forge->addKey('expiry', false);
         $this->forge->addKey('specialty', false);

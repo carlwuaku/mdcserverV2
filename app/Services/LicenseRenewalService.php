@@ -140,8 +140,8 @@ class LicenseRenewalService
                 if (!empty($status)) {
                     $rules = Utils::getLicenseRenewalStageValidation($licenseType, $status);
                     $validation = \Config\Services::validation();
-
-                    if (!$validation->setRules($rules)->run($renewal)) {
+                    if (count($rules) > 0 && !$validation->setRules($rules)->run($renewal)) {
+                        log_message('error', json_encode($validation->getErrors()));
                         throw new Exception("Validation failed for renewal $renewalUuid");
                     }
                     $renewal['status'] = $status;

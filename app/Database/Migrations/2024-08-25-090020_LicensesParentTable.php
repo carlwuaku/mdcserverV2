@@ -36,7 +36,8 @@ class LicensesParentTable extends Migration
                 'default' => null
             ],
             'status' => [
-                'type' => 'TEXT',
+                'type' => 'VARCHAR',
+                'constraint' => '100',
                 'null' => true,
                 'default' => 'Active'
             ],

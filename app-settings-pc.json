@@ -102,40 +102,9 @@
                 },
                 {
                     "title": "Renewals",
-                    "url": "",
+                    "url": "/licenses/renewal-dashboard/practitioners",
                     "icon": "",
-                    "children": [
-                        {
-                            "title": "Dashboard",
-                            "url": "/licenses/renewal-dashboard/practitioners",
-                            "icon": "",
-                            "children": []
-                        },
-                        {
-                            "title": "Add New Renewal",
-                            "url": "/licenses/renewal-form/practitioners",
-                            "icon": "",
-                            "children": []
-                        },
-                        {
-                            "title": "Renewal Print Queue",
-                            "url": "/licenses/renewal-print-queue/practitioners",
-                            "icon": "",
-                            "children": []
-                        },
-                        {
-                            "title": "Renewal Reports",
-                            "url": "/licenses/renewal-reports/practitioners",
-                            "icon": "",
-                            "children": []
-                        },
-                        {
-                            "title": "Gazette",
-                            "url": "/licenses/gazette/practitioners",
-                            "icon": "",
-                            "children": []
-                        }
-                    ]
+                    "children": []
                 },
                 {
                     "title": "Basic Reports",
@@ -182,38 +151,7 @@
                     "title": "Renewals",
                     "url": "/licenses/renewal-dashboard/facilities",
                     "icon": "",
-                    "children": [
-                        {
-                            "title": "Dashboard",
-                            "url": "/licenses/renewal-dashboard/facilities",
-                            "icon": "",
-                            "children": []
-                        },
-                        {
-                            "title": "Add New Renewal",
-                            "url": "/licenses/renewal-form/facilities",
-                            "icon": "",
-                            "children": []
-                        },
-                        {
-                            "title": "Renewal Print Queue",
-                            "url": "/licenses/renewal-print-queue/facilities",
-                            "icon": "",
-                            "children": []
-                        },
-                        {
-                            "title": "Renewal Reports",
-                            "url": "/licenses/renewal-reports/facilities",
-                            "icon": "",
-                            "children": []
-                        },
-                        {
-                            "title": "Gazette",
-                            "url": "/licenses/gazette/facilities",
-                            "icon": "",
-                            "children": []
-                        }
-                    ]
+                    "children": []
                 },
                 {
                     "title": "Basic Reports",
@@ -258,40 +196,9 @@
                 },
                 {
                     "title": "Renewals",
-                    "url": "",
+                    "url": "/licenses/renewal-dashboard/otcms",
                     "icon": "",
-                    "children": [
-                        {
-                            "title": "Dashboard",
-                            "url": "/licenses/renewal-dashboard/otcms",
-                            "icon": "",
-                            "children": []
-                        },
-                        {
-                            "title": "Add New Renewal",
-                            "url": "/licenses/renewal-form/otcms",
-                            "icon": "",
-                            "children": []
-                        },
-                        {
-                            "title": "Renewal Print Queue",
-                            "url": "/licenses/renewal-print-queue/otcms",
-                            "icon": "",
-                            "children": []
-                        },
-                        {
-                            "title": "Renewal Reports",
-                            "url": "/licenses/renewal-reports/otcms",
-                            "icon": "",
-                            "children": []
-                        },
-                        {
-                            "title": "Gazette",
-                            "url": "/licenses/gazette/otcms",
-                            "icon": "",
-                            "children": []
-                        }
-                    ]
+                    "children": []
                 },
                 {
                     "title": "Basic Reports",
@@ -1082,55 +989,14 @@
                     "onlineCertificatePrintable": false,
                     "title": "Pending Payment",
                     "active_children": false,
-                    "url": "/licenses/renewal",
+                    "url": "/licenses/renewal/practitioners",
                     "urlParams": {
-                        "license_type": "practitioners",
                         "status": "Pending Payment"
                     },
                     "icon": "list_alt",
                     "children": [],
                     "description": "View/Print approved applications",
                     "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Pending Payment",
-                    "apiCountText": "Renewals"
-                },
-                "Pending Approval": {
-                    "allowedTransitions": [
-                        "Approved"
-                    ],
-                    "fields": [
-                        {
-                            "label": "Renewal Date",
-                            "name": "renewal_date",
-                            "hint": "",
-                            "options": [],
-                            "type": "date",
-                            "value": "",
-                            "required": true
-                        },
-                        {
-                            "label": "Renewal Fee",
-                            "name": "renewal_fee",
-                            "hint": "",
-                            "options": [],
-                            "type": "text",
-                            "value": "",
-                            "required": true
-                        }
-                    ],
-                    "permission": "Mark_Practitioners_Renewal_Pending_Approval",
-                    "printable": false,
-                    "onlineCertificatePrintable": false,
-                    "title": "Pending Approval",
-                    "active_children": false,
-                    "url": "/licenses/renewal",
-                    "urlParams": {
-                        "license_type": "practitioners",
-                        "status": "Pending Approval"
-                    },
-                    "icon": "list_alt",
-                    "children": [],
-                    "description": "Manage submitted applications",
-                    "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Pending Approval",
                     "apiCountText": "Renewals"
                 },
                 "Approved": {
@@ -1191,9 +1057,8 @@
                     "onlineCertificatePrintable": true,
                     "title": "Approved",
                     "active_children": false,
-                    "url": "/licenses/renewal",
+                    "url": "/licenses/renewal/practitioners",
                     "urlParams": {
-                        "license_type": "practitioners",
                         "status": "Approved"
                     },
                     "icon": "list_alt",
@@ -1797,9 +1662,8 @@
                     "onlineCertificatePrintable": false,
                     "title": "Pending Payment",
                     "active_children": false,
-                    "url": "/licenses/renewal",
+                    "url": "/licenses/renewal/facilities",
                     "urlParams": {
-                        "license_type": "facilities",
                         "status": "Pending Payment"
                     },
                     "icon": "list_alt",
@@ -1818,9 +1682,8 @@
                     "onlineCertificatePrintable": false,
                     "title": "Pending Regional Approval",
                     "active_children": false,
-                    "url": "/licenses/renewal",
+                    "url": "/licenses/renewal/facilities",
                     "urlParams": {
-                        "license_type": "facilities",
                         "status": "Pending Regional Approval"
                     },
                     "icon": "list_alt",
@@ -1858,9 +1721,8 @@
                     "onlineCertificatePrintable": false,
                     "title": "Pending Authorization",
                     "active_children": false,
-                    "url": "/licenses/renewal",
+                    "url": "/licenses/renewal/facilities",
                     "urlParams": {
-                        "license_type": "facilities",
                         "status": "Pending Authorization"
                     },
                     "icon": "list_alt",
@@ -1927,9 +1789,8 @@
                     "onlineCertificatePrintable": true,
                     "title": "Approved",
                     "active_children": false,
-                    "url": "/licenses/renewal",
+                    "url": "/licenses/renewal/facilities",
                     "urlParams": {
-                        "license_type": "facilities",
                         "status": "Approved"
                     },
                     "icon": "list_alt",
@@ -2375,9 +2236,8 @@
                     "onlineCertificatePrintable": false,
                     "title": "Pending Authorization",
                     "active_children": false,
-                    "url": "/licenses/renewal",
+                    "url": "/licenses/renewal/otcms",
                     "urlParams": {
-                        "license_type": "otcms",
                         "status": "Pending Authorization"
                     },
                     "icon": "list_alt",
@@ -2444,9 +2304,8 @@
                     "onlineCertificatePrintable": true,
                     "title": "Approved",
                     "active_children": false,
-                    "url": "/licenses/renewal",
+                    "url": "/licenses/renewal/otcms",
                     "urlParams": {
-                        "license_type": "otcms",
                         "status": "Approved"
                     },
                     "icon": "list_alt",
