@@ -22,7 +22,8 @@ class AddApplicationForms extends Migration
                 'unique' => true,
             ],
             'practitioner_type' => [
-                'type' => 'TEXT',
+                'type' => 'VARCHAR',
+                'constraint' => '255',
                 'null' => false,
             ],
             'form_type' => [

@@ -16,15 +16,17 @@ class HousemanshipMetadata extends Migration
             ],
             'posting_id' => [
                 'type' => 'INT',
-                'constraint' => 9   ,
+                'constraint' => 9,
                 'null' => false,
             ],
             'name' => [
-                'type' => 'TEXT',
+                'type' => 'VARCHAR',
+                'constraint' => '255',
                 'null' => false
             ],
             'value' => [
-                'type' => 'TEXT',
+                'type' => 'VARCHAR',
+                'constraint' => '255',
                 'null' => true,
                 'default' => null
             ],

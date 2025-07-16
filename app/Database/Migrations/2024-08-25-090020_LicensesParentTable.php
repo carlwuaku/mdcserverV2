@@ -60,7 +60,8 @@ class LicensesParentTable extends Migration
                 'default' => null
             ],
             'type' => [
-                'type' => 'TEXT',
+                'type' => 'VARCHAR',
+                'constraint' => '255',
                 'null' => false,
             ],
             'phone' => [

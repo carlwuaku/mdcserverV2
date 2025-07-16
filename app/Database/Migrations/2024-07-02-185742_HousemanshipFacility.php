@@ -23,7 +23,8 @@ class HousemanshipFacility extends Migration
                 'unique' => true,
             ],
             'name' => [
-                'type' => 'TEXT',
+                'type' => 'VARCHAR',
+                'constraint' => '255',
                 'null' => true,
                 'default' => null
             ],

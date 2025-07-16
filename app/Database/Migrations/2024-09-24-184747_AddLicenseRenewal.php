@@ -75,7 +75,8 @@ class AddLicenseRenewal extends Migration
                 'default' => null
             ],
             'qr_text' => [
-                'type' => 'TEXT',
+                'type' => 'VARCHAR',
+                'constraint' => '500',
                 'null' => true,
                 'default' => null
             ],
@@ -85,12 +86,14 @@ class AddLicenseRenewal extends Migration
                 'default' => null
             ],
             'status' => [
-                'type' => 'TEXT',
+                'type' => 'VARCHAR',
+                'constraint' => '500',
                 'null' => true,
                 'default' => 'Pending Approval'
             ],
             'batch_number' => [
-                'type' => 'TEXT',
+                'type' => 'VARCHAR',
+                'constraint' => '500',
                 'null' => true,
                 'default' => null
             ],
@@ -142,7 +145,6 @@ class AddLicenseRenewal extends Migration
         ]);
         $this->forge->addKey('created_on', false);
         $this->forge->addKey('receipt', false);
-        $this->forge->addKey('qr_code', false);
         $this->forge->addKey('qr_text', false);
         $this->forge->addKey('expiry', false);
 

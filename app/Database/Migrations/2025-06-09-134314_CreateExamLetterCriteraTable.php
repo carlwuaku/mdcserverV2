@@ -41,7 +41,6 @@ class CreateExamLetterCriteraTable extends Migration
 
         $this->forge->addKey('field', false);
         $this->forge->addKey('letter_id', false);
-        $this->forge->addKey('value', false);
         $this->forge->addForeignKey('letter_id', 'examination_letter_templates', 'id', 'CASCADE', 'CASCADE');
         $this->forge->addKey('id', true);
         $this->forge->createTable('examination_letter_template_criteria', true);

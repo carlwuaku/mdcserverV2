@@ -21,25 +21,30 @@ class FacilitiesTable extends Migration
                 'null' => false,
             ],
             'name' => [
-                'type' => 'TEXT',
+                'type' => 'VARCHAR',
+                'constraint' => '255',
                 'null' => false
             ],
             'town' => [
-                'type' => 'TEXT',
+                'type' => 'VARCHAR',
+                'constraint' => '500',
                 'null' => true,
                 'default' => null
             ],
             'suburb' => [
-                'type' => 'TEXT',
+                'type' => 'VARCHAR',
+                'constraint' => '500',
                 'null' => true,
                 'default' => null
             ],
             'business_type' => [
-                'type' => 'TEXT',
+                'type' => 'VARCHAR',
+                'constraint' => '255',
                 'null' => false,
             ],
             'house_number' => [
-                'type' => 'TEXT',
+                'type' => 'VARCHAR',
+                'constraint' => '500',
                 'null' => true,
                 'default' => null
             ],

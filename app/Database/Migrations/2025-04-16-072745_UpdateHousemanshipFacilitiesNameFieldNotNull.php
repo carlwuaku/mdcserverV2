@@ -15,7 +15,8 @@ class UpdateHousemanshipFacilitiesNameFieldNotNull extends Migration
                 // Modify the name field to be NOT NULL
                 $this->forge->modifyColumn('housemanship_facilities', [
                     'name' => [
-                        'type' => 'TEXT',
+                        'type' => 'VARCHAR',
+                        'constraint' => '500',
                         'null' => false,
                     ],
                 ]);
