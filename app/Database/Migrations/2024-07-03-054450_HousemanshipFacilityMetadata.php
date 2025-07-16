@@ -20,11 +20,13 @@ class HousemanshipFacilityMetadata extends Migration
                 'null' => false,
             ],
             'name' => [
-                'type' => 'TEXT',
+                'type' => 'VARCHAR',
+                'constraint' => '255',
                 'null' => false
             ],
             'value' => [
-                'type' => 'TEXT',
+                'type' => 'VARCHAR',
+                'constraint' => '255',
                 'null' => true,
                 'default' => null
             ],

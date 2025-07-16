@@ -11,7 +11,8 @@ class AddDocumentsUniqueId extends Migration
         if (!$this->db->fieldExists('unique_id', 'documents')) {
             $this->forge->addColumn('documents', [
                 'unique_id' => [
-                    'type' => 'TEXT',
+                    'type' => 'VARCHAR',
+                    'constraint' => '500',
                     'null' => true,
                     'default' => null,
                 ],
@@ -20,7 +21,8 @@ class AddDocumentsUniqueId extends Migration
         if (!$this->db->fieldExists('table_name', 'documents')) {
             $this->forge->addColumn('documents', [
                 'table_name' => [
-                    'type' => 'TEXT',
+                    'type' => 'VARCHAR',
+                    'constraint' => '500',
                     'null' => true,
                     'default' => null,
                 ],
