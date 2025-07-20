@@ -29,27 +29,27 @@ class LicenseUtils extends Utils
 
         try {
             $model = new LicenseRenewalModel();
+            $renewalDateGenerator = new LicenseRenewalDateGenerator();
+            $dates = $renewalDateGenerator->generateRenewalDates($data);
             $license = self::getLicenseDetails($license_uuid);
             $licenseType = $license['type'];
             $license_number = $license['license_number'];
-            $startDate = $data['start_date'];
 
-            if (empty($startDate)) {
-                $startDate = self::generateRenewalStartDate($license);
-                $data['start_date'] = $startDate;
-            } else {
-                $data['start_date'] = date('Y-m-d', strtotime($startDate));
-            }
-            $expiry = $data['expiry'];
-            if (empty($expiry)) {
-                $data['expiry'] = self::generateRenewalExpiryDate($license, $startDate);
-            } else {
-                $data['expiry'] = date('Y-m-d', strtotime($expiry));
-            }
+
+            $data['start_date'] = $dates['start_date'];
+            $data['expiry'] = $dates['expiry_date'];
+            $startDate = $data['start_date'];
             $year = date('Y', strtotime($startDate));
             $code = md5($license['license_number'] . "%%" . $year);
             $qrText = site_url("api/verify/renewal/$code");// "manager.mdcghana.org/api/verifyRelicensure/$code";
-
+            //merge the incoming data with the license data
+            $fieldsToRemove = ['id', 'uuid', 'created_on', 'modified_on', 'deleted_at'];
+            foreach ($fieldsToRemove as $field) {
+                if (isset($data[$field])) {
+                    unset($data[$field]);
+                }
+            }
+            $data = array_merge($license, $data);
 
 
             $qrCode = Utils::generateQRCode($qrText, false);
@@ -69,11 +69,13 @@ class LicenseUtils extends Utils
 
             $LicensesModel = new LicensesModel();
             $subModel = new LicenseRenewalModel();
+            $licenseDef = Utils::getLicenseSetting($licenseType);
+
             $subModel->createOrUpdateSubDetails($id, $licenseType, $data);
             // log_message('info', 'subRenewal created successfully');
             //a trigger in the database will update the license table with the renewal date, expiry and status
             //get the fields to update based on the renewal type
-            $licenseDef = Utils::getLicenseSetting($licenseType);
+
             $fieldsToUpdate = $licenseDef->fieldsToUpdateOnRenewal;
 
             $licenseUpdate = [
@@ -89,10 +91,6 @@ class LicenseUtils extends Utils
             /** @var ActivitiesModel $activitiesModel */
             $activitiesModel = new ActivitiesModel();
             $activitiesModel->logActivity("added renewal record for $license_number ");
-
-
-
-
         } catch (\Throwable $th) {
             log_message("error", $th->getMessage());
             throw new Exception("Error inserting data." . $th->getMessage());
@@ -114,7 +112,7 @@ class LicenseUtils extends Utils
         try {
             $model = new LicenseRenewalModel();
             $renewal = $model->builder()->where('uuid', $renewal_uuid)->get()->getFirstRow('array');
-
+            $license = self::getLicenseDetails($renewal['license_number']);
             $licenseType = $renewal['license_type'];
             $license_number = $renewal['license_number'];
             $data['license_type'] = $licenseType;
@@ -139,12 +137,34 @@ class LicenseUtils extends Utils
                 $data['qr_code'] = $qrCode;
                 $data['qr_text'] = $qrText;
             }
+            //unset the $license status as when no status is provided, the default status from the license is used
+            unset($license['status']);
+            $data = array_merge($license, $data);
             $formData = $model->createArrayFromAllowedFields($data, false);
             //if the online_print_template is an empty string, set it to null
-            if (empty($data['online_print_template'])) {
+            if ($data['online_print_template'] === "") {
                 $formData['online_print_template'] = null;
             }
-            // log_message('info', print_r($formData, true));
+            //the createArrayFromAllowedFields function will remove any fields that are set to null. this is to avoid accidentally setting a field to null when the user does not want to update it or removing sensitive information.
+            //there are some cases where some fields are safe to be set to null, so we need to allow them to be set to null.
+            $nullableFields = [
+                'online_print_template',
+                'qr_code',
+                'qr_text',
+                'approve_online_certificate',
+                'online_certificate_start_date',
+                'online_certificate_end_date',
+                'payment_date',
+                'payment_file',
+                'payment_file_date',
+                'payment_invoice_number'
+            ];
+            // for each of these ones, if it was set in $data and was null, set it to null
+            foreach ($nullableFields as $field) {
+                if (array_key_exists($field, $data) && $data[$field] === null) {
+                    $formData[$field] = null;
+                }
+            }
 
             $model->where("uuid", $renewal_uuid)->set($formData)->update();
             $id = $renewal['id'];
@@ -297,6 +317,14 @@ class LicenseUtils extends Utils
 
         }
         return $results;
+    }
+
+    public static function getLicenseRenewalStages($licenseType)
+    {
+        $licenseDef = Utils::getLicenseSetting($licenseType);
+        $renewalStages = (array) $licenseDef->renewalStages;
+
+        return array_keys($renewalStages);
     }
 
     /**

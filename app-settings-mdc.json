@@ -963,6 +963,7 @@
                     "apiType": ""
                 }
             ],
+            "implicitRenewalFields": [],
             "renewalTable": "practitioners_renewal",
             "renewalStages": {
                 "Pending Payment": {
@@ -1125,6 +1126,28 @@
                 ],
                 "joinCondition": "practitioners_renewal.renewal_id = license_renewal.id"
             },
+            "renewalDisplayFields": [
+                "name",
+                "first_name",
+                "last_name",
+                "middle_name",
+                "license_number",
+                "start_date",
+                "expiry",
+                "status",
+                "created_on",
+                "batch_number",
+                "payment_date",
+                "payment_file",
+                "payment_file_date",
+                "payment_invoice_number",
+                "approve_online_certificate",
+                "online_certificate_start_date",
+                "online_certificate_end_date",
+                "print_template",
+                "online_print_template",
+                "in_print_queue"
+            ],
             "renewalJsonFields": [
                 "qualifications"
             ],
@@ -2349,11 +2372,11 @@
                     "icon": "",
                     "children": [],
                     "urlParams": {
-                        "child_practitioner_type": "Doctor",
+                        "renewal_practitioner_type": "Doctor",
                         "license_type": "practitioners",
                         "status": "Pending Approval"
                     },
-                    "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Pending Approval&child_practitioner_type=Doctor",
+                    "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Pending Approval&renewal_practitioner_type=Doctor",
                     "apiCountText": ""
                 },
                 {
@@ -2362,11 +2385,11 @@
                     "icon": "",
                     "children": [],
                     "urlParams": {
-                        "child_practitioner_type": "Doctor",
+                        "renewal_practitioner_type": "Doctor",
                         "license_type": "practitioners",
                         "status": "Pending Payment"
                     },
-                    "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Pending Payment&child_practitioner_type=Doctor",
+                    "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Pending Payment&renewal_practitioner_type=Doctor",
                     "apiCountText": ""
                 }
             ],
@@ -3289,5 +3312,94 @@
     },
     "letterContainer": {
         "html": "<html lang=\"en\"><head><meta charset=\"utf-8\"><title>Exam Registration Letter <\/title><link href=\"https:\/\/cdn.jsdelivr.net\/npm\/bootstrap@5.0.2\/dist\/css\/bootstrap.min.css\" rel=\"stylesheet\" integrity=\"sha384-EVSTQN3\/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC\" crossorigin=\"anonymous\"><style>label{ font-weight: bold;} .watermarked{ position: relative; overflow: hidden;} .bold{ font-weight: bold;} .font-20{ font-size: 20px;} .font-13{ font-size: 13px;} .weird-font{ font-size: 21px;} .watermarked::before{ position: absolute; top: 12cm; left: 6cm; display: block; width: 300%; height: 300%; opacity: 0.1; content: url('<?php echo base_url() . \"assets\/images\/mdc_logo.png\" ?>');} body{ background: #f7f7f7;} .page{ background: white; display: block; margin: 0 auto; margin-bottom: 0.5cm; box-shadow: 0 0 0.5cm rgba(0, 0, 0, 0.5); padding: 4%; font-family: Calibri, 'Trebuchet MS', sans-serif; font-size: 16px;} .align-right{ text-align: end;} .a4{ width: 21cm; page-break-after: always;} .caps{ text-transform: uppercase;} .break{ page-break-before: always;} @media print{ body, page{ margin: 0; box-shadow: 0;} .break{ page-break-before: always;} .a4{ width: unset !important; height: unset !important; page-break-after: always;} .no-print{ display: none;}} .margin-30{ margin-bottom: 30px;} .content{ margin-bottom: 30px !important;} .sticky-bottom{ position: sticky; bottom: 0; z-index: 1030;} <\/style><script src=\"https:\/\/code.jquery.com\/jquery-3.5.1.js\"><\/script><\/head><body><div id=\"letter\" class=\"a4 page watermarked\">[##content##] <\/div><\/body><\/html>"
-    }
+    },
+    "renewalRules": [
+        {
+            "name": "Temporary License Rule",
+            "description": "Temporary licenses are valid for 3 months from issue date",
+            "criteria": [
+                {
+                    "field": "license_type",
+                    "operator": "equals",
+                    "value": "Practitioners"
+                },
+                {
+                    "field": "register_type",
+                    "operator": "equals",
+                    "value": "Temporary"
+                }
+            ],
+            "start_date": "today",
+            "expiry_date": "+3 months"
+        },
+        {
+            "name": "Provisional License Rule",
+            "description": "Provisional licenses are valid for 1 year from issue date",
+            "criteria": [
+                {
+                    "field": "license_type",
+                    "operator": "equals",
+                    "value": "Practitioners"
+                },
+                {
+                    "field": "register_type",
+                    "operator": "equals",
+                    "value": "Provisional"
+                }
+            ],
+            "start_date": "today",
+            "expiry_date": "+1 year"
+        },
+        {
+            "name": "Default Permanent License Rule",
+            "description": "Default rule for permanent licenses - calendar year validity",
+            "criteria": [],
+            "start_date": "start_of_year",
+            "expiry_date": "end_of_year"
+        }
+    ],
+    "datePatterns": {
+        "description": "Available date calculation patterns",
+        "simple_patterns": [
+            "today",
+            "now",
+            "start_of_year",
+            "end_of_year",
+            "start_of_month",
+            "end_of_month"
+        ],
+        "relative_patterns": [
+            "+1 day",
+            "+1 week",
+            "+1 month",
+            "+3 months",
+            "+6 months",
+            "+1 year",
+            "+2 years",
+            "-1 day"
+        ],
+        "complex_patterns": {
+            "description": "Object-based patterns for complex date calculations",
+            "structure": {
+                "base": "Base date (can be any simple pattern or 'start_date')",
+                "modify": [
+                    "Array of date modifications"
+                ],
+                "conditional": [
+                    {
+                        "criteria": "Array of criteria objects",
+                        "modify": "Array of modifications to apply if criteria match"
+                    }
+                ]
+            }
+        }
+    },
+    "operators": [
+        "equals",
+        "not_equals",
+        "in",
+        "not_in",
+        "greater_than",
+        "less_than"
+    ]
 }

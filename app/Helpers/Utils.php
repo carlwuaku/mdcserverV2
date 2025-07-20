@@ -201,7 +201,7 @@ class Utils
      * get the table name, fields, other settings for a license type
      * @param string $license
      * @return object {table: string, uniqueKeyField: string,selectionFields:array, displayColumns: array, fields: array, onCreateValidation: array, 
-     * onUpdateValidation: array, renewalFields: array, renewalTable: string, renewalStages: object, 
+     * onUpdateValidation: array, renewalFields: array, implicitRenewalFields: array, renewalTable: string, renewalStages: object, 
      * fieldsToUpdateOnRenewal: array, basicStatisticsFields: array,
      *  basicStatisticsFilterFields: array, advancedStatisticsFields: array, renewalFilterFields: array, 
      *  renewalBasicStatisticsFields: array, renewalSearchFields: array, gazetteTableColumns: array, renewalJsonFields: array}
@@ -360,7 +360,7 @@ class Utils
             if (property_exists($licenseDef, 'searchFields')) {
                 return $licenseDef->searchFields;
             }
-            throw new \Exception("Search fields not defined for $license");
+            throw new Exception("Search fields not defined for $license");
         } catch (\Throwable $th) {
             throw $th;
         }

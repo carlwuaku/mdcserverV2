@@ -252,7 +252,6 @@ class LicenseService
         if ($withDeleted) {
             $model->withDeleted();
         }
-
         // Get total count
         $totalBuilder = clone $builder;
         $total = $totalBuilder->countAllResults();

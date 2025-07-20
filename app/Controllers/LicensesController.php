@@ -311,6 +311,26 @@ class LicensesController extends ResourceController
         }
     }
 
+    public function getPharmacySuperintendent()
+    {
+        try {
+            $licenseNumber = $this->request->getVar('param');
+            $result = $this->renewalService->isEligiblePharmacySuperintendent($licenseNumber);
+
+            if (!$result) {
+                return $this->respond(['message' => "License renewal not found"], ResponseInterface::HTTP_NOT_FOUND);
+            }
+
+            return $this->respond(["data" => [$result], "message" => "Practitioner is eligible"], ResponseInterface::HTTP_OK);
+
+        } catch (\InvalidArgumentException $e) {
+            return $this->respond(['message' => $e->getMessage()], ResponseInterface::HTTP_NOT_FOUND);
+        } catch (\Throwable $e) {
+            log_message("error", $e);
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     // Private helper methods
 
     /**
