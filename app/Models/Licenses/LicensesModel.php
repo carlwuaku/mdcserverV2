@@ -34,7 +34,8 @@ class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormIn
         'last_renewal_expiry',
         'last_renewal_status',
         'deleted_at',
-        'created_on'
+        'created_on',
+        'register_type'
     ];
 
     protected bool $allowEmptyInserts = false;
@@ -429,15 +430,15 @@ class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormIn
                 "options" => [
                     [
                         "key" => "Active",
-                        "value" => "active"
+                        "value" => "Active"
                     ],
                     [
                         "key" => "Inactive",
-                        "value" => "inactive"
+                        "value" => "Inactive"
                     ],
                     [
                         "key" => "Suspended",
-                        "value" => "suspended"
+                        "value" => "Suspended"
                     ]
                 ],
                 "value" => "",

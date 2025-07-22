@@ -704,7 +704,7 @@ class PrintQueueController extends ResourceController
                 $result = $documentVerificationModel->generateSecureDocument($document);
                 //append the qr code to the content
                 // $document['content'] .= "<img src='{$result['qr_path']}' alt='QR Code' />";
-                $results .= '<div style="page-break-after: always; border:thin dashed">' . $document['content'] . '</div>';
+                $results .= '<div style="page-break-after: always;">' . $document['content'] . '</div>';
             }
 
             return $this->respond(['message' => "Print queue created successfully", 'data' => $results], ResponseInterface::HTTP_OK);

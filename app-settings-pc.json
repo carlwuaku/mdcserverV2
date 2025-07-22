@@ -221,44 +221,6 @@
             ]
         },
         {
-            "title": "License Renewal",
-            "active_children": false,
-            "url": "",
-            "icon": "list_alt",
-            "children": [
-                {
-                    "title": "Dashboard",
-                    "url": "/licenses/renewal-dashboard",
-                    "icon": "",
-                    "children": []
-                },
-                {
-                    "title": "Add New Renewal",
-                    "url": "/licenses/renewal-form",
-                    "icon": "",
-                    "children": []
-                },
-                {
-                    "title": "Renewal Print Queue",
-                    "url": "/licenses/renewal-print-queue",
-                    "icon": "",
-                    "children": []
-                },
-                {
-                    "title": "Renewal Reports",
-                    "url": "/licenses/renewal-reports",
-                    "icon": "",
-                    "children": []
-                },
-                {
-                    "title": "Gazette",
-                    "url": "/licenses/gazette",
-                    "icon": "",
-                    "children": []
-                }
-            ]
-        },
-        {
             "title": "Housemanship",
             "active_children": false,
             "url": "",
@@ -628,8 +590,7 @@
                 "category",
                 "nationality",
                 "marital_status",
-                "maiden_name",
-                "register_type"
+                "maiden_name"
             ],
             "displayColumns": [
                 "picture",
@@ -956,6 +917,7 @@
                     "apiType": "select"
                 }
             ],
+            "implicitRenewalFields": [],
             "renewalTable": "practitioners_renewal",
             "renewalStages": {
                 "Pending Payment": {
@@ -1100,6 +1062,27 @@
                     "required": false
                 }
             ],
+            "renewalDisplayFields": [
+                "first_name",
+                "last_name",
+                "middle_name",
+                "license_number",
+                "start_date",
+                "expiry",
+                "status",
+                "created_on",
+                "batch_number",
+                "payment_date",
+                "payment_file",
+                "payment_file_date",
+                "payment_invoice_number",
+                "approve_online_certificate",
+                "online_certificate_start_date",
+                "online_certificate_end_date",
+                "print_template",
+                "online_print_template",
+                "in_print_queue"
+            ],
             "detailsPageHeaderTabs": [
                 {
                     "label": "Register Type",
@@ -1120,6 +1103,48 @@
                 {
                     "label": "Status",
                     "key": "status"
+                }
+            ],
+            "detailsPageTabs": [
+                {
+                    "label": "Personal Details",
+                    "key": "details"
+                },
+                {
+                    "label": "Education history",
+                    "key": "education"
+                },
+                {
+                    "label": "Housemanship",
+                    "key": "housemanship"
+                },
+                {
+                    "label": "Examination",
+                    "key": "examination"
+                },
+                {
+                    "label": "CPD",
+                    "key": "cpd"
+                },
+                {
+                    "label": "Renewal History",
+                    "key": "renewal"
+                },
+                {
+                    "label": "Superintending history",
+                    "key": "superintending"
+                },
+                {
+                    "label": "Work history",
+                    "key": "work"
+                },
+                {
+                    "label": "Activities",
+                    "key": "activities"
+                },
+                {
+                    "label": "Documents",
+                    "key": "documents"
                 }
             ],
             "searchFields": {
@@ -1188,6 +1213,80 @@
                     "apiKeyProperty": "practitioner_type",
                     "apiLabelProperty": "practitioner_type",
                     "apiType": "select"
+                },
+                {
+                    "label": "Date of birth",
+                    "name": "date_of_birth",
+                    "hint": "",
+                    "options": [],
+                    "type": "date-range",
+                    "value": "",
+                    "required": false
+                },
+                {
+                    "label": "Sex",
+                    "name": "sex",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/practitioners/sex",
+                    "apiKeyProperty": "sex",
+                    "apiLabelProperty": "sex",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                },
+                {
+                    "label": "Nationality",
+                    "name": "nationality",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/practitioners/nationality",
+                    "apiKeyProperty": "nationality",
+                    "apiLabelProperty": "nationality",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                },
+                {
+                    "label": "Training institution",
+                    "name": "training_institution",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/practitioners/training_institution",
+                    "apiKeyProperty": "training_institution",
+                    "apiLabelProperty": "training_institution",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                },
+                {
+                    "label": "Qualification date",
+                    "name": "qualification_date",
+                    "hint": "",
+                    "options": [],
+                    "type": "date-range",
+                    "value": "",
+                    "required": false
+                },
+                {
+                    "label": "Institution Type",
+                    "name": "institution_type",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/practitioners/institution_type",
+                    "apiKeyProperty": "institution_type",
+                    "apiLabelProperty": "institution_type",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
                 }
             ],
             "advancedStatisticsFields": [
@@ -1401,7 +1500,57 @@
                     "apiType": "select",
                     "selection_mode": "multiple"
                 }
-            ]
+            ],
+            "gazetteTableColumns": {
+                "name": {
+                    "label": "Name",
+                    "fields": [
+                        "last_name",
+                        "first_name",
+                        "middle_name"
+                    ],
+                    "type": "text",
+                    "format": "capitalize",
+                    "transformation": []
+                },
+                "postal_address": {
+                    "label": "Address",
+                    "fields": [
+                        "postal_address"
+                    ],
+                    "type": "text",
+                    "format": "",
+                    "transformation": []
+                },
+                "qualifications": {
+                    "label": "Qualification",
+                    "fields": [
+                        "qualification_at_registration",
+                        "qualifications"
+                    ],
+                    "type": "text",
+                    "format": "",
+                    "transformation": []
+                },
+                "qualification_date": {
+                    "label": "Qualification Date",
+                    "fields": [
+                        "qualification_date"
+                    ],
+                    "type": "text",
+                    "format": "capitalize",
+                    "transformation": []
+                },
+                "registration_date": {
+                    "label": "Year Of Registration",
+                    "fields": [
+                        "registration_date"
+                    ],
+                    "type": "text",
+                    "format": "capitalize",
+                    "transformation": []
+                }
+            }
         },
         "facilities": {
             "table": "facilities",
@@ -1590,9 +1739,13 @@
                     "name": "practitioner_in_charge",
                     "hint": "",
                     "options": [],
-                    "type": "text",
+                    "type": "api",
                     "value": "",
-                    "required": true
+                    "required": true,
+                    "api_url": "licenses/renewal-check-superintendent",
+                    "apiKeyProperty": "license_number",
+                    "apiLabelProperty": "name",
+                    "apiType": "search"
                 },
                 {
                     "label": "Weekdays Start Time",
@@ -1649,6 +1802,9 @@
                     "required": true
                 }
             ],
+            "implicitRenewalFields": [
+                "business_type"
+            ],
             "renewalTable": "facility_renewal",
             "renewalStages": {
                 "Pending Payment": {
@@ -1696,26 +1852,7 @@
                     "allowedTransitions": [
                         "Approved"
                     ],
-                    "fields": [
-                        {
-                            "label": "Renewal Date",
-                            "name": "renewal_date",
-                            "hint": "",
-                            "options": [],
-                            "type": "date",
-                            "value": "",
-                            "required": true
-                        },
-                        {
-                            "label": "Renewal Fee",
-                            "name": "renewal_fee",
-                            "hint": "",
-                            "options": [],
-                            "type": "text",
-                            "value": "",
-                            "required": true
-                        }
-                    ],
+                    "fields": [],
                     "permission": "Mark_Facilities_Renewal_Pending_Authorization",
                     "printable": false,
                     "onlineCertificatePrintable": false,
@@ -1805,23 +1942,27 @@
                     "label": "Business Type",
                     "name": "business_type",
                     "hint": "",
-                    "options": [
-                        {
-                            "key": "Hospital",
-                            "value": "Hospital"
-                        },
-                        {
-                            "key": "Clinic",
-                            "value": "Clinic"
-                        },
-                        {
-                            "key": "Pharmacy",
-                            "value": "Pharmacy"
-                        }
-                    ],
-                    "type": "select",
+                    "options": [],
+                    "type": "api",
                     "value": "",
-                    "required": true
+                    "required": false,
+                    "api_url": "admin/distinct-values/facilities/business_type",
+                    "apiKeyProperty": "business_type",
+                    "apiLabelProperty": "business_type",
+                    "apiType": "select"
+                },
+                {
+                    "label": "Superintendent Registration Number",
+                    "name": "practitioner_in_charge",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": false,
+                    "api_url": "",
+                    "apiKeyProperty": "",
+                    "apiLabelProperty": "",
+                    "apiType": ""
                 }
             ],
             "renewalSearchFields": {
@@ -1830,6 +1971,28 @@
                 ],
                 "joinCondition": "facility_renewal.renewal_id = license_renewal.id"
             },
+            "renewalDisplayFields": [
+                "name",
+                "practitioner_in_charge",
+                "license_number",
+                "start_date",
+                "expiry",
+                "status",
+                "region",
+                "district",
+                "created_on",
+                "batch_number",
+                "payment_date",
+                "payment_file",
+                "payment_file_date",
+                "payment_invoice_number",
+                "approve_online_certificate",
+                "online_certificate_start_date",
+                "online_certificate_end_date",
+                "print_template",
+                "online_print_template",
+                "in_print_queue"
+            ],
             "fieldsToUpdateOnRenewal": [],
             "detailsPageHeaderTabs": [
                 {
@@ -1843,6 +2006,24 @@
                 {
                     "label": "Status",
                     "key": "status"
+                }
+            ],
+            "detailsPageTabs": [
+                {
+                    "label": "Details",
+                    "key": "details"
+                },
+                {
+                    "label": "Renewal History",
+                    "key": "renewal"
+                },
+                {
+                    "label": "Activities",
+                    "key": "activities"
+                },
+                {
+                    "label": "Documents",
+                    "key": "documents"
                 }
             ],
             "searchFields": {
@@ -1925,15 +2106,9 @@
                 {
                     "label": "Business Type",
                     "name": "business_type",
-                    "hint": "",
-                    "options": [],
-                    "type": "api",
-                    "value": "",
-                    "required": false,
-                    "api_url": "admin/distinct-values/facilities/business_type",
-                    "apiKeyProperty": "business_type",
-                    "apiLabelProperty": "business_type",
-                    "apiType": "select"
+                    "type": "bar",
+                    "xAxisLabel": "Business Type",
+                    "yAxisLabel": "Number of Licenses"
                 },
                 {
                     "label": "Region",
@@ -2209,20 +2384,8 @@
                 "district": "required"
             },
             "onUpdateValidation": {},
-            "renewalFields": [
-                {
-                    "label": "Batch number",
-                    "name": "batch_number",
-                    "hint": "",
-                    "options": [],
-                    "type": "text",
-                    "value": "",
-                    "required": false,
-                    "api_url": "",
-                    "apiKeyProperty": "",
-                    "apiLabelProperty": ""
-                }
-            ],
+            "renewalFields": [],
+            "implicitRenewalFields": [],
             "renewalTable": "otcms_renewal",
             "renewalStages": {
                 "Pending Authorization": {
@@ -2318,32 +2481,30 @@
             "renewalJsonFields": [],
             "renewalSearchFields": {
                 "fields": [
-                    "first_name",
-                    "last_name",
-                    "middle_name"
+                    "name"
                 ],
-                "joinCondition": "practitioners_renewal.renewal_id = license_renewal.id"
+                "joinCondition": "otcms_renewal.renewal_id = license_renewal.id"
             },
             "fieldsToUpdateOnRenewal": [],
-            "renewalFilterFields": [
-                {
-                    "label": "Practitioner Type",
-                    "name": "practitioner_type",
-                    "hint": "",
-                    "options": [
-                        {
-                            "key": "Pharmacist",
-                            "value": "Pharmacist"
-                        },
-                        {
-                            "key": "Pharmacy Technician",
-                            "value": "Pharmacy Technician"
-                        }
-                    ],
-                    "type": "select",
-                    "value": "",
-                    "required": false
-                }
+            "renewalFilterFields": [],
+            "renewalDisplayFields": [
+                "name",
+                "license_number",
+                "start_date",
+                "expiry",
+                "status",
+                "created_on",
+                "batch_number",
+                "payment_date",
+                "payment_file",
+                "payment_file_date",
+                "payment_invoice_number",
+                "approve_online_certificate",
+                "online_certificate_start_date",
+                "online_certificate_end_date",
+                "print_template",
+                "online_print_template",
+                "in_print_queue"
             ],
             "detailsPageHeaderTabs": [
                 {
@@ -2351,11 +2512,29 @@
                     "key": "status"
                 }
             ],
+            "detailsPageTabs": [
+                {
+                    "label": "Details",
+                    "key": "details"
+                },
+                {
+                    "label": "Renewal History",
+                    "key": "renewal"
+                },
+                {
+                    "label": "Activities",
+                    "key": "activities"
+                },
+                {
+                    "label": "Documents",
+                    "key": "documents"
+                }
+            ],
             "searchFields": {
                 "fields": [
                     "name",
                     "town",
-                    "residential_address",
+                    "premises_address",
                     "maiden_name"
                 ],
                 "joinCondition": "licenses.license_number = otcms.license_number"
@@ -2503,7 +2682,57 @@
                     "value": "",
                     "required": false
                 }
-            ]
+            ],
+            "gazetteTableColumns": {
+                "name": {
+                    "label": "Name",
+                    "fields": [
+                        "last_name",
+                        "first_name",
+                        "middle_name"
+                    ],
+                    "type": "text",
+                    "format": "capitalize",
+                    "transformation": []
+                },
+                "postal_address": {
+                    "label": "Address",
+                    "fields": [
+                        "postal_address"
+                    ],
+                    "type": "text",
+                    "format": "",
+                    "transformation": []
+                },
+                "qualifications": {
+                    "label": "Qualification",
+                    "fields": [
+                        "qualification_at_registration",
+                        "qualifications"
+                    ],
+                    "type": "text",
+                    "format": "",
+                    "transformation": []
+                },
+                "qualification_date": {
+                    "label": "Qualification Date",
+                    "fields": [
+                        "qualification_date"
+                    ],
+                    "type": "text",
+                    "format": "capitalize",
+                    "transformation": []
+                },
+                "registration_date": {
+                    "label": "Year Of Registration",
+                    "fields": [
+                        "registration_date"
+                    ],
+                    "type": "text",
+                    "format": "capitalize",
+                    "transformation": []
+                }
+            }
         },
         "exam_candidates": {
             "table": "exam_candidates",
@@ -2673,6 +2902,7 @@
             "onCreateValidation": {},
             "onUpdateValidation": {},
             "renewalFields": [],
+            "implicitRenewalFields": [],
             "renewalTable": "",
             "renewalStages": {},
             "renewalSearchFields": {
@@ -2698,6 +2928,24 @@
                 {
                     "label": "Current State",
                     "key": "state"
+                }
+            ],
+            "detailsPageTabs": [
+                {
+                    "label": "Details",
+                    "key": "details"
+                },
+                {
+                    "label": "Examination",
+                    "key": "examination"
+                },
+                {
+                    "label": "Activities",
+                    "key": "activities"
+                },
+                {
+                    "label": "Documents",
+                    "key": "documents"
                 }
             ],
             "searchFields": {
@@ -2996,28 +3244,26 @@
                 },
                 {
                     "title": "Renewals pending approval",
-                    "url": "/licenses/renewals-manage",
+                    "url": "/licenses/renewals-manage/practitioners",
                     "icon": "",
                     "children": [],
                     "urlParams": {
-                        "child_practitioner_type": "Pharmacist",
-                        "license_type": "practitioners",
+                        "renewal_practitioner_type": "Pharmacist",
                         "status": "Pending Approval"
                     },
-                    "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Pending Approval&child_practitioner_type=Pharmacist",
+                    "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Pending Approval&renewal_practitioner_type=Pharmacist",
                     "apiCountText": ""
                 },
                 {
                     "title": "Renewals pending payment",
-                    "url": "/licenses/renewals-manage",
+                    "url": "/licenses/renewals-manage/practitioners",
                     "icon": "",
                     "children": [],
                     "urlParams": {
-                        "child_practitioner_type": "Pharmacist",
-                        "license_type": "practitioners",
+                        "renewal_practitioner_type": "Pharmacist",
                         "status": "Pending Payment"
                     },
-                    "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Pending Payment&child_practitioner_type=Pharmacist",
+                    "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Pending Payment&renewal_practitioner_type=Pharmacist",
                     "apiCountText": ""
                 }
             ],
@@ -3167,34 +3413,30 @@
         {
             "title": "Search Pharmacists",
             "active_children": false,
-            "url": "/licenses",
+            "url": "/licenses/list/practitioners",
             "icon": "person_outlined",
             "children": [],
             "urlParams": {
-                "licenseType": "practitioners",
                 "child_practitioner_type": "Pharmacist"
             }
         },
         {
             "title": "Search Pharmacy Technicians",
             "active_children": false,
-            "url": "/licenses",
+            "url": "/licenses/list/practitioners",
             "icon": "person_outlined",
             "children": [],
             "urlParams": {
-                "licenseType": "practitioners",
                 "child_practitioner_type": "Pharmacy Technician"
             }
         },
         {
             "title": "Search Examination Candidates",
             "active_children": false,
-            "url": "/licenses",
+            "url": "/licenses/list/exam_candidates",
             "icon": "person_outlined",
             "children": [],
-            "urlParams": {
-                "licenseType": "exam_candidates"
-            }
+            "urlParams": {}
         },
         {
             "title": "Search CPD Topics",
@@ -3791,5 +4033,97 @@
     },
     "letterContainer": {
         "html": "<html lang=\"en\"><head><meta charset=\"utf-8\"><title>Exam Registration Letter <\/title><link href=\"https:\/\/cdn.jsdelivr.net\/npm\/bootstrap@5.0.2\/dist\/css\/bootstrap.min.css\" rel=\"stylesheet\" integrity=\"sha384-EVSTQN3\/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC\" crossorigin=\"anonymous\"><style>label{ font-weight: bold;} .watermarked{ position: relative; overflow: hidden;} .bold{ font-weight: bold;} .font-20{ font-size: 20px;} .font-13{ font-size: 13px;} .weird-font{ font-size: 21px;} .watermarked::before{ position: absolute; top: 12cm; left: 6cm; display: block; width: 300%; height: 300%; opacity: 0.1; content: url('<?php echo base_url() . \"assets\/images\/mdc_logo.png\" ?>');} body{ background: #f7f7f7;} .page{ background: white; display: block; margin: 0 auto; margin-bottom: 0.5cm; box-shadow: 0 0 0.5cm rgba(0, 0, 0, 0.5); padding: 4%; font-family: Calibri, 'Trebuchet MS', sans-serif; font-size: 16px;} .align-right{ text-align: end;} .a4{ width: 21cm; page-break-after: always;} .caps{ text-transform: uppercase;} .break{ page-break-before: always;} @media print{ body, page{ margin: 0; box-shadow: 0;} .break{ page-break-before: always;} .a4{ width: unset !important; height: unset !important; page-break-after: always;} .no-print{ display: none;}} .margin-30{ margin-bottom: 30px;} .content{ margin-bottom: 30px !important;} .sticky-bottom{ position: sticky; bottom: 0; z-index: 1030;} <\/style><script src=\"https:\/\/code.jquery.com\/jquery-3.5.1.js\"><\/script><\/head><body><div id=\"letter\" class=\"a4 page watermarked\">[##content##] <\/div><\/body><\/html>"
-    }
+    },
+    "renewalRules": [
+        {
+            "name": "Temporary License Rule",
+            "description": "Temporary licenses are valid for 3 months from issue date",
+            "criteria": [
+                {
+                    "field": "license_type",
+                    "operator": "equals",
+                    "value": "Practitioners"
+                },
+                {
+                    "field": "register_type",
+                    "operator": "equals",
+                    "value": "Temporary"
+                }
+            ],
+            "start_date": "today",
+            "expiry_date": "+3 months"
+        },
+        {
+            "name": "Provisional License Rule",
+            "description": "Provisional licenses are valid for 1 year from issue date",
+            "criteria": [
+                {
+                    "field": "license_type",
+                    "operator": "equals",
+                    "value": "Practitioners"
+                },
+                {
+                    "field": "register_type",
+                    "operator": "equals",
+                    "value": "Provisional"
+                }
+            ],
+            "start_date": "today",
+            "expiry_date": "+1 year"
+        },
+        {
+            "name": "Default Permanent License Rule",
+            "description": "Default rule for permanent licenses - calendar year validity",
+            "criteria": [],
+            "start_date": "start_of_year",
+            "expiry_date": "end_of_year"
+        }
+    ],
+    "datePatterns": {
+        "description": "Available date calculation patterns",
+        "simple_patterns": [
+            "today",
+            "now",
+            "start_of_year",
+            "end_of_year",
+            "start_of_month",
+            "end_of_month"
+        ],
+        "relative_patterns": [
+            "+1 day",
+            "+1 week",
+            "+1 month",
+            "+3 months",
+            "+6 months",
+            "+1 year",
+            "+2 years",
+            "-1 day"
+        ],
+        "complex_patterns": {
+            "description": "Object-based patterns for complex date calculations",
+            "structure": {
+                "base": "Base date (can be any simple pattern or 'start_date')",
+                "modify": [
+                    "Array of date modifications"
+                ],
+                "conditional": [
+                    {
+                        "criteria": "Array of criteria objects",
+                        "modify": "Array of modifications to apply if criteria match"
+                    }
+                ]
+            }
+        }
+    },
+    "operators": [
+        "equals",
+        "not_equals",
+        "in",
+        "not_in",
+        "greater_than",
+        "less_than"
+    ],
+    "allowedTestEmails": [
+        "wuakuc@gmail.com"
+    ]
 }

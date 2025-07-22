@@ -47,7 +47,13 @@ class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, 
         'license_uuid',
         'print_template',
         'online_print_template',
-        'in_print_queue'
+        'in_print_queue',
+        'phone',
+        'region',
+        'district',
+        'email',
+        'name',
+        'country_of_practice'
     ];
 
     protected bool $allowEmptyInserts = false;
@@ -89,6 +95,9 @@ class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, 
         'receipt',
         'batch_number',
         'payment_invoice_number',
+        'email',
+        'name',
+        'phone'
     ];
 
 
@@ -98,7 +107,10 @@ class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, 
         //get the fields for the selected type and merge with the default fields
         $defaultColumns = [
             'picture',
+            'name',
             'license_number',
+            'region',
+            'district',
             'start_date',
             'expiry',
             'status',
@@ -128,16 +140,10 @@ class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, 
                 return $defaultColumns;
             }
             $licenseDef = $licenseTypes[$this->licenseType];
-            $fields = $licenseDef['renewalFields'];
-
-            $licenseTypeFields = $licenseDef['fields'];
-
-            $columns = array_map(function ($field) {
-                return $field['name'];
-            }, array_merge($fields, $licenseTypeFields));
-            return Utils::reorderPriorityColumns(array_merge($defaultColumns, $columns, ['deleted_at']));
+            $fields = $licenseDef['renewalDisplayFields'];
+            return $fields;
         }
-        return Utils::reorderPriorityColumns($defaultColumns);
+        return $defaultColumns;
     }
 
     public function getDisplayColumnLabels(): array
@@ -202,24 +208,33 @@ class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, 
                 "value" => "",
                 "required" => false
             ],
-            // [
-            //     "label" => "Region",
-            //     "name" => "region",
-            //     "type" => "select",
-            //     "hint" => "",
-            //     "options" => $this->getDistinctValuesAsKeyValuePairs('region'),
-            //     "value" => "",
-            //     "required" => false
-            // ],
-            // [
-            //     "label" => "District",
-            //     "name" => "district",
-            //     "type" => "select",
-            //     "hint" => "",
-            //     "options" => $this->getDistinctValuesAsKeyValuePairs('district'),
-            //     "value" => "",
-            //     "required" => false
-            // ],
+            [
+                "label" => "Region",
+                "name" => "region",
+                "type" => "select",
+                "hint" => "",
+                "options" => $this->getDistinctValuesAsKeyValuePairs('region'),
+                "value" => "",
+                "required" => false
+            ],
+            [
+                "label" => "District",
+                "name" => "district",
+                "type" => "select",
+                "hint" => "",
+                "options" => $this->getDistinctValuesAsKeyValuePairs('district'),
+                "value" => "",
+                "required" => false
+            ],
+            [
+                "label" => "Batch number",
+                "name" => "batch_number",
+                "type" => "select",
+                "hint" => "",
+                "options" => $this->getDistinctValuesAsKeyValuePairs('batch_number'),
+                "value" => "",
+                "required" => false
+            ],
         ];
 
         if ($this->licenseType) {
@@ -231,7 +246,7 @@ class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, 
                 return $default;
             }
             $licenseDef = $licenseTypes[$this->licenseType];
-            $fields = $licenseDef['renewalFields'];
+            $fields = $licenseDef['renewalFilterFields'];
             //prepend renewal_ to the names of the fields to differentiate them from the license fields
             $fields = array_map(function ($field) {
                 $field['name'] = 'renewal_' . $field['name'];
@@ -275,7 +290,7 @@ class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, 
             $licenseDef = Utils::getLicenseSetting($licenseType);
             //we now have the data_snapshot field which holds all the data from the 
             //license type table at the time of renewal
-            $licenseTypeTable = $licenseDef->table;
+            // $licenseTypeTable = $licenseDef->table;
             //get the sub table for that license type
             $renewalSubTable = $licenseDef->renewalTable;
             $renewalSubFields = $licenseDef->renewalFields;
@@ -287,14 +302,14 @@ class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, 
                 for ($i = 0; $i < count($renewalSubFields); $i++) {
                     $extraColumns[] = $renewalSubTable . "." . $renewalSubFields[$i]['name'];
                 }
-                $builder->select(array_merge(["{$this->table}.*"], $extraColumns, ["licenses.region", "licenses.district", "licenses.phone", "licenses.email", "licenses.postal_address"]));
+                $builder->select(array_merge(["{$this->table}.*"], $extraColumns));
             }
-            $builder->join("licenses", $this->table . '.license_number = licenses.license_number', 'left');
+            // $builder->join("licenses", $this->table . '.license_number = licenses.license_number', 'left');
 
-            $fullLicenseJoinConditions = $this->table . ".license_number = $licenseTypeTable.license_number ";
-            if ($licenseJoinConditions) {
-                $builder->where($licenseJoinConditions);
-            }
+            // $fullLicenseJoinConditions = $this->table . ".license_number = $licenseTypeTable.license_number ";
+            // if ($licenseJoinConditions) {
+            //     $builder->where($licenseJoinConditions);
+            // }
 
             $fullRenewalJoinConditions = $this->table . ".id = $renewalSubTable.renewal_id ";
             if ($renewalJoinConditions) {
@@ -303,9 +318,9 @@ class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, 
 
             // in some cases we may not want to add the renewal join, for example when we are doing a search as it would have been added already
             // in the search method
-            if ($addLicenseJoin) {
-                $builder->join($licenseTypeTable, $fullLicenseJoinConditions, 'left');
-            }
+            // if ($addLicenseJoin) {
+            //     $builder->join($licenseTypeTable, $fullLicenseJoinConditions, 'left');
+            // }
             // in some cases we may not want to add the renewal join, for example when we are doing a search as it would have been added already
             // in the search method
             if ($addRenewalJoin) {
@@ -321,7 +336,7 @@ class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, 
     /**
      * insert or update renewal details. the table is obtained from the license type in app.settings.json
      * @param string $licenseType
-     * @param array $formData
+     * @param array $formData an array from the merge of the incoming form and existing data
      * @return void
      */
     public function createOrUpdateSubDetails($renewalId, $licenseType, $formData)
@@ -330,6 +345,7 @@ class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, 
             $licenseDef = Utils::getLicenseSetting($licenseType);
             $table = $licenseDef->renewalTable;
             $licenseFields = $licenseDef->renewalFields;
+            $implicitFields = $licenseDef->implicitRenewalFields;//these fields will be taken from the existing license data
             $data = [];
             // $protectedFields = [];
             //make sure $formdata is an array
@@ -342,6 +358,9 @@ class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, 
                 if (array_key_exists($name, $formData)) {
                     $data[$name] = $formData[$name];
                 }
+            }
+            foreach ($implicitFields as $field) {
+                $data[$field] = $formData[$field];
             }
             $data['license_number'] = $formData['license_number'];
             $data['renewal_id'] = $renewalId;
@@ -389,6 +408,17 @@ class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, 
         return $data;
     }
 
+    /**
+     * gets a builder instance for the sub table associated with the given license type
+     * @param string $type the license type
+     * @return BaseBuilder the builder instance
+     */
+    public function getRenewalSubTableBuilder(string $type): BaseBuilder
+    {
+        $table = $this->getChildRenewalTable($type);
+        $builder = $this->builder($table);
+        return $builder;
+    }
 
     public function getFormFields(): array
     {
@@ -404,25 +434,6 @@ class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, 
                 "required" => true,
                 "showOnly" => true
             ],
-            [
-                "label" => "Start Date",
-                "name" => "start_date",
-                "type" => "date",
-                "hint" => "",
-                "options" => [],
-                "value" => "",
-                "required" => true
-            ],
-
-            [
-                "label" => "End Date",
-                "name" => "expiry",
-                "type" => "date",
-                "hint" => "",
-                "options" => [],
-                "value" => "",
-                "required" => true
-            ],
 
             [
                 "label" => "Batch Number",
@@ -432,131 +443,8 @@ class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, 
                 "options" => [],
                 "value" => "",
                 "required" => false
-            ],
-            [
-                "label" => "Payment Date",
-                "name" => "payment_date",
-                "type" => "date",
-                "hint" => "",
-                "options" => [],
-                "value" => "",
-                "required" => false
-            ],
-            [
-                "label" => "Payment File",
-                "name" => "payment_file",
-                "type" => "file",
-                "hint" => "",
-                "options" => [],
-                "value" => "",
-                "required" => false
-            ],
-            [
-                "label" => "Payment File Date",
-                "name" => "payment_file_date",
-                "type" => "date",
-                "hint" => "",
-                "options" => [],
-                "value" => "",
-                "required" => false
-            ],
-            [
-                "label" => "Payment Invoice Number",
-                "name" => "payment_invoice_number",
-                "type" => "text",
-                "hint" => "",
-                "options" => [],
-                "value" => "",
-                "required" => false
-            ],
-            [
-                "label" => "Approve Online Certificate",
-                "name" => "approve_online_certificate",
-                "type" => "select",
-                "hint" => "",
-                "options" => [
-                    [
-                        "key" => "Yes",
-                        "value" => "yes"
-                    ],
-                    [
-                        "key" => "No",
-                        "value" => "no"
-                    ]
-                ],
-                "value" => "",
-                "required" => false
-            ],
-            [
-                "label" => "Online Certificate Start Date",
-                "name" => "online_certificate_start_date",
-                "type" => "date",
-                "hint" => "",
-                "options" => [],
-                "value" => "",
-            ],
-            [
-                "label" => "Online Certificate End Date",
-                "name" => "online_certificate_end_date",
-                "type" => "date",
-                "hint" => "",
-                "options" => [],
-                "value" => "",
-            ],
-
-            [
-                "label" => "Picture",
-                "name" => "picture",
-                "type" => "picture",
-                "hint" => "",
-                "options" => [],
-                "value" => "",
-                "required" => false
-            ],
-            [
-                "label" => "Print Template",
-                "name" => "print_template",
-                "hint" => "The template to use for printing by admins",
-                "options" => [],
-                "type" => "api",
-                "value" => "",
-                "required" => true,
-                "api_url" => "print-queue/templates",
-                "apiKeyProperty" => "template_name",
-                "apiLabelProperty" => "template_name",
-                "apiType" => "select"
-            ],
-            [
-                "label" => "Online Certificate Template",
-                "name" => "online_print_template",
-                "hint" => "The template to use for online certificate printing by practitioners",
-                "options" => [],
-                "type" => "api",
-                "value" => "",
-                "required" => false,
-                "api_url" => "print-queue/templates",
-                "apiKeyProperty" => "template_name",
-                "apiLabelProperty" => "template_name",
-                "apiType" => "select"
-            ],
-            [
-                "label" => "In Print Queue",
-                "name" => "in_print_queue",
-                "type" => "select",
-                "hint" => "",
-                "options" => [
-                    [
-                        "key" => "Yes",
-                        "value" => "1"
-                    ],
-                    [
-                        "key" => "No",
-                        "value" => "0"
-                    ]
-                ],
-                "value" => "",
-                "required" => false
             ]
+
 
         ];
     }

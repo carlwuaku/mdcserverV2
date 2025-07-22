@@ -189,6 +189,7 @@ $routes->group("licenses", ["namespace" => "App\Controllers", "filter" => "apiau
     $routes->post("renewal/filter", [LicensesController::class, "getRenewals"], ["filter" => ["hasPermission:View_License_Renewal"]]);
 
     $routes->get("renewal-form-fields/(:segment)", [LicensesController::class, "getLicenseRenewalFormFields"], ["filter" => ["hasPermission:Create_License_Renewal"]], );
+    $routes->get("renewal-check-superintendent", [LicensesController::class, "getPharmacySuperintendent"], ["filter" => ["hasPermission:Create_License_Renewal"]], );
     $routes->get("renewal-count", [LicensesController::class, "countRenewals"], ["filter" => ["hasPermission:View_License_Renewal"]], );
     $routes->post("renewal-count", [LicensesController::class, "countRenewals"], ["filter" => ["hasPermission:View_License_Renewal"]], );
 
