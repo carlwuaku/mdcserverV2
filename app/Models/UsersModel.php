@@ -15,7 +15,7 @@ class UsersModel extends UserModel implements TableDisplayInterface
     public $position;
     public $picture;
     public $phone;
-    public $email;
+    public $email_address;
 
     public $status;
     public $username;
@@ -36,7 +36,7 @@ class UsersModel extends UserModel implements TableDisplayInterface
             'position',
             'picture',
             'phone',
-            'email',
+            'email_address',
             'google_authenticator_setup'
         ];
     }
@@ -66,7 +66,7 @@ class UsersModel extends UserModel implements TableDisplayInterface
         'two_fa_deadline',
         'profile_table',
         'profile_table_uuid',
-        'email'
+        'email_address'
     ];
 
     protected $defaultProfileSelect = [
@@ -80,7 +80,7 @@ class UsersModel extends UserModel implements TableDisplayInterface
         'two_fa_deadline',
         'profile_table',
         'profile_table_uuid',
-        'email'
+        'email_address'
     ];
 
     protected $searchFields = [
@@ -88,7 +88,7 @@ class UsersModel extends UserModel implements TableDisplayInterface
         'username',
         'position',
         'phone',
-        'email'
+        'email_address'
     ];
 
 

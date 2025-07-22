@@ -3401,5 +3401,8 @@
         "not_in",
         "greater_than",
         "less_than"
+    ],
+    "allowedTestEmails": [
+        "wuakuc@gmail.com"
     ]
 }

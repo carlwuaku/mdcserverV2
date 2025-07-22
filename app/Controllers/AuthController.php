@@ -120,7 +120,7 @@ class AuthController extends ResourceController
             "username" => "required|is_unique[users.username]",
             "password" => "required|min_length[8]|strong_password[]",
             "password_confirm" => "required|matches[password]",
-            "email" => "required|valid_email|is_unique[auth_identities.secret]",
+            "email_address" => "required|valid_email|is_unique[auth_identities.secret]",
         ];
         if (!$this->validate($rules)) {
             $message = implode(" ", array_values($this->validator->getErrors()));
@@ -759,9 +759,12 @@ class AuthController extends ResourceController
             return $this->respond(['message' => $message], ResponseInterface::HTTP_BAD_REQUEST);
         }
 
-        $username = $this->request->getPost('username');
+        $username = $this->request->getVar('username');
         $ipAddress = $this->request->getIPAddress();
         $userAgent = $this->request->getUserAgent()->getAgentString();
+        // Set expiration
+        $timeout = 15;
+        $expiresAt = Time::now()->addMinutes($timeout);
 
         // Check rate limiting (max 5 attempts per email per hour)
         if (!$this->checkRateLimit($username, $ipAddress)) {
@@ -771,17 +774,17 @@ class AuthController extends ResourceController
             ], ResponseInterface::HTTP_TOO_MANY_REQUESTS);
         }
 
-        // Find user by username or email
+        // Find user by username 
         $user = $this->userModel->where('username', $username)
-            ->orWhere('email', $username)
             ->first();
 
         // Always return success message for security (don't reveal if user exists)
         $successMessage = 'If an account with that username exists, a password reset link has been sent to the associated email address.';
-
         if ($user === null) {
+            log_message('info', "$username not found");
+
             $this->logResetAttempt($username, $ipAddress, $userAgent, false);
-            return $this->respond(['message' => $successMessage], ResponseInterface::HTTP_OK);
+            return $this->respond(['message' => $successMessage, 'data' => ['timeout' => $timeout]], ResponseInterface::HTTP_OK);
         }
 
         try {
@@ -796,9 +799,6 @@ class AuthController extends ResourceController
             $token = Utils::generateSecure6DigitToken();
             $tokenHash = password_hash($token, PASSWORD_ARGON2ID);
 
-            // Set expiration
-            $timeout = 15;
-            $expiresAt = Time::now()->addMinutes($timeout);
 
             // Save token to database
             $tokenData = [
@@ -813,17 +813,18 @@ class AuthController extends ResourceController
             ];
 
             $this->passwordResetTokenModel->insert($tokenData);
+            log_message('debug', json_encode($user));
 
             // Send reset email
-            $this->sendResetEmail($user->email, $token, $user->username);
+            $this->sendResetEmail($user->email_address, $token, $user->username);
 
             // Log successful attempt
-            $this->logResetAttempt($user->email, $ipAddress, $userAgent, true);
+            $this->logResetAttempt($user->email_address, $ipAddress, $userAgent, true);
 
             return $this->respond(['message' => $successMessage, 'data' => ['timeout' => $timeout]], ResponseInterface::HTTP_OK);
 
         } catch (\Exception $e) {
-            log_message('error', 'Password reset error: ' . $e->getMessage());
+            log_message('error', 'Password reset error: ' . $e);
             $this->logResetAttempt($username, $ipAddress, $userAgent, false);
 
             return $this->respond([
@@ -849,7 +850,6 @@ class AuthController extends ResourceController
             $message = implode(" ", array_values($this->validator->getErrors()));
             return $this->respond(['message' => $message], ResponseInterface::HTTP_BAD_REQUEST);
         }
-        service('passwords');
 
 
         $token = $this->request->getVar('token');
@@ -882,15 +882,21 @@ class AuthController extends ResourceController
         $userObject = auth()->getProvider();
 
         $user = $userObject->find($tokenRecord->user_id);
-        if (!$user || $user->username !== $this->request->getVar('username')) {
+        log_message('debug', json_encode($user));
+        if (!$user || strtolower($user->username) !== strtolower($this->request->getVar('username'))) {
             return $this->respond([
                 'message' => 'User not found.'
             ], ResponseInterface::HTTP_NOT_FOUND);
         }
         try {
-            // Hash new password
-            $user->password = $password;
+            log_message('debug', "password " . $password);
+            $user->fill([
+                'email' => $user->email_address,
+                'password' => $password
+            ]);
             $userObject->save($user);
+            // $user->password = $password;
+            // $userObject->save($user);
 
             // Mark token as used
             $this->passwordResetTokenModel->delete($tokenRecord->id);
@@ -1006,14 +1012,13 @@ class AuthController extends ResourceController
 
         $message = "Hello {$username},\n\n";
         $message .= "You have requested to reset your password. Please enter this code <b>$token</b> to proceed.";
-        $message .= "Please click the link below to reset your password:\n\n";
-        $message .= "This link will expire in 15 minutes.\n\n";
+        $message .= "This token will expire in 15 minutes.\n\n";
         $message .= "If you did not request this password reset, please ignore this email.\n\n";
 
         $emailConfig = new EmailConfig($message, "Password Reset Request", $email);
 
 
-        EmailHelper::sendEmail($emailConfig);
+        EmailHelper::sendEmail(emailConfig: $emailConfig);
 
     }
 
@@ -1296,7 +1301,7 @@ class AuthController extends ResourceController
         $userTypes = implode(",", USER_TYPES);
         $rules = [
             "username" => "required|is_unique[users.username]",
-            "email" => "required|valid_email|is_unique[auth_identities.secret]",
+            "email_address" => "required|valid_email|is_unique[auth_identities.secret]",
             "phone" => "required|min_length[10]",
             "role_name" => "required|is_not_unique[roles.role_name]",
             "password" => "required|min_length[8]|strong_password[]",
@@ -1332,7 +1337,7 @@ class AuthController extends ResourceController
             // Base rules without password requirement
             $baseRules = [
                 "username" => "required|is_unique[users.username]|is_unique[auth_identities.secret]",
-                "email" => "required|valid_email|is_unique[auth_identities.secret]",
+                "email_address" => "required|valid_email|is_unique[auth_identities.secret]",
                 "phone" => "required|min_length[10]",
                 "display_name" => "permit_empty",//for some users it will be taken from their profile
                 "user_type" => "required|in_list[$userTypes]",
@@ -1439,7 +1444,7 @@ class AuthController extends ResourceController
             // Validate the request data
             $rules = [
                 "username" => "permit_empty|is_unique[users.username,id,$userId]",
-                "email" => "permit_empty|valid_email|is_unique[auth_identities.secret,user_id,$userId]",
+                "email_address" => "permit_empty|valid_email|is_unique[auth_identities.secret,user_id,$userId]",
                 "phone" => "permit_empty|min_length[10]",
                 "role_name" => "permit_empty|is_not_unique[roles.role_name]",
                 "password" => "permit_empty|min_length[8]|strong_password[]",

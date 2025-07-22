@@ -6,7 +6,7 @@ use Brevo\Client\Api\TransactionalEmailsApi;
 use GuzzleHttp;
 use Exception;
 
-class EmailHelper
+class EmailHelper extends Utils
 {
 
 
@@ -42,9 +42,13 @@ class EmailHelper
 
 
             return $result;
+        } catch (\Brevo\Client\ApiException $e) {
+            self::queueEmail($emailConfig);
+            throw $e;
         } catch (Exception $e) {
             log_message('error', $e->getMessage());
             echo 'Exception when calling TransactionalEmailsApi->sendTransacEmail: ', $e->getMessage(), PHP_EOL;
+            throw $e;
         }
     }
 
@@ -153,16 +157,20 @@ class EmailHelper
     {
         $emailQueueModel = new \App\Models\EmailQueueModel();
         $emailQueueLogModel = new \App\Models\EmailQueueLogModel();
-        if (!$emailId) {
-            $emailId = self::queueEmail($emailConfig);
-        }
+        log_message('info', 'Sending email' . json_encode($emailConfig));
         $method = getenv('EMAIL_METHOD');
         $result = null;
-        //if not production environment, only log the email and do not send it
-        if (getenv('CI_ENVIRONMENT') !== 'production') {
+        //if not production environment, only log the email and do not send it if it's not in the list of allowed emails from config
+        /**
+         * @var string[]
+         */
+        $allowedEmails = self::getAppSettings('allowedTestEmails') ?? [];
+        if (!in_array($emailConfig->to, $allowedEmails) && getenv('CI_ENVIRONMENT') !== 'production') {
             $message = "Email not sent in non-production environment";
-            $emailQueueModel->updateStatus($emailId, 'sent', $message);
-            $emailQueueLogModel->logStatusChange($emailId, 'sent', $message);
+            if ($emailId) {
+                $emailQueueModel->updateStatus($emailId, 'sent', $message);
+                $emailQueueLogModel->logStatusChange($emailId, 'sent', $message);
+            }
             return true;
         }
         // Send via appropriate method
@@ -180,9 +188,21 @@ class EmailHelper
 
             // Update status to sent. we have to assume that the email was sent successfully. the actual sending is done by the selected method
             //and can only be verified by checking the logs of the email service provider
+            if (!$emailId) {
+                $emailQueueModel->insert([
+                    "to_email" => $emailConfig->to,
+                    "from_email" => $emailConfig->sender,
+                    "subject" => $emailConfig->subject,
+                    "message" => $emailConfig->message,
+                    "cc" => $emailConfig->cc,
+                    "bcc" => $emailConfig->bcc,
+                    "status" => "sent",
+                ]);
+            } else {
+                $emailQueueModel->updateStatus($emailId, 'sent', $message);
+                $emailQueueLogModel->logStatusChange($emailId, 'sent', $message);
+            }
 
-            $emailQueueModel->updateStatus($emailId, 'sent', $message);
-            $emailQueueLogModel->logStatusChange($emailId, 'sent', $message);
 
         } catch (Exception $e) {
             log_message('error', $e->getMessage());

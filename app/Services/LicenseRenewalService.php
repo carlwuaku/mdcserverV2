@@ -113,7 +113,8 @@ class LicenseRenewalService
     public function updateBulkRenewals(array $renewalsData, ?string $status = null): array
     {
         $results = [];
-
+        $failed = 0;
+        $success = 0;
         foreach ($renewalsData as $renewal) {
             try {
                 $renewal = (array) $renewal;
@@ -157,7 +158,7 @@ class LicenseRenewalService
                 LicenseUtils::updateRenewal($renewalUuid, $renewal);
 
                 $model->db->transComplete();
-
+                $success++;
                 $results[] = [
                     'id' => $renewalUuid,
                     'successful' => true,
@@ -166,6 +167,7 @@ class LicenseRenewalService
 
             } catch (\Throwable $e) {
                 log_message('error', 'Bulk renewal update failed: ' . $e);
+                $failed++;
                 $results[] = [
                     'id' => $renewal['uuid'] ?? 'unknown',
                     'successful' => false,
@@ -176,7 +178,7 @@ class LicenseRenewalService
 
         return [
             'success' => true,
-            'message' => 'Bulk renewal update completed',
+            'message' => "Bulk renewal update complete. Success: $success, Failed: $failed",
             'data' => $results
         ];
     }

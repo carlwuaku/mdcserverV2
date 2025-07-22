@@ -1063,7 +1063,6 @@
                 }
             ],
             "renewalDisplayFields": [
-                "name",
                 "first_name",
                 "last_name",
                 "middle_name",
@@ -1172,6 +1171,80 @@
                     "apiKeyProperty": "practitioner_type",
                     "apiLabelProperty": "practitioner_type",
                     "apiType": "select"
+                },
+                {
+                    "label": "Date of birth",
+                    "name": "date_of_birth",
+                    "hint": "",
+                    "options": [],
+                    "type": "date-range",
+                    "value": "",
+                    "required": false
+                },
+                {
+                    "label": "Sex",
+                    "name": "sex",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/practitioners/sex",
+                    "apiKeyProperty": "sex",
+                    "apiLabelProperty": "sex",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                },
+                {
+                    "label": "Nationality",
+                    "name": "nationality",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/practitioners/nationality",
+                    "apiKeyProperty": "nationality",
+                    "apiLabelProperty": "nationality",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                },
+                {
+                    "label": "Training institution",
+                    "name": "training_institution",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/practitioners/training_institution",
+                    "apiKeyProperty": "training_institution",
+                    "apiLabelProperty": "training_institution",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                },
+                {
+                    "label": "Qualification date",
+                    "name": "qualification_date",
+                    "hint": "",
+                    "options": [],
+                    "type": "date-range",
+                    "value": "",
+                    "required": false
+                },
+                {
+                    "label": "Institution Type",
+                    "name": "institution_type",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/practitioners/institution_type",
+                    "apiKeyProperty": "institution_type",
+                    "apiLabelProperty": "institution_type",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
                 }
             ],
             "advancedStatisticsFields": [
@@ -3953,5 +4026,8 @@
         "not_in",
         "greater_than",
         "less_than"
+    ],
+    "allowedTestEmails": [
+        "wuakuc@gmail.com"
     ]
 }

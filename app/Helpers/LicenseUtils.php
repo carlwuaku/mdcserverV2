@@ -142,7 +142,7 @@ class LicenseUtils extends Utils
             $data = array_merge($license, $data);
             $formData = $model->createArrayFromAllowedFields($data, false);
             //if the online_print_template is an empty string, set it to null
-            if ($data['online_print_template'] === "") {
+            if (array_key_exists('online_print_template', $data) && $data['online_print_template'] === "") {
                 $formData['online_print_template'] = null;
             }
             //the createArrayFromAllowedFields function will remove any fields that are set to null. this is to avoid accidentally setting a field to null when the user does not want to update it or removing sensitive information.

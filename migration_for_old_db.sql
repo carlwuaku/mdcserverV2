@@ -100,11 +100,11 @@ VALUES
 INSERT
     IGNORE INTO ci4_mdc4.`users` (
         `username`,
-        `regionId`,
+        `region`,
         `position`,
         `picture`,
         `phone`,
-        `email`,
+        `email_address`,
         `role_name`,
         `user_type`
     )
@@ -548,7 +548,6 @@ WHERE
     `data_snapshot` IS NULL;
 
 ##END UPDATE SNAPSHOT BASED ON PROVISIONAL NUMBER##
-
 ########-PHYSICIAN ASSISTANTS RENEWAL########-
 #-physician assistants renewal. the renewal is split into the licenses_renewal and practitioners_renewal. the licenses_renewal is the main table that holds the renewal data and the practitioners_renewal is the table that holds the additional data for the practitioners
 INSERT INTO
@@ -879,7 +878,6 @@ WHERE
 
 ##END UPDATE PRACTITIONER RENEWAL DETAILS BASED ON PROVISIONAL NUMBER FOR DOCTORS##
 #########-END UPDATE PRACTITIONER RENEWAL#########-
-
 #UPDATE PRACTITIONER RENEWAL DETAILS BASED ON REGISTRATION NUMBER  FOR PAS##
 UPDATE
     ci4_mdc4.`practitioners_renewal` pr
@@ -1662,7 +1660,7 @@ FROM
 #END IMPORT PA WORK HISTORY#
 #IMPORT CPD PROVIDERS#
 #BEFORE RUNNING THIS SCRIPT, MAKE SURE THE bf_cpd_facilities table has only unique names
-INSERT INTO
+INSERT IGNORE INTO
     ci4_mdc4.`cpd_providers` (
         `name`,
         `location`,
