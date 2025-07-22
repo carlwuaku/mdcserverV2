@@ -1105,6 +1105,48 @@
                     "key": "status"
                 }
             ],
+            "detailsPageTabs": [
+                {
+                    "label": "Personal Details",
+                    "key": "details"
+                },
+                {
+                    "label": "Education history",
+                    "key": "education"
+                },
+                {
+                    "label": "Housemanship",
+                    "key": "housemanship"
+                },
+                {
+                    "label": "Examination",
+                    "key": "examination"
+                },
+                {
+                    "label": "CPD",
+                    "key": "cpd"
+                },
+                {
+                    "label": "Renewal History",
+                    "key": "renewal"
+                },
+                {
+                    "label": "Superintending history",
+                    "key": "superintending"
+                },
+                {
+                    "label": "Work history",
+                    "key": "work"
+                },
+                {
+                    "label": "Activities",
+                    "key": "activities"
+                },
+                {
+                    "label": "Documents",
+                    "key": "documents"
+                }
+            ],
             "searchFields": {
                 "fields": [
                     "first_name",
@@ -1966,6 +2008,24 @@
                     "key": "status"
                 }
             ],
+            "detailsPageTabs": [
+                {
+                    "label": "Details",
+                    "key": "details"
+                },
+                {
+                    "label": "Renewal History",
+                    "key": "renewal"
+                },
+                {
+                    "label": "Activities",
+                    "key": "activities"
+                },
+                {
+                    "label": "Documents",
+                    "key": "documents"
+                }
+            ],
             "searchFields": {
                 "fields": [
                     "name",
@@ -2452,6 +2512,24 @@
                     "key": "status"
                 }
             ],
+            "detailsPageTabs": [
+                {
+                    "label": "Details",
+                    "key": "details"
+                },
+                {
+                    "label": "Renewal History",
+                    "key": "renewal"
+                },
+                {
+                    "label": "Activities",
+                    "key": "activities"
+                },
+                {
+                    "label": "Documents",
+                    "key": "documents"
+                }
+            ],
             "searchFields": {
                 "fields": [
                     "name",
@@ -2850,6 +2928,24 @@
                 {
                     "label": "Current State",
                     "key": "state"
+                }
+            ],
+            "detailsPageTabs": [
+                {
+                    "label": "Details",
+                    "key": "details"
+                },
+                {
+                    "label": "Examination",
+                    "key": "examination"
+                },
+                {
+                    "label": "Activities",
+                    "key": "activities"
+                },
+                {
+                    "label": "Documents",
+                    "key": "documents"
                 }
             ],
             "searchFields": {
