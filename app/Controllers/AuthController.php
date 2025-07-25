@@ -1315,6 +1315,7 @@ class AuthController extends ResourceController
         }
         $userObject = auth()->getProvider();
         $data = $this->request->getVar();
+        $data['email'] = $data['email_address'];
         $userEntityObject = new User(
             $data
         );
@@ -1392,9 +1393,10 @@ class AuthController extends ResourceController
                     ];
                     continue;
                 }
-
+                $userData['email'] = $userData['email_address'];
                 try {
                     $userEntityObject = new User($userData);
+
                     $userObject->save($userEntityObject);
                     $id = $userObject->getInsertID();
 
@@ -1463,7 +1465,7 @@ class AuthController extends ResourceController
                     $existingUser->{$key} = $value;
                 }
             }
-
+            $existingUser->email = $data->email_address ?? $existingUser->email;
             $userObject->save($existingUser);
 
             return $this->respond(['message' => 'User updated successfully'], ResponseInterface::HTTP_OK);
