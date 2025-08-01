@@ -14,9 +14,9 @@ class CreateInvoicePaymentOptionsTable extends Migration
                 'constraint' => 20,
                 'AUTO_INCREMENT' => true
             ],
-            'invoice_number' => [
-                'type' => 'VARCHAR',
-                'constraint' => 50,
+            'invoice_uuid' => [
+                'type' => 'CHAR',
+                'constraint' => 36,
                 'null' => false,
             ],
             'method_name' => [
@@ -31,9 +31,8 @@ class CreateInvoicePaymentOptionsTable extends Migration
         ]);
         $this->forge->addPrimaryKey('id');
 
-        $this->forge->addUniqueKey(['invoice_number', 'method_name']);
-        $this->forge->addForeignKey('invoice_number', 'invoices', 'invoice_number', 'CASCADE', 'CASCADE');
-        $this->forge->addForeignKey('method_name', 'payment_methods', 'method_name', 'CASCADE', 'CASCADE');
+        $this->forge->addForeignKey('invoice_uuid', 'invoices', 'uuid', 'CASCADE', 'CASCADE');
+        $this->forge->addForeignKey('method_name', 'payment_methods', 'method_name', 'CASCADE', 'RESTRICT');
         $this->forge->createTable('invoice_payment_options');
     }
 

@@ -328,6 +328,32 @@
             ]
         },
         {
+            "title": "Payment",
+            "active_children": false,
+            "url": "",
+            "icon": "payments",
+            "children": [
+                {
+                    "title": "Add new fee",
+                    "url": "/payment/fees/add",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "View fees",
+                    "url": "/payment/fees",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "View invoices/payments",
+                    "url": "/payment/invoices",
+                    "icon": "",
+                    "children": []
+                }
+            ]
+        },
+        {
             "title": "Messaging",
             "active_children": false,
             "url": "",
@@ -4079,51 +4105,116 @@
             "expiry_date": "end_of_year"
         }
     ],
-    "datePatterns": {
-        "description": "Available date calculation patterns",
-        "simple_patterns": [
-            "today",
-            "now",
-            "start_of_year",
-            "end_of_year",
-            "start_of_month",
-            "end_of_month"
-        ],
-        "relative_patterns": [
-            "+1 day",
-            "+1 week",
-            "+1 month",
-            "+3 months",
-            "+6 months",
-            "+1 year",
-            "+2 years",
-            "-1 day"
-        ],
-        "complex_patterns": {
-            "description": "Object-based patterns for complex date calculations",
-            "structure": {
-                "base": "Base date (can be any simple pattern or 'start_date')",
-                "modify": [
-                    "Array of date modifications"
-                ],
-                "conditional": [
-                    {
-                        "criteria": "Array of criteria objects",
-                        "modify": "Array of modifications to apply if criteria match"
-                    }
-                ]
-            }
-        }
-    },
-    "operators": [
-        "equals",
-        "not_equals",
-        "in",
-        "not_in",
-        "greater_than",
-        "less_than"
-    ],
     "allowedTestEmails": [
         "wuakuc@gmail.com"
-    ]
+    ],
+    "payments": {
+        "purposes": {
+            "Pharmacy Renewal": {
+                "paymentMethods": [
+                    "In-Person",
+                    "Ghana.gov Platform"
+                ],
+                "defaultInvoiceItems": [
+                    {
+                        "criteria": [
+                            {
+                                "field": "business_type",
+                                "value": [
+                                    "R"
+                                ]
+                            }
+                        ],
+                        "feeServiceCodes": [
+                            {
+                                "service_code": "PC0306",
+                                "quantity": 1
+                            }
+                        ]
+                    },
+                    {
+                        "criteria": [
+                            {
+                                "field": "business_type",
+                                "value": [
+                                    "R"
+                                ]
+                            },
+                            {
+                                "field": "cbd",
+                                "value": [
+                                    "yes"
+                                ]
+                            }
+                        ],
+                        "feeServiceCodes": [
+                            {
+                                "service_code": "PC0307",
+                                "quantity": 1
+                            }
+                        ]
+                    },
+                    {
+                        "criteria": [
+                            {
+                                "field": "business_type",
+                                "value": [
+                                    "WR"
+                                ]
+                            }
+                        ],
+                        "feeServiceCodes": [
+                            {
+                                "service_code": "PC0302",
+                                "quantity": 1
+                            }
+                        ]
+                    }
+                ],
+                "sourceTableName": "license_renewal"
+            },
+            "Pharmacist Renewal": {
+                "paymentMethods": [
+                    "In-Person",
+                    "Ghana.gov Platform"
+                ],
+                "defaultInvoiceItems": [],
+                "sourceTableName": "license_renewal"
+            },
+            "Pharmacy Technician Renewal": {
+                "paymentMethods": [
+                    "In-Person",
+                    "Ghana.gov Platform"
+                ],
+                "defaultInvoiceItems": [],
+                "sourceTableName": "license_renewal"
+            },
+            "Otcms Renewal": {
+                "paymentMethods": [
+                    "In-Person",
+                    "Ghana.gov Platform"
+                ],
+                "defaultInvoiceItems": [],
+                "sourceTableName": "license_renewal"
+            }
+        },
+        "paymentMethods": {
+            "In-Person": {
+                "type": "offline",
+                "isActive": true,
+                "onStart": "offlinePayment",
+                "onComplete": "offlinePaymentComplete",
+                "description": "Pay this invoice in person at any bank branch, via mobile money, or via a bank up and upload evidence of payment",
+                "logo": "assets/images/offline_payment.png"
+            },
+            "Ghana.gov Platform": {
+                "type": "online",
+                "isActive": true,
+                "onStart": "ghana_gov",
+                "onComplete": "ghana_gov",
+                "description": "Pay this invoice online via the Ghana.gov platform",
+                "logo": "assets/images/ghana_gov.png"
+            }
+        }
+    }
 }

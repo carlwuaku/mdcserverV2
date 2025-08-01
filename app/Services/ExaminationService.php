@@ -206,7 +206,6 @@ class ExaminationService
         // Only collect metadata that actually exists in the incoming data
         foreach ($metadataFields as $field) {
             $fieldName = $field['name'] ?? $field; // Handle both array and string field definitions
-            log_message("debug", $data[$fieldName]);
             if (isset($data[$fieldName])) {
                 $metadataUpdates[$fieldName] = $data[$fieldName];
             }
@@ -1024,7 +1023,6 @@ class ExaminationService
             $activityLogMessages[] = "Set status for  exam registration for intern code {$application['intern_code']}";
         }
         $this->examinationApplicationsModel->db->transException(true)->transStart();
-        log_message("debug", print_r($updateData, true));
         $numRows = $this->examinationApplicationsModel->updateBatch($updateData, 'id', count($updateData));
         $this->examinationApplicationsModel->db->transComplete();
         try {

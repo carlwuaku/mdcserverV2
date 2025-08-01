@@ -319,6 +319,32 @@
             ]
         },
         {
+            "title": "Payment",
+            "active_children": false,
+            "url": "",
+            "icon": "assignment",
+            "children": [
+                {
+                    "title": "Add new fee",
+                    "url": "/payment/fees/add",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "View fees",
+                    "url": "/payment/fees",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "View invoices/payments",
+                    "url": "/payment/invoices",
+                    "icon": "",
+                    "children": []
+                }
+            ]
+        },
+        {
             "title": "Messaging",
             "active_children": false,
             "url": "",
@@ -3450,15 +3476,42 @@
             }
         }
     },
-    "operators": [
-        "equals",
-        "not_equals",
-        "in",
-        "not_in",
-        "greater_than",
-        "less_than"
-    ],
-    "allowedTestEmails": [
-        "wuakuc@gmail.com"
-    ]
+    "payments": {
+        "purposes": {
+            "Doctors Renewal": {
+                "paymentMethods": [
+                    "In-Person",
+                    "Ghana.gov Platform"
+                ],
+                "defaultInvoiceItems": [],
+                "sourceTableName": "license_renewal"
+            },
+            "Physician Assistant Renewal": {
+                "paymentMethods": [
+                    "In-Person",
+                    "Ghana.gov Platform"
+                ],
+                "defaultInvoiceItems": [],
+                "sourceTableName": "license_renewal"
+            }
+        },
+        "paymentMethods": {
+            "In-Person": {
+                "type": "offline",
+                "isActive": true,
+                "onStart": "offlinePayment",
+                "onComplete": "offlinePaymentComplete",
+                "description": "Pay this invoice in person at any bank branch, via mobile money, or via a bank up and upload evidence of payment",
+                "logo": "assets/images/offline_payment.png"
+            },
+            "Ghana.gov Platform": {
+                "type": "online",
+                "isActive": true,
+                "onStart": "ghana_gov",
+                "onComplete": "ghana_gov",
+                "description": "Pay this invoice online via the Ghana.gov platform",
+                "logo": "assets/images/ghana_gov.png"
+            }
+        }
+    }
 }

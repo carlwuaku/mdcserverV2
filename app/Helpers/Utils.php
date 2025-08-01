@@ -20,7 +20,7 @@ use App\Helpers\Enums\HousemanshipSetting;
 use App\Models\Licenses\LicenseRenewalModel;
 use App\Models\Licenses\LicensesModel;
 use Exception;
-
+use CodeIgniter\Exceptions\ConfigException;
 class Utils
 {
 
@@ -300,7 +300,7 @@ class Utils
      * it returns an array of rules in the format: 
      * [
      *          "license_number" => "required|is_unique[licenses.license_number]",
-     *         "registration_date" => "required|valid_date",
+     *         "$data_date" => "required|valid_date",
      * ]
      * @param array $fields
      * @return array
@@ -993,5 +993,151 @@ class Utils
             'token' => $token,
             'expires_at' => $expiresAt
         ];
+    }
+
+    /**
+     * Gets the payment options defined in the app settings
+     * @return array{purposes: array {}, paymentMethods: array} the payment options
+     */
+    public static function getPaymentSettings()
+    {
+        return self::getAppSettings("payments");
+    }
+
+    /**
+     * Check if data matches criteria
+     * 
+     * Criteria is an array of rules to match.
+     * Each rule is an associative array with two keys: 'field' and 'value'.
+     * 
+     * 'field' is the key in the data to check
+     * 'value' is an array of allowed values. If the first value in the array is 1, then any non-empty value in the data will match.
+     * If the first value in the array is 0, then only empty values in the data will match i.e. empty strings or null.
+     * If the first value in the array is neither 1 nor 0, then any value in the array will be checked against the value in the data.
+     * 
+     * @param array $criteria array of rules to match
+     * @param array $data data to check
+     * @return bool true if all criteria match
+     */
+    public static function criteriaMatch(array $criteria, array $data)
+    {
+
+        foreach ($criteria as $criterion) {
+            $field = $criterion['field'] ?? '';
+            $values = $criterion['value'] ?? [];
+            // Check if the field exists in the $data
+            if (!array_key_exists($field, $data)) {
+                return false;
+            }
+
+            // If no values specified, continue to next criterion
+            if (empty($values)) {
+                continue;
+            }
+
+            $dataValue = $data[$field];
+            $firstValue = $values[0];
+            // Special case: first value is 1 - match any non-empty value
+            if ($firstValue == 1) {
+                $isEmpty = ($dataValue === null || (is_string($dataValue) && trim($dataValue) === ''));
+                if ($isEmpty) {
+                    return false;
+                }
+                continue;
+            }
+
+            // Special case: first value is 0 - match only empty values
+            if ($firstValue == 0) {
+                $isEmpty = ($dataValue === null || (is_string($dataValue) && trim($dataValue) === ''));
+                if (!$isEmpty) {
+                    return false;
+                }
+                continue;
+            }
+
+            // Regular case: check if data value is in the allowed values array
+            if (!in_array($dataValue, $values)) {
+                return false;
+            }
+
+        }
+
+
+        return true;
+    }
+
+    /**
+     * Get license renewal details
+     * 
+     * @param string $uuid the uuid of the license renewal
+     * @return array the license renewal details
+     * @throws \InvalidArgumentException if the license renewal does not exist
+     */
+    public static function getLicenseRenewalDetails($uuid)
+    {
+        $model = new LicenseRenewalModel();
+        $builder = $model->builder();
+        $builder->where($model->getTableName() . '.uuid', $uuid);
+        $builder->select($model->getTableName() . '.*');
+        $builder->select("JSON_UNQUOTE(data_snapshot) AS data_snapshot");
+        $data = $model->first();
+
+        if (!$data) {
+            throw new \InvalidArgumentException("License renewal not found");
+        }
+
+        $model2 = new LicenseRenewalModel();
+        $builder2 = $model2->builder();
+        $builder2->where($model2->getTableName() . '.uuid', $uuid);
+        $builder2 = $model->addLicenseDetails($builder2, $data['license_type']);
+
+        $fullData = $model2->first();
+        $data_snapshot = empty($data['data_snapshot']) ? [] : json_decode($data['data_snapshot'], true);
+        unset($fullData['data_snapshot']);
+        //for practitioners, there's no name field. use the first name and last name instead
+        if (!array_key_exists('name', $fullData) && array_key_exists('first_name', $fullData) && array_key_exists('last_name', $fullData)) {
+            $fullData['name'] = $fullData['first_name'] . ' ' . $fullData['last_name'];
+        }
+        return array_merge($fullData, $data_snapshot);
+    }
+
+    /**
+     * Get the details for a payment from the relevant table. each payment purpose has a table which contains the details of the uuid. the expected values are in license_renewal, license.
+     * 
+     * @param string $purpose the payment purpose
+     * @param string $uuid the uuid of the license or license renewal
+     * @return array the details for the payment
+     * @throws ConfigException if the payment purpose is invalid
+     * @throws ConfigException if the source table name is not found
+     * @throws ConfigException if the source table name is invalid
+     */
+    public static function getUuidDetailsForPayment(string $purpose, string $uuid)
+    {
+        /**
+         * @var array{defaultInvoiceItems: array {criteria: array {field:string, value:string[]}[], feeServiceCodes: array}[], paymentMethods: array, sourceTableName: string}
+         */
+        $purposes = self::getPaymentSettings()["purposes"];
+        //get the default fees
+        if (!isset($purposes[$purpose])) {
+            throw new ConfigException("Invalid payment purpose: $purpose");
+        }
+        $sourceTable = $purposes[$purpose]["sourceTableName"];
+        //the purpose could be one of license_renewal, license, application.
+        if (empty($sourceTable)) {
+            throw new ConfigException("table name not found for purpose: $purpose");
+        }
+        switch ($sourceTable) {
+            case "license_renewal":
+                $details = self::getLicenseRenewalDetails($uuid);
+                $details['unique_id'] = $details['license_number'];
+                return $details;
+            case "license":
+
+                $details = self::getLicenseDetails($uuid);
+                $details['unique_id'] = $details['license_number'];
+                return $details;
+            default:
+                throw new ConfigException("Invalid source table: $purpose");
+        }
     }
 }

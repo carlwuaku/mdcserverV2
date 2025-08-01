@@ -9,42 +9,22 @@ use CodeIgniter\Database\BaseBuilder;
 use App\Models\MyBaseModel;
 
 
-class OnlinePaymentsModel extends MyBaseModel
+class OnlinePaymentDetailModel extends MyBaseModel
 {
-    protected $table = 'online_payments';
+    protected $table = 'online_payment_details';
     protected $primaryKey = 'id';
     protected $useAutoIncrement = true;
     protected $returnType = 'array';
     protected $useSoftDeletes = false;
     protected $protectFields = true;
     protected $allowedFields = [
-        'collecting_agent_branch_code',
-        'mda_branch_code',
-        'first_name',
-        'last_name',
-        'email',
-        'phone_number',
-        'application_id',
-        'description',
-        'invoice_items',
-        'redirect_url',
-        'post_url',
-        'response_status',
-        'response_message',
-        'invoice_expires',
-        'invoice_total_amounts',
-        'response',
-        'invoice_currencies',
-        'payment_qr_code',
-        'unique_id',
-        'created_at',
-        'purpose',
-        'year',
-        'status',
-        'invoice_number',
-        'origin',
-        'updated_at',
-        'deleted_at'
+        'payment_uuid',
+        'payment_gateway',
+        'transaction_id',
+        'gateway_response',
+        'gateway_status',
+        'processing_fee',
+        'net_amount'
     ];
 
     protected bool $allowEmptyInserts = false;
@@ -61,7 +41,14 @@ class OnlinePaymentsModel extends MyBaseModel
     protected $deletedField = 'deleted_at';
 
     // Validation
-    protected $validationRules = [];
+    protected $validationRules = [
+        'payment_uuid' => 'required|max_length[36]',
+        'payment_gateway' => 'required|max_length[100]',
+        'transaction_id' => 'permit_empty|max_length[255]',
+        'gateway_status' => 'permit_empty|max_length[50]',
+        'processing_fee' => 'permit_empty|decimal',
+        'net_amount' => 'permit_empty|decimal'
+    ];
     protected $validationMessages = [];
     protected $skipValidation = false;
     protected $cleanValidationRules = true;
@@ -76,4 +63,24 @@ class OnlinePaymentsModel extends MyBaseModel
     protected $afterFind = [];
     protected $beforeDelete = [];
     protected $afterDelete = [];
+
+    public function findByPayment(string $paymentId): ?array
+    {
+        return $this->where('payment_id', $paymentId)->first();
+    }
+
+    public function findByTransactionId(string $transactionId): ?array
+    {
+        return $this->where('transaction_id', $transactionId)->first();
+    }
+
+    public function updateGatewayResponse(string $paymentId, array $response, string $status): bool
+    {
+        return $this->where('payment_id', $paymentId)
+            ->set([
+                'gateway_response' => json_encode($response),
+                'gateway_status' => $status
+            ])
+            ->update();
+    }
 }
