@@ -299,9 +299,9 @@ class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, 
             if ($addSelectClause) {
                 $extraColumns = [];
 
-                for ($i = 0; $i < count($renewalSubFields); $i++) {
-                    $extraColumns[] = $renewalSubTable . "." . $renewalSubFields[$i]['name'];
-                }
+                // for ($i = 0; $i < count($renewalSubFields); $i++) {
+                $extraColumns = [$renewalSubTable . ".*"];
+                // }
                 $builder->select(array_merge(["{$this->table}.*"], $extraColumns));
             }
             // $builder->join("licenses", $this->table . '.license_number = licenses.license_number', 'left');

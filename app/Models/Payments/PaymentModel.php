@@ -13,7 +13,7 @@ class PaymentModel extends Model
     protected $useSoftDeletes = false;
     protected $protectFields = true;
     protected $allowedFields = [
-        'invoice_number',
+        'invoice_uuid',
         'method_name',
         'amount',
         'currency',
@@ -38,14 +38,7 @@ class PaymentModel extends Model
 
     // Validation
     protected $validationRules = [
-        'invoice_number' => 'required|not_unique[invoices.invoice_number]',
-        'method_name' => 'required|not_unique[payment_methods.method_name]',
-        'amount' => 'required|decimal|greater_than[0]',
-        'currency' => 'permit_empty|max_length[3]',
-        'payment_date' => 'required|valid_date',
-        'status' => 'required|in_list[pending,completed,failed,refunded]',
-        'reference_number' => 'permit_empty|max_length[100]',
-        'notes' => 'permit_empty'
+
     ];
     protected $validationMessages = [];
     protected $skipValidation = false;

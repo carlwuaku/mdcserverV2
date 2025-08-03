@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Services\GhanaGovPaymentService;
 use App\Services\PaymentsService;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
@@ -9,9 +10,11 @@ use CodeIgniter\RESTful\ResourceController;
 class PaymentsController extends ResourceController
 {
     private PaymentsService $paymentsService;
+    private GhanaGovPaymentService $ghanaGovPaymentService;
     public function __construct()
     {
         $this->paymentsService = \Config\Services::paymentsService();
+        $this->ghanaGovPaymentService = \Config\Services::ghanaGovPaymentService();
     }
 
     /**
@@ -250,6 +253,55 @@ class PaymentsController extends ResourceController
             log_message("error", $e);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    public function submitOfflinePayment(string $uuid)
+    {
+        try {
+            $data = $this->request->getVar();
+
+            $result = $this->paymentsService->submitOfflinePayment($uuid, (array) $data);
+
+            return $this->respond(['data' => $result, 'message' => 'Payment submitted successfully'], ResponseInterface::HTTP_OK);
+
+        } catch (\Throwable $e) {
+            log_message("error", $e);
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function paymentDone()
+    {
+        try {
+            $invoiceNumber = $this->request->getPost("invoice_number");
+
+            $this->ghanaGovPaymentService->ghanaGovInvoicepaymentDone($invoiceNumber);
+
+            return $this->respond(['data' => null, 'message' => 'Payment submitted successfully'], ResponseInterface::HTTP_OK);
+
+        } catch (\Throwable $e) {
+            log_message("error", $e);
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function queryGhanaGovInvoice($invoiceNumber)
+    {
+        try {
+
+            $response = $this->ghanaGovPaymentService->queryGhanaGovInvoice($invoiceNumber);
+
+            return $this->respond(['data' => $response, 'message' => 'Payment submitted successfully'], ResponseInterface::HTTP_OK);
+
+        } catch (\Throwable $e) {
+            log_message("error", $e);
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
+    public function paymentRedirect($applicationId)
+    {
     }
 
     private function extractRequestFilters(): array

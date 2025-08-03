@@ -309,4 +309,65 @@ class NetworkUtils
     {
         return filter_var($url, FILTER_VALIDATE_URL) !== false;
     }
+
+    /**
+     * Send a CURL request to the given URL with the given method and data
+     * @param string $method The method to use for the request (e.g. GET, POST, PUT)
+     * @param string $url The URL to send the request to
+     * @param array|string $data The data to send with the request
+     * @param array $header_options The headers to include in the request
+     * @return string The response from the server
+     */
+    public static function makeCURLRequest($method, $url, $data, $header_options)
+    {
+        $curl = curl_init();
+        switch ($method) {
+            case "POST":
+                curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
+                curl_setopt($curl, CURLOPT_CUSTOMREQUEST, "POST");
+                // curl_setopt($curl, CURLOPT_POSTFIELDS, "your_var");
+                curl_setopt($curl, CURLOPT_POSTREDIR, 3);
+
+                // curl_setopt($curl, CURLOPT_POST, 1);
+                if ($data)
+                    curl_setopt(
+                        $curl,
+                        CURLOPT_POSTFIELDS,
+                        $data
+                    );
+                break;
+            case "PUT":
+                curl_setopt($curl, CURLOPT_CUSTOMREQUEST, "PUT");
+                if ($data)
+                    curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
+                break;
+            default:
+                if ($data)
+                    $url = sprintf("%s?%s", $url, http_build_query($data));
+        }
+        // OPTIONS:
+        curl_setopt($curl, CURLOPT_URL, $url);
+        foreach ($header_options as $key => $value) {
+            # code...
+        }
+        //if no header set, default set the content type to form
+        if (empty($header_options)) {
+            curl_setopt($curl, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+            // curl_setopt($curl, CURLOPT_HTTPHEADER, array('Content-Type: application/x-www-form-urlencoded'));   
+        } else {
+            curl_setopt($curl, CURLOPT_HTTPHEADER, $header_options);
+        }
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($curl, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+        // EXECUTE:
+        // echo "executing";
+        $result = curl_exec($curl);
+        // echo $result . "done executing";
+        if (!$result) {
+            die("Connection Failure");
+        }
+        curl_close($curl);
+        return $result;
+    }
+
 }

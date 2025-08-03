@@ -100,6 +100,7 @@ define("PRACTITIONERS_RENEWAL_TABLE", "practitioners_renewal");
 define("PRACTITIONERS_TABLE", "practitioners");
 define("APPLICATIONS_ASSETS_FOLDER", "applications");
 define("PRACTITIONERS_ASSETS_FOLDER", "practitioners_images");
+define("PAYMENTS_ASSETS_FOLDER", "payments");
 define("QRCODES_ASSETS_FOLDER", "qr_codes");
 define("UPLOADS_FOLDER", "uploads");
 define("PRIORITY_FIELDS", ["picture", "license_number", "name", "first_name", "middle_name", "last_name", "status", "facility_type", "email", "phone_number"]);

@@ -1161,6 +1161,10 @@
                     "key": "superintending"
                 },
                 {
+                    "label": "Payments",
+                    "key": "payments"
+                },
+                {
                     "label": "Work history",
                     "key": "work"
                 },
@@ -2044,6 +2048,10 @@
                     "key": "renewal"
                 },
                 {
+                    "label": "Payments",
+                    "key": "payments"
+                },
+                {
                     "label": "Activities",
                     "key": "activities"
                 },
@@ -2548,6 +2556,10 @@
                     "key": "renewal"
                 },
                 {
+                    "label": "Payments",
+                    "key": "payments"
+                },
+                {
                     "label": "Activities",
                     "key": "activities"
                 },
@@ -2964,6 +2976,10 @@
                 {
                     "label": "Examination",
                     "key": "examination"
+                },
+                {
+                    "label": "Payments",
+                    "key": "payments"
                 },
                 {
                     "label": "Activities",
@@ -3455,6 +3471,22 @@
             "urlParams": {
                 "child_practitioner_type": "Pharmacy Technician"
             }
+        },
+        {
+            "title": "Search Pharmacies",
+            "active_children": false,
+            "url": "/licenses/list/facilities",
+            "icon": "local_pharmacy",
+            "children": [],
+            "urlParams": {}
+        },
+        {
+            "title": "Search OTCMS",
+            "active_children": false,
+            "url": "/licenses/list/otcms",
+            "icon": "person_outlined",
+            "children": [],
+            "urlParams": {}
         },
         {
             "title": "Search Examination Candidates",
@@ -4169,25 +4201,99 @@
                                 "quantity": 1
                             }
                         ]
+                    },
+                    {
+                        "criteria": [
+                            {
+                                "field": "business_type",
+                                "value": [
+                                    "W"
+                                ]
+                            }
+                        ],
+                        "feeServiceCodes": [
+                            {
+                                "service_code": "PC0304",
+                                "quantity": 1
+                            }
+                        ]
                     }
                 ],
-                "sourceTableName": "license_renewal"
+                "sourceTableName": "license_renewal",
+                "description": "Renewal of pharmacy license for [license_number] - [start_date] to [expiry]",
+                "licenseTypes": [
+                    "facilities"
+                ],
+                "licenseCriteria": [],
+                "activityTypes": [
+                    "renewal"
+                ]
             },
             "Pharmacist Renewal": {
                 "paymentMethods": [
                     "In-Person",
                     "Ghana.gov Platform"
                 ],
-                "defaultInvoiceItems": [],
-                "sourceTableName": "license_renewal"
+                "defaultInvoiceItems": [
+                    {
+                        "criteria": [],
+                        "feeServiceCodes": [
+                            {
+                                "service_code": "PC0401",
+                                "quantity": 1
+                            }
+                        ]
+                    }
+                ],
+                "sourceTableName": "license_renewal",
+                "description": "Pharmacists relicensure for [license_number] - [start_date] to [expiry]",
+                "licenseTypes": [
+                    "practitioners"
+                ],
+                "licenseCriteria": [
+                    {
+                        "field": "practitioner_type",
+                        "value": [
+                            "Pharmacist"
+                        ]
+                    }
+                ],
+                "activityTypes": [
+                    "renewal"
+                ]
             },
             "Pharmacy Technician Renewal": {
                 "paymentMethods": [
                     "In-Person",
                     "Ghana.gov Platform"
                 ],
-                "defaultInvoiceItems": [],
-                "sourceTableName": "license_renewal"
+                "defaultInvoiceItems": [
+                    {
+                        "criteria": [],
+                        "feeServiceCodes": [
+                            {
+                                "service_code": "PC0403",
+                                "quantity": 1
+                            }
+                        ]
+                    }
+                ],
+                "sourceTableName": "license_renewal",
+                "description": "Pharmacy Technician relicensure for [license_number] - [start_date] to [expiry]",
+                "licenseTypes": [
+                    "practitioners"
+                ],
+                "licenseCriteria": [
+                    {
+                        "field": "practitioner_type",
+                        "value": [
+                            "Pharmacy Technician"
+                        ]
+                    }
+                ],
+                "activityTypes": [
+                    "renewal"
+                ]
             },
             "Otcms Renewal": {
                 "paymentMethods": [
@@ -4195,7 +4301,15 @@
                     "Ghana.gov Platform"
                 ],
                 "defaultInvoiceItems": [],
-                "sourceTableName": "license_renewal"
+                "sourceTableName": "license_renewal",
+                "description": "Renewal of OTCMS license for [license_number] - [start_date] to [expiry]",
+                "licenseTypes": [
+                    "otcms"
+                ],
+                "licenseCriteria": [],
+                "activityTypes": [
+                    "renewal"
+                ]
             }
         },
         "paymentMethods": {

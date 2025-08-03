@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Helpers\LicenseUtils;
 use App\Helpers\PaymentUtils;
+use App\Helpers\TemplateEngineHelper;
 use App\Helpers\Types\InvoicePaymentOptionType;
 use App\Helpers\Types\PaymentInvoiceItemType;
 use App\Helpers\Utils;
@@ -12,6 +13,7 @@ use App\Models\Payments\FeesModel;
 use App\Models\Payments\InvoiceLineItemModel;
 use App\Models\Payments\InvoiceModel;
 use App\Models\Payments\InvoicePaymentOptionModel;
+use App\Models\Payments\PaymentModel;
 use CodeIgniter\Database\BaseBuilder;
 use Exception;
 
@@ -29,6 +31,8 @@ class PaymentsService
 
     private InvoicePaymentOptionModel $invoicePaymentOptionModel;
 
+    private PaymentModel $paymentModel;
+
     public function __construct()
     {
         $this->feesModel = new FeesModel();
@@ -36,6 +40,7 @@ class PaymentsService
         $this->invoiceModel = new InvoiceModel();
         $this->invoiceLineItemModel = new InvoiceLineItemModel();
         $this->invoicePaymentOptionModel = new InvoicePaymentOptionModel();
+        $this->paymentModel = new PaymentModel();
     }
     //create fee
     //update fee
@@ -215,7 +220,7 @@ class PaymentsService
             "unique_id" => "required|is_unique[invoices.invoice_number]",
             "purpose" => "required",
             "due_date" => "required|valid_date",
-            "name" => "required",
+            "last_name" => "required",
             "email" => "required|valid_email",
             "phone_number" => "required|numeric"
         ];
@@ -243,6 +248,7 @@ class PaymentsService
         $data['application_id'] = $applicationId;
         $data['amount'] = 0;//this will be updated with the database triggers on the invoice_line_items table
         $data['status'] = 'Pending';
+       
         // Insert into the database
         $invoiceData = $this->invoiceModel->createArrayFromAllowedFields($data);
         $this->invoiceModel->db->transException(true)->transStart();
@@ -517,7 +523,7 @@ class PaymentsService
             $fail = [];
             //get the settings for the purpose
             /**
-             * @var array{defaultInvoiceItems: array {criteria: array {field:string, value:string[]}[], feeServiceCodes: array}[], paymentMethods: array, sourceTableName: string}
+             * @var array{defaultInvoiceItems: array {criteria: array {field:string, value:string[]}[], feeServiceCodes: array}[], paymentMethods: array, sourceTableName: string, description: string}
              */
             $purposes = Utils::getPaymentSettings()["purposes"];
             //get the default fees
@@ -525,22 +531,27 @@ class PaymentsService
                 throw new \InvalidArgumentException("Invalid payment purpose: $purpose");
             }
             $sourceTable = $purposes[$purpose]["sourceTableName"];
+            $descriptionTemplate = $purposes[$purpose]["description"];
             $paymentMethods = $purposes[$purpose]["paymentMethods"];
 
             foreach ($uuids as $uuid) {
                 $details = Utils::getUuidDetailsForPayment($purpose, $uuid);
+                $templateEngineHelper = new TemplateEngineHelper();
+                $description = $templateEngineHelper->process($descriptionTemplate, $details);
                 try {
 
                     $defaultFees = $this->getInvoiceDefaultFees($purpose, $uuid);
                     $invoiceData = [
-                        'name' => $details["name"],
+                        'first_name' => array_key_exists("first_name", $details) ? $details["first_name"] : $details["name"],
+                        'last_name' => array_key_exists("last_name", $details) ? $details["last_name"] : $details["unique_id"],
                         'email' => $details["email"],
                         'phone_number' => $details["phone"],
                         'purpose_table' => $sourceTable,
                         'purpose_table_uuid' => $uuid,
                         'purpose' => $purpose,
                         'due_date' => $dueDate,
-                        'unique_id' => $details["unique_id"]
+                        'unique_id' => $details["unique_id"],
+                        'description' => $description
                     ];
                     $itemsArray = array_map(function ($item) {
                         $itemObj = new PaymentInvoiceItemType(0, '', '', 0, 0, 0);
@@ -571,6 +582,62 @@ class PaymentsService
 
 
     }
+
+    public function uploadPaymentEvidence(string $uuid)
+    {
+
+    }
+
+    /**
+     * Submit an offline payment.
+     * @param array $data The data to submit. Must contain the following keys:
+     *  - uuid: The uuid of the invoice.
+     *  - payment_file: The payment file.
+     *  - payment_date: The payment date.
+     *  - payment_file_date: The date of the payment file.
+     * @return bool Whether the payment was successfully submitted.
+     * @throws \InvalidArgumentException If the validation fails.
+     */
+    public function submitOfflinePayment(string $uuid, array $data)
+    {
+        // Validate and process the data
+        $rules = [
+            "payment_file" => "required",
+            "payment_date" => "required|valid_date"
+        ];
+
+        $validator = \Config\Services::validation();
+        $validator->setRules($rules);
+        if (!$validator->run($data)) {
+            $message = implode(" ", array_values($validator->getErrors()));
+            throw new \InvalidArgumentException("Validation failed: " . $message);
+        }
+        //get the details of the invoice
+        $invoiceDetails = $this->invoiceModel->where(["uuid" => $uuid])->first();
+        if (!$invoiceDetails) {
+            throw new \InvalidArgumentException("Invalid invoice uuid");
+        }
+        $unique_id = $invoiceDetails['unique_id'];
+        if (!$unique_id) {
+            throw new \InvalidArgumentException("Invalid invoice uuid");
+        }
+        $uuid = $invoiceDetails['uuid'];
+        $data['status'] = 'Paid';
+        $data['payment_file_date'] = date("Y-m-d");
+        $data['payment_method'] = "In-Person";
+        $paymentData = $this->invoiceModel->createArrayFromAllowedFields($data);
+        $this->invoiceModel->db->transException(true)->transStart();
+        //update the invoice
+        $this->invoiceModel->builder()->where(['uuid' => $uuid])->update($paymentData);
+
+
+
+        $this->invoiceModel->db->transComplete();
+        $this->activitiesModel->logActivity("submitted payment for invoice $uuid for $unique_id", null, "Payments");
+        // Return the exam ID
+        return true;
+    }
+
 
 
 

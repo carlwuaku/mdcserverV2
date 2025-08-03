@@ -20,7 +20,8 @@ class InvoiceModel extends MyBaseModel implements TableDisplayInterface, FormInt
     protected $allowedFields = [
         'invoice_number',
         'unique_id',
-        'name',
+        'first_name',
+        'last_name',
         'email',
         'phone',
         'amount',
@@ -34,7 +35,16 @@ class InvoiceModel extends MyBaseModel implements TableDisplayInterface, FormInt
         'status',
         'notes',
         'purpose_table',
-        'purpose_table_uuid'
+        'purpose_table_uuid',
+        'payment_method',
+        'origin',
+        'payment_file',
+        'payment_date',
+        'payment_file_date',
+        'online_payment_status',
+        'online_payment_response',
+        'mda_branch_code',
+        'description'
     ];
 
     protected bool $allowEmptyInserts = false;
@@ -73,7 +83,8 @@ class InvoiceModel extends MyBaseModel implements TableDisplayInterface, FormInt
 
     public $searchFields = [
         'invoice_number',
-        'name',
+        'first_name',
+        'last_name',
         'email',
         'phone_number',
         'amount'
@@ -81,17 +92,27 @@ class InvoiceModel extends MyBaseModel implements TableDisplayInterface, FormInt
 
     public function getDisplayColumns(): array
     {
-        //get the fields for the selected type, if present, or go with the default fields if not available
         return [
+            'application_id',
+            'first_name',
+            'last_name',
+            'unique_id',
             'invoice_number',
-            'name',
             'email',
             'phone_number',
             'amount',
             'purpose',
             'due_date',
             'status',
-            'notes'
+            'notes',
+            'payment_method',
+            'payment_file',
+            'payment_date',
+            'payment_file_date',
+            'online_payment_status',
+            'online_payment_response',
+            'mda_branch_code',
+            'description'
         ];
 
     }

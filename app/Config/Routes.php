@@ -334,8 +334,11 @@ $routes->group("payment", ["namespace" => "App\Controllers", "filter" => "apiaut
     $routes->post("invoices/default-fees", [PaymentsController::class, "getInvoiceDefaultFees"], ["filter" => ["hasPermission:Create_Payment_Invoices"]]);
     $routes->get("invoices", [PaymentsController::class, "getInvoices"], ["filter" => ["hasPermission:View_Payment_Invoices"]]);
     $routes->get("invoices/(:segment)", [PaymentsController::class, "getInvoice/$1"], ["filter" => ["hasPermission:View_Payment_Invoices"]]);
-    $routes->put("invoices", [PaymentsController::class, "updateInvoices"], ["filter" => ["hasPermission:Update_Payment_Invoices"]]);
+    $routes->put("invoices/manual-payment/(:segment)", [PaymentsController::class, "submitOfflinePayment/$1"], ["filter" => ["hasPermission:Submit_Invoice_Payments"]]);
     $routes->delete("invoices/(:segment)", [PaymentsController::class, "deleteInvoice/$1"], ["filter" => ["hasPermission:Delete_Payment_Invoices"]]);
+
+    $routes->post("paymentDone", [PaymentsController::class, "paymentDone"]);
+    $routes->post("queryInvoice/(:segment)", [PaymentsController::class, "queryGhanaGovInvoice/$1"]);
 
 });
 

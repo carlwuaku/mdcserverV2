@@ -8,7 +8,9 @@ class CreateInvoiceTableTriggers extends Migration
 {
     public function up()
     {
-
+        $this->db->query("DROP TRIGGER IF EXISTS update_invoice_total_from_line_items");
+        $this->db->query("DROP TRIGGER IF EXISTS update_invoice_total_on_line_update");
+        $this->db->query("DROP TRIGGER IF EXISTS update_invoice_total_on_line_delete");
 
         // Add computed total trigger
         $this->db->query("

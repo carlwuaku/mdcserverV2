@@ -1250,6 +1250,10 @@
                     "key": "renewal"
                 },
                 {
+                    "label": "Payments",
+                    "key": "payments"
+                },
+                {
                     "label": "Work history",
                     "key": "work"
                 },
@@ -2105,6 +2109,10 @@
                 {
                     "label": "Examination",
                     "key": "examination"
+                },
+                {
+                    "label": "Payments",
+                    "key": "payments"
                 },
                 {
                     "label": "Activities",
@@ -3484,7 +3492,22 @@
                     "Ghana.gov Platform"
                 ],
                 "defaultInvoiceItems": [],
-                "sourceTableName": "license_renewal"
+                "sourceTableName": "license_renewal",
+                "description": "Doctors relicensure for [license_number] - [start_date] to [expiry]",
+                "licenseTypes": [
+                    "practitioners"
+                ],
+                "licenseCriteria": [
+                    {
+                        "field": "practitioner_type",
+                        "value": [
+                            "Doctor"
+                        ]
+                    }
+                ],
+                "activityTypes": [
+                    "renewal"
+                ]
             },
             "Physician Assistant Renewal": {
                 "paymentMethods": [
@@ -3492,7 +3515,22 @@
                     "Ghana.gov Platform"
                 ],
                 "defaultInvoiceItems": [],
-                "sourceTableName": "license_renewal"
+                "sourceTableName": "license_renewal",
+                "description": "Physician assistant relicensure for [license_number] - [start_date] to [expiry]",
+                "licenseTypes": [
+                    "practitioners"
+                ],
+                "licenseCriteria": [
+                    {
+                        "field": "practitioner_type",
+                        "value": [
+                            "Physician Assistant"
+                        ]
+                    }
+                ],
+                "activityTypes": [
+                    "renewal"
+                ]
             }
         },
         "paymentMethods": {

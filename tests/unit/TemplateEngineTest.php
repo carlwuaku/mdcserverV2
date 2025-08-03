@@ -4,18 +4,18 @@ namespace Tests\Unit;
 
 use CodeIgniter\Test\CIUnitTestCase;
 use Config\Services;
-use \App\Helpers\TemplateEngine;
+use App\Helpers\TemplateEngineHelper;
 
 class TemplateEngineTest extends CIUnitTestCase
 {
-    private TemplateEngine $engine;
+    private TemplateEngineHelper $engine;
 
     protected function setUp(): void
     {
         parent::setUp();
 
         // Initialize with test resource and settings loaders
-        $this->engine = new TemplateEngine(
+        $this->engine = new TemplateEngineHelper(
             // Test resource loader
             function ($id) {
                 return "<img src='test-resource-{$id}.jpg'>";
