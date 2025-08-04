@@ -304,6 +304,70 @@ class PaymentsController extends ResourceController
     {
     }
 
+    public function createPaymentFileUpload()
+    {
+        try {
+            $data = $this->request->getPost();
+
+            //create the letters objects
+            $this->paymentsService->createPaymentFileUpload((array) $data);
+
+            return $this->respond(['data' => null, 'message' => 'Payment submitted successfully'], ResponseInterface::HTTP_OK);
+
+        } catch (\InvalidArgumentException $e) {
+            return $this->respond(['message' => $e->getMessage()], ResponseInterface::HTTP_BAD_REQUEST);
+        } catch (\Throwable $e) {
+            log_message("error", $e);
+            return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
+    public function getPaymentFileUploads()
+    {
+        try {
+            $filters = $this->extractRequestFilters();
+            $result = $this->paymentsService->getPaymentFileUploads($filters);
+
+            return $this->respond($result, ResponseInterface::HTTP_OK);
+
+        } catch (\Throwable $e) {
+            log_message("error", $e);
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function deletePaymentFileUpload($id)
+    {
+        try {
+            $result = $this->paymentsService->deletePaymentFileUpload($id);
+
+            return $this->respond($result, ResponseInterface::HTTP_OK);
+
+        } catch (\Throwable $e) {
+            log_message("error", $e);
+            return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function approvePaymentFileUpload($id)
+    {
+        try {
+
+            $this->paymentsService->approvePaymentFileUpload(["id" => $id]);
+
+            return $this->respond(['data' => null, 'message' => 'Payment submitted successfully'], ResponseInterface::HTTP_OK);
+
+        } catch (\InvalidArgumentException $e) {
+            return $this->respond(['message' => $e->getMessage()], ResponseInterface::HTTP_BAD_REQUEST);
+        } catch (\Throwable $e) {
+            log_message("error", $e);
+            return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
+
     private function extractRequestFilters(): array
     {
         $filters = [];

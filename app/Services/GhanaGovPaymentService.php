@@ -2,19 +2,12 @@
 
 namespace App\Services;
 
-use App\Helpers\LicenseUtils;
 use App\Helpers\NetworkUtils;
-use App\Helpers\PaymentUtils;
-use App\Helpers\Types\InvoicePaymentOptionType;
-use App\Helpers\Types\PaymentInvoiceItemType;
-use App\Helpers\Utils;
 use App\Models\ActivitiesModel;
 use App\Models\Payments\FeesModel;
 use App\Models\Payments\InvoiceLineItemModel;
 use App\Models\Payments\InvoiceModel;
 use App\Models\Payments\InvoicePaymentOptionModel;
-use App\Models\Payments\PaymentModel;
-use CodeIgniter\Database\BaseBuilder;
 use Exception;
 use InvalidArgumentException;
 class GhanaGovPaymentService
@@ -27,7 +20,6 @@ class GhanaGovPaymentService
 
     private InvoicePaymentOptionModel $invoicePaymentOptionModel;
 
-    private PaymentModel $paymentModel;
 
     private $baseUrl;
     private $username;
@@ -47,7 +39,6 @@ class GhanaGovPaymentService
         $this->invoiceModel = new InvoiceModel();
         $this->invoiceLineItemModel = new InvoiceLineItemModel();
         $this->invoicePaymentOptionModel = new InvoicePaymentOptionModel();
-        $this->paymentModel = new PaymentModel();
         $this->apiKey = getenv("GHANA_GOV_API_KEY");
         $this->checkoutUrl = getenv("GHANA_GOV_CHECKOUT_URL");
         $this->createInvoiceUrl = getenv("GHANA_GOV_CREATE_INVOICE_URL");

@@ -340,6 +340,20 @@ $routes->group("payment", ["namespace" => "App\Controllers", "filter" => "apiaut
     $routes->post("paymentDone", [PaymentsController::class, "paymentDone"]);
     $routes->post("queryInvoice/(:segment)", [PaymentsController::class, "queryGhanaGovInvoice/$1"]);
 
+    $routes->put("fees/(:segment)", [PaymentsController::class, "updateFee/$1"], ["filter" => ["hasPermission:Update_Payment_Fees"]]);
+    $routes->delete("fees/(:segment)", [PaymentsController::class, "deleteFee/$1"], ["filter" => ["hasPermission:Delete_Payment_Fees"]]);
+    $routes->get("fees", [PaymentsController::class, "getFees"], ["filter" => ["hasPermission:View_Payment_Fees"]]);
+
+    $routes->get("fees/(:num)", [PaymentsController::class, "getFee/$1"], ["filter" => ["hasPermission:View_Payment_Fees"]]);
+    $routes->post("fees", [PaymentsController::class, "createFee"], ["filter" => ["hasPermission:Create_Payment_Fees"]]);
+
+    $routes->delete("payment-uploads/(:segment)", [PaymentsController::class, "deletePaymentFileUpload/$1"], ["filter" => ["hasPermission:Delete_Payment_Evidence_File"]]);
+    $routes->get("payment-uploads", [PaymentsController::class, "getPaymentFileUploads"], ["filter" => ["hasPermission:View_Payment_Evidence_File"]]);
+
+    $routes->post("payment-uploads", [PaymentsController::class, "createPaymentFileUpload"], ["filter" => ["hasPermission:Upload_Payment_Evidence_File"]]);
+    $routes->post("payment-uploads/(:num)/approve", [PaymentsController::class, "approvePaymentFileUpload/$1"], ["filter" => ["hasPermission:Approve_Payment_Evidence_File"]]);
+
+
 });
 
 service('auth')->routes($routes);

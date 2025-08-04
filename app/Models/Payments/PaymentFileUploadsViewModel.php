@@ -2,49 +2,30 @@
 
 namespace App\Models\Payments;
 
-use App\Helpers\Interfaces\TableDisplayInterface;
-use App\Helpers\Interfaces\FormInterface;
-use App\Helpers\Utils;
-use CodeIgniter\Database\BaseBuilder;
 use App\Models\MyBaseModel;
 
-
-class OnlinePaymentsModel extends MyBaseModel
+class PaymentFileUploadsViewModel extends MyBaseModel
 {
-    protected $table = 'online_payments';
+    protected $table = 'payment_file_uploads_view';
     protected $primaryKey = 'id';
     protected $useAutoIncrement = true;
     protected $returnType = 'array';
     protected $useSoftDeletes = false;
     protected $protectFields = true;
     protected $allowedFields = [
-        'collecting_agent_branch_code',
-        'mda_branch_code',
+        'unique_id',
         'first_name',
         'last_name',
         'email',
         'phone_number',
+        'amount',
         'application_id',
-        'description',
-        'invoice_items',
-        'redirect_url',
-        'post_url',
-        'response_status',
-        'response_message',
-        'invoice_expires',
-        'invoice_total_amounts',
-        'response',
-        'invoice_currencies',
-        'payment_qr_code',
-        'unique_id',
-        'created_at',
         'purpose',
-        'year',
-        'status',
-        'invoice_number',
-        'origin',
-        'updated_at',
-        'deleted_at'
+        'due_date',
+        'file_status',
+        'invoice_status',
+        'payment_date',
+        'reference_number'
     ];
 
     protected bool $allowEmptyInserts = false;
@@ -76,4 +57,14 @@ class OnlinePaymentsModel extends MyBaseModel
     protected $afterFind = [];
     protected $beforeDelete = [];
     protected $afterDelete = [];
+
+    public $searchFields = [
+        'application_id',
+        'unique_id',
+        'first_name',
+        'last_name',
+        'email',
+        'phone_number',
+        'amount'
+    ];
 }

@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Helpers\LicenseUtils;
 use App\Helpers\PaymentUtils;
 use App\Helpers\TemplateEngineHelper;
 use App\Helpers\Types\InvoicePaymentOptionType;
@@ -13,8 +12,8 @@ use App\Models\Payments\FeesModel;
 use App\Models\Payments\InvoiceLineItemModel;
 use App\Models\Payments\InvoiceModel;
 use App\Models\Payments\InvoicePaymentOptionModel;
-use App\Models\Payments\PaymentModel;
-use CodeIgniter\Database\BaseBuilder;
+use App\Models\Payments\PaymentFileUploadsModel;
+use App\Models\Payments\PaymentFileUploadsViewModel;
 use Exception;
 
 /**
@@ -31,7 +30,9 @@ class PaymentsService
 
     private InvoicePaymentOptionModel $invoicePaymentOptionModel;
 
-    private PaymentModel $paymentModel;
+    private PaymentFileUploadsModel $paymentFileUploadsModel;
+    private PaymentFileUploadsViewModel $paymentFileUploadsViewModel;
+
 
     public function __construct()
     {
@@ -40,7 +41,8 @@ class PaymentsService
         $this->invoiceModel = new InvoiceModel();
         $this->invoiceLineItemModel = new InvoiceLineItemModel();
         $this->invoicePaymentOptionModel = new InvoicePaymentOptionModel();
-        $this->paymentModel = new PaymentModel();
+        $this->paymentFileUploadsModel = new PaymentFileUploadsModel();
+        $this->paymentFileUploadsViewModel = new PaymentFileUploadsViewModel();
     }
     //create fee
     //update fee
@@ -248,7 +250,7 @@ class PaymentsService
         $data['application_id'] = $applicationId;
         $data['amount'] = 0;//this will be updated with the database triggers on the invoice_line_items table
         $data['status'] = 'Pending';
-       
+
         // Insert into the database
         $invoiceData = $this->invoiceModel->createArrayFromAllowedFields($data);
         $this->invoiceModel->db->transException(true)->transStart();
@@ -639,6 +641,146 @@ class PaymentsService
     }
 
 
+    public function createPaymentFileUpload(array $data)
+    {
+        // Validate and process the data
+        $rules = [
+            "invoice_uuid" => "required|is_not_unique[invoices.uuid]",
+            "file_path" => "required",
+            "payment_date" => "required|valid_date"
+        ];
+
+        $validator = \Config\Services::validation();
+        $validator->setRules($rules);
+        if (!$validator->run($data)) {
+            $message = implode(" ", array_values($validator->getErrors()));
+            throw new \InvalidArgumentException("Validation failed: " . $message);
+        }
+        $paymentFileUpload = $this->invoiceModel->where(["uuid" => $data['invoice_uuid']])->first();
+
+        //non-admins should only be able to upload payments for their own invoices
+        $user = auth()->getUser();
+        if (!$user->user_type === "admin") {
+            //the usernames are the unique_id (license_number, application_code, etc) of the payers. these are also the usernames of the users
+            if ($paymentFileUpload['unique_id'] !== $user->username) {
+                throw new Exception("{$user->username} does not have permission to upload this payment file for an invoice belonging to user with unique id {$paymentFileUpload->unique_id}");
+            }
+        }
+        // Insert into the database
+        $examData = $this->paymentFileUploadsModel->createArrayFromAllowedFields($data);
+
+        $id = $this->paymentFileUploadsModel->insert($examData);
+
+        // Return the exam ID
+        return $id;
+    }
+
+    public function approvePaymentFileUpload(array $data)
+    {
+        try {
+            // Validate and process the data
+            $rules = [
+                "id" => "required|is_not_unique[payment_file_uploads.id]"
+            ];
+            $validator = \Config\Services::validation();
+            $validator->setRules($rules);
+            if (!$validator->run($data)) {
+                $message = implode(" ", array_values($validator->getErrors()));
+                throw new \InvalidArgumentException("Validation failed: " . $message);
+            }
+            $paymentFileUpload = $this->paymentFileUploadsViewModel->builder()->where(["id" => $data['id']])->get()->getRow();
+            if (!$paymentFileUpload) {
+                throw new \InvalidArgumentException("Record not found");
+            }
+            // update the status
+            $updateData = [
+                "status" => "Approved",
+            ];
+            $this->paymentFileUploadsModel->builder()->where(["id" => $data['id']])->update($updateData);
+
+            //update the invoice
+            $invoiceData = [
+                "payment_file" => $paymentFileUpload->file_path,
+                "payment_date" => $paymentFileUpload->payment_date,
+            ];
+            $this->submitOfflinePayment($paymentFileUpload->invoice_uuid, $invoiceData);
+        } catch (\Throwable $th) {
+            throw $th;
+        }
 
 
+
+
+    }
+
+    public function deletePaymentFileUpload(string $id): bool
+    {
+        $paymentFileUpload = $this->paymentFileUploadsViewModel->where(["id" => $id])->get()->getRow();
+        if (!$paymentFileUpload) {
+            throw new \InvalidArgumentException("Record not found");
+        }
+        //if the user is not an admin, they can only delete their own payment file uploads
+        $user = auth()->getUser();
+        if (!$user->user_type === "admin") {
+            //the usernames are the unique_id (license_number, application_code, etc) of the payers. these are also the usernames of the users
+            if ($paymentFileUpload->unique_id !== $user->username) {
+                throw new Exception("{$user->username} does not have permission to delete this payment file upload with uinque id {$paymentFileUpload->unique_id}");
+            }
+        }
+
+        if (!$this->paymentFileUploadsModel->where('id', $id)->delete()) {
+            throw new \RuntimeException('Failed to delete payment file upload: ' . json_encode($this->paymentFileUploadsModel->errors()));
+        }
+
+        // Log activity
+        $this->activitiesModel->logActivity("Deleted payment file upload for {$paymentFileUpload->unique_id} for payment {$paymentFileUpload->invoice_uuid} ");
+
+        return true;
+    }
+
+
+    public function getPaymentFileUploads(array $filters = []): array
+    {
+        $per_page = $filters['limit'] ?? 100;
+        $page = $filters['page'] ?? 0;
+        $param = $filters['param'] ?? $filters['child_param'] ?? null;
+        $sortBy = $filters['sortBy'] ?? "id";
+        $sortOrder = $filters['sortOrder'] ?? "desc";
+        $user = auth()->getUser();
+        //admins should be able to see all payment file uploads. non-admins should only be able to see their own 
+        if ($user->user_type === "admin") {
+            // Build query
+            $builder = $param ? $this->paymentFileUploadsViewModel->search($param) : $this->paymentFileUploadsViewModel->builder();
+            $tableName = $this->paymentFileUploadsViewModel->getTableName();
+            $builder->orderBy("$tableName.$sortBy", $sortOrder);
+            // Apply filters
+            $filterArray = $this->paymentFileUploadsViewModel->createArrayFromAllowedFields($filters);
+
+            array_map(function ($value, $key) use ($builder, $tableName) {
+                $value = Utils::parseParam($value);
+                $columnName = $tableName . "." . $key;
+                $builder = Utils::parseWhereClause($builder, $columnName, $value);
+            }, $filterArray, array_keys($filterArray));
+
+        } else {
+            $uniqueId = $user->username;
+            $builder = $this->paymentFileUploadsViewModel->builder();
+            $tableName = $this->paymentFileUploadsViewModel->getTableName();
+            $builder->orderBy("$tableName.$sortBy", $sortOrder);
+            $builder = Utils::parseWhereClause($builder, "unique_id", $uniqueId);
+        }
+
+
+        $total = $builder->countAllResults(false);
+        $result = $builder->get($per_page, $page)->getResult();
+
+        $displayColumns = $this->paymentFileUploadsModel->getDisplayColumns();
+
+        return [
+            'data' => $result,
+            'total' => $total,
+            'displayColumns' => $displayColumns,
+            'columnFilters' => $this->paymentFileUploadsModel->getDisplayColumnFilters()
+        ];
+    }
 }

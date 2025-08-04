@@ -8,43 +8,19 @@ use App\Helpers\Utils;
 use CodeIgniter\Database\BaseBuilder;
 use App\Models\MyBaseModel;
 
-
-class InvoiceModel extends MyBaseModel implements TableDisplayInterface
+class PaymentFileUploadsModel extends MyBaseModel implements TableDisplayInterface
 {
-    protected $table = 'invoices';
+    protected $table = 'payment_file_uploads';
     protected $primaryKey = 'id';
     protected $useAutoIncrement = true;
     protected $returnType = 'array';
     protected $useSoftDeletes = false;
     protected $protectFields = true;
     protected $allowedFields = [
-        'invoice_number',
-        'unique_id',
-        'first_name',
-        'last_name',
-        'email',
-        'phone',
-        'amount',
-        'application_id',
-        'post_url',
-        'redirect_url',
-        'purpose',
-        'year',
-        'currency',
-        'due_date',
-        'status',
-        'notes',
-        'purpose_table',
-        'purpose_table_uuid',
-        'payment_method',
-        'origin',
-        'payment_file',
+        'invoice_uuid',
+        'file_path',
         'payment_date',
-        'payment_file_date',
-        'online_payment_status',
-        'online_payment_response',
-        'mda_branch_code',
-        'description'
+        'status'
     ];
 
     protected bool $allowEmptyInserts = false;
@@ -61,12 +37,8 @@ class InvoiceModel extends MyBaseModel implements TableDisplayInterface
     protected $deletedField = 'deleted_at';
 
     // Validation
-    protected $validationRules = [
-
-    ];
-    protected $validationMessages = [
-
-    ];
+    protected $validationRules = [];
+    protected $validationMessages = [];
     protected $skipValidation = false;
     protected $cleanValidationRules = true;
 
@@ -83,7 +55,6 @@ class InvoiceModel extends MyBaseModel implements TableDisplayInterface
 
     public $searchFields = [
         'invoice_number',
-        'unique_id',
         'first_name',
         'last_name',
         'email',
@@ -95,6 +66,7 @@ class InvoiceModel extends MyBaseModel implements TableDisplayInterface
     {
         return [
             'application_id',
+            'file_path',
             'first_name',
             'last_name',
             'unique_id',
@@ -104,23 +76,20 @@ class InvoiceModel extends MyBaseModel implements TableDisplayInterface
             'amount',
             'purpose',
             'due_date',
-            'status',
-            'notes',
+            'file_status',
+            'invoice_status',
             'payment_method',
-            'payment_file',
             'payment_date',
-            'payment_file_date',
-            'online_payment_status',
-            'online_payment_response',
-            'mda_branch_code',
-            'description'
+            'created_at'
         ];
 
     }
 
     public function getDisplayColumnLabels(): array
     {
-        return [];
+        return [
+            'file_path' => 'File',
+        ];
     }
 
     public function getDisplayColumnFilters(): array
@@ -138,7 +107,7 @@ class InvoiceModel extends MyBaseModel implements TableDisplayInterface
             ],
             [
                 "label" => "Status",
-                "name" => "status",
+                "name" => "file_status",
                 "type" => "select",
                 "hint" => "",
                 "options" => $this->getDistinctValuesAsKeyValuePairs('status'),
@@ -146,20 +115,11 @@ class InvoiceModel extends MyBaseModel implements TableDisplayInterface
                 "required" => false
             ],
             [
-                "label" => "Due Date",
-                "name" => "due_date",
+                "label" => "Date submitted",
+                "name" => "created_at",
                 "type" => "date-range",
                 "hint" => "",
                 "options" => [],
-                "value" => "",
-                "required" => false
-            ],
-            [
-                "label" => "Purpose",
-                "name" => "purpose",
-                "type" => "select",
-                "hint" => "",
-                "options" => $this->getDistinctValuesAsKeyValuePairs('purpose'),
                 "value" => "",
                 "required" => false
             ]
@@ -167,22 +127,4 @@ class InvoiceModel extends MyBaseModel implements TableDisplayInterface
 
         return $default;
     }
-
-
-
-
-    /**
-     * generate a random string for an invoice number. it will have the unique id appended
-     * @param string $uid the license number or registration number of the payer
-     * @return string 
-     */
-    public function generateInvoiceApplicationId($uid)
-    {
-        $uid = str_replace(['+', '/', '=', ' '], '', $uid);
-        return substr(str_replace(['+', '/', '='], '', base64_encode(random_bytes(32))), 0, 18) . $uid;
-    }
-
-
-
-
 }

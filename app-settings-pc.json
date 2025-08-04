@@ -350,6 +350,15 @@
                     "url": "/payment/invoices",
                     "icon": "",
                     "children": []
+                },
+                {
+                    "title": "Uploads pending approval",
+                    "url": "/payment/payment-uploads",
+                    "icon": "",
+                    "children": [],
+                    "urlParams": {
+                        "file_status": "Pending"
+                    }
                 }
             ]
         },
