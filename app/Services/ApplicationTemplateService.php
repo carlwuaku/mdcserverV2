@@ -256,8 +256,8 @@ class ApplicationTemplateService
             }
         }
         $defaults = [
-            ['type' => 'email', 'label' => 'Send Email', 'config' => ['template' => '', 'subject' => '']],
-            ['type' => 'admin_email', 'label' => 'Send Admin Email', 'config' => ['template' => '', 'subject' => '', 'admin_email' => '']],
+            ['type' => 'email', 'config_type' => 'email', 'label' => 'Send Email', 'config' => ['template' => '', 'subject' => '']],
+            ['type' => 'admin_email', 'config_type' => 'admin_email', 'label' => 'Send Admin Email', 'config' => ['template' => '', 'subject' => '', 'admin_email' => '']],
             [
                 'type' => 'api_call',
                 'config_type' => 'api_call',

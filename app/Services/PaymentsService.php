@@ -15,6 +15,7 @@ use App\Models\Payments\InvoicePaymentOptionModel;
 use App\Models\Payments\PaymentFileUploadsModel;
 use App\Models\Payments\PaymentFileUploadsViewModel;
 use Exception;
+use CodeIgniter\Events\Events;
 
 /**
  * License Service - Handles all license-related business logic
@@ -276,6 +277,7 @@ class PaymentsService
 
         $this->invoiceModel->db->transComplete();
         $this->activitiesModel->logActivity("created invoice $invoiceUuid for $unique_id", null, "Payments");
+        Events::trigger(EVENT_INVOICE_CREATED, $invoice, $items);
         // Return the exam ID
         return $invoiceId;
     }

@@ -126,5 +126,6 @@ define("APPLY_FOR_EXAMINATION", "Apply for examination");
 define("MIGRATED", "Migrated");
 define("VALID_EXAMINATION_RESULTS", ["Pass", "Fail", "Absent"]);
 define("VALID_PAYMENT_INVOICE_STATUSES", ['Pending', 'Paid', 'Overdue', 'Cancelled', 'Payment Approved']);
+define('EVENT_INVOICE_CREATED', 'invoice_created');
 
 
