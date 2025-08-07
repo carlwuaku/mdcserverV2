@@ -4,7 +4,7 @@ namespace App\Database\Migrations;
 
 use CodeIgniter\Database\Migration;
 use App\Helpers\DatabaseMigrationHelper;
-class InsertPaymentPermissions extends Migration
+class InsertSubmitPaymentPermissions extends Migration
 {
     public function up()
     {
