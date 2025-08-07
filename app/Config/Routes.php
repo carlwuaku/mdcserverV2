@@ -9,6 +9,7 @@ use App\Controllers\EmailController;
 use App\Controllers\ExaminationController;
 use App\Controllers\HousemanshipController;
 use App\Controllers\LicensesController;
+use App\Controllers\PaymentsController;
 use App\Controllers\PrintQueueController;
 use App\Controllers\RegionController;
 use App\Controllers\SpecialtiesController;
@@ -318,6 +319,40 @@ $routes->group("examinations", ["namespace" => "App\Controllers", "filter" => "a
     $routes->put("applications/update-status", [ExaminationController::class, "updateExaminationApplicationStatus"], ["filter" => ["hasPermission:Approve_Or_Deny_Examination_Applications"]]);
     $routes->get("applications/count", [ExaminationController::class, "countExaminationApplications"], ["filter" => ["hasPermission:Approve_Or_Deny_Examination_Applications"]]);
     $routes->put("applications/(:segment)", [ExaminationController::class, "updateApplication/$1"], ["filter" => ["hasPermission:Approve_Or_Deny_Examination_Applications"]]);
+});
+
+$routes->group("payment", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
+    $routes->put("fees/(:segment)", [PaymentsController::class, "updateFee/$1"], ["filter" => ["hasPermission:Update_Payment_Fees"]]);
+    $routes->delete("fees/(:segment)", [PaymentsController::class, "deleteFee/$1"], ["filter" => ["hasPermission:Delete_Payment_Fees"]]);
+    $routes->get("fees", [PaymentsController::class, "getFees"], ["filter" => ["hasPermission:View_Payment_Fees"]]);
+
+    $routes->get("fees/(:num)", [PaymentsController::class, "getFee/$1"], ["filter" => ["hasPermission:View_Payment_Fees"]]);
+    $routes->post("fees", [PaymentsController::class, "createFee"], ["filter" => ["hasPermission:Create_Payment_Fees"]]);
+
+    $routes->post("invoices", [PaymentsController::class, "createInvoice"], ["filter" => ["hasPermission:Create_Payment_Invoices"]]);
+    $routes->post("invoices/preset", [PaymentsController::class, "createPresetInvoices"], ["filter" => ["hasPermission:Create_Payment_Invoices"]]);
+    $routes->post("invoices/default-fees", [PaymentsController::class, "getInvoiceDefaultFees"], ["filter" => ["hasPermission:Create_Payment_Invoices"]]);
+    $routes->post("invoices/printout", [PaymentsController::class, "generateInvoicePrintouts"], ["filter" => ["hasPermission:Create_Payment_Invoices"]]);
+    $routes->get("invoices", [PaymentsController::class, "getInvoices"], ["filter" => ["hasPermission:View_Payment_Invoices"]]);
+    $routes->get("invoices/(:segment)", [PaymentsController::class, "getInvoice/$1"], ["filter" => ["hasPermission:View_Payment_Invoices"]]);
+    $routes->put("invoices/manual-payment/(:segment)", [PaymentsController::class, "submitOfflinePayment/$1"], ["filter" => ["hasPermission:Submit_Invoice_Payments"]]);
+    $routes->delete("invoices/(:segment)", [PaymentsController::class, "deleteInvoice/$1"], ["filter" => ["hasPermission:Delete_Payment_Invoices"]]);
+
+    $routes->post("paymentDone", [PaymentsController::class, "paymentDone"]);
+    $routes->post("queryInvoice/(:segment)", [PaymentsController::class, "queryGhanaGovInvoice/$1"]);
+
+    $routes->put("fees/(:segment)", [PaymentsController::class, "updateFee/$1"], ["filter" => ["hasPermission:Update_Payment_Fees"]]);
+    $routes->delete("fees/(:segment)", [PaymentsController::class, "deleteFee/$1"], ["filter" => ["hasPermission:Delete_Payment_Fees"]]);
+    $routes->get("fees", [PaymentsController::class, "getFees"], ["filter" => ["hasPermission:View_Payment_Fees"]]);
+
+    $routes->get("fees/(:num)", [PaymentsController::class, "getFee/$1"], ["filter" => ["hasPermission:View_Payment_Fees"]]);
+    $routes->post("fees", [PaymentsController::class, "createFee"], ["filter" => ["hasPermission:Create_Payment_Fees"]]);
+
+    $routes->delete("payment-uploads/(:segment)", [PaymentsController::class, "deletePaymentFileUpload/$1"], ["filter" => ["hasPermission:Delete_Payment_Evidence_File"]]);
+    $routes->get("payment-uploads", [PaymentsController::class, "getPaymentFileUploads"], ["filter" => ["hasPermission:View_Payment_Evidence_File"]]);
+
+    $routes->post("payment-uploads", [PaymentsController::class, "createPaymentFileUpload"], ["filter" => ["hasPermission:Upload_Payment_Evidence_File"]]);
+    $routes->post("payment-uploads/(:num)/approve", [PaymentsController::class, "approvePaymentFileUpload/$1"], ["filter" => ["hasPermission:Approve_Payment_Evidence_File"]]);
 
 
 });

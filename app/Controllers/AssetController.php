@@ -28,7 +28,8 @@ class AssetController extends ResourceController
         $allowedTypes = [
             'practitioners_images',
             'documents',
-            'applications'
+            'applications',
+            'payments'
         ];
         if (!in_array($type, $allowedTypes)) {
             return $this->respond(['message' => "Invalid file type"], ResponseInterface::HTTP_BAD_REQUEST);
@@ -36,6 +37,9 @@ class AssetController extends ResourceController
         $mimes = "image/jpg,image/jpeg,image/gif,image/png,image/webp,image/svg+xml,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
         if ($type === "practitioners_images") {
             $mimes = "image/jpg,image/jpeg,image/png";
+        }
+        if ($type === "payments") {
+            $mimes = "application/pdf,image/jpg,image/jpeg,image/png";
         }
         $validationRule = [
             'uploadFile' => [
@@ -84,6 +88,8 @@ class AssetController extends ResourceController
             case "applications":
                 $destination = APPLICATIONS_ASSETS_FOLDER . "/";
                 break;
+            case "payments":
+                $destination = PAYMENTS_ASSETS_FOLDER . "/";
             default:
 
                 break;

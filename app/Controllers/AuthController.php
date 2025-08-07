@@ -813,7 +813,6 @@ class AuthController extends ResourceController
             ];
 
             $this->passwordResetTokenModel->insert($tokenData);
-            log_message('debug', json_encode($user));
 
             // Send reset email
             $this->sendResetEmail($user->email_address, $token, $user->username);
@@ -882,14 +881,12 @@ class AuthController extends ResourceController
         $userObject = auth()->getProvider();
 
         $user = $userObject->find($tokenRecord->user_id);
-        log_message('debug', json_encode($user));
         if (!$user || strtolower($user->username) !== strtolower($this->request->getVar('username'))) {
             return $this->respond([
                 'message' => 'User not found.'
             ], ResponseInterface::HTTP_NOT_FOUND);
         }
         try {
-            log_message('debug', "password " . $password);
             $user->fill([
                 'email' => $user->email_address,
                 'password' => $password

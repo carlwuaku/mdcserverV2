@@ -499,42 +499,7 @@ class ExaminationController extends ResourceController
     private function extractRequestFilters(): array
     {
         $filters = [];
-
-        // Get common parameters
-        $commonParams = [
-            'limit',
-            'page',
-            'withDeleted',
-            'param',
-            'child_param',
-            'sortBy',
-            'sortOrder',
-            'type',
-            'exam_type',
-            'exam_id',
-            'created_on',
-            'result',
-            'intern_code'
-        ];
         $filters = array_merge($this->request->getGet(), (array) $this->request->getVar());
-
-        // foreach ($commonParams as $param) {
-        //     $value = $this->request->getVar($param);
-        //     if ($value !== null) {
-        //         $filters[$param] = $value;
-        //     }
-        // }
-
-        // // Get all child_ and renewal_ parameters
-        // $allParams = $this->request->getVar();
-        // if (is_array($allParams)) {
-        //     foreach ($allParams as $key => $value) {
-        //         if (strpos($key, 'child_') === 0) {
-        //             $filters[$key] = $value;
-        //         }
-        //     }
-        // }
-
         return $filters;
     }
 }

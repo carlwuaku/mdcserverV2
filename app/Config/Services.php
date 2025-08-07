@@ -2,12 +2,14 @@
 
 namespace Config;
 
+use App\Services\GhanaGovPaymentService;
 use CodeIgniter\Config\BaseService;
 use App\Services\LicenseService;
 use App\Services\LicenseRenewalService;
 use App\Services\ApplicationService;
 use App\Services\ApplicationTemplateService;
 use App\Services\ExaminationService;
+use App\Services\PaymentsService;
 
 /**
  * Services Configuration file.
@@ -90,5 +92,22 @@ class Services extends BaseService
             return static::getSharedInstance('examinationService');
         }
         return new ExaminationService();
+    }
+
+    /**Payments Service */
+    public static function paymentsService(bool $getShared = true): PaymentsService
+    {
+        if ($getShared) {
+            return static::getSharedInstance('paymentsService');
+        }
+        return new PaymentsService();
+    }
+
+    public static function ghanaGovPaymentService(bool $getShared = true): GhanaGovPaymentService
+    {
+        if ($getShared) {
+            return static::getSharedInstance('ghanaGovPaymentService');
+        }
+        return new GhanaGovPaymentService();
     }
 }

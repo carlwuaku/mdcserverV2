@@ -214,19 +214,7 @@ class LicenseRenewalService
     public function getRenewalDetails(string $uuid): ?array
     {
         $model = new LicenseRenewalModel();
-        $builder = $model->builder();
-        $builder->where($model->getTableName() . '.uuid', $uuid);
-        $data = $model->first();
-
-        if (!$data) {
-            return null;
-        }
-
-        $model2 = new LicenseRenewalModel();
-        $builder2 = $model2->builder();
-        $builder2->where($model2->getTableName() . '.uuid', $uuid);
-        $builder2 = $model->addLicenseDetails($builder2, $data['license_type']);
-        $finalData = $model2->first();
+        $finalData = Utils::getLicenseRenewalDetails($uuid);
 
         return [
             'data' => $finalData,
@@ -412,7 +400,6 @@ class LicenseRenewalService
                 $licenseType,
                 $renewalChildParams
             );
-            log_message("debug", $builder->getCompiledSelect(false));
             $result = $builder->get()->getResult();
             $results[$field->name] = $this->formatStatisticsResult($field, $result);
         }
@@ -620,7 +607,6 @@ class LicenseRenewalService
 
         // Apply renewal child parameters
         if (!empty($renewalChildParams)) {
-            log_message('debug', print_r($renewalChildParams, true));
             $licenseDef = Utils::getLicenseSetting($licenseType);
             $renewalSubTable = $licenseDef->renewalTable;
 

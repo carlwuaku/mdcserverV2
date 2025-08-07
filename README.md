@@ -70,3 +70,7 @@ To properly install this, run the `php spark migration -all` command in the term
 --generate keys
 openssl genrsa -out private_key.pem 2048
 openssl rsa -in private_key.pem -pubout -out public_key.pem
+
+# APP-SETTINGS-*.JSON
+
+The app-settings-*.json is required for this application to run. It contains the required configuration specific to the business running it. There may be multiple versions created, but the one that is used in running the application will be the one defined in .env APP_SETTINGS_FILE variable.

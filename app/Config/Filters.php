@@ -91,6 +91,7 @@ class Filters extends BaseConfig
                 'housemanship/*',
                 'examinations/*',
                 'activities/*',
+                'payment/*',
             ],
             'after' => [
                 'api/*',
@@ -109,6 +110,7 @@ class Filters extends BaseConfig
                 'examinations/*',
                 'activities/*',
                 'activities',
+                'payment/*',
             ]
         ],
     ];

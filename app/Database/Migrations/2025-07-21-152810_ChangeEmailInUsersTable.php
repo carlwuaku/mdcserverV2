@@ -9,7 +9,6 @@ class ChangeEmailInUsersTable extends Migration
     public function up()
     {
         if ($this->db->fieldExists('email', 'users')) {
-            // Modify the name field to be NOT NULL
             $this->forge->modifyColumn('users', [
                 'email' => [
                     'name' => 'email_address',

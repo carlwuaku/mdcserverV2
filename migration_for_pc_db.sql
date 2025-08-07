@@ -1796,3 +1796,28 @@ FROM
     );
 
 #END IMPORT HOUSEMANSHIP FACILITIES#
+#IMPORT PAYMENT FEES
+INSERT
+    IGNORE INTO ci4_pc2.`fees` (
+        `payer_type`,
+        `name`,
+        `rate`,
+        `created_on`,
+        `category`,
+        `service_code`,
+        `chart_of_account`,
+        `supports_variable_amount`,
+        `currency`
+    )
+SELECT
+    `payer_type`,
+    `name`,
+    `rate`,
+    `created_on`,
+    `category`,
+    `service_code`,
+    `chart_of_account`,
+    `supports_variable_amount`,
+    `currency`
+FROM
+    council.`bf_fees`;
