@@ -332,6 +332,7 @@ $routes->group("payment", ["namespace" => "App\Controllers", "filter" => "apiaut
     $routes->post("invoices", [PaymentsController::class, "createInvoice"], ["filter" => ["hasPermission:Create_Payment_Invoices"]]);
     $routes->post("invoices/preset", [PaymentsController::class, "createPresetInvoices"], ["filter" => ["hasPermission:Create_Payment_Invoices"]]);
     $routes->post("invoices/default-fees", [PaymentsController::class, "getInvoiceDefaultFees"], ["filter" => ["hasPermission:Create_Payment_Invoices"]]);
+    $routes->post("invoices/printout", [PaymentsController::class, "generateInvoicePrintouts"], ["filter" => ["hasPermission:Create_Payment_Invoices"]]);
     $routes->get("invoices", [PaymentsController::class, "getInvoices"], ["filter" => ["hasPermission:View_Payment_Invoices"]]);
     $routes->get("invoices/(:segment)", [PaymentsController::class, "getInvoice/$1"], ["filter" => ["hasPermission:View_Payment_Invoices"]]);
     $routes->put("invoices/manual-payment/(:segment)", [PaymentsController::class, "submitOfflinePayment/$1"], ["filter" => ["hasPermission:Submit_Invoice_Payments"]]);

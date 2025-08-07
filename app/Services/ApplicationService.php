@@ -514,7 +514,7 @@ class ApplicationService
 
         foreach ($initialStage['actions'] as $action) {
             try {
-                ApplicationFormActionHelper::runAction($action, $data);
+                ApplicationFormActionHelper::runAction((object) $action, $data);
             } catch (\Throwable $e) {
                 log_message('error', 'Initial stage action failed: ' . $e);
             }

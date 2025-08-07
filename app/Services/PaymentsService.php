@@ -14,6 +14,7 @@ use App\Models\Payments\InvoiceModel;
 use App\Models\Payments\InvoicePaymentOptionModel;
 use App\Models\Payments\PaymentFileUploadsModel;
 use App\Models\Payments\PaymentFileUploadsViewModel;
+use App\Models\PrintTemplateModel;
 use Exception;
 use CodeIgniter\Events\Events;
 
@@ -784,5 +785,46 @@ class PaymentsService
             'displayColumns' => $displayColumns,
             'columnFilters' => $this->paymentFileUploadsModel->getDisplayColumnFilters()
         ];
+    }
+
+    /**
+     * Generates a printout for the given invoices based on the given template.
+     * @param array $uuids The uuids of the invoices to generate a printout for
+     * @param string $templateName The name of the template to use
+     * @return array The generated printouts
+     * @throws \InvalidArgumentException If the template is not found
+     */
+    public function generateInvoicePrintouts(array $uuids, string $templateName)
+    {
+        //get the invoice details along with their items
+        /**
+         * @var array
+         */
+        $invoices = $this->invoiceModel->whereIn("uuid", $uuids)->get()->getResult();
+        /**
+         * @var array
+         */
+        $items = $this->invoiceLineItemModel->whereIn("invoice_uuid", $uuids)->get()->getResult();
+        $printTemplateModel = new PrintTemplateModel();
+
+        $template = $printTemplateModel->where(["template_name" => $templateName])->get()->getRow();
+        if (!$template) {
+            //TODO: consider creating a default template
+            throw new \InvalidArgumentException("Print template not found");
+            //
+        }
+        $results = [];
+        foreach ($invoices as $invoice) {
+            $invoice->items = array_filter($items, function ($item) use ($invoice) {
+                return $item->invoice_uuid === $invoice->uuid;
+            });
+            $templateEngineHelper = new TemplateEngineHelper();
+            $invoiceTemplate = $templateEngineHelper->process($template->template_content, $invoice);
+            $results[] = '<div class="page-break"> ' . $invoiceTemplate . '</div>';
+
+        }
+
+        return $results;
+
     }
 }

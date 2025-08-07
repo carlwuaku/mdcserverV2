@@ -1,5 +1,6 @@
 <?php
 namespace App\Helpers;
+
 class TemplateEngineHelper
 {
     /**
@@ -138,7 +139,10 @@ class TemplateEngineHelper
     {
         $data = (object) $data;
 
-        // Process in order: variables, resources, settings
+        // Process loops first (they might contain variables)
+        $template = $this->processLoops($template, $data);
+
+        // Then process in order: variables, resources, settings
         $template = $this->processVariables($template, $data);
         $template = $this->processResources($template);
         $template = $this->processSettings($template);
@@ -147,7 +151,60 @@ class TemplateEngineHelper
     }
 
     /**
+     * Process loop blocks in format:
+     * [#LOOP:array_property]
+     *   Template content with [item.property] variables
+     * [/LOOP]
+     */
+    private function processLoops(string $template, object $data): string
+    {
+        return preg_replace_callback(
+            '/\[#LOOP:([^\]]+)\](.*?)\[\/LOOP\]/s',
+            function ($matches) use ($data) {
+                $arrayProperty = trim($matches[1]);
+                $loopTemplate = $matches[2];
+                log_message('debug', 'Processing loop: ' . $loopTemplate);
+
+                // Get the array data
+                if (!property_exists($data, $arrayProperty) || !is_array($data->$arrayProperty)) {
+                    return ''; // Return empty if property doesn't exist or isn't an array
+                }
+
+                $arrayData = $data->$arrayProperty;
+                $result = '';
+
+                // Process each item in the array
+                foreach ($arrayData as $index => $item) {
+                    $itemResult = $loopTemplate;
+
+                    // Create context data for this iteration
+                    $loopData = (object) array_merge(
+                        (array) $data, // Include parent data
+                        [
+                            'item' => (object) $item,
+                            'index' => $index,
+                            'index1' => $index + 1, // 1-based index
+                            'first' => $index === 0,
+                            'last' => $index === count($arrayData) - 1,
+                            'count' => count($arrayData)
+                        ]
+                    );
+
+                    // Process variables in the loop template
+                    $itemResult = $this->processVariables($itemResult, $loopData);
+
+                    $result .= $itemResult;
+                }
+
+                return $result;
+            },
+            $template
+        );
+    }
+
+    /**
      * Process variables in format [variable::transformation||params]
+     * Now also handles nested properties like [item.name] or [user.address.city]
      */
     private function processVariables(string $template, object $data): string
     {
@@ -156,14 +213,16 @@ class TemplateEngineHelper
             $varName = $parts[0];
             $transformation = $parts[1] ?? null;
 
-            if (!property_exists($data, $varName)) {
+            // Handle nested properties (e.g., item.name, user.address.city)
+            $value = $this->getNestedProperty($data, $varName);
+
+            if ($value === null) {
                 return '';
             }
 
-            $value = $data->$varName;
-
             // Handle date fields - either by pattern match or explicit transformation
-            if ($this->isDateField($varName)) {
+            $finalPropertyName = $this->getFinalPropertyName($varName);
+            if ($this->isDateField($finalPropertyName)) {
                 $value = $this->formatDate($value);
             }
 
@@ -174,6 +233,36 @@ class TemplateEngineHelper
 
             return $value;
         }, $template);
+    }
+
+    /**
+     * Get nested property value using dot notation
+     */
+    private function getNestedProperty(object $data, string $propertyPath)
+    {
+        $properties = explode('.', $propertyPath);
+        $current = $data;
+
+        foreach ($properties as $property) {
+            if (is_object($current) && property_exists($current, $property)) {
+                $current = $current->$property;
+            } elseif (is_array($current) && isset($current[$property])) {
+                $current = $current[$property];
+            } else {
+                return null;
+            }
+        }
+
+        return $current;
+    }
+
+    /**
+     * Get the final property name from a nested path (for date field checking)
+     */
+    private function getFinalPropertyName(string $propertyPath): string
+    {
+        $properties = explode('.', $propertyPath);
+        return end($properties);
     }
 
     /**

@@ -366,7 +366,23 @@ class PaymentsController extends ResourceController
         }
     }
 
+    public function generateInvoicePrintouts()
+    {
+        try {
+            $uuids = $this->request->getVar("uuids");
+            $templateName = $this->request->getVar("template_name");
 
+            $results = $this->paymentsService->generateInvoicePrintouts($uuids, $templateName);
+
+            return $this->respond(['data' => $results, 'message' => 'Invoices generated successfully'], ResponseInterface::HTTP_OK);
+
+        } catch (\InvalidArgumentException $e) {
+            return $this->respond(['message' => $e->getMessage()], ResponseInterface::HTTP_BAD_REQUEST);
+        } catch (\Throwable $e) {
+            log_message("error", $e);
+            return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 
     private function extractRequestFilters(): array
     {

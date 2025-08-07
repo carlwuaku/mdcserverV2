@@ -44,7 +44,8 @@ class InvoiceModel extends MyBaseModel implements TableDisplayInterface
         'online_payment_status',
         'online_payment_response',
         'mda_branch_code',
-        'description'
+        'description',
+        'invoice_template'
     ];
 
     protected bool $allowEmptyInserts = false;

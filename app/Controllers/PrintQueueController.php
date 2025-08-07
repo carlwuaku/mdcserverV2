@@ -652,6 +652,37 @@ class PrintQueueController extends ResourceController
         }
     }
 
+    /**
+     * Create a new print queue item
+     * 
+     * @OA\Post(
+     *     path="/print-queue",
+     *     summary="Create a new print queue item",
+     *     tags={"Print Queue"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"object", "template_name", "department", "table_name"},
+     *             @OA\Property(property="object", type="object", example={"unique_id": "1234567890", "table_name": "users", "table_row_uuid": "1234567890"}),
+     *             @OA\Property(property="template_name", type="string", example="Invoice Template"),
+     *             @OA\Property(property="department", type="string", example="Accounting"),
+     *             @OA\Property(property="table_name", type="string", example="users")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Print queue created successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Print queue created successfully")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Bad request"
+     *     ),
+     *     security={{"bearerAuth": {}}}
+     * )
+     */
     public function createPrintQueue()
     {
         try {
