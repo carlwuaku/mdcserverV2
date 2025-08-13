@@ -6,12 +6,14 @@ use App\Helpers\Utils;
 use App\Models\PermissionsModel;
 use App\Models\RolePermissionsModel;
 use App\Models\RolesModel;
+use CodeIgniter\Events\Events;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 use CodeIgniter\Shield\Entities\User;
 use App\Models\UsersModel;
 use CodeIgniter\Database\MigrationRunner;
 use Google\ReCaptcha\ReCaptcha;
+use mysqli_sql_exception;
 use ReCaptcha\ReCaptcha as ReCaptchaReCaptcha;
 use App\Helpers\CacheHelper;
 use Vectorface\GoogleAuthenticator;
@@ -20,6 +22,7 @@ use App\Models\Auth\PasswordResetTokenModel;
 use App\Models\Auth\PasswordResetAttemptModel;
 use App\Helpers\EmailConfig;
 use App\Helpers\EmailHelper;
+use App\Helpers\TemplateEngineHelper;
 
 
 /**
@@ -301,12 +304,37 @@ class AuthController extends ResourceController
         $userObject->update($userData->id, [
             'two_fa_setup_token' => $secret
         ]);
-        //TODO: Send email to user
+        $this->send2FaSetupEmail($email, $userData->display_name, $secret, $qrCodeUrl);
+
         return $this->respond([
             'secret' => $secret, // User can manually enter this if they can't scan QR
             'qr_code_url' => $qrCodeUrl,
             'message' => 'Scan this QR code with Google Authenticator app'
         ], ResponseInterface::HTTP_OK);
+    }
+
+    private function send2FaSetupEmail($email, $displayName, $secret, $qrCodeUrl): void
+    {
+        try {
+            $settings = service("settings");
+            $messageTemplate = $settings->get(SETTING_2_FACTOR_AUTHENTICATION_SETUP_EMAIL_TEMPLATE);
+            $subject = $settings->get(SETTING_2_FACTOR_AUTHENTICATION_SETUP_EMAIL_SUBJECT);
+            if (empty($messageTemplate) || empty($subject)) {
+                throw new \Exception("Email template or subject for 2FA not found");
+            }
+            $templateEngine = new TemplateEngineHelper();
+            $message = $templateEngine->process($messageTemplate, ['qr_code_url' => $qrCodeUrl, 'secret' => $secret, 'display_name' => $displayName]);
+
+
+            $emailConfig = new EmailConfig($message, $subject, $email);
+
+
+            EmailHelper::sendEmail(emailConfig: $emailConfig);
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+
+
     }
 
     public function verifyAndEnableGoogleAuth()
@@ -350,23 +378,38 @@ class AuthController extends ResourceController
         }
         // Code is valid, save the secret to the user's record
 
-        // $userData->google_auth_secret = $secret;
-        // $userData->two_fa_setup_token = null; // Clear the setup token
-        // $userObject->save($userData);
         $userObject->update($userData->id, [
             'two_fa_setup_token' => null,
             'google_auth_secret' => $secret,
         ]);
-
+        $this->send2FaVerificationEmail($userData->email, $userData->display_name);
         return $this->respond([
             'message' => '2FA has been successfully enabled for your account'
         ], ResponseInterface::HTTP_OK);
     }
 
+    private function send2FaVerificationEmail($email, $displayName): void
+    {
+        try {
+            $settings = service("settings");
+            $messageTemplate = $settings->get(SETTING_2_FACTOR_AUTHENTICATION_VERIFICATION_EMAIL_TEMPLATE);
+            $subject = $settings->get(SETTING_2_FACTOR_AUTHENTICATION_VERIFICATION_EMAIL_SUBJECT);
+            if (empty($messageTemplate) || empty($subject)) {
+                throw new \Exception("Email template or subject for 2FA verification not found");
+            }
+            $templateEngine = new TemplateEngineHelper();
+            $message = $templateEngine->process($messageTemplate, ['display_name' => $displayName]);
+
+
+            $emailConfig = new EmailConfig($message, $subject, $email);
+            EmailHelper::sendEmail(emailConfig: $emailConfig);
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+    }
+
     public function disableGoogleAuth()
     {
-
-
         $userId = $this->request->getVar('user_id');
         $userObject = new UsersModel();
         $userData = $userObject->findById($userId);
@@ -375,10 +418,29 @@ class AuthController extends ResourceController
         // Remove 2FA
         $userData->google_auth_secret = null;
         $userObject->save($userData);
-
+        $this->send2FaDisabledEmail($userData->email, $userData->display_name);
         return $this->respond([
             'message' => '2FA has been successfully disabled for this account'
         ], ResponseInterface::HTTP_OK);
+    }
+
+    private function send2FaDisabledEmail($email, $displayName): void
+    {
+        try {
+            $settings = service("settings");
+            $messageTemplate = $settings->get(SETTING_2_FACTOR_AUTHENTICATION_DISABLED_EMAIL_TEMPLATE);
+            $subject = $settings->get(SETTING_2_FACTOR_AUTHENTICATION_DISABLED_EMAIL_SUBJECT);
+            if (empty($messageTemplate) || empty($subject)) {
+                throw new \Exception("Email template or subject for 2FA disabled not found");
+            }
+            $templateEngine = new TemplateEngineHelper();
+            $message = $templateEngine->process($messageTemplate, ['display_name' => $displayName]);
+
+            $emailConfig = new EmailConfig($message, $subject, $email);
+            EmailHelper::sendEmail(emailConfig: $emailConfig);
+        } catch (\Throwable $th) {
+            throw $th;
+        }
     }
 
 
@@ -815,7 +877,7 @@ class AuthController extends ResourceController
             $this->passwordResetTokenModel->insert($tokenData);
 
             // Send reset email
-            $this->sendResetEmail($user->email_address, $token, $user->username);
+            $this->sendResetEmail($user->email_address, $user->display_name, $token);
 
             // Log successful attempt
             $this->logResetAttempt($user->email_address, $ipAddress, $userAgent, true);
@@ -898,11 +960,15 @@ class AuthController extends ResourceController
             // Mark token as used
             $this->passwordResetTokenModel->delete($tokenRecord->id);
 
-            // Optionally: Add to password history
+            // TODO: Add to password history
             // $this->addToPasswordHistory($user->id, $hashedPassword);
+            try {
+                // Optionally: Send confirmation email
+                $this->sendPasswordChangeConfirmationEmail($user->email, $user->display_name);
 
-            // Optionally: Send confirmation email
-            // $this->sendPasswordChangeConfirmation($user->email, $user->username);
+            } catch (\Throwable $th) {
+                log_message('error', 'Error sending password change confirmation email: ' . $th);
+            }
 
             return $this->respond([
                 'message' => 'Password reset successfully. Please login with your new credentials.',
@@ -915,6 +981,28 @@ class AuthController extends ResourceController
             return $this->respond([
                 'message' => 'An error occurred while resetting your password. Please try again.'
             ], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    private function sendPasswordChangeConfirmationEmail($email, $displayName): void
+    {
+        try {
+            $settings = service("settings");
+            $messageTemplate = $settings->get(SETTING_RESET_PASSWORD_CONFIRMATION_EMAIL_TEMPLATE);
+            $subject = $settings->get(SETTING_RESET_PASSWORD_CONFIRMATION_EMAIL_SUBJECT);
+            if (empty($messageTemplate) || empty($subject)) {
+                throw new \Exception("Email template or subject for password reset confirmation not found");
+            }
+            $templateEngine = new TemplateEngineHelper();
+            $message = $templateEngine->process($messageTemplate, ['display_name' => $displayName]);
+
+
+            $emailConfig = new EmailConfig($message, $subject, $email);
+
+
+            EmailHelper::sendEmail(emailConfig: $emailConfig);
+        } catch (\Throwable $th) {
+            throw $th;
         }
     }
 
@@ -1003,20 +1091,26 @@ class AuthController extends ResourceController
     /**
      * Send password reset email
      */
-    private function sendResetEmail($email, $token, $username): void
+    private function sendResetEmail($email, $displayName, $token): void
     {
-        //TODO: save template in settings
+        try {
+            $settings = service("settings");
+            $messageTemplate = $settings->get(SETTING_RESET_PASSWORD_EMAIL_TEMPLATE);
+            $subject = $settings->get(SETTING_RESET_PASSWORD_EMAIL_SUBJECT);
+            if (empty($messageTemplate) || empty($subject)) {
+                throw new \Exception("Email template or subject not found");
+            }
+            $templateEngine = new TemplateEngineHelper();
+            $message = $templateEngine->process($messageTemplate, ['token' => $token, 'display_name' => $displayName]);
 
-        $message = "Hello {$username},\n\n";
-        $message .= "You have requested to reset your password. Please enter this code <b>$token</b> to proceed.";
-        $message .= "This token will expire in 15 minutes.\n\n";
-        $message .= "If you did not request this password reset, please ignore this email.\n\n";
 
-        $emailConfig = new EmailConfig($message, "Password Reset Request", $email);
+            $emailConfig = new EmailConfig($message, $subject, $email);
 
 
-        EmailHelper::sendEmail(emailConfig: $emailConfig);
-
+            EmailHelper::sendEmail(emailConfig: $emailConfig);
+        } catch (\Throwable $th) {
+            throw $th;
+        }
     }
 
     /**
@@ -1317,6 +1411,17 @@ class AuthController extends ResourceController
             $data
         );
         $userObject->save($userEntityObject);
+        try {
+            try {
+                $this->sendNewUserEmail($userEntityObject->email_address, $userEntityObject->display_name, $userEntityObject->username, $userEntityObject->user_type);
+            } catch (\Throwable $th) {
+                log_message('error', "Error triggering user added event for user id: " . $userEntityObject->email_address);
+                log_message('error', $th);
+            }
+        } catch (\Throwable $th) {
+            log_message('error', "Error triggering user added event for user id: " . $userEntityObject->email_address);
+            log_message('error', $th);
+        }
 
         $id = $userObject->getInsertID();
         return $this->respond(['message' => 'User created successfully', 'data' => $id], ResponseInterface::HTTP_OK);
@@ -1390,41 +1495,89 @@ class AuthController extends ResourceController
                     ];
                     continue;
                 }
-                $userData['email'] = $userData['email_address'];
+                $userData['email_address'] = $userData['email'];
                 try {
                     $userEntityObject = new User($userData);
 
                     $userObject->save($userEntityObject);
                     $id = $userObject->getInsertID();
+                    try {
+                        $this->sendNewUserEmail($userEntityObject->email_address, $userEntityObject->display_name, $userEntityObject->username, $userEntityObject->user_type);
+                    } catch (\Throwable $th) {
+                        log_message('error', "Error triggering user added event for user id: " . $userEntityObject->email_address);
+                        log_message('error', $th);
+                    }
 
                     $results[] = [
                         'status' => 'success',
                         'message' => 'User created successfully',
-                        'data' => $id
+                        'data' => $userData['username']
+                    ];
+                } catch (mysqli_sql_exception $e) {
+                    log_message('error', $e);
+                    $results[] = [
+                        'status' => 'error',
+                        'message' => $e->getMessage(),
+                        'data' => $userData['username'] ?? 'Unknown user'
                     ];
                 } catch (\Exception $e) {
                     $results[] = [
                         'status' => 'error',
-                        'message' => $e,
+                        'message' => $e->getMessage(),
                         'data' => $userData['username'] ?? 'Unknown user'
                     ];
                 }
             }
 
             // If all users failed, return a bad request status
-            if (
-                count(array_filter($results, function ($item) {
-                    return $item['status'] === 'error';
-                })) === count($results)
-            ) {
-                return $this->respond(['message' => 'All user creations failed', 'details' => $results], ResponseInterface::HTTP_BAD_REQUEST);
-            }
+            // if (
+            //     count(array_filter($results, function ($item) {
+            //         return $item['status'] === 'error';
+            //     })) === count($results)
+            // ) {
+            //     return $this->respond(['message' => 'All user creations failed', 'details' => $results], ResponseInterface::HTTP_BAD_REQUEST);
+            // }
 
             // Otherwise return success with details
             return $this->respond(['message' => 'Users processed', 'details' => $results], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
             log_message('error', $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+    }
+
+    private function sendNewUserEmail($email, $displayName, $username, $userType): void
+    {
+        try {
+            $settings = service("settings");
+            $userTypeMessagesMap = [
+                "admin" => ["template" => SETTING_USER_ADMIN_ADDED_EMAIL_TEMPLATE, "subject" => SETTING_USER_ADMIN_ADDED_EMAIL_SUBJECT],
+                "cpd" => ["template" => SETTING_USER_CPD_ADDED_EMAIL_TEMPLATE, "subject" => SETTING_USER_CPD_ADDED_EMAIL_SUBJECT],
+                "license" => ["template" => SETTING_USER_LICENSE_ADDED_EMAIL_TEMPLATE, "subject" => SETTING_USER_LICENSE_ADDED_EMAIL_SUBJECT],
+                "student" => ["template" => SETTING_USER_STUDENT_ADDED_EMAIL_TEMPLATE, "subject" => SETTING_USER_STUDENT_ADDED_EMAIL_SUBJECT],
+                "exam_candidate" => ["template" => SETTING_USER_EXAM_CANDIDATE_ADDED_EMAIL_TEMPLATE, "subject" => SETTING_USER_EXAM_CANDIDATE_ADDED_EMAIL_SUBJECT],
+                "housemanship_facility" => ["template" => SETTING_USER_HOUSEMANSHIP_FACILITY_ADDED_EMAIL_TEMPLATE, "subject" => SETTING_USER_HOUSEMANSHIP_FACILITY_ADDED_EMAIL_SUBJECT],
+                "guest" => ["template" => SETTING_USER_GUEST_ADDED_EMAIL_TEMPLATE, "subject" => SETTING_USER_GUEST_ADDED_EMAIL_SUBJECT],
+            ];
+            $userMessageType = $userTypeMessagesMap[$userType] ?? null;
+            if (empty($userMessageType)) {
+                throw new \Exception("Email template or subject not set");
+            }
+            $messageTemplate = $settings->get($userMessageType['template']);
+            $subject = $settings->get($userMessageType['template']);
+            if (empty($messageTemplate) || empty($subject)) {
+                throw new \Exception("Email template or subject not found");
+            }
+            $templateEngine = new TemplateEngineHelper();
+            $message = $templateEngine->process($messageTemplate, ['display_name' => $displayName, 'username' => $username]);
+
+
+            $emailConfig = new EmailConfig($message, $subject, $email);
+
+
+            EmailHelper::sendEmail(emailConfig: $emailConfig);
+        } catch (\Throwable $th) {
+            throw $th;
         }
     }
 

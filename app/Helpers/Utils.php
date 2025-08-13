@@ -175,7 +175,7 @@ class Utils
 
     /**
      * get the value for a key in app settings
-     * @param string $license
+     * @param string $key
      * @return array
      */
     public static function getAppSettings(string $key = null): ?array
@@ -188,6 +188,27 @@ class Utils
             return $data[$key] ?? null;
         }
         return $data;
+    }
+
+    /**
+     * Retrieve multiple app settings based on an array of keys.
+     *
+     * @param array $keys An array of keys to fetch from the app settings.
+     * @return array|null An associative array of key-value pairs from the app settings, 
+     *                    or null if the settings file cannot be read.
+     */
+
+    public static function getMultipleAppSettings(array $keys): ?array
+    {
+        /**
+         * @var array
+         */
+        $data = json_decode(file_get_contents(self::getAppSettingsFileName()), true);
+        $result = [];
+        foreach ($keys as $key) {
+            $result[$key] = $data[$key] ?? null;
+        }
+        return $result;
     }
 
     public static function setAppSettings(string $key, $value)

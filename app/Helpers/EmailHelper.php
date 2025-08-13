@@ -157,7 +157,6 @@ class EmailHelper extends Utils
     {
         $emailQueueModel = new \App\Models\EmailQueueModel();
         $emailQueueLogModel = new \App\Models\EmailQueueLogModel();
-        log_message('info', 'Sending email' . json_encode($emailConfig));
         $method = getenv('EMAIL_METHOD');
         $result = null;
         //if not production environment, only log the email and do not send it if it's not in the list of allowed emails from config
