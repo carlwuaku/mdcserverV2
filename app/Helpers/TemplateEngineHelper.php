@@ -130,7 +130,7 @@ class TemplateEngineHelper
     }
 
     /**
-     * Main template processing method
+     * Main template processing method. By default, the institution_name, institution_logo, institution_address,institution_website, institution_email, institution_phone and portal_url are added as variables.
      * @param string $template
      * @param array|object $data
      * @return string
@@ -138,7 +138,26 @@ class TemplateEngineHelper
     public function process(string $template, array|object $data): string
     {
         $data = (object) $data;
+        //load institution data
+        $appSettings = Utils::getMultipleAppSettings([
+            "institutionName",
+            "institutionLogo",
+            "institutionAddress",
+            "institutionEmail",
+            "institutionPhone",
+            "portalUrl",
+            "institutionWebsite"
+        ]);
 
+        $data->institution_name = $appSettings["institutionName"];
+        $data->institution_logo = $appSettings["institutionLogo"];
+        $data->institution_address = $appSettings["institutionAddress"];
+        $data->institution_email = $appSettings["institutionEmail"];
+        $data->institution_phone = $appSettings["institutionPhone"];
+        $data->portal_url = $appSettings["portalUrl"];
+        $data->institution_website = $appSettings["institutionWebsite"];
+        $data->current_year = date('Y');
+        log_message('debug', 'Processing template: ' . print_r($data, true));
         // Process loops first (they might contain variables)
         $template = $this->processLoops($template, $data);
 

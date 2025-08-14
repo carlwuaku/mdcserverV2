@@ -118,7 +118,6 @@ class PrintQueueController extends ResourceController
 
             // Convert to HTML
             $htmlWriter = IOFactory::createWriter($phpWord, 'HTML');
-            $htmlWriter->setUseDiskCaching(true);
             $htmlWriter->save($htmlPath);
 
             // Read the generated HTML file

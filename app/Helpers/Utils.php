@@ -175,7 +175,7 @@ class Utils
 
     /**
      * get the value for a key in app settings
-     * @param string $license
+     * @param string $key
      * @return array
      */
     public static function getAppSettings(string $key = null): ?array
@@ -188,6 +188,27 @@ class Utils
             return $data[$key] ?? null;
         }
         return $data;
+    }
+
+    /**
+     * Retrieve multiple app settings based on an array of keys.
+     *
+     * @param array $keys An array of keys to fetch from the app settings.
+     * @return array|null An associative array of key-value pairs from the app settings, 
+     *                    or null if the settings file cannot be read.
+     */
+
+    public static function getMultipleAppSettings(array $keys): ?array
+    {
+        /**
+         * @var array
+         */
+        $data = json_decode(file_get_contents(self::getAppSettingsFileName()), true);
+        $result = [];
+        foreach ($keys as $key) {
+            $result[$key] = $data[$key] ?? null;
+        }
+        return $result;
     }
 
     public static function setAppSettings(string $key, $value)
@@ -899,6 +920,105 @@ class Utils
         } else {
             return "An error occurred. Please make sure the data is valid and is not a duplicate operation, and try again. ";
         }
+    }
+
+    /**
+     * Parse MySQL exceptions and return secure but reasonable error messages
+     * This function takes raw MySQL error messages and converts them to user-friendly messages
+     * while maintaining security by not exposing sensitive database information
+     * 
+     * @param string $errorMessage The raw MySQL error message
+     * @return string A user-friendly error message
+     */
+    public static function parseMysqlExceptions(string $errorMessage): string
+    {
+        // Duplicate entry errors - extract the duplicate value and field name
+        if (preg_match("/Duplicate entry '(.+?)' for key '(.+?)'/", $errorMessage, $matches)) {
+            $duplicateValue = $matches[1];
+            $keyName = $matches[2];
+            
+            // Common key name mappings to user-friendly names
+            $fieldMappings = [
+                'username' => 'username',
+                'email' => 'email address',
+                'license_number' => 'license number',
+                'phone' => 'phone number',
+                'national_id' => 'national ID',
+                'passport_number' => 'passport number',
+                'registration_number' => 'registration number',
+                'PRIMARY' => 'record'
+            ];
+            
+            $friendlyFieldName = $fieldMappings[$keyName] ?? 'value';
+            return "The {$friendlyFieldName} '{$duplicateValue}' already exists.";
+        }
+        
+        // Foreign key constraint errors
+        if (preg_match("/Cannot add or update a child row: a foreign key constraint fails/", $errorMessage)) {
+            return "Cannot perform this operation because it would violate data integrity. Please ensure all referenced data exists.";
+        }
+        
+        if (preg_match("/Cannot delete or update a parent row: a foreign key constraint fails/", $errorMessage)) {
+            return "Cannot delete this record because it is referenced by other data. Please remove the related records first.";
+        }
+        
+        // Data truncation errors
+        if (preg_match("/Data too long for column '(.+?)'/", $errorMessage, $matches)) {
+            $columnName = str_replace('_', ' ', $matches[1]);
+            return "The value for '{$columnName}' is too long. Please provide a shorter value.";
+        }
+        
+        // Incorrect data type errors
+        if (preg_match("/Incorrect .+ value: '(.+?)' for column '(.+?)'/", $errorMessage, $matches)) {
+            $value = $matches[1];
+            $columnName = str_replace('_', ' ', $matches[2]);
+            return "Invalid value '{$value}' for field '{$columnName}'. Please check the format and try again.";
+        }
+        
+        // Column cannot be null errors
+        if (preg_match("/Column '(.+?)' cannot be null/", $errorMessage, $matches)) {
+            $columnName = str_replace('_', ' ', $matches[1]);
+            return "The field '{$columnName}' is required and cannot be empty.";
+        }
+        
+        // Unknown column errors
+        if (preg_match("/Unknown column '(.+?)' in '(.+?)'/", $errorMessage, $matches)) {
+            return "Invalid field specified in the request. Please check your data and try again.";
+        }
+        
+        // Table doesn't exist errors
+        if (preg_match("/Table '(.+?)' doesn't exist/", $errorMessage)) {
+            return "The requested resource is not available. Please contact support.";
+        }
+        
+        // Connection errors
+        if (preg_match("/(Connection refused|Can't connect to MySQL server)/", $errorMessage)) {
+            return "Database connection error. Please try again later or contact support.";
+        }
+        
+        // Access denied errors
+        if (preg_match("/Access denied for user/", $errorMessage)) {
+            return "Database access error. Please contact support.";
+        }
+        
+        // Out of range errors
+        if (preg_match("/Out of range value for column '(.+?)'/", $errorMessage, $matches)) {
+            $columnName = str_replace('_', ' ', $matches[1]);
+            return "The value for '{$columnName}' is outside the allowed range.";
+        }
+        
+        // Deadlock errors
+        if (preg_match("/Deadlock found when trying to get lock/", $errorMessage)) {
+            return "The operation could not be completed due to system contention. Please try again.";
+        }
+        
+        // Lock wait timeout
+        if (preg_match("/Lock wait timeout exceeded/", $errorMessage)) {
+            return "The operation timed out. Please try again.";
+        }
+        
+        // Default fallback for any other MySQL errors
+        return "A database error occurred. Please verify your data is correct and try again. If the problem persists, contact support.";
     }
 
     /**

@@ -5,6 +5,13 @@
     "logo": "assets/images/pc-logo.png",
     "defaultEmailSenderEmail": "info@pcghana.org",
     "defaultEmailSenderName": "Pharmacy Council Ghana",
+    "institutionName": "Pharmacy Council Ghana",
+    "institutionLogo": "https://testmanagement.pcghana.org/assets/images/pc-logo.png",
+    "institutionAddress": "P.O. Box 115, Accra, Ghana",
+    "institutionEmail": "info@pcghana.org",
+    "institutionPhone": "+233 302 302 302",
+    "institutionWebsite": "https://pcghana.org",
+    "portalUrl": "https://practitioners.pharmacycouncilghana.org",
     "sidebarMenu": [
         {
             "title": "Dashboard",

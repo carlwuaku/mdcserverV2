@@ -5,6 +5,13 @@
     "logo": "assets/images/logo.png",
     "defaultEmailSenderEmail": "info@mdcghana.org",
     "defaultEmailSenderName": "MDC Ghana",
+    "institutionName": "Medical & Dental Council Ghana",
+    "institutionLogo": "assets/images/logo.png",
+    "institutionAddress": "P.O. Box 115, Accra, Ghana",
+    "institutionEmail": "info@mdcghana.org",
+    "institutionPhone": "+233 302 302 302",
+    "institutionWebsite": "https://www.mdcghana.org",
+    "portalUrl": "https://portal.mdcghana.org",
     "sidebarMenu": [
         {
             "title": "Dashboard",

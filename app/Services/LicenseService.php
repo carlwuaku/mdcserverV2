@@ -100,6 +100,8 @@ class LicenseService
 
         $changes = implode(", ", Utils::compareObjects($oldData, $data));
         $licenseUpdateData = $model->createArrayFromAllowedFields($data);
+        //make sure the district is not an empty string
+        $licenseUpdateData['district'] = $licenseUpdateData['district'] ? $licenseUpdateData['district'] : null;
 
         $model->db->transException(true)->transStart();
 

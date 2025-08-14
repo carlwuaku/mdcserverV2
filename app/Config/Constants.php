@@ -128,4 +128,35 @@ define("VALID_EXAMINATION_RESULTS", ["Pass", "Fail", "Absent"]);
 define("VALID_PAYMENT_INVOICE_STATUSES", ['Pending', 'Paid', 'Overdue', 'Cancelled', 'Payment Approved']);
 define('EVENT_INVOICE_CREATED', 'invoice_created');
 
+define("SETTING_RESET_PASSWORD_EMAIL_TEMPLATE", "General.reset_password_email_template");
+define("SETTING_RESET_PASSWORD_EMAIL_SUBJECT", "General.reset_password_email_subject");
+define("SETTING_RESET_PASSWORD_CONFIRMATION_EMAIL_TEMPLATE", "General.reset_password_confirmation_email_template");
+define("SETTING_RESET_PASSWORD_CONFIRMATION_EMAIL_SUBJECT", "General.reset_password_confirmation_email_subject");
+define("SETTING_2_FACTOR_AUTHENTICATION_SETUP_EMAIL_TEMPLATE", "General.two_factor_authentication_setup_email_template");
+define("SETTING_2_FACTOR_AUTHENTICATION_SETUP_EMAIL_SUBJECT", "General.two_factor_authentication_setup_email_subject");
+define("SETTING_2_FACTOR_AUTHENTICATION_VERIFICATION_EMAIL_TEMPLATE", "General.two_factor_authentication_verification_email_template");
+define("SETTING_2_FACTOR_AUTHENTICATION_VERIFICATION_EMAIL_SUBJECT", "General.two_factor_authentication_verification_email_subject");
+define("SETTING_2_FACTOR_AUTHENTICATION_DISABLED_EMAIL_TEMPLATE", "General.two_factor_authentication_disabled_email_template");
+define("SETTING_2_FACTOR_AUTHENTICATION_DISABLED_EMAIL_SUBJECT", "General.two_factor_authentication_disabled_email_subject");
+define("SETTING_USER_ADMIN_ADDED_EMAIL_TEMPLATE", "General.user_admin_added_email_template");
+define("SETTING_USER_ADMIN_ADDED_EMAIL_SUBJECT", "General.user_admin_added_email_subject");
+define("SETTING_USER_LICENSE_ADDED_EMAIL_TEMPLATE", "General.user_license_added_email_template");
+define("SETTING_USER_LICENSE_ADDED_EMAIL_SUBJECT", "General.user_license_added_email_subject");
+define("SETTING_USER_CPD_ADDED_EMAIL_TEMPLATE", "General.user_cpd_added_email_template");
+define("SETTING_USER_CPD_ADDED_EMAIL_SUBJECT", "General.user_cpd_added_email_subject");
+define("SETTING_USER_STUDENT_ADDED_EMAIL_TEMPLATE", "General.user_student_added_email_template");
+define("SETTING_USER_STUDENT_ADDED_EMAIL_SUBJECT", "General.user_student_added_email_subject");
+define("SETTING_USER_GUEST_ADDED_EMAIL_TEMPLATE", "General.user_guest_added_email_template");
+define("SETTING_USER_GUEST_ADDED_EMAIL_SUBJECT", "General.user_guest_added_email_subject");
+define("SETTING_USER_HOUSEMANSHIP_FACILITY_ADDED_EMAIL_TEMPLATE", "General.user_housemanship_facility_added_email_template");
+define("SETTING_USER_HOUSEMANSHIP_FACILITY_ADDED_EMAIL_SUBJECT", "General.user_housemanship_facility_added_email_subject");
+define("SETTING_USER_EXAM_CANDIDATE_ADDED_EMAIL_TEMPLATE", "General.user_exam_candidate_added_email_template");
+define("SETTING_USER_EXAM_CANDIDATE_ADDED_EMAIL_SUBJECT", "General.user_exam_candidate_added_email_subject");
+define("SETTING_EMAIL_HEADER_AND_FOOTER_TEMPLATE", "General.email_header_and_footer_template");
+define("SETTING_PASSWORD_RESET_TOKEN_TIMEOUT", "General.password_reset_token_timeout");
+
+
+
+define("EVENT_USER_ADDED", "user_added");
+
 
