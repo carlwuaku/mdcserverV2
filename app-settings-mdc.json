@@ -17,12 +17,14 @@
             "title": "Dashboard",
             "url": "/dashboard",
             "icon": "dashboard",
+            "color": "indigo",
             "children": []
         },
         {
             "title": "Search",
             "url": "/search",
             "icon": "search",
+            "color": "indigo",
             "children": []
         },
         {
@@ -30,6 +32,7 @@
             "active_children": false,
             "url": "",
             "icon": "auto_stories_outlined",
+            "color": "deep-purple",
             "children": [
                 {
                     "title": "View/Search CPD Topics",
@@ -65,6 +68,7 @@
             "active_children": false,
             "url": "",
             "icon": "list_alt",
+            "color": "amber",
             "children": [
                 {
                     "title": "Manage Applications",
@@ -91,6 +95,7 @@
             "active_children": false,
             "url": "",
             "icon": "person_outlined",
+            "color": "green",
             "children": [
                 {
                     "title": "View/Search Licenses",
@@ -135,6 +140,7 @@
             "active_children": false,
             "url": "",
             "icon": "person_outlined",
+            "color": "green",
             "children": [
                 {
                     "title": "View/Search Licenses",
@@ -179,6 +185,7 @@
             "active_children": false,
             "url": "",
             "icon": "list_alt",
+            "color": "green",
             "children": [
                 {
                     "title": "Dashboard",
@@ -223,6 +230,7 @@
             "active_children": false,
             "url": "",
             "icon": "medical_services",
+            "color": "pink",
             "children": [
                 {
                     "title": "View/Search Postings",
@@ -291,6 +299,7 @@
             "active_children": false,
             "url": "",
             "icon": "assignment",
+            "color": "purple",
             "children": [
                 {
                     "title": "View/Search Exams",
@@ -330,6 +339,7 @@
             "active_children": false,
             "url": "",
             "icon": "assignment",
+            "color": "black",
             "children": [
                 {
                     "title": "Add new fee",
@@ -362,6 +372,7 @@
             "active_children": false,
             "url": "",
             "icon": "mail",
+            "color": "deep-orange",
             "children": [
                 {
                     "title": "Dashboard",
@@ -388,6 +399,7 @@
             "active_children": false,
             "url": "",
             "icon": "print",
+            "color": "blue",
             "children": [
                 {
                     "title": "View Templates",
@@ -408,6 +420,7 @@
             "active_children": false,
             "url": "",
             "icon": "settings",
+            "color": "indigo",
             "children": [
                 {
                     "title": "New User",
@@ -2416,7 +2429,7 @@
             "active_children": false,
             "url": "/applications/application-types",
             "icon": "person_outlined",
-            "color": "pink",
+            "color": "green",
             "children": [
                 {
                     "title": "New Provisional Registrations",
@@ -2523,7 +2536,7 @@
             "active_children": false,
             "url": "/applications/application-types",
             "icon": "list_alt",
-            "color": "purple",
+            "color": "green",
             "children": [
                 {
                     "title": "New Provisional Registrations",
@@ -2630,7 +2643,7 @@
             "active_children": false,
             "url": "/cpd",
             "icon": "list_alt",
-            "color": "indigo",
+            "color": "deep-purple",
             "children": [
                 {
                     "title": "Submissions pending approval",

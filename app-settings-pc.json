@@ -17,19 +17,22 @@
             "title": "Dashboard",
             "url": "/dashboard",
             "icon": "dashboard",
-            "children": []
+            "children": [],
+            "color": "indigo"
         },
         {
             "title": "Search",
             "url": "/search",
             "icon": "search",
-            "children": []
+            "children": [],
+            "color": "indigo"
         },
         {
             "title": "CPD",
             "active_children": false,
             "url": "",
             "icon": "auto_stories_outlined",
+            "color": "deep-purple",
             "children": [
                 {
                     "title": "View/Search CPD Topics",
@@ -65,6 +68,7 @@
             "active_children": false,
             "url": "",
             "icon": "list_alt",
+            "color": "amber",
             "children": [
                 {
                     "title": "Manage Applications",
@@ -87,10 +91,11 @@
             ]
         },
         {
-            "title": "Pharmacists/Pharmacy Technicians",
+            "title": "Pharmacists / Technicians",
             "active_children": false,
             "url": "",
             "icon": "person_outlined",
+            "color": "green",
             "children": [
                 {
                     "title": "View/Search Pharmacist/Technician",
@@ -138,6 +143,7 @@
             "active_children": false,
             "url": "",
             "icon": "person_outlined",
+            "color": "green",
             "children": [
                 {
                     "title": "View/Search Pharmacies",
@@ -185,6 +191,7 @@
             "active_children": false,
             "url": "",
             "icon": "person_outlined",
+            "color": "green",
             "children": [
                 {
                     "title": "View/Search OTCMS",
@@ -232,6 +239,7 @@
             "active_children": false,
             "url": "",
             "icon": "medical_services",
+            "color": "pink",
             "children": [
                 {
                     "title": "View/Search Postings",
@@ -300,6 +308,7 @@
             "active_children": false,
             "url": "",
             "icon": "assignment",
+            "color": "purple",
             "children": [
                 {
                     "title": "View/Search Exams",
@@ -339,6 +348,7 @@
             "active_children": false,
             "url": "",
             "icon": "payments",
+            "color": "black",
             "children": [
                 {
                     "title": "Add new fee",
@@ -374,6 +384,7 @@
             "active_children": false,
             "url": "",
             "icon": "mail",
+            "color": "deep-orange",
             "children": [
                 {
                     "title": "Dashboard",
@@ -400,6 +411,7 @@
             "active_children": false,
             "url": "",
             "icon": "print",
+            "color": "blue",
             "children": [
                 {
                     "title": "View Templates",
@@ -420,6 +432,7 @@
             "active_children": false,
             "url": "",
             "icon": "settings",
+            "color": "indigo",
             "children": [
                 {
                     "title": "New User",
@@ -3285,7 +3298,7 @@
             "title": "Practitioners",
             "active_children": false,
             "url": "/applications/application-types",
-            "icon": "list_alt",
+            "icon": "person_outlined",
             "color": "green",
             "children": [
                 {
@@ -3342,8 +3355,8 @@
             "title": "Continuous Professional Development (CPD)",
             "active_children": false,
             "url": "/cpd",
-            "icon": "list_alt",
-            "color": "indigo",
+            "icon": "auto_stories_outlined",
+            "color": "deep-purple",
             "children": [
                 {
                     "title": "Submissions pending approval",
@@ -3368,7 +3381,7 @@
             "title": "Housemanship",
             "active_children": false,
             "url": "/housemanship/postings",
-            "icon": "auto_stories_outlined",
+            "icon": "medical_services",
             "color": "pink",
             "children": [
                 {
