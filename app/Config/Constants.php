@@ -152,6 +152,8 @@ define("SETTING_USER_HOUSEMANSHIP_FACILITY_ADDED_EMAIL_TEMPLATE", "General.user_
 define("SETTING_USER_HOUSEMANSHIP_FACILITY_ADDED_EMAIL_SUBJECT", "General.user_housemanship_facility_added_email_subject");
 define("SETTING_USER_EXAM_CANDIDATE_ADDED_EMAIL_TEMPLATE", "General.user_exam_candidate_added_email_template");
 define("SETTING_USER_EXAM_CANDIDATE_ADDED_EMAIL_SUBJECT", "General.user_exam_candidate_added_email_subject");
+define("SETTING_EMAIL_HEADER_AND_FOOTER_TEMPLATE", "General.email_header_and_footer_template");
+define("SETTING_PASSWORD_RESET_TOKEN_TIMEOUT", "General.password_reset_token_timeout");
 
 
 

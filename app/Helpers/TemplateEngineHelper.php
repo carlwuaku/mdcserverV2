@@ -130,7 +130,7 @@ class TemplateEngineHelper
     }
 
     /**
-     * Main template processing method. By default, the institution_name, institution_logo, institution_address, institution_email, institution_phone and portal_url are added as variables.
+     * Main template processing method. By default, the institution_name, institution_logo, institution_address,institution_website, institution_email, institution_phone and portal_url are added as variables.
      * @param string $template
      * @param array|object $data
      * @return string
@@ -156,6 +156,8 @@ class TemplateEngineHelper
         $data->institution_phone = $appSettings["institutionPhone"];
         $data->portal_url = $appSettings["portalUrl"];
         $data->institution_website = $appSettings["institutionWebsite"];
+        $data->current_year = date('Y');
+        log_message('debug', 'Processing template: ' . print_r($data, true));
         // Process loops first (they might contain variables)
         $template = $this->processLoops($template, $data);
 

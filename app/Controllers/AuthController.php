@@ -824,8 +824,11 @@ class AuthController extends ResourceController
         $username = $this->request->getVar('username');
         $ipAddress = $this->request->getIPAddress();
         $userAgent = $this->request->getUserAgent()->getAgentString();
+
+        $settings = service("settings");
+        $timeoutSettingValue = $settings->get(SETTING_PASSWORD_RESET_TOKEN_TIMEOUT);
         // Set expiration
-        $timeout = 15;
+        $timeout = $timeoutSettingValue ? (int) $timeoutSettingValue : 15;
         $expiresAt = Time::now()->addMinutes($timeout);
 
         // Check rate limiting (max 5 attempts per email per hour)
@@ -877,7 +880,7 @@ class AuthController extends ResourceController
             $this->passwordResetTokenModel->insert($tokenData);
 
             // Send reset email
-            $this->sendResetEmail($user->email_address, $user->display_name, $token);
+            $this->sendResetEmail($user->email_address, $user->display_name, $token, $timeout);
 
             // Log successful attempt
             $this->logResetAttempt($user->email_address, $ipAddress, $userAgent, true);
@@ -1091,7 +1094,7 @@ class AuthController extends ResourceController
     /**
      * Send password reset email
      */
-    private function sendResetEmail($email, $displayName, $token): void
+    private function sendResetEmail($email, $displayName, $token, $timeout): void
     {
         try {
             $settings = service("settings");
@@ -1101,7 +1104,7 @@ class AuthController extends ResourceController
                 throw new \Exception("Email template or subject not found");
             }
             $templateEngine = new TemplateEngineHelper();
-            $message = $templateEngine->process($messageTemplate, ['token' => $token, 'display_name' => $displayName]);
+            $message = $templateEngine->process($messageTemplate, ['token' => $token, 'display_name' => $displayName, 'timeout' => $timeout]);
 
 
             $emailConfig = new EmailConfig($message, $subject, $email);
@@ -1513,32 +1516,24 @@ class AuthController extends ResourceController
                         'message' => 'User created successfully',
                         'data' => $userData['username']
                     ];
-                } catch (mysqli_sql_exception $e) {
+                } catch (\CodeIgniter\Database\Exceptions\DatabaseException $e) {
                     log_message('error', $e);
                     $results[] = [
                         'status' => 'error',
-                        'message' => $e->getMessage(),
+                        'message' => Utils::parseMysqlExceptions($e->getMessage()),
                         'data' => $userData['username'] ?? 'Unknown user'
                     ];
                 } catch (\Exception $e) {
+                    log_message('error', $e);
                     $results[] = [
                         'status' => 'error',
-                        'message' => $e->getMessage(),
+                        'message' => 'An error occurred. Please make sure the data is valid and is not a duplicate operation, and try again. ',
                         'data' => $userData['username'] ?? 'Unknown user'
                     ];
                 }
             }
 
-            // If all users failed, return a bad request status
-            // if (
-            //     count(array_filter($results, function ($item) {
-            //         return $item['status'] === 'error';
-            //     })) === count($results)
-            // ) {
-            //     return $this->respond(['message' => 'All user creations failed', 'details' => $results], ResponseInterface::HTTP_BAD_REQUEST);
-            // }
 
-            // Otherwise return success with details
             return $this->respond(['message' => 'Users processed', 'details' => $results], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
             log_message('error', $th);

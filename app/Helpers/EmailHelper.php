@@ -172,6 +172,12 @@ class EmailHelper extends Utils
             }
             return true;
         }
+        //wrap the email message in the email template
+        $settings = service("settings");
+        $emailHeaderAndFooterTemplate = $settings->get(SETTING_EMAIL_HEADER_AND_FOOTER_TEMPLATE);
+        //insert the message in the [email_content] placeholder. things like the institution_name will be taken from app.settings.json
+        $templateHelper = new TemplateEngineHelper();
+        $emailConfig->message = $templateHelper->process($emailHeaderAndFooterTemplate, ['email_content' => $emailConfig->message]);
         // Send via appropriate method
         try {
             switch ($method) {
