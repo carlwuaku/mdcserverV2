@@ -17,12 +17,14 @@
             "title": "Dashboard",
             "url": "/dashboard",
             "icon": "dashboard",
+            "color": "indigo",
             "children": []
         },
         {
             "title": "Search",
             "url": "/search",
             "icon": "search",
+            "color": "indigo",
             "children": []
         },
         {
@@ -30,6 +32,7 @@
             "active_children": false,
             "url": "",
             "icon": "auto_stories_outlined",
+            "color": "deep-purple",
             "children": [
                 {
                     "title": "View/Search CPD Topics",
@@ -65,6 +68,7 @@
             "active_children": false,
             "url": "",
             "icon": "list_alt",
+            "color": "amber",
             "children": [
                 {
                     "title": "Manage Applications",
@@ -91,6 +95,7 @@
             "active_children": false,
             "url": "",
             "icon": "person_outlined",
+            "color": "green",
             "children": [
                 {
                     "title": "View/Search Licenses",
@@ -135,6 +140,7 @@
             "active_children": false,
             "url": "",
             "icon": "person_outlined",
+            "color": "green",
             "children": [
                 {
                     "title": "View/Search Licenses",
@@ -179,6 +185,7 @@
             "active_children": false,
             "url": "",
             "icon": "list_alt",
+            "color": "green",
             "children": [
                 {
                     "title": "Dashboard",
@@ -223,6 +230,7 @@
             "active_children": false,
             "url": "",
             "icon": "medical_services",
+            "color": "pink",
             "children": [
                 {
                     "title": "View/Search Postings",
@@ -291,6 +299,7 @@
             "active_children": false,
             "url": "",
             "icon": "assignment",
+            "color": "purple",
             "children": [
                 {
                     "title": "View/Search Exams",
@@ -330,6 +339,7 @@
             "active_children": false,
             "url": "",
             "icon": "assignment",
+            "color": "black",
             "children": [
                 {
                     "title": "Add new fee",
@@ -362,6 +372,7 @@
             "active_children": false,
             "url": "",
             "icon": "mail",
+            "color": "deep-orange",
             "children": [
                 {
                     "title": "Dashboard",
@@ -388,6 +399,7 @@
             "active_children": false,
             "url": "",
             "icon": "print",
+            "color": "blue",
             "children": [
                 {
                     "title": "View Templates",
@@ -408,6 +420,7 @@
             "active_children": false,
             "url": "",
             "icon": "settings",
+            "color": "indigo",
             "children": [
                 {
                     "title": "New User",
@@ -2416,7 +2429,7 @@
             "active_children": false,
             "url": "/applications/application-types",
             "icon": "person_outlined",
-            "color": "pink",
+            "color": "green",
             "children": [
                 {
                     "title": "New Provisional Registrations",
@@ -2429,7 +2442,10 @@
                         "child_type": "Doctor"
                     },
                     "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Practitioners Provisional Registration Application&child_type=Doctor",
-                    "apiCountText": ""
+                    "apiCountText": "",
+                    "permissions": [
+                        "View_Application_Forms"
+                    ]
                 },
                 {
                     "title": "New Permanent Registrations",
@@ -2442,7 +2458,10 @@
                         "child_type": "Doctor"
                     },
                     "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Practitioners Permanent Registration Application&child_type=Doctor",
-                    "apiCountText": ""
+                    "apiCountText": "",
+                    "permissions": [
+                        "View_Application_Forms"
+                    ]
                 },
                 {
                     "title": "New Temporary Registrations",
@@ -2455,7 +2474,10 @@
                         "child_type": "Doctor"
                     },
                     "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Practitioners Temporary Registration Application&child_type=Doctor",
-                    "apiCountText": ""
+                    "apiCountText": "",
+                    "permissions": [
+                        "View_Application_Forms"
+                    ]
                 },
                 {
                     "title": "New Portal Edits",
@@ -2467,7 +2489,10 @@
                         "status": "Pending Approval"
                     },
                     "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Portal Edit",
-                    "apiCountText": ""
+                    "apiCountText": "",
+                    "permissions": [
+                        "View_Application_Forms"
+                    ]
                 },
                 {
                     "title": "Renewals pending approval",
@@ -2480,7 +2505,10 @@
                         "status": "Pending Approval"
                     },
                     "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Pending Approval&renewal_practitioner_type=Doctor",
-                    "apiCountText": ""
+                    "apiCountText": "",
+                    "permissions": [
+                        "View_License_Renewal"
+                    ]
                 },
                 {
                     "title": "Renewals pending payment",
@@ -2493,7 +2521,10 @@
                         "status": "Pending Payment"
                     },
                     "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Pending Payment&renewal_practitioner_type=Doctor",
-                    "apiCountText": ""
+                    "apiCountText": "",
+                    "permissions": [
+                        "View_License_Renewal"
+                    ]
                 }
             ],
             "description": "",
@@ -2505,7 +2536,7 @@
             "active_children": false,
             "url": "/applications/application-types",
             "icon": "list_alt",
-            "color": "purple",
+            "color": "green",
             "children": [
                 {
                     "title": "New Provisional Registrations",
@@ -2518,7 +2549,10 @@
                         "child_type": "Physician Assistant"
                     },
                     "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Practitioners Provisional Registration Application&child_type=Physician Assistant",
-                    "apiCountText": ""
+                    "apiCountText": "",
+                    "permissions": [
+                        "View_Application_Forms"
+                    ]
                 },
                 {
                     "title": "New Permanent Registrations",
@@ -2531,7 +2565,10 @@
                         "child_type": "Physician Assistant"
                     },
                     "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Practitioners Permanent Registration Application&child_type=Physician Assistant",
-                    "apiCountText": ""
+                    "apiCountText": "",
+                    "permissions": [
+                        "View_Application_Forms"
+                    ]
                 },
                 {
                     "title": "New Temporary Registrations",
@@ -2544,7 +2581,10 @@
                         "child_type": "Physician Assistant"
                     },
                     "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Practitioners Temporary Registration Application&child_type=Physician Assistant",
-                    "apiCountText": ""
+                    "apiCountText": "",
+                    "permissions": [
+                        "View_Application_Forms"
+                    ]
                 },
                 {
                     "title": "New Portal Edits",
@@ -2556,7 +2596,10 @@
                         "status": "Pending Approval"
                     },
                     "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Portal Edit",
-                    "apiCountText": ""
+                    "apiCountText": "",
+                    "permissions": [
+                        "View_Application_Forms"
+                    ]
                 },
                 {
                     "title": "Renewals pending approval",
@@ -2569,7 +2612,10 @@
                         "status": "Pending Approval"
                     },
                     "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Pending Approval&child_practitioner_type=Physician Assistant",
-                    "apiCountText": ""
+                    "apiCountText": "",
+                    "permissions": [
+                        "View_License_Renewal"
+                    ]
                 },
                 {
                     "title": "Renewals pending payment",
@@ -2582,7 +2628,10 @@
                         "status": "Pending Payment"
                     },
                     "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Pending Payment&child_practitioner_type=Physician Assistant",
-                    "apiCountText": ""
+                    "apiCountText": "",
+                    "permissions": [
+                        "View_License_Renewal"
+                    ]
                 }
             ],
             "description": "",
@@ -2594,7 +2643,7 @@
             "active_children": false,
             "url": "/cpd",
             "icon": "list_alt",
-            "color": "indigo",
+            "color": "deep-purple",
             "children": [
                 {
                     "title": "Submissions pending approval",
@@ -2610,7 +2659,10 @@
             ],
             "description": "",
             "apiCountUrl": "/applications/count?status=Pending Approval&form_type=CPD Attendance",
-            "apiCountText": "Submissions pending approval"
+            "apiCountText": "Submissions pending approval",
+            "permissions": [
+                "View_Application_Forms"
+            ]
         },
         {
             "title": "Housemanship",
@@ -2628,7 +2680,10 @@
                         "type": "Doctor"
                     },
                     "apiCountUrl": "/housemanship/posting-application-count?type=Doctor&session=1",
-                    "apiCountText": ""
+                    "apiCountText": "",
+                    "permissions": [
+                        "View_Housemanship_Posting_Applications"
+                    ]
                 },
                 {
                     "title": "1st Year housemanship applications - Physician Assistants",
@@ -2639,7 +2694,10 @@
                         "type": "PA"
                     },
                     "apiCountUrl": "/housemanship/posting-application-count?type=PA&session=1",
-                    "apiCountText": ""
+                    "apiCountText": "",
+                    "permissions": [
+                        "View_Housemanship_Posting_Applications"
+                    ]
                 },
                 {
                     "title": "2nd Year housemanship applications - Doctors",
@@ -2650,7 +2708,10 @@
                         "type": "Doctor"
                     },
                     "apiCountUrl": "/housemanship/posting-application-count?type=Doctor&session=2",
-                    "apiCountText": ""
+                    "apiCountText": "",
+                    "permissions": [
+                        "View_Housemanship_Posting_Applications"
+                    ]
                 },
                 {
                     "title": "2nd Year housemanship applications - Physician Assistants",
@@ -2661,7 +2722,10 @@
                         "type": "PA"
                     },
                     "apiCountUrl": "/housemanship/posting-application-count?type=PA&session=2",
-                    "apiCountText": ""
+                    "apiCountText": "",
+                    "permissions": [
+                        "View_Housemanship_Posting_Applications"
+                    ]
                 }
             ],
             "description": "",
@@ -2696,7 +2760,10 @@
                         "child_category": "Medical"
                     },
                     "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Examination Candidates Registration Application&child_type=Doctor&child_category=Medical",
-                    "apiCountText": ""
+                    "apiCountText": "",
+                    "permissions": [
+                        "View_Application_Forms"
+                    ]
                 },
                 {
                     "title": "New registrations - Doctors (Dental)",
@@ -2710,7 +2777,10 @@
                         "child_category": "Dental"
                     },
                     "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Examination Candidates Registration Application&child_type=Doctor&child_category=Dental",
-                    "apiCountText": ""
+                    "apiCountText": "",
+                    "permissions": [
+                        "View_Application_Forms"
+                    ]
                 },
                 {
                     "title": "New registrations - Physician Assistants (Medical)",
@@ -2724,7 +2794,10 @@
                         "child_category": "Medical"
                     },
                     "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Examination Candidates Registration Application&child_type=Physician Assistant&child_category=Medical",
-                    "apiCountText": ""
+                    "apiCountText": "",
+                    "permissions": [
+                        "View_Application_Forms"
+                    ]
                 },
                 {
                     "title": "New registrations - Physician Assistants (Dental)",
@@ -2738,7 +2811,10 @@
                         "child_category": "Dental"
                     },
                     "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Examination Candidates Registration Application&child_type=Physician Assistant&child_category=Dental",
-                    "apiCountText": ""
+                    "apiCountText": "",
+                    "permissions": [
+                        "View_Application_Forms"
+                    ]
                 },
                 {
                     "title": "New applications for examinations",
@@ -2747,7 +2823,10 @@
                     "children": [],
                     "urlParams": {},
                     "apiCountUrl": "/examinations/applications/count",
-                    "apiCountText": ""
+                    "apiCountText": "",
+                    "permissions": [
+                        "Approve_Or_Deny_Examination_Applications"
+                    ]
                 }
             ],
             "description": "",
