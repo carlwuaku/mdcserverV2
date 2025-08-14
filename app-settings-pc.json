@@ -3298,7 +3298,10 @@
                         "status": "Pending Approval"
                     },
                     "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Portal Edit",
-                    "apiCountText": ""
+                    "apiCountText": "",
+                    "permissions": [
+                        "View_Application_Forms"
+                    ]
                 },
                 {
                     "title": "Renewals pending approval",
@@ -3310,7 +3313,10 @@
                         "status": "Pending Approval"
                     },
                     "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Pending Approval&renewal_practitioner_type=Pharmacist",
-                    "apiCountText": ""
+                    "apiCountText": "",
+                    "permissions": [
+                        "View_License_Renewal"
+                    ]
                 },
                 {
                     "title": "Renewals pending payment",
@@ -3322,7 +3328,10 @@
                         "status": "Pending Payment"
                     },
                     "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Pending Payment&renewal_practitioner_type=Pharmacist",
-                    "apiCountText": ""
+                    "apiCountText": "",
+                    "permissions": [
+                        "View_License_Renewal"
+                    ]
                 }
             ],
             "description": "Manage submitted applications",
@@ -3345,7 +3354,10 @@
                         "form_type": "CPD Attendance"
                     },
                     "apiCountUrl": "/applications/count?status=Pending Approval&form_type=CPD Attendance",
-                    "apiCountText": ""
+                    "apiCountText": "",
+                    "permissions": [
+                        "View_Application_Forms"
+                    ]
                 }
             ],
             "description": "",
@@ -3368,7 +3380,10 @@
                         "type": "Pharmacist"
                     },
                     "apiCountUrl": "/housemanship/posting-application-count?type=Pharmacist&session=1",
-                    "apiCountText": ""
+                    "apiCountText": "",
+                    "permissions": [
+                        "View_Housemanship_Posting_Applications"
+                    ]
                 },
                 {
                     "title": "1st Year housemanship applications - Pharmacy Technicians",
@@ -3379,7 +3394,10 @@
                         "type": "PA"
                     },
                     "apiCountUrl": "/housemanship/posting-application-count?type=PA&session=1",
-                    "apiCountText": ""
+                    "apiCountText": "",
+                    "permissions": [
+                        "View_Housemanship_Posting_Applications"
+                    ]
                 },
                 {
                     "title": "2nd Year housemanship applications - Pharmacists",
@@ -3390,7 +3408,10 @@
                         "type": "Pharmacist"
                     },
                     "apiCountUrl": "/housemanship/posting-application-count?type=Pharmacist&session=2",
-                    "apiCountText": ""
+                    "apiCountText": "",
+                    "permissions": [
+                        "View_Housemanship_Posting_Applications"
+                    ]
                 },
                 {
                     "title": "2nd Year housemanship applications - Pharmacy Technicians",
@@ -3401,7 +3422,10 @@
                         "type": "PA"
                     },
                     "apiCountUrl": "/housemanship/posting-application-count?type=PA&session=2",
-                    "apiCountText": ""
+                    "apiCountText": "",
+                    "permissions": [
+                        "View_Housemanship_Posting_Applications"
+                    ]
                 }
             ],
             "description": "",
@@ -3425,7 +3449,7 @@
                     "apiCountText": ""
                 },
                 {
-                    "title": "New registrations - Pharmacists (Medical)",
+                    "title": "New registrations - Pharmacists",
                     "url": "/applications",
                     "icon": "",
                     "children": [],
@@ -3435,11 +3459,14 @@
                         "child_type": "Pharmacist",
                         "child_category": "Medical"
                     },
-                    "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Examination Candidates Registration Application&child_type=Pharmacist&child_category=Medical",
-                    "apiCountText": ""
+                    "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Examination Candidates Registration Application&child_type=Pharmacist",
+                    "apiCountText": "",
+                    "permissions": [
+                        "View_Application_Forms"
+                    ]
                 },
                 {
-                    "title": "New registrations - Pharmacy Technicians (Medical)",
+                    "title": "New registrations - Pharmacy Technicians",
                     "url": "/applications",
                     "icon": "",
                     "children": [],
@@ -3449,8 +3476,11 @@
                         "child_type": "Pharmacy Technician",
                         "child_category": "Medical"
                     },
-                    "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Examination Candidates Registration Application&child_type=Pharmacy Technician&child_category=Medical",
-                    "apiCountText": ""
+                    "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Examination Candidates Registration Application&child_type=Pharmacy Technician",
+                    "apiCountText": "",
+                    "permissions": [
+                        "View_Application_Forms"
+                    ]
                 },
                 {
                     "title": "New applications for examinations",
@@ -3459,7 +3489,10 @@
                     "children": [],
                     "urlParams": {},
                     "apiCountUrl": "/examinations/applications/count",
-                    "apiCountText": ""
+                    "apiCountText": "",
+                    "permissions": [
+                        "Approve_Or_Deny_Examination_Applications"
+                    ]
                 }
             ],
             "description": "",
