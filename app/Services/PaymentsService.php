@@ -605,42 +605,48 @@ class PaymentsService
      */
     public function submitOfflinePayment(string $uuid, array $data)
     {
-        // Validate and process the data
-        $rules = [
-            "payment_file" => "required",
-            "payment_date" => "required|valid_date"
-        ];
+        try {
 
-        $validator = \Config\Services::validation();
-        $validator->setRules($rules);
-        if (!$validator->run($data)) {
-            $message = implode(" ", array_values($validator->getErrors()));
-            throw new \InvalidArgumentException("Validation failed: " . $message);
+            // Validate and process the data
+            $rules = [
+                "payment_file" => "required",
+                "payment_date" => "required|valid_date"
+            ];
+
+            $validator = \Config\Services::validation();
+            $validator->setRules($rules);
+            if (!$validator->run($data)) {
+                $message = implode(" ", array_values($validator->getErrors()));
+                throw new \InvalidArgumentException("Validation failed: " . $message);
+            }
+            //get the details of the invoice
+            $invoiceDetails = $this->invoiceModel->where(["uuid" => $uuid])->first();
+            if (!$invoiceDetails) {
+                throw new \InvalidArgumentException("Invalid invoice uuid");
+            }
+            $unique_id = $invoiceDetails['unique_id'];
+            if (!$unique_id) {
+                throw new \InvalidArgumentException("Invalid invoice uuid");
+            }
+            $uuid = $invoiceDetails['uuid'];
+            $data['status'] = 'Paid';
+            $data['payment_file_date'] = date("Y-m-d");
+            $data['payment_method'] = "In-Person";
+            $paymentData = $this->invoiceModel->createArrayFromAllowedFields($data);
+            $this->invoiceModel->db->transException(true)->transStart();
+            //update the invoice
+            $this->invoiceModel->builder()->where(['uuid' => $uuid])->update($paymentData);
+
+
+
+            $this->invoiceModel->db->transComplete();
+            $this->activitiesModel->logActivity("submitted payment for invoice $uuid for $unique_id", null, "Payments");
+            Events::trigger(EVENT_INVOICE_PAYMENT_COMPLETED, $uuid);
+            return true;
+        } catch (\Throwable $th) {
+            log_message("error", $th);
+            throw $th;
         }
-        //get the details of the invoice
-        $invoiceDetails = $this->invoiceModel->where(["uuid" => $uuid])->first();
-        if (!$invoiceDetails) {
-            throw new \InvalidArgumentException("Invalid invoice uuid");
-        }
-        $unique_id = $invoiceDetails['unique_id'];
-        if (!$unique_id) {
-            throw new \InvalidArgumentException("Invalid invoice uuid");
-        }
-        $uuid = $invoiceDetails['uuid'];
-        $data['status'] = 'Paid';
-        $data['payment_file_date'] = date("Y-m-d");
-        $data['payment_method'] = "In-Person";
-        $paymentData = $this->invoiceModel->createArrayFromAllowedFields($data);
-        $this->invoiceModel->db->transException(true)->transStart();
-        //update the invoice
-        $this->invoiceModel->builder()->where(['uuid' => $uuid])->update($paymentData);
-
-
-
-        $this->invoiceModel->db->transComplete();
-        $this->activitiesModel->logActivity("submitted payment for invoice $uuid for $unique_id", null, "Payments");
-        // Return the exam ID
-        return true;
     }
 
 

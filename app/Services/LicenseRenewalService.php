@@ -107,8 +107,15 @@ class LicenseRenewalService
         }
     }
 
+
     /**
-     * Update multiple renewals at once
+     * Update multiple license renewals.
+     *
+     * @param object[] $renewalsData An array of renewals data
+     * @param string|null $status The new status for the renewals. If provided, it will be
+     *          validated against the valid stages for the license type.
+     * @return array An array containing the results of the bulk renewal update.
+     * @throws Exception If validation fails or if the renewal status is invalid.
      */
     public function updateBulkRenewals(array $renewalsData, ?string $status = null): array
     {

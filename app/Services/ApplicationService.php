@@ -543,7 +543,6 @@ class ApplicationService
     private function processStageActions(array $actions, array $application, ApplicationsModel $model): void
     {
         $model->db->transException(true)->transStart();
-        log_message('info', 'Processing stage actions for application: ' . print_r($application, true));
         try {
             foreach ($actions as $action) {
                 // Merge form_data with application data

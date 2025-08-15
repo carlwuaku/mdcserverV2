@@ -4,6 +4,8 @@
  */
 namespace App\Helpers;
 
+use stdClass;
+
 
 class ApplicationFormActionHelper extends Utils
 {
@@ -32,13 +34,13 @@ class ApplicationFormActionHelper extends Utils
 
     private static function runInternalApiCall($action, $data)
     {
+        $licenseTypesSettings = self::getAppSettings("licenseTypes");
         // Check if the action is for creating or updating a license
         //the type of the action can be create_xxx where xxx is the type of the license. if it's a create, get whatever follows create_ and check if it's a license type
         if (strpos($action->type, 'create_') === 0) {
             //get the part after create_
             $licenseType = substr($action->type, strlen('create_'));
             // Check if the license type is in the configured license types
-            $licenseTypesSettings = self::getAppSettings("licenseTypes");//license types are the keys of the license_types array in the app settings
             if (in_array($licenseType, array_keys($licenseTypesSettings))) {
                 // If it's a license type, create a license
                 return self::createLicense($action, $data);
@@ -47,6 +49,25 @@ class ApplicationFormActionHelper extends Utils
                 log_message('info', 'Handling internal API call for non-license type: ' . $licenseType);
                 throw new \InvalidArgumentException('Unsupported internal API call type: ' . $action->type);
             }
+        }
+        // Check if the action is for updating a license or renewal_status or renewal
+        if (strpos($action->type, 'update_') === 0) {
+            //get the part after update_
+            $licenseType = substr($action->type, strlen('update_'));
+            //if it's 'renewal_status'
+            if ($licenseType === 'renewal_status') {
+                return self::updateRenewalStatus($action, $data);
+            }
+            // Check if the license type is in the configured license types
+
+            if (in_array($licenseType, array_keys($licenseTypesSettings))) {
+                // If it's a license type, update a license
+                return self::updateLicense($action, $data);
+            }
+            //handle other types of internal API calls
+            log_message('info', 'Handling internal API call for non-license type: ' . $licenseType);
+            throw new \InvalidArgumentException('Unsupported internal API call type: ' . $action->type);
+
         }
 
         // If not a license action, throw an exception
@@ -216,7 +237,7 @@ class ApplicationFormActionHelper extends Utils
         try {
 
             // Get renewal service using CI4 service() function
-            $renewalService = service('licenseRenewalService');
+            $renewalService = \Config\Services::licenseRenewalService();
 
             // Map application data to renewal data
             $renewalData = self::mapDataForRenewal($action->config, $data);
@@ -244,7 +265,7 @@ class ApplicationFormActionHelper extends Utils
         try {
 
             // Get license service using CI4 service() function
-            $licenseService = service('licenseService');
+            $licenseService = \Config\Services::licenseService();
 
             // Get license UUID from config or data
             $licenseUuid = $action->config['license_uuid'] ?? $data['license_uuid'] ?? null;
@@ -264,6 +285,41 @@ class ApplicationFormActionHelper extends Utils
 
         } catch (\Throwable $e) {
             log_message('error', 'License update failed: ' . $e);
+            throw $e;
+        }
+    }
+
+    private static function updateRenewalStatus(object $action, array $data)
+    {
+
+        try {
+            $renewalService = \Config\Services::licenseRenewalService();
+            //get the uuid from the data
+            $renewalUuid = $data['uuid'];
+
+
+            //any other data that need to be updated will be in the action config
+
+            $renewalData = new stdClass();
+            $renewalData->uuid = $renewalUuid;
+            //get the remaining details to be updated from the data
+            foreach ($data as $key => $value) {
+                $renewalData->{$key} = $value;
+            }
+
+            $bodyMappingData = self::mapDataForRenewal($action->config, $data);
+            //since we need to have the status in the config it must be in the bodyMappingData. if not, we cannot proceed.
+            if (!isset($bodyMappingData['status'])) {
+                throw new \InvalidArgumentException('Renewal status is required for update');
+            }
+            $status = $bodyMappingData['status'];
+            //the updateBulkRenewals function expects an array of renewal data objects. since the event callback passes in a single renewal object, we need to wrap it in an array
+
+            $result = $renewalService->updateBulkRenewals([$renewalData], $status);
+            return $result;
+
+        } catch (\Throwable $e) {
+            log_message('error', 'Renewal status update failed: ' . $e);
             throw $e;
         }
     }
@@ -351,7 +407,7 @@ class ApplicationFormActionHelper extends Utils
      */
     private static function handleLicenseServiceCall($action, $data, $method, $path)
     {
-        $licenseService = service('licenseService');
+        $licenseService = \Config\Services::licenseService();
         $mappedData = self::mapDataForLicense($action->config, $data);
 
         switch ($method) {
@@ -395,7 +451,7 @@ class ApplicationFormActionHelper extends Utils
      */
     private static function handleRenewalServiceCall($action, $data, $method, $path)
     {
-        $renewalService = service('licenseRenewalService');
+        $renewalService = \Config\Services::licenseRenewalService();
         $mappedData = self::mapDataForRenewal($action->config, $data);
 
         switch ($method) {

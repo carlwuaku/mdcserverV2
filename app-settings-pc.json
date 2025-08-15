@@ -978,7 +978,6 @@
                 "Pending Payment": {
                     "label": "Pending Payment",
                     "allowedTransitions": [
-                        "Pending Approval",
                         "Approved"
                     ],
                     "fields": [
@@ -4289,6 +4288,33 @@
                 "licenseCriteria": [],
                 "activityTypes": [
                     "renewal"
+                ],
+                "onPaymentCompletedActions": [
+                    {
+                        "type": "email",
+                        "config_type": "email",
+                        "config": {
+                            "template": "theapplication will be printed",
+                            "subject": "Your application is being processed",
+                            "admin_email": "",
+                            "endpoint": "",
+                            "method": "GET",
+                            "auth_token": "",
+                            "headers": [],
+                            "body_mapping": [],
+                            "query_params": []
+                        }
+                    },
+                    {
+                        "type": "update_renewal_status",
+                        "config_type": "internal_api_call",
+                        "label": "Update renewal status",
+                        "config": {
+                            "body_mapping": {
+                                "status": "Pending Regional Approval"
+                            }
+                        }
+                    }
                 ]
             },
             "Pharmacist Renewal": {

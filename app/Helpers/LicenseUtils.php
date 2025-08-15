@@ -190,7 +190,7 @@ class LicenseUtils extends Utils
             //send email to the user from here if the setting RENEWAL_EMAIL_TO is set to true
             /** @var ActivitiesModel $activitiesModel */
             $activitiesModel = new ActivitiesModel();
-            $activitiesModel->logActivity("updated renewal record for $license_number.  ");
+            $activitiesModel->logActivity("updated renewal record for $license_number with data " . json_encode(array_merge($data, $formData)));
 
 
 

@@ -10,6 +10,8 @@ use App\Models\Payments\InvoiceModel;
 use App\Models\Payments\InvoicePaymentOptionModel;
 use Exception;
 use InvalidArgumentException;
+use CodeIgniter\Events\Events;
+
 class GhanaGovPaymentService
 {
     private FeesModel $feesModel;
@@ -139,7 +141,7 @@ class GhanaGovPaymentService
                 throw new InvalidArgumentException("Invoice not found");
             }
             $networkResponse = $this->queryGhanaGovInvoice($invoiceNumber);
-
+            $uniqueId = $invoiceData['unique_id'];
 
             //get the invoice details
             if ($networkResponse['status'] == 0) { //successful
@@ -186,9 +188,8 @@ class GhanaGovPaymentService
                         ];
 
                         $this->invoiceModel->builder()->where(['uuid' => $invoiceData['uuid']])->update($updateData);
-                        //TODO; EMIT EVENT HERE TO SIGNAL THAT INVOICE WAS PAID
-                        //TODO: PROBABLY SEND EMAIL
-                        // $this->processPayment($invoice_number);
+                        Events::trigger(EVENT_INVOICE_PAYMENT_COMPLETED, $invoiceData['uuid']);
+
 
                         $message = "Payment for {$invoiceData['description']} - invoice number $invoiceNumber has been updated to 
                         Paid. Thank you.";
@@ -214,13 +215,18 @@ class GhanaGovPaymentService
                 }
                 // $this->sendSingleMail($payer_details->email, $message, 'Payment');
                 $this->activitiesModel->logActivity(
-                    "payment invoice number $invoiceNumber called post_url. " . json_encode($networkResponse),
+                    $message,
+                    "0",
+                    "Payment"
+                );
+                $this->activitiesModel->logActivity(
+                    "payment invoice number $invoiceNumber for $uniqueId called post_url. " . json_encode($networkResponse),
                     "0",
                     "system"
                 );
             } else {
                 $this->activitiesModel->logActivity(
-                    "payment invoice number $invoiceNumber called post_url with query invoice response status {$networkResponse['status']}. .json_encode($networkResponse)",
+                    "payment invoice number $invoiceNumber for $uniqueId called post_url with query invoice response status {$networkResponse['status']}. .json_encode($networkResponse)",
 
                     "0",
                     "system"
