@@ -87,7 +87,6 @@ Events::on(EVENT_INVOICE_PAYMENT_COMPLETED, static function (string $uuid) {
         foreach ($onPaymentCompletedActions as $action) {
             //the ApplicationFormActionHelper expects an object for the cofig, and some data to process.  
             $result = ApplicationFormActionHelper::runAction((object) $action, $invoiceDetails);
-            //TODO: save the results of the action somewhere
             log_message("info", "action ran for invoice payment" . json_encode($invoiceDetails) . " <br> Results: " . json_encode($result));
         }
 
@@ -98,5 +97,15 @@ Events::on(EVENT_INVOICE_PAYMENT_COMPLETED, static function (string $uuid) {
     }
 });
 
+Events::on(EVENT_APPLICATION_FORM_ACTION_COMPLETED, static function (object $action, array $data, array $result) {
+
+    //log this to the actions database   
+    try {
+        //TODO: save the results of the action somewhere
+
+    } catch (\Throwable $e) {
+
+    }
+});
 
 

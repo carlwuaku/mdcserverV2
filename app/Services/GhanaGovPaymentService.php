@@ -188,27 +188,28 @@ class GhanaGovPaymentService
                         ];
 
                         $this->invoiceModel->builder()->where(['uuid' => $invoiceData['uuid']])->update($updateData);
+                        //this event will process the invoice based on its purpose
                         Events::trigger(EVENT_INVOICE_PAYMENT_COMPLETED, $invoiceData['uuid']);
 
 
-                        $message = "Payment for {$invoiceData['description']} - invoice number $invoiceNumber has been updated to 
+                        $message = "Payment for {$invoiceData['description']} - invoice number $invoiceNumber for {$invoiceData['unique_id']} has been updated to 
                         Paid. Thank you.";
                         break;
                     case 2:
-                        $message = "Payment  for {$invoiceData['description']} - invoice number $invoiceNumber failed. Please try again or contact the Ghana.gov payment platform fo assistance. Thank you.";
+                        $message = "Payment  for {$invoiceData['description']} - invoice number $invoiceNumber for {$invoiceData['unique_id']}  failed. Please try again or contact the Ghana.gov payment platform fo assistance. Thank you.";
                         break;
                     case 3:
-                        $message = "We were unable to retrieve any payment records for your payment  for {$invoiceData['description']} - invoice number $invoiceNumber. 
+                        $message = "We were unable to retrieve any payment records for your payment  for {$invoiceData['unique_id']}  for {$invoiceData['description']} - invoice number $invoiceNumber. 
                          ";
                         break;
 
                     case 4:
-                        $message = "Payment for {$invoiceData['description']} - invoice number $invoiceNumber is pending payment. Please make payment as soon as possible 
+                        $message = "Payment for {$invoiceData['description']} - invoice number $invoiceNumber for {$invoiceData['unique_id']} is pending payment. Please make payment as soon as possible 
                             to complete the process. 
                              ";
                         break;
                     default:
-                        $message = "No Payment for {$invoiceData['description']} - invoice number $invoiceNumber was found. Please try again later. 
+                        $message = "No Payment for {$invoiceData['description']} - invoice number $invoiceNumber for {$invoiceData['unique_id']} was found. Please try again later. 
                  
                  ";
                         break;

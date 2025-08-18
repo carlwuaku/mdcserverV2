@@ -4,6 +4,7 @@
  */
 namespace App\Helpers;
 
+use CodeIgniter\Events\Events;
 use stdClass;
 
 
@@ -17,19 +18,33 @@ class ApplicationFormActionHelper extends Utils
      */
     public static function runAction($action, $data)
     {
-        //get the license types so that if it's an internal_api_call, we check if it's creating or updating a license
-        switch ($action->config_type) {
-            case 'email':
-                return self::sendEmailToApplicant($action, $data);
-            case 'admin_email':
-                return self::sendEmailToAdmin($action, $data);
-            case 'api_call':
-                return self::callApi($action, $data);
-            case 'internal_api_call':
-                return self::runInternalApiCall($action, $data);
-            default:
-                return $data;
+        try {
+            $result = [];
+            //get the license types so that if it's an internal_api_call, we check if it's creating or updating a license
+            switch ($action->config_type) {
+                case 'email':
+                    $result = self::sendEmailToApplicant($action, $data);
+                    break;
+                case 'admin_email':
+                    $result = self::sendEmailToAdmin($action, $data);
+                    break;
+                case 'api_call':
+                    $result = self::callApi($action, $data);
+                    break;
+                case 'internal_api_call':
+                    $result = self::runInternalApiCall($action, $data);
+                    break;
+                default:
+                    $result = $data;
+            }
+            Events::trigger(EVENT_APPLICATION_FORM_ACTION_COMPLETED, $action, $data, $result);
+            return $result;
+        } catch (\Throwable $th) {
+            log_message('error', 'Error running action: ' . $th->getMessage());
+            //log this to the actions database
+            throw $th;
         }
+
     }
 
     private static function runInternalApiCall($action, $data)
@@ -99,7 +114,6 @@ class ApplicationFormActionHelper extends Utils
      */
     private static function sendEmailToAdmin($action, $data)
     {
-        log_message('info', 'Sending email to admin');
         $templateModel = new TemplateEngineHelper();
         $content = $templateModel->process($action->config['template'], $data);
         $subject = $templateModel->process($action->config['subject'], $data);
@@ -107,6 +121,10 @@ class ApplicationFormActionHelper extends Utils
 
         EmailHelper::sendEmail($emailConfig);
         return $data;
+    }
+
+    private static function generateInvoice($action, $data)
+    {
     }
 
     // /**

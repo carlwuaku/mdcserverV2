@@ -6,6 +6,7 @@ use App\Models\Licenses\LicensesModel;
 use Exception;
 use SimpleSoftwareIO\QrCode\Generator;
 use App\Models\ActivitiesModel;
+use App\Helpers\Types\RenewalStageType;
 
 class LicenseUtils extends Utils
 {
@@ -16,11 +17,14 @@ class LicenseUtils extends Utils
 
 
 
+
     /**
-     * Retain a license.
+     * Create a new license renewal record and update the license table with the renewal data.
      *
-     * @param string $license_uuid The UUID of the license
-     * @param array $data The data to insert
+     * @param string $license_uuid The UUID of the license.
+     * @param array $data An array of renewal data including start_date, expiry, etc.
+     * @throws Exception If there is an error inserting the data.
+     * @return int The ID of the newly created renewal record.
      */
     public static function retainLicense(
         string $license_uuid,
@@ -91,6 +95,7 @@ class LicenseUtils extends Utils
             /** @var ActivitiesModel $activitiesModel */
             $activitiesModel = new ActivitiesModel();
             $activitiesModel->logActivity("added renewal record for $license_number ");
+            return $id;
         } catch (\Throwable $th) {
             log_message("error", $th->getMessage());
             throw new Exception("Error inserting data." . $th->getMessage());
@@ -319,12 +324,39 @@ class LicenseUtils extends Utils
         return $results;
     }
 
+    /**
+     * Returns an array of renewal stages for a given license type.
+     *
+     * @param string $licenseType The type of license.
+     * @return array An array of renewal stages.
+     */
     public static function getLicenseRenewalStages($licenseType)
     {
         $licenseDef = Utils::getLicenseSetting($licenseType);
         $renewalStages = (array) $licenseDef->renewalStages;
 
         return array_keys($renewalStages);
+    }
+
+    /**
+     * Returns an array of renewal stages values for a given license type.
+     *
+     * @param string $licenseType The type of license.
+     * @return \App\Helpers\Types\RenewalStageType[] An array of renewal stages values.
+     */
+    public static function getLicenseRenewalStagesValues($licenseType)
+    {
+        $licenseDef = Utils::getLicenseSetting($licenseType);
+
+        $renewalStages = (array) $licenseDef->renewalStages;
+        $result = [];
+
+        foreach ($renewalStages as $key => $value) {
+            log_message('info', 'value: ' . json_encode($value));
+            $result[] = RenewalStageType::fromArray($value);
+        }
+
+        return $result;
     }
 
     /**

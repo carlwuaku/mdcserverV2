@@ -1058,9 +1058,27 @@
                     "children": [],
                     "description": "View/Print approved applications",
                     "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Pending Payment",
-                    "apiCountText": "Renewals"
+                    "apiCountText": "Renewals",
+                    "actions": [
+                        {
+                            "type": "email",
+                            "config_type": "email",
+                            "config": {
+                                "template": "your renewal is pending payment",
+                                "subject": "Renewal is pending payment",
+                                "admin_email": "",
+                                "endpoint": "",
+                                "method": "",
+                                "auth_token": "",
+                                "headers": [],
+                                "body_mapping": [],
+                                "query_params": []
+                            }
+                        }
+                    ]
                 },
                 "Pending Approval": {
+                    "label": "Pending Approval",
                     "allowedTransitions": [
                         "Approved"
                     ],
@@ -1098,7 +1116,24 @@
                     "children": [],
                     "description": "Manage submitted applications",
                     "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Pending Approval",
-                    "apiCountText": "Renewals"
+                    "apiCountText": "Renewals",
+                    "actions": [
+                        {
+                            "type": "email",
+                            "config_type": "email",
+                            "config": {
+                                "template": "your renewal is pending approval",
+                                "subject": "Renewal is pending approval",
+                                "admin_email": "",
+                                "endpoint": "",
+                                "method": "",
+                                "auth_token": "",
+                                "headers": [],
+                                "body_mapping": [],
+                                "query_params": []
+                            }
+                        }
+                    ]
                 },
                 "Approved": {
                     "label": "Approved",
@@ -1167,7 +1202,24 @@
                     "children": [],
                     "description": "View/Print approved applications",
                     "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Approved",
-                    "apiCountText": "Renewals"
+                    "apiCountText": "Renewals",
+                    "actions": [
+                        {
+                            "type": "email",
+                            "config_type": "email",
+                            "config": {
+                                "template": "your renewal is now approved",
+                                "subject": "Renewal Approved",
+                                "admin_email": "",
+                                "endpoint": "",
+                                "method": "",
+                                "auth_token": "",
+                                "headers": [],
+                                "body_mapping": [],
+                                "query_params": []
+                            }
+                        }
+                    ]
                 }
             },
             "renewalSearchFields": {
@@ -3599,6 +3651,18 @@
                 ],
                 "activityTypes": [
                     "renewal"
+                ],
+                "onPaymentCompletedActions": [
+                    {
+                        "type": "update_renewal_status",
+                        "config_type": "internal_api_call",
+                        "label": "Update renewal status",
+                        "config": {
+                            "body_mapping": {
+                                "status": "Approved"
+                            }
+                        }
+                    }
                 ]
             },
             "Physician Assistant Renewal": {
@@ -3622,6 +3686,18 @@
                 ],
                 "activityTypes": [
                     "renewal"
+                ],
+                "onPaymentCompletedActions": [
+                    {
+                        "type": "update_renewal_status",
+                        "config_type": "internal_api_call",
+                        "label": "Update renewal status",
+                        "config": {
+                            "body_mapping": {
+                                "status": "Approved"
+                            }
+                        }
+                    }
                 ]
             }
         },

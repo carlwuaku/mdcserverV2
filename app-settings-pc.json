@@ -980,26 +980,7 @@
                     "allowedTransitions": [
                         "Approved"
                     ],
-                    "fields": [
-                        {
-                            "label": "Renewal Date",
-                            "name": "renewal_date",
-                            "hint": "",
-                            "options": [],
-                            "type": "date",
-                            "value": "",
-                            "required": true
-                        },
-                        {
-                            "label": "Renewal Fee",
-                            "name": "renewal_fee",
-                            "hint": "",
-                            "options": [],
-                            "type": "text",
-                            "value": "",
-                            "required": true
-                        }
-                    ],
+                    "fields": [],
                     "permission": "Mark_Practitioners_Renewal_Pending_Payment",
                     "printable": false,
                     "onlineCertificatePrintable": false,
@@ -1013,7 +994,24 @@
                     "children": [],
                     "description": "View/Print approved applications",
                     "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Pending Payment",
-                    "apiCountText": "Renewals"
+                    "apiCountText": "Renewals",
+                    "actions": [
+                        {
+                            "type": "email",
+                            "config_type": "email",
+                            "config": {
+                                "template": "your renewal is now pending payment",
+                                "subject": "Renewal Pending Payment",
+                                "admin_email": "",
+                                "endpoint": "",
+                                "method": "",
+                                "auth_token": "",
+                                "headers": [],
+                                "body_mapping": [],
+                                "query_params": []
+                            }
+                        }
+                    ]
                 },
                 "Approved": {
                     "label": "Approved",
@@ -1081,7 +1079,24 @@
                     "children": [],
                     "description": "View/Print approved applications",
                     "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Approved",
-                    "apiCountText": "Renewals"
+                    "apiCountText": "Renewals",
+                    "actions": [
+                        {
+                            "type": "email",
+                            "config_type": "email",
+                            "config": {
+                                "template": "your renewal is now approved",
+                                "subject": "Renewal Approved",
+                                "admin_email": "",
+                                "endpoint": "",
+                                "method": "",
+                                "auth_token": "",
+                                "headers": [],
+                                "body_mapping": [],
+                                "query_params": []
+                            }
+                        }
+                    ]
                 }
             },
             "renewalJsonFields": [
@@ -1884,9 +1899,27 @@
                     "children": [],
                     "description": "View/Print approved applications",
                     "apiCountUrl": "/licenses/renewal-count?license_type=facilities&status=Pending Payment",
-                    "apiCountText": "Renewals"
+                    "apiCountText": "Renewals",
+                    "actions": [
+                        {
+                            "type": "email",
+                            "config_type": "email",
+                            "config": {
+                                "template": "your renewal is now approved",
+                                "subject": "Renewal Approved",
+                                "admin_email": "",
+                                "endpoint": "",
+                                "method": "",
+                                "auth_token": "",
+                                "headers": [],
+                                "body_mapping": [],
+                                "query_params": []
+                            }
+                        }
+                    ]
                 },
                 "Pending Regional Approval": {
+                    "label": "Pending Regional Approval",
                     "allowedTransitions": [
                         "Pending Authorization"
                     ],
@@ -1904,9 +1937,11 @@
                     "children": [],
                     "description": "Manage submitted applications",
                     "apiCountUrl": "/licenses/renewal-count?license_type=facilities&status=Pending Regional Approval",
-                    "apiCountText": "Renewals"
+                    "apiCountText": "Renewals",
+                    "actions": []
                 },
                 "Pending Authorization": {
+                    "label": "Pending Authorization",
                     "allowedTransitions": [
                         "Approved"
                     ],
@@ -1924,7 +1959,8 @@
                     "children": [],
                     "description": "Manage submitted applications",
                     "apiCountUrl": "/licenses/renewal-count?license_type=facilities&status=Pending Authorization",
-                    "apiCountText": "Renewals"
+                    "apiCountText": "Renewals",
+                    "actions": []
                 },
                 "Approved": {
                     "label": "Approved",
@@ -1992,7 +2028,24 @@
                     "children": [],
                     "description": "View/Print approved applications",
                     "apiCountUrl": "/licenses/renewal-count?license_type=facilities&status=Approved",
-                    "apiCountText": "Renewals"
+                    "apiCountText": "Renewals",
+                    "actions": [
+                        {
+                            "type": "email",
+                            "config_type": "email",
+                            "config": {
+                                "template": "your renewal is now approved",
+                                "subject": "Renewal Approved",
+                                "admin_email": "",
+                                "endpoint": "",
+                                "method": "",
+                                "auth_token": "",
+                                "headers": [],
+                                "body_mapping": [],
+                                "query_params": []
+                            }
+                        }
+                    ]
                 }
             },
             "renewalFilterFields": [
@@ -2469,7 +2522,24 @@
                     "children": [],
                     "description": "Renewals pending authorization",
                     "apiCountUrl": "/licenses/renewal-count?license_type=otcms&status=Pending Authorization",
-                    "apiCountText": "Renewals"
+                    "apiCountText": "Renewals",
+                    "actions": [
+                        {
+                            "type": "email",
+                            "config_type": "email",
+                            "config": {
+                                "template": "your renewal is now pending authorization",
+                                "subject": "Renewal pending authorization",
+                                "admin_email": "",
+                                "endpoint": "",
+                                "method": "",
+                                "auth_token": "",
+                                "headers": [],
+                                "body_mapping": [],
+                                "query_params": []
+                            }
+                        }
+                    ]
                 },
                 "Approved": {
                     "label": "Approved",
@@ -2537,7 +2607,24 @@
                     "children": [],
                     "description": "View/Print approved renewal applications",
                     "apiCountUrl": "/licenses/renewal-count?license_type=otcms&status=Approved",
-                    "apiCountText": "Renewals"
+                    "apiCountText": "Renewals",
+                    "actions": [
+                        {
+                            "type": "email",
+                            "config_type": "email",
+                            "config": {
+                                "template": "your renewal is now approved",
+                                "subject": "Renewal Approved",
+                                "admin_email": "",
+                                "endpoint": "",
+                                "method": "",
+                                "auth_token": "",
+                                "headers": [],
+                                "body_mapping": [],
+                                "query_params": []
+                            }
+                        }
+                    ]
                 }
             },
             "renewalJsonFields": [],
@@ -4348,6 +4435,33 @@
                 ],
                 "activityTypes": [
                     "renewal"
+                ],
+                "onPaymentCompletedActions": [
+                    {
+                        "type": "email",
+                        "config_type": "email",
+                        "config": {
+                            "template": "theapplication will be printed",
+                            "subject": "Your application is being processed",
+                            "admin_email": "",
+                            "endpoint": "",
+                            "method": "GET",
+                            "auth_token": "",
+                            "headers": [],
+                            "body_mapping": [],
+                            "query_params": []
+                        }
+                    },
+                    {
+                        "type": "update_renewal_status",
+                        "config_type": "internal_api_call",
+                        "label": "Update renewal status",
+                        "config": {
+                            "body_mapping": {
+                                "status": "Approved"
+                            }
+                        }
+                    }
                 ]
             },
             "Pharmacy Technician Renewal": {
@@ -4381,6 +4495,18 @@
                 ],
                 "activityTypes": [
                     "renewal"
+                ],
+                "onPaymentCompletedActions": [
+                    {
+                        "type": "update_renewal_status",
+                        "config_type": "internal_api_call",
+                        "label": "Update renewal status",
+                        "config": {
+                            "body_mapping": {
+                                "status": "Approved"
+                            }
+                        }
+                    }
                 ]
             },
             "Otcms Renewal": {
@@ -4397,6 +4523,18 @@
                 "licenseCriteria": [],
                 "activityTypes": [
                     "renewal"
+                ],
+                "onPaymentCompletedActions": [
+                    {
+                        "type": "update_renewal_status",
+                        "config_type": "internal_api_call",
+                        "label": "Update renewal status",
+                        "config": {
+                            "body_mapping": {
+                                "status": "Approved"
+                            }
+                        }
+                    }
                 ]
             }
         },
