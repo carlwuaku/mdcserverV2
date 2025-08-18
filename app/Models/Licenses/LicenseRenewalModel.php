@@ -420,6 +420,11 @@ class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, 
         return $builder;
     }
 
+    /**
+     * Get the form fields for the license renewal form.
+     *
+     * @return array An array of form fields.
+     */
     public function getFormFields(): array
     {
 

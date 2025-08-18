@@ -59,7 +59,7 @@ class CreateHousemanshipApplicationsDetailsTable extends Migration
         $this->forge->addForeignKey('first_choice_region', 'regions', 'name', 'CASCADE', 'RESTRICT', 'posting_first_choice_region');
         $this->forge->addForeignKey('second_choice_region', 'regions', 'name', 'CASCADE', 'RESTRICT', 'posting_second_choice_region');
         $this->forge->addKey('id', true);
-        $this->forge->createTable('housemanship_postings_application_details');
+        $this->forge->createTable('housemanship_postings_application_details', true);
     }
 
     public function down()

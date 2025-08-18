@@ -77,10 +77,18 @@ class CreatePaymentsTable extends Migration
         $this->forge->addKey('payment_date');
         $this->forge->addForeignKey('invoice_number', 'invoices', 'invoice_number', 'CASCADE', 'CASCADE');
         $this->forge->addForeignKey('method_name', 'payment_methods', 'method_name', 'CASCADE', 'RESTRICT');
-        $this->forge->createTable('payments');
+        $this->forge->createTable('payments', true);
 
         // Add UUID trigger for payment_id
-        $this->db->query("ALTER TABLE payments MODIFY uuid CHAR(36) DEFAULT (UUID())");
+        $trigger = "
+       CREATE TRIGGER before_insert_payments
+       BEFORE INSERT ON payments
+       FOR EACH ROW
+       BEGIN
+        SET NEW.uuid = UUID();
+       END;
+       ";
+        $this->db->query($trigger);
     }
 
     public function down()

@@ -37,11 +37,11 @@ class AddPrintTemplateRoles extends Migration
 
         $this->forge->addKey('id', true);
         $this->forge->addKey(['template_uuid', 'role_name']);
-        $this->forge->createTable('print_template_roles');
+        $this->forge->createTable('print_template_roles', true);
     }
 
     public function down()
     {
         $this->forge->dropTable('print_template_roles');
     }
-} 
+}

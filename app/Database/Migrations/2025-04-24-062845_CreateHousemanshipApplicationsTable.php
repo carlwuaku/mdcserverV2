@@ -90,7 +90,7 @@ class CreateHousemanshipApplicationsTable extends Migration
         $this->forge->addKey('tags', false);
         $this->forge->addForeignKey('license_number', 'licenses', 'license_number', 'CASCADE', 'RESTRICT');
         $this->forge->addKey('id', true);
-        $this->forge->createTable('housemanship_postings_applications');
+        $this->forge->createTable('housemanship_postings_applications', true);
     }
 
     public function down()

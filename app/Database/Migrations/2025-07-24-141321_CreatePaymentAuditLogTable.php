@@ -59,10 +59,18 @@ class CreatePaymentAuditLogTable extends Migration
         $this->forge->addKey('payment_uuid');
         $this->forge->addKey('created_at');
         $this->forge->addForeignKey('payment_uuid', 'payments', 'uuid', 'CASCADE', 'CASCADE');
-        $this->forge->createTable('payment_audit_log');
+        $this->forge->createTable('payment_audit_log', true);
 
         // Add UUID trigger for log_id
-        $this->db->query("ALTER TABLE payment_audit_log MODIFY uuid CHAR(36) DEFAULT (UUID())");
+        $trigger = "
+       CREATE TRIGGER before_insert_payment_audit_log
+       BEFORE INSERT ON payment_audit_log
+       FOR EACH ROW
+       BEGIN
+        SET NEW.uuid = UUID();
+       END;
+       ";
+        $this->db->query($trigger);
     }
 
     public function down()

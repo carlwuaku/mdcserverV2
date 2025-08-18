@@ -58,7 +58,7 @@ class AddExternalCpds extends Migration
         ]);
 
         $this->forge->addKey('id', true);
-        $this->forge->createTable('external_cpd_attendance');
+        $this->forge->createTable('external_cpd_attendance', true);
     }
 
     public function down()

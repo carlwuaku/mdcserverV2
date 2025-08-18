@@ -74,10 +74,18 @@ class CreateOfflinePaymentDetailsTable extends Migration
         $this->forge->addKey('payment_uuid');
         $this->forge->addKey('verification_status');
         $this->forge->addForeignKey('payment_uuid', 'payments', 'uuid', 'CASCADE', 'CASCADE');
-        $this->forge->createTable('offline_payment_details');
+        $this->forge->createTable('offline_payment_details', true);
 
         // Add UUID trigger for detail_id
-        $this->db->query("ALTER TABLE offline_payment_details MODIFY uuid CHAR(36) DEFAULT (UUID())");
+        $trigger = "
+       CREATE TRIGGER before_insert_offline_payment_details
+       BEFORE INSERT ON offline_payment_details
+       FOR EACH ROW
+       BEGIN
+        SET NEW.uuid = UUID();
+       END;
+       ";
+        $this->db->query($trigger);
     }
 
     public function down()

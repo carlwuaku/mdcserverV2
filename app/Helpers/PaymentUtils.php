@@ -94,8 +94,13 @@ class PaymentUtils extends Utils
         return $fees;
     }
 
-    public static function generatePresetInvoices()
+    /**
+     * @param string $uuid The uuid of the invoice
+     * @return array|null The details of the invoice with the given uuid. null if no such invoice exists.
+     */
+    public static function getInvoiceDetails($uuid): array
     {
-
+        $model = new \App\Models\Payments\InvoiceModel();
+        return $model->where("uuid", $uuid)->first();
     }
 }

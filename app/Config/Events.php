@@ -2,10 +2,10 @@
 
 namespace Config;
 
+use App\Helpers\PaymentUtils;
 use CodeIgniter\Events\Events;
-use CodeIgniter\Exceptions\FrameworkException;
-use CodeIgniter\HotReloader\HotReloader;
-
+use App\Helpers\Utils;
+use App\Helpers\ApplicationFormActionHelper;
 /*
  * --------------------------------------------------------------------
  * Application Events
@@ -58,5 +58,54 @@ Events::on(EVENT_INVOICE_CREATED, static function ($invoice, $items) {
     log_message("info", "event - Invoice created: " . $invoice['invoice_number']);
 });
 
+Events::on(EVENT_INVOICE_PAYMENT_COMPLETED, static function (string $uuid) {
+    //get the invoice details
+    $invoiceDetails = PaymentUtils::getInvoiceDetails($uuid);
+    //check the purpose of the payment
+    $purpose = $invoiceDetails['purpose'];
+    //replace the uuid with purpose_table_uuid
+    $invoiceDetails['uuid'] = $invoiceDetails['purpose_table_uuid'];
+    //get the config for the purpose from app-settings
+    /**
+     * @var array{defaultInvoiceItems: array {criteria: array {field:string, value:string[]}[], feeServiceCodes: array}[], paymentMethods: array, sourceTableName: string, description: string, onPaymentCompletedActions: array}[]
+     */
+    $purposes = Utils::getPaymentSettings()["purposes"];
+    if (!isset($purposes[$purpose])) {
+        throw new \InvalidArgumentException("Invalid payment purpose: $purpose");
+    }
+    //get the onPaymentCompletedActions for the purpose. these are identical to the actions for application forms. so we can use the ApplicationFormActionHelper methods to run them.
+    $onPaymentCompletedActions = $purposes[$purpose]["onPaymentCompletedActions"];
+    if (empty($onPaymentCompletedActions)) {
+        log_message("info", "No onPaymentCompletedActions found for purpose: $purpose");
+        return;
+    }
+
+    //run the actions
+    $model = new \App\Models\Payments\InvoiceModel();
+    $model->db->transException(true)->transStart();
+    try {
+        foreach ($onPaymentCompletedActions as $action) {
+            //the ApplicationFormActionHelper expects an object for the cofig, and some data to process.  
+            $result = ApplicationFormActionHelper::runAction((object) $action, $invoiceDetails);
+            log_message("info", "action ran for invoice payment" . json_encode($invoiceDetails) . " <br> Results: " . json_encode($result));
+        }
+
+        $model->db->transComplete();
+    } catch (\Throwable $e) {
+        $model->db->transRollback();
+        throw $e;
+    }
+});
+
+Events::on(EVENT_APPLICATION_FORM_ACTION_COMPLETED, static function (object $action, array $data, array $result) {
+
+    //log this to the actions database   
+    try {
+        //TODO: save the results of the action somewhere
+
+    } catch (\Throwable $e) {
+
+    }
+});
 
 

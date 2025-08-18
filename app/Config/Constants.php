@@ -158,5 +158,7 @@ define("SETTING_PASSWORD_RESET_TOKEN_TIMEOUT", "General.password_reset_token_tim
 
 
 define("EVENT_USER_ADDED", "user_added");
+define("EVENT_INVOICE_PAYMENT_COMPLETED", "invoice_payment_completed");
+define("EVENT_APPLICATION_FORM_ACTION_COMPLETED", "application_form_action_completed");
 
 

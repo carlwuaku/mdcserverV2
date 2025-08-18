@@ -3,13 +3,15 @@
 namespace App\Services;
 
 use App\Helpers\LicenseUtils;
+use App\Helpers\Types\RenewalStageType;
 use App\Helpers\Utils;
 use App\Models\ActivitiesModel;
 use App\Models\Licenses\LicenseRenewalModel;
 use App\Models\Licenses\LicensesModel;
 use CodeIgniter\Database\BaseBuilder;
+use CodeIgniter\Exceptions\ConfigException;
 use Exception;
-
+use App\Helpers\ApplicationFormActionHelper;
 /**
  * License Renewal Service - Handles all license renewal-related business logic
  */
@@ -22,8 +24,15 @@ class LicenseRenewalService
         $this->activitiesModel = new ActivitiesModel();
     }
 
+
     /**
-     * Create a new license renewal
+     * Create a new license renewal.
+     *
+     * @param array $data An array containing the license number, license UUID and license type.
+     * @return array An array containing the success status, message and data.
+     * @throws ConfigException If no valid stages are found for the license type.
+     * @throws Exception If the renewal is not found with the given id.
+     * @throws \Throwable If an error occurs during the creation of the renewal.
      */
     public function createRenewal(array $data): array
     {
@@ -33,24 +42,46 @@ class LicenseRenewalService
             "license_type" => "required"
         ];
 
+        $license_uuid = $data['license_uuid'];
+        $licenseType = $data['license_type'];
         // Validate data
         $validation = \Config\Services::validation();
         if (!$validation->setRules($rules)->run($data)) {
             throw new \InvalidArgumentException('Validation failed: ' . json_encode($validation->getErrors()));
         }
+        //get the valid stages for the license type
+        $validStages = LicenseUtils::getLicenseRenewalStagesValues($licenseType);
+        if (count($validStages) == 0) {
+            throw new ConfigException("No valid stages found for license type $licenseType");
+        }
+        //get the first stage
+        $stage = $validStages[0];
+        $this->validateRenewalStageActivation($data, $stage, $licenseType);
 
-        $license_uuid = $data['license_uuid'];
-        $licenseType = $data['license_type'];
+        $data['status'] = $stage->label;
+
+
 
         $model = new LicenseRenewalModel($licenseType);
 
-        // Use database transaction
-
-
         try {
             $model->db->transException(true)->transStart();
-            LicenseUtils::retainLicense($license_uuid, $data);
+            $renewalId = LicenseUtils::retainLicense($license_uuid, $data);
             $model->db->transComplete();
+            try {
+                //get the details of the renewal
+                $builder = $model->builder();
+                $builder->where($model->table . '.id', $renewalId);
+                $builder = $model->addLicenseDetails($builder, $licenseType, true, true, '', '', true);
+                $renewalDetails = $builder->get()->getFirstRow('array');
+                if (!$renewalDetails) {
+                    throw new Exception("Renewal not found with id $renewalId");
+                }
+                //run the actions for that stage
+                $this->runRenewalActions($renewalDetails, $stage);
+            } catch (\Throwable $th) {
+                log_message('error', "Error getting renewal details: " . json_encode($renewalDetails) . "<br>" . $th);
+            }
 
             return [
                 'success' => true,
@@ -65,8 +96,66 @@ class LicenseRenewalService
     }
 
     /**
-     * Update a license renewal
+     * Validates the renewal stage activation by checking if the provided data complies with the rules
+     * for the specified license type and stage. Also checks if the user has the required permission for the stage.
+     *
+     * @param array $data The data to be validated.
+     * @param RenewalStageType $stage The stage to validate against.
+     * @param string $licenseType The license type.
+     * @throws \InvalidArgumentException If the data validation fails.
+     * @throws \CodeIgniter\Shield\Exceptions\PermissionException If the user does not have the required permission.
      */
+    private function validateRenewalStageActivation(array $data, RenewalStageType $stage, string $licenseType)
+    {
+        $rules = Utils::getLicenseRenewalStageValidation($licenseType, $stage->label);
+        $validation = \Config\Services::validation();
+        if (count($rules) > 0 && !$validation->setRules($rules)->run($data)) {
+            log_message('error', json_encode($validation->getErrors()));
+            throw new \InvalidArgumentException('Validation failed: ' . json_encode($validation->getErrors()));
+        }
+        // Check if the user has the required permission for the first stage
+        $permission = $stage->permission;
+        $rpModel = new \App\Models\RolePermissionsModel();
+        if (!$rpModel->hasPermission(auth()->getUser()->role_name, $permission)) {
+            log_message("error", "User " . auth()->getUser()->username . " attempted to perform an activate renewal stage {$stage->label} without the required permission: $permission");
+            throw new \CodeIgniter\Shield\Exceptions\PermissionException("You do not have permission to perform this action");
+        }
+    }
+
+
+    /**
+     * Runs the actions for the given renewal stage.
+     *
+     * @param array $renewalDetails The details of the renewal.
+     * @param RenewalStageType $stage The stage to run the actions for.
+     * @throws \Throwable If an error occurs while running the actions.
+     */
+    private function runRenewalActions(array $renewalDetails, RenewalStageType $stage)
+    {
+        try {
+
+            //run the actions for that stage
+            if (isset($stage->actions)) {
+                foreach ($stage->actions as $action) {
+                    log_message('info', "Running action for renewal: " . json_encode($action) . json_encode($renewalDetails));
+                    try {
+                        ApplicationFormActionHelper::runAction($action, (array) $renewalDetails);
+                    } catch (\Throwable $th) {
+                        //let it through for now. 
+                        //TODO: notify the admin to retry
+                        log_message('error', "Error running action for renewal: " . json_encode($action) . json_encode($renewalDetails) . "<br>" . $th);
+                    }
+
+                }
+            }
+        } catch (\Throwable $th) {
+            log_message('error', "Error getting renewal details: " . json_encode($renewalDetails) . "<br>" . $th);
+        }
+    }
+
+
+
+
     public function updateRenewal(string $uuid, array $data): array
     {
         $rules = [
@@ -86,6 +175,8 @@ class LicenseRenewalService
 
         $data['uuid'] = $uuid;
         unset($data['id']);
+        //the status is not allowed to be updated. do that through updateBulkRenewals
+        unset($data['status']);
 
         $model = new LicenseRenewalModel($licenseType);
 
@@ -107,8 +198,15 @@ class LicenseRenewalService
         }
     }
 
+
     /**
-     * Update multiple renewals at once
+     * Update multiple license renewals. this is used to update the status of the renewals
+     *
+     * @param object[] $renewalsData An array of renewals data
+     * @param string|null $status The new status for the renewals. If provided, it will be
+     *          validated against the valid stages for the license type.
+     * @return array An array containing the results of the bulk renewal update.
+     * @throws Exception If validation fails or if the renewal status is invalid.
      */
     public function updateBulkRenewals(array $renewalsData, ?string $status = null): array
     {
@@ -116,12 +214,14 @@ class LicenseRenewalService
         $failed = 0;
         $success = 0;
         foreach ($renewalsData as $renewal) {
+            $renewal = (array) $renewal;
             try {
-                $renewal = (array) $renewal;
+
                 $renewalUuid = $renewal['uuid'];
 
                 $model = new LicenseRenewalModel();
                 $existingRenewal = $model->builder()->where('uuid', $renewalUuid)->get()->getFirstRow('array');
+
 
                 if (!$existingRenewal) {
                     $results[] = [
@@ -131,26 +231,42 @@ class LicenseRenewalService
                     ];
                     continue;
                 }
-
                 $licenseType = $existingRenewal['license_type'];
-                unset($renewal['uuid']);
+                //get the details of the renewal
+                $builder = $model->builder();
+                $builder->where($model->table . '.uuid', $renewalUuid);
+                $builder = $model->addLicenseDetails($builder, $licenseType, true, true, '', '', true);
+                $renewalDetails = $builder->get()->getFirstRow('array');
+
+                /**
+                 * @var RenewalStageType
+                 */
+                $renewalStage = null;
+
 
                 // Validate if status is provided
                 if (!empty($status)) {
                     //get the valid stages for the license type
-                    $validStages = LicenseUtils::getLicenseRenewalStages($licenseType);
-                    if (!in_array($status, $validStages)) {
+                    $validStages = LicenseUtils::getLicenseRenewalStagesValues($licenseType);
+
+                    if (count($validStages) == 0) {
+                        throw new ConfigException("No valid stages found for license type $licenseType");
+                    }
+                    $validStageNames = array_map(function ($stage) {
+                        return $stage->label;
+                    }, $validStages);
+
+                    if (!in_array($status, $validStageNames)) {
                         throw new Exception("Invalid renewal status: $status");
                     }
-                    $rules = Utils::getLicenseRenewalStageValidation($licenseType, $status);
-                    $validation = \Config\Services::validation();
-                    if (count($rules) > 0 && !$validation->setRules($rules)->run($renewal)) {
-                        log_message('error', json_encode($validation->getErrors()));
-                        throw new Exception("Validation failed for renewal $renewalUuid");
-                    }
-                    $renewal['status'] = $status;
-                }
 
+
+                    $renewalStage = $validStages[array_search($status, $validStageNames)];
+                    $this->validateRenewalStageActivation($renewal, $renewalStage, $licenseType);
+                    $renewal['status'] = $status;
+
+                }
+                unset($renewal['uuid']);
                 $model = new LicenseRenewalModel($licenseType);
                 // Use database transaction
                 $model->db->transException(true)->transStart();
@@ -164,6 +280,8 @@ class LicenseRenewalService
                     'successful' => true,
                     'message' => 'Renewal updated successfully'
                 ];
+                $this->runRenewalActions($renewalDetails, $renewalStage);
+
 
             } catch (\Throwable $e) {
                 log_message('error', 'Bulk renewal update failed: ' . $e);
@@ -206,6 +324,10 @@ class LicenseRenewalService
             'success' => true,
             'message' => 'License renewal deleted successfully'
         ];
+    }
+
+    public function runRenewalStageActions()
+    {
     }
 
     /**
@@ -337,26 +459,26 @@ class LicenseRenewalService
         $licenseDef = Utils::getLicenseSetting($licenseType);
         $renewalStages = (array) $licenseDef->renewalStages;
 
-        // Create status field with renewal stages
-        $status = [
-            "label" => "Status",
-            "name" => "status",
-            "type" => "select",
-            "hint" => "",
-            "options" => [],
-            "value" => "",
-            "required" => true
-        ];
+        // we're removing the status field so that the application goes through the renewal stages
+        // $status = [
+        //     "label" => "Status",
+        //     "name" => "status",
+        //     "type" => "select",
+        //     "hint" => "",
+        //     "options" => [],
+        //     "value" => "",
+        //     "required" => true
+        // ];
 
-        foreach (array_keys($renewalStages) as $key) {
-            $status["options"][] = [
-                "key" => $key,
-                "value" => $key
-            ];
-        }
+        // foreach (array_keys($renewalStages) as $key) {
+        //     $status["options"][] = [
+        //         "key" => $key,
+        //         "value" => $key
+        //     ];
+        // }
 
         $modelFields = $licenseModel->getFormFields();
-        $modelFields[] = $status;
+        // $modelFields[] = $status;
 
         return array_merge($modelFields, $licenseDef->renewalFields);
     }

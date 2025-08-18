@@ -64,10 +64,18 @@ class CreatePaymentFilesTable extends Migration
         $this->forge->addUniqueKey('uuid');
         $this->forge->addKey('payment_uuid');
         $this->forge->addForeignKey('payment_uuid', 'payments', 'uuid', 'CASCADE', 'CASCADE');
-        $this->forge->createTable('payment_files');
+        $this->forge->createTable('payment_files', true);
 
         // Add UUID trigger for file_id
-        $this->db->query("ALTER TABLE payment_files MODIFY uuid CHAR(36) DEFAULT (UUID())");
+        $trigger = "
+       CREATE TRIGGER before_insert_payment_files
+       BEFORE INSERT ON payment_files
+       FOR EACH ROW
+       BEGIN
+        SET NEW.uuid = UUID();
+       END;
+       ";
+        $this->db->query($trigger);
     }
 
     public function down()

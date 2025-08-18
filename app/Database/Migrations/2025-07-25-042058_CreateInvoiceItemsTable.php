@@ -61,10 +61,18 @@ class CreateInvoiceItemsTable extends Migration
         $this->forge->addKey('invoice_number');
         $this->forge->addForeignKey('invoice_number', 'invoices', 'invoice_number', 'CASCADE', 'CASCADE');
         $this->forge->addForeignKey('purpose_code', 'payment_purposes', 'purpose_code', 'CASCADE', 'RESTRICT');
-        $this->forge->createTable('invoice_line_items');
+        $this->forge->createTable('invoice_line_items', true);
 
         // Add UUID trigger for line_item_id
-        $this->db->query("ALTER TABLE invoice_line_items MODIFY uuid CHAR(36) DEFAULT (UUID())");
+        $trigger = "
+       CREATE TRIGGER before_insert_invoice_line_items
+       BEFORE INSERT ON invoice_line_items
+       FOR EACH ROW
+       BEGIN
+        SET NEW.uuid = UUID();
+       END;
+       ";
+        $this->db->query($trigger);
     }
 
     public function down()
