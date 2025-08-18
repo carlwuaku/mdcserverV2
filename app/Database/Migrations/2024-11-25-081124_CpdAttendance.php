@@ -38,7 +38,7 @@ class CpdAttendance extends Migration
         ]);
 
         $this->forge->addKey('id', true);
-        $this->forge->createTable('cpd_attendance');
+        $this->forge->createTable('cpd_attendance', true);
     }
 
     public function down()

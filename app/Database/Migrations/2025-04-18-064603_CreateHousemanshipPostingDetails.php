@@ -58,7 +58,7 @@ class CreateHousemanshipPostingDetails extends Migration
         $this->forge->addForeignKey('facility_name', 'housemanship_facilities', 'name', 'CASCADE', 'CASCADE');
         $this->forge->addForeignKey('posting_uuid', 'housemanship_postings', 'uuid', 'CASCADE', 'CASCADE');
         $this->forge->addKey('id', true);
-        $this->forge->createTable('housemanship_postings_details');
+        $this->forge->createTable('housemanship_postings_details', true);
     }
 
     public function down()

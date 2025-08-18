@@ -33,7 +33,7 @@ class CreateInvoicePaymentOptionsTable extends Migration
 
         $this->forge->addForeignKey('invoice_uuid', 'invoices', 'uuid', 'CASCADE', 'CASCADE');
         $this->forge->addForeignKey('method_name', 'payment_methods', 'method_name', 'CASCADE', 'RESTRICT');
-        $this->forge->createTable('invoice_payment_options');
+        $this->forge->createTable('invoice_payment_options', true);
     }
 
     public function down()

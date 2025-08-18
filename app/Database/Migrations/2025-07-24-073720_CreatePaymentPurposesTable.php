@@ -47,10 +47,18 @@ class CreatePaymentPurposesTable extends Migration
         $this->forge->addPrimaryKey('id');
         $this->forge->addUniqueKey('purpose_code');
         $this->forge->addUniqueKey('uuid');
-        $this->forge->createTable('payment_purposes');
+        $this->forge->createTable('payment_purposes', true);
 
         // Add UUID trigger for purpose_id
-        $this->db->query("ALTER TABLE payment_purposes MODIFY uuid CHAR(36) DEFAULT (UUID())");
+        $trigger = "
+       CREATE TRIGGER before_insert_payment_purposes
+       BEFORE INSERT ON payment_purposes
+       FOR EACH ROW
+       BEGIN
+        SET NEW.uuid = UUID();
+       END;
+       ";
+        $this->db->query($trigger);
     }
 
     public function down()

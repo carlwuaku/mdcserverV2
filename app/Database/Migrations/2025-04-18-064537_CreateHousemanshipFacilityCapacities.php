@@ -39,7 +39,7 @@ class CreateHousemanshipFacilityCapacities extends Migration
         $this->forge->addKey('capacity', false);
         $this->forge->addForeignKey('facility_name', 'housemanship_facilities', 'name', 'CASCADE', 'CASCADE');
         $this->forge->addKey('id', true);
-        $this->forge->createTable('housemanship_facility_capacities');
+        $this->forge->createTable('housemanship_facility_capacities', true);
     }
 
     public function down()

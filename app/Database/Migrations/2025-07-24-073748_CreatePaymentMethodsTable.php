@@ -49,10 +49,18 @@ class CreatePaymentMethodsTable extends Migration
         $this->forge->addUniqueKey('method_code');
         $this->forge->addUniqueKey('uuid');
         $this->forge->addUniqueKey('method_name');
-        $this->forge->createTable('payment_methods');
+        $this->forge->createTable('payment_methods', true);
 
         // Add UUID trigger for method_id
-        $this->db->query("ALTER TABLE payment_methods MODIFY uuid CHAR(36) DEFAULT (UUID())");
+        $trigger = "
+       CREATE TRIGGER before_insert_payment_methods
+       BEFORE INSERT ON payment_methods
+       FOR EACH ROW
+       BEGIN
+        SET NEW.uuid = UUID();
+       END;
+       ";
+        $this->db->query($trigger);
     }
 
     public function down()

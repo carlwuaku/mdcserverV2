@@ -118,10 +118,18 @@ class CreatePaymentInvoicesTable extends Migration
         $this->forge->addKey('purpose', false);
         $this->forge->addKey('year', false);
         $this->forge->addKey('status', false);
-        $this->forge->createTable('invoices');
+        $this->forge->createTable('invoices', true);
 
         // Add UUID trigger for invoice_id
-        $this->db->query("ALTER TABLE invoices MODIFY uuid CHAR(36) DEFAULT (UUID())");
+        $trigger = "
+       CREATE TRIGGER before_insert_invoices
+       BEFORE INSERT ON invoices
+       FOR EACH ROW
+       BEGIN
+        SET NEW.uuid = UUID();
+       END;
+       ";
+        $this->db->query($trigger);
     }
 
     public function down()

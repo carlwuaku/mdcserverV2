@@ -54,7 +54,7 @@ class CreatePaymentFileUploads extends Migration
         $this->forge->addKey('created_at');
         $this->forge->addKey('reference_number');
         $this->forge->addForeignKey('invoice_uuid', 'invoices', 'uuid', 'CASCADE', 'CASCADE');
-        $this->forge->createTable('payment_file_uploads');
+        $this->forge->createTable('payment_file_uploads', true);
 
     }
 
