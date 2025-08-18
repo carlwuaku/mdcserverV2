@@ -7,6 +7,7 @@ use App\Services\LicenseRenewalService;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 use OpenApi\Attributes as OA;
+use CodeIgniter\Shield\Exceptions\PermissionException;
 /**
  * @OA\Info(title="API Name", version="1.0")
  * @OA\Tag(name="Tag Name", description="Tag description")
@@ -174,6 +175,8 @@ class LicensesController extends ResourceController
 
         } catch (\InvalidArgumentException $e) {
             return $this->respond(['message' => $e->getMessage()], ResponseInterface::HTTP_BAD_REQUEST);
+        } catch (PermissionException $e) {
+            return $this->respond(['message' => $e->getMessage()], ResponseInterface::HTTP_UNAUTHORIZED);
         } catch (\Throwable $e) {
             log_message("error", $e);
             return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
@@ -206,6 +209,8 @@ class LicensesController extends ResourceController
 
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
+        } catch (PermissionException $e) {
+            return $this->respond(['message' => $e->getMessage()], ResponseInterface::HTTP_UNAUTHORIZED);
         } catch (\Throwable $e) {
             log_message("error", $e);
             return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);

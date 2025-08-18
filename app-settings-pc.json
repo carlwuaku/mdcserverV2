@@ -447,7 +447,7 @@
                     "children": []
                 },
                 {
-                    "title": "Manage Roles",
+                    "title": "Manage Roles/Permissions",
                     "url": "/admin/roles",
                     "icon": "",
                     "children": []
@@ -465,6 +465,286 @@
                     "children": []
                 }
             ]
+        }
+    ],
+    "dashboardMenu": [
+        {
+            "title": "Practitioners",
+            "active_children": false,
+            "url": "/applications/application-types",
+            "icon": "person_outlined",
+            "color": "green",
+            "children": [
+                {
+                    "title": "New Portal Edits",
+                    "url": "/applications",
+                    "icon": "",
+                    "children": [],
+                    "urlParams": {
+                        "form_type": "Portal Edit",
+                        "status": "Pending Approval"
+                    },
+                    "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Portal Edit",
+                    "apiCountText": "",
+                    "permissions": [
+                        "View_Application_Forms"
+                    ]
+                },
+                {
+                    "title": "Renewals pending approval",
+                    "url": "/licenses/renewals-manage/practitioners",
+                    "icon": "",
+                    "children": [],
+                    "urlParams": {
+                        "renewal_practitioner_type": "Pharmacist",
+                        "status": "Pending Approval"
+                    },
+                    "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Pending Approval&renewal_practitioner_type=Pharmacist",
+                    "apiCountText": "",
+                    "permissions": [
+                        "View_License_Renewal"
+                    ]
+                },
+                {
+                    "title": "Renewals pending payment",
+                    "url": "/licenses/renewals-manage/practitioners",
+                    "icon": "",
+                    "children": [],
+                    "urlParams": {
+                        "renewal_practitioner_type": "Pharmacist",
+                        "status": "Pending Payment"
+                    },
+                    "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Pending Payment&renewal_practitioner_type=Pharmacist",
+                    "apiCountText": "",
+                    "permissions": [
+                        "View_License_Renewal"
+                    ]
+                }
+            ],
+            "description": "Manage submitted applications",
+            "apiCountUrl": "/applications/count?status=Pending Approval",
+            "apiCountText": "New Applications"
+        },
+        {
+            "title": "Continuous Professional Development (CPD)",
+            "active_children": false,
+            "url": "/cpd",
+            "icon": "auto_stories_outlined",
+            "color": "deep-purple",
+            "children": [
+                {
+                    "title": "Submissions pending approval",
+                    "url": "/applications",
+                    "icon": "",
+                    "children": [],
+                    "urlParams": {
+                        "form_type": "CPD Attendance"
+                    },
+                    "apiCountUrl": "/applications/count?status=Pending Approval&form_type=CPD Attendance",
+                    "apiCountText": "",
+                    "permissions": [
+                        "View_Application_Forms"
+                    ]
+                }
+            ],
+            "description": "",
+            "apiCountUrl": "/applications/count?status=Pending Approval&form_type=CPD Attendance",
+            "apiCountText": "Submissions pending approval"
+        },
+        {
+            "title": "Housemanship",
+            "active_children": false,
+            "url": "/housemanship/postings",
+            "icon": "medical_services",
+            "color": "pink",
+            "children": [
+                {
+                    "title": "1st Year housemanship applications - Pharmacists",
+                    "url": "/housemanship/posting-applications/1",
+                    "icon": "",
+                    "children": [],
+                    "urlParams": {
+                        "type": "Pharmacist"
+                    },
+                    "apiCountUrl": "/housemanship/posting-application-count?type=Pharmacist&session=1",
+                    "apiCountText": "",
+                    "permissions": [
+                        "View_Housemanship_Posting_Applications"
+                    ]
+                },
+                {
+                    "title": "1st Year housemanship applications - Pharmacy Technicians",
+                    "url": "/housemanship/posting-applications/1",
+                    "icon": "",
+                    "children": [],
+                    "urlParams": {
+                        "type": "PA"
+                    },
+                    "apiCountUrl": "/housemanship/posting-application-count?type=PA&session=1",
+                    "apiCountText": "",
+                    "permissions": [
+                        "View_Housemanship_Posting_Applications"
+                    ]
+                },
+                {
+                    "title": "2nd Year housemanship applications - Pharmacists",
+                    "url": "/housemanship/posting-applications/2",
+                    "icon": "",
+                    "children": [],
+                    "urlParams": {
+                        "type": "Pharmacist"
+                    },
+                    "apiCountUrl": "/housemanship/posting-application-count?type=Pharmacist&session=2",
+                    "apiCountText": "",
+                    "permissions": [
+                        "View_Housemanship_Posting_Applications"
+                    ]
+                },
+                {
+                    "title": "2nd Year housemanship applications - Pharmacy Technicians",
+                    "url": "/housemanship/posting-applications/2",
+                    "icon": "",
+                    "children": [],
+                    "urlParams": {
+                        "type": "PA"
+                    },
+                    "apiCountUrl": "/housemanship/posting-application-count?type=PA&session=2",
+                    "apiCountText": "",
+                    "permissions": [
+                        "View_Housemanship_Posting_Applications"
+                    ]
+                }
+            ],
+            "description": "",
+            "apiCountUrl": "",
+            "apiCountText": ""
+        },
+        {
+            "title": "Examinations",
+            "active_children": false,
+            "url": "",
+            "icon": "assignment",
+            "color": "purple",
+            "children": [
+                {
+                    "title": "Manage examinations",
+                    "url": "/examinations",
+                    "icon": "",
+                    "children": [],
+                    "urlParams": {},
+                    "apiCountUrl": "",
+                    "apiCountText": ""
+                },
+                {
+                    "title": "New registrations - Pharmacists",
+                    "url": "/applications",
+                    "icon": "",
+                    "children": [],
+                    "urlParams": {
+                        "form_type": "Examination Candidates Registration Application",
+                        "status": "Pending approval",
+                        "child_type": "Pharmacist",
+                        "child_category": "Medical"
+                    },
+                    "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Examination Candidates Registration Application&child_type=Pharmacist",
+                    "apiCountText": "",
+                    "permissions": [
+                        "View_Application_Forms"
+                    ]
+                },
+                {
+                    "title": "New registrations - Pharmacy Technicians",
+                    "url": "/applications",
+                    "icon": "",
+                    "children": [],
+                    "urlParams": {
+                        "form_type": "Examination Candidates Registration Application",
+                        "status": "Pending approval",
+                        "child_type": "Pharmacy Technician",
+                        "child_category": "Medical"
+                    },
+                    "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Examination Candidates Registration Application&child_type=Pharmacy Technician",
+                    "apiCountText": "",
+                    "permissions": [
+                        "View_Application_Forms"
+                    ]
+                },
+                {
+                    "title": "New applications for examinations",
+                    "url": "/examinations",
+                    "icon": "",
+                    "children": [],
+                    "urlParams": {},
+                    "apiCountUrl": "/examinations/applications/count",
+                    "apiCountText": "",
+                    "permissions": [
+                        "Approve_Or_Deny_Examination_Applications"
+                    ]
+                }
+            ],
+            "description": "",
+            "apiCountUrl": "",
+            "apiCountText": ""
+        }
+    ],
+    "searchTypes": [
+        {
+            "title": "Search Pharmacists",
+            "active_children": false,
+            "url": "/licenses/list/practitioners",
+            "icon": "person_outlined",
+            "children": [],
+            "urlParams": {
+                "child_practitioner_type": "Pharmacist"
+            }
+        },
+        {
+            "title": "Search Pharmacy Technicians",
+            "active_children": false,
+            "url": "/licenses/list/practitioners",
+            "icon": "person_outlined",
+            "children": [],
+            "urlParams": {
+                "child_practitioner_type": "Pharmacy Technician"
+            }
+        },
+        {
+            "title": "Search Pharmacies",
+            "active_children": false,
+            "url": "/licenses/list/facilities",
+            "icon": "local_pharmacy",
+            "children": [],
+            "urlParams": {}
+        },
+        {
+            "title": "Search OTCMS",
+            "active_children": false,
+            "url": "/licenses/list/otcms",
+            "icon": "person_outlined",
+            "children": [],
+            "urlParams": {}
+        },
+        {
+            "title": "Search Examination Candidates",
+            "active_children": false,
+            "url": "/licenses/list/exam_candidates",
+            "icon": "person_outlined",
+            "children": [],
+            "urlParams": {}
+        },
+        {
+            "title": "Search CPD Topics",
+            "active_children": false,
+            "url": "/cpd",
+            "icon": "auto_stories_outlined",
+            "children": []
+        },
+        {
+            "title": "Search CPD Providers",
+            "active_children": false,
+            "url": "/cpd/providers",
+            "icon": "auto_stories_outlined",
+            "children": []
         }
     ],
     "renewalBasicStatisticsFilterFields": [
@@ -3379,286 +3659,6 @@
             "gazetteTableColumns": {}
         }
     },
-    "dashboardMenu": [
-        {
-            "title": "Practitioners",
-            "active_children": false,
-            "url": "/applications/application-types",
-            "icon": "person_outlined",
-            "color": "green",
-            "children": [
-                {
-                    "title": "New Portal Edits",
-                    "url": "/applications",
-                    "icon": "",
-                    "children": [],
-                    "urlParams": {
-                        "form_type": "Portal Edit",
-                        "status": "Pending Approval"
-                    },
-                    "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Portal Edit",
-                    "apiCountText": "",
-                    "permissions": [
-                        "View_Application_Forms"
-                    ]
-                },
-                {
-                    "title": "Renewals pending approval",
-                    "url": "/licenses/renewals-manage/practitioners",
-                    "icon": "",
-                    "children": [],
-                    "urlParams": {
-                        "renewal_practitioner_type": "Pharmacist",
-                        "status": "Pending Approval"
-                    },
-                    "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Pending Approval&renewal_practitioner_type=Pharmacist",
-                    "apiCountText": "",
-                    "permissions": [
-                        "View_License_Renewal"
-                    ]
-                },
-                {
-                    "title": "Renewals pending payment",
-                    "url": "/licenses/renewals-manage/practitioners",
-                    "icon": "",
-                    "children": [],
-                    "urlParams": {
-                        "renewal_practitioner_type": "Pharmacist",
-                        "status": "Pending Payment"
-                    },
-                    "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Pending Payment&renewal_practitioner_type=Pharmacist",
-                    "apiCountText": "",
-                    "permissions": [
-                        "View_License_Renewal"
-                    ]
-                }
-            ],
-            "description": "Manage submitted applications",
-            "apiCountUrl": "/applications/count?status=Pending Approval",
-            "apiCountText": "New Applications"
-        },
-        {
-            "title": "Continuous Professional Development (CPD)",
-            "active_children": false,
-            "url": "/cpd",
-            "icon": "auto_stories_outlined",
-            "color": "deep-purple",
-            "children": [
-                {
-                    "title": "Submissions pending approval",
-                    "url": "/applications",
-                    "icon": "",
-                    "children": [],
-                    "urlParams": {
-                        "form_type": "CPD Attendance"
-                    },
-                    "apiCountUrl": "/applications/count?status=Pending Approval&form_type=CPD Attendance",
-                    "apiCountText": "",
-                    "permissions": [
-                        "View_Application_Forms"
-                    ]
-                }
-            ],
-            "description": "",
-            "apiCountUrl": "/applications/count?status=Pending Approval&form_type=CPD Attendance",
-            "apiCountText": "Submissions pending approval"
-        },
-        {
-            "title": "Housemanship",
-            "active_children": false,
-            "url": "/housemanship/postings",
-            "icon": "medical_services",
-            "color": "pink",
-            "children": [
-                {
-                    "title": "1st Year housemanship applications - Pharmacists",
-                    "url": "/housemanship/posting-applications/1",
-                    "icon": "",
-                    "children": [],
-                    "urlParams": {
-                        "type": "Pharmacist"
-                    },
-                    "apiCountUrl": "/housemanship/posting-application-count?type=Pharmacist&session=1",
-                    "apiCountText": "",
-                    "permissions": [
-                        "View_Housemanship_Posting_Applications"
-                    ]
-                },
-                {
-                    "title": "1st Year housemanship applications - Pharmacy Technicians",
-                    "url": "/housemanship/posting-applications/1",
-                    "icon": "",
-                    "children": [],
-                    "urlParams": {
-                        "type": "PA"
-                    },
-                    "apiCountUrl": "/housemanship/posting-application-count?type=PA&session=1",
-                    "apiCountText": "",
-                    "permissions": [
-                        "View_Housemanship_Posting_Applications"
-                    ]
-                },
-                {
-                    "title": "2nd Year housemanship applications - Pharmacists",
-                    "url": "/housemanship/posting-applications/2",
-                    "icon": "",
-                    "children": [],
-                    "urlParams": {
-                        "type": "Pharmacist"
-                    },
-                    "apiCountUrl": "/housemanship/posting-application-count?type=Pharmacist&session=2",
-                    "apiCountText": "",
-                    "permissions": [
-                        "View_Housemanship_Posting_Applications"
-                    ]
-                },
-                {
-                    "title": "2nd Year housemanship applications - Pharmacy Technicians",
-                    "url": "/housemanship/posting-applications/2",
-                    "icon": "",
-                    "children": [],
-                    "urlParams": {
-                        "type": "PA"
-                    },
-                    "apiCountUrl": "/housemanship/posting-application-count?type=PA&session=2",
-                    "apiCountText": "",
-                    "permissions": [
-                        "View_Housemanship_Posting_Applications"
-                    ]
-                }
-            ],
-            "description": "",
-            "apiCountUrl": "",
-            "apiCountText": ""
-        },
-        {
-            "title": "Examinations",
-            "active_children": false,
-            "url": "",
-            "icon": "assignment",
-            "color": "purple",
-            "children": [
-                {
-                    "title": "Manage examinations",
-                    "url": "/examinations",
-                    "icon": "",
-                    "children": [],
-                    "urlParams": {},
-                    "apiCountUrl": "",
-                    "apiCountText": ""
-                },
-                {
-                    "title": "New registrations - Pharmacists",
-                    "url": "/applications",
-                    "icon": "",
-                    "children": [],
-                    "urlParams": {
-                        "form_type": "Examination Candidates Registration Application",
-                        "status": "Pending approval",
-                        "child_type": "Pharmacist",
-                        "child_category": "Medical"
-                    },
-                    "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Examination Candidates Registration Application&child_type=Pharmacist",
-                    "apiCountText": "",
-                    "permissions": [
-                        "View_Application_Forms"
-                    ]
-                },
-                {
-                    "title": "New registrations - Pharmacy Technicians",
-                    "url": "/applications",
-                    "icon": "",
-                    "children": [],
-                    "urlParams": {
-                        "form_type": "Examination Candidates Registration Application",
-                        "status": "Pending approval",
-                        "child_type": "Pharmacy Technician",
-                        "child_category": "Medical"
-                    },
-                    "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Examination Candidates Registration Application&child_type=Pharmacy Technician",
-                    "apiCountText": "",
-                    "permissions": [
-                        "View_Application_Forms"
-                    ]
-                },
-                {
-                    "title": "New applications for examinations",
-                    "url": "/examinations",
-                    "icon": "",
-                    "children": [],
-                    "urlParams": {},
-                    "apiCountUrl": "/examinations/applications/count",
-                    "apiCountText": "",
-                    "permissions": [
-                        "Approve_Or_Deny_Examination_Applications"
-                    ]
-                }
-            ],
-            "description": "",
-            "apiCountUrl": "",
-            "apiCountText": ""
-        }
-    ],
-    "searchTypes": [
-        {
-            "title": "Search Pharmacists",
-            "active_children": false,
-            "url": "/licenses/list/practitioners",
-            "icon": "person_outlined",
-            "children": [],
-            "urlParams": {
-                "child_practitioner_type": "Pharmacist"
-            }
-        },
-        {
-            "title": "Search Pharmacy Technicians",
-            "active_children": false,
-            "url": "/licenses/list/practitioners",
-            "icon": "person_outlined",
-            "children": [],
-            "urlParams": {
-                "child_practitioner_type": "Pharmacy Technician"
-            }
-        },
-        {
-            "title": "Search Pharmacies",
-            "active_children": false,
-            "url": "/licenses/list/facilities",
-            "icon": "local_pharmacy",
-            "children": [],
-            "urlParams": {}
-        },
-        {
-            "title": "Search OTCMS",
-            "active_children": false,
-            "url": "/licenses/list/otcms",
-            "icon": "person_outlined",
-            "children": [],
-            "urlParams": {}
-        },
-        {
-            "title": "Search Examination Candidates",
-            "active_children": false,
-            "url": "/licenses/list/exam_candidates",
-            "icon": "person_outlined",
-            "children": [],
-            "urlParams": {}
-        },
-        {
-            "title": "Search CPD Topics",
-            "active_children": false,
-            "url": "/cpd",
-            "icon": "auto_stories_outlined",
-            "children": []
-        },
-        {
-            "title": "Search CPD Providers",
-            "active_children": false,
-            "url": "/cpd/providers",
-            "icon": "auto_stories_outlined",
-            "children": []
-        }
-    ],
     "cpdFilterFields": [
         {
             "label": "Search",
