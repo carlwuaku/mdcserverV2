@@ -12,13 +12,20 @@ class Action
     public string $url;
     public array $urlParams;
 
+    /**
+     * a list of criteria which must all be met for the alert to be shown
+     * @var CriteriaType[]
+     */
+    public array $criteria;
+
     public function __construct(
         string $label = '',
         string $icon = '',
         string $type = '',
         string $linkProp = '',
         string $url = '',
-        array $urlParams = []
+        array $urlParams = [],
+        array $criteria = []
     ) {
         $this->label = $label;
         $this->icon = $icon;
@@ -26,6 +33,7 @@ class Action
         $this->linkProp = $linkProp;
         $this->url = $url;
         $this->urlParams = $urlParams;
+        $this->criteria = $criteria;
     }
 
     public function toArray(): array
@@ -36,19 +44,27 @@ class Action
             'type' => $this->type,
             'linkProp' => $this->linkProp,
             'url' => $this->url,
-            'urlParams' => $this->urlParams
+            'urlParams' => $this->urlParams,
+            'criteria' => $this->criteria
         ];
     }
 
     public static function fromArray(array $data): self
     {
+        $alertCriteria = [];
+        if (isset($data['criteria']) && is_array($data['criteria'])) {
+            foreach ($data['criteria'] as $criteriaData) {
+                $alertCriteria[] = CriteriaType::fromArray($criteriaData);
+            }
+        }
         return new self(
             $data['label'] ?? '',
             $data['icon'] ?? '',
             $data['type'] ?? '',
             $data['linkProp'] ?? '',
             $data['url'] ?? '',
-            $data['urlParams'] ?? []
+            $data['urlParams'] ?? [],
+            $alertCriteria
         );
     }
 }
@@ -85,6 +101,9 @@ class Alert
 
     public static function fromArray(array $data): self
     {
+        /**
+         * @var CriteriaType[]
+         */
         $alertCriteria = [];
         if (isset($data['criteria']) && is_array($data['criteria'])) {
             foreach ($data['criteria'] as $criteriaData) {
@@ -104,6 +123,10 @@ class PortalHomeConfigType
     public string $title;
     public string $image;
     public string $icon;
+    /**
+     * links to be included
+     * @var Action[]
+     */
     public array $actions;
     public string $description;
 

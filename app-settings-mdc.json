@@ -3517,7 +3517,8 @@
                     "type": "link",
                     "linkProp": "",
                     "url": "/profile",
-                    "urlParams": {}
+                    "urlParams": {},
+                    "criteria": []
                 }
             ],
             "alerts": [
@@ -3557,7 +3558,8 @@
                     "type": "link",
                     "linkProp": "",
                     "url": "/application-forms",
-                    "urlParams": {}
+                    "urlParams": {},
+                    "criteria": []
                 }
             ],
             "alerts": [],
@@ -3575,7 +3577,8 @@
                     "type": "link",
                     "linkProp": "",
                     "url": "/relicensure",
-                    "urlParams": {}
+                    "urlParams": {},
+                    "criteria": []
                 },
                 {
                     "label": "Print certificates",
@@ -3583,7 +3586,8 @@
                     "type": "link",
                     "linkProp": "",
                     "url": "/relicensure",
-                    "urlParams": {}
+                    "urlParams": {},
+                    "criteria": []
                 }
             ],
             "alerts": [

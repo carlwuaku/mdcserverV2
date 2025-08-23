@@ -4212,7 +4212,8 @@
                     "type": "link",
                     "linkProp": "",
                     "url": "/profile",
-                    "urlParams": {}
+                    "urlParams": {},
+                    "criteria": []
                 }
             ],
             "alerts": [
@@ -4252,7 +4253,8 @@
                     "type": "link",
                     "linkProp": "",
                     "url": "/application-forms",
-                    "urlParams": {}
+                    "urlParams": {},
+                    "criteria": []
                 }
             ],
             "description": "View or fill application forms"
@@ -4261,23 +4263,41 @@
             "title": "Relicense Status",
             "active_children": false,
             "url": "/renewal",
-            "image": "assets/images/relicensure.jpg",
+            "image": "assets/images/010-gold-medal.png",
             "actions": [
                 {
                     "label": "Click to apply",
                     "icon": "",
                     "type": "link",
                     "linkProp": "",
-                    "url": "/relicensure",
-                    "urlParams": {}
+                    "url": "/relicensure/form",
+                    "urlParams": {},
+                    "criteria": [
+                        {
+                            "field": "in_good_standing",
+                            "operator": "not_equals",
+                            "value": [
+                                "In Good Standing"
+                            ]
+                        }
+                    ]
                 },
                 {
-                    "label": "Print certificates",
+                    "label": "View history/Print certificates",
                     "icon": "",
                     "type": "link",
                     "linkProp": "",
                     "url": "/relicensure",
-                    "urlParams": {}
+                    "urlParams": {},
+                    "criteria": [
+                        {
+                            "field": "in_good_standing",
+                            "operator": "equals",
+                            "value": [
+                                "In Good Standing"
+                            ]
+                        }
+                    ]
                 }
             ],
             "alerts": [

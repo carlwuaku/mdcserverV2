@@ -1,5 +1,6 @@
 <?php
 namespace App\Helpers;
+use App\Helpers\Types\Action;
 use App\Helpers\Types\Alert;
 use App\Helpers\Types\CriteriaType;
 use App\Helpers\Types\PortalHomeConfigType;
@@ -22,7 +23,7 @@ class PortalHelper
             if (strpos($portalHomeConfig->image, "http") === false) {
                 $portalHomeConfig->image = base_url($portalHomeConfig->image);
             }
-            //for the alerts, include them if the user matches the criteria
+            //for the alerts and actions, include them if the user matches the criteria
             $alerts = [];
             foreach ($portalHomeConfig->alerts as $alert) {
                 if (CriteriaType::matchesCriteria($userData, $alert->criteria)) {
@@ -34,6 +35,14 @@ class PortalHelper
             }
             $portalHomeConfig->alerts = $alerts;
 
+            $actions = [];
+            foreach ($portalHomeConfig->actions as $action) {
+                if (CriteriaType::matchesCriteria($userData, $action->criteria)) {
+                    unset($action->criteria);
+                    $actions[] = $action;
+                }
+            }
+            $portalHomeConfig->actions = $actions;
             return $portalHomeConfig;
         } catch (\Throwable $th) {
             throw $th;
