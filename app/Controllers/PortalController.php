@@ -1,0 +1,82 @@
+<?php
+
+namespace App\Controllers;
+
+use App\Helpers\Utils;
+use CodeIgniter\HTTP\ResponseInterface;
+use CodeIgniter\RESTful\ResourceController;
+use App\Helpers\Types\PortalHomeConfigType;
+use App\Helpers\AuthHelper;
+
+class PortalController extends ResourceController
+{
+    /**
+     * Gets the home menu for the logged in user. the settings in app-settings are used together with the user data to create the menu
+     *
+     * @return \CodeIgniter\HTTP\ResponseInterface
+     */
+    public function getHomeMenu()
+    {
+        try {
+            $userId = auth("tokens")->id();
+            $user = AuthHelper::getAuthUser($userId);
+
+            $portalHomeMenuItems = Utils::getAppSettings('portalHomeMenu');
+            /**
+             * @var PortalHomeConfigType[]
+             */
+            $configs = [];
+            foreach ($portalHomeMenuItems as $config) {
+                $configObject = PortalHomeConfigType::fromArray($config);
+
+                //fill the configs with user data
+                $configs[] = AuthHelper::fillPortalHomeMenuForUser($user, $configObject);
+            }
+
+            return $this->respond(["data" => $configs], ResponseInterface::HTTP_OK);
+
+        } catch (\Throwable $th) {
+            log_message("error", $th);
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+
+        }
+    }
+
+
+    public function appSettings()
+    {
+        // return CacheHelper::remember('app_settings', function() {
+        //read the data from app-settings.json at the root of the project
+        try {
+            $settings = ['appName', 'appVersion', 'appLongName', 'logo', 'whiteLogo', 'loginBackground'];
+            //if the user is logged in, add more settings
+            // if (auth("tokens")->loggedIn()) {
+            //     $settings = array_merge($settings, ['portalHomeMenu']);
+            // }
+            $data = Utils::getMultipleAppSettings($settings);
+
+            //if logo or other images are set append the base url to it
+            $imageProperties = ['logo', 'whiteLogo', 'institutionLogo', 'loginBackground'];
+            foreach ($imageProperties as $imageProperty) {
+                if (isset($data[$imageProperty])) {
+                    $data[$imageProperty] = base_url() . $data[$imageProperty];
+                }
+            }
+            $data['recaptchaSiteKey'] = getenv('RECAPTCHA_PUBLIC_KEY');
+            if (isset($data['portalHomeMenu'])) {
+                //set each image url relative to the base url
+                foreach ($data['portalHomeMenu'] as $key => $menu) {
+                    if (isset($menu['image'])) {
+                        $data['portalHomeMenu'][$key]['image'] = base_url() . $menu['image'];
+                    }
+                }
+            }
+            return $this->respond($data, ResponseInterface::HTTP_OK);
+        } catch (\Throwable $th) {
+            log_message('error', $th);
+            return $this->respond(['message' => 'App settings file not found'], ResponseInterface::HTTP_NOT_FOUND);
+        }
+
+        // }, 3600); // Cache for 1 hour
+    }
+}

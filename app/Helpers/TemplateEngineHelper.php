@@ -157,7 +157,6 @@ class TemplateEngineHelper
         $data->portal_url = $appSettings["portalUrl"];
         $data->institution_website = $appSettings["institutionWebsite"];
         $data->current_year = date('Y');
-        log_message('debug', 'Processing template: ' . print_r($data, true));
         // Process loops first (they might contain variables)
         $template = $this->processLoops($template, $data);
 

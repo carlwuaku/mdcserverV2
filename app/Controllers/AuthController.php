@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Helpers\AuthHelper;
 use App\Helpers\Utils;
 use App\Models\PermissionsModel;
 use App\Models\RolePermissionsModel;
@@ -54,12 +55,32 @@ class AuthController extends ResourceController
         // return CacheHelper::remember('app_settings', function() {
         //read the data from app-settings.json at the root of the project
         try {
-            $fileName = Utils::getAppSettingsFileName();
-            $data = json_decode(file_get_contents($fileName), true);
+            $settings = ['appName', 'appVersion', 'appLongName', 'logo', 'whiteLogo', 'loginBackground'];
+            //if the user is logged in, add more settings
+            if (auth("tokens")->loggedIn()) {
+                $settings = array_merge($settings, [
+                    'sidebarMenu',
+                    'dashboardMenu',
+                    'searchTypes',
+                    'renewalBasicStatisticsFilterFields',
+                    'basicStatisticsFilterFields',
+                    'advancedStatisticsFilterFields',
+                    '
+                    licenseTypes',
+                    'cpdFilterFields',
+                    'housemanship',
+                    'examinations',
+                    'payments'
+                ]);
+            }
+            $data = Utils::getMultipleAppSettings($settings);
 
-            //if logo is set, append the base url to it
-            if (isset($data['logo'])) {
-                $data['logo'] = base_url() . $data['logo'];
+            //if logo or other images are set append the base url to it
+            $imageProperties = ['logo', 'whiteLogo', 'institutionLogo', 'loginBackground'];
+            foreach ($imageProperties as $imageProperty) {
+                if (isset($data[$imageProperty])) {
+                    $data[$imageProperty] = base_url() . $data[$imageProperty];
+                }
             }
             $data['recaptchaSiteKey'] = getenv('RECAPTCHA_PUBLIC_KEY');
             if (isset($data['portalHomeMenu'])) {
@@ -78,6 +99,8 @@ class AuthController extends ResourceController
 
         // }, 3600); // Cache for 1 hour
     }
+
+
 
     public function verifyRecaptcha()
     {
@@ -462,10 +485,64 @@ class AuthController extends ResourceController
     public function profile()
     {
         $userId = auth()->id();
+
+        $userData = AuthHelper::getAuthUser($userId);
+        //only return needed fields
+
+        $excludeProfileDataFields = ['uuid', 'id', 'created_at', 'updated_at', 'deleted_at'];
+        $data = [
+            'display_name' => $userData->display_name,
+            'email_address' => $userData->email_address,
+            'user_type' => $userData->user_type,
+            'region' => $userData->region
+        ];
+        if ($userData->profile_data) {
+            $data['profile_data'] = array_diff_key((array) $userData->profile_data, array_flip($excludeProfileDataFields));
+        }
+        $permissionsList = $userData->permissions;
+        return $this->respondCreated([
+            "user" => $data,
+            "permissions" => $permissionsList
+        ]);
+    }
+
+    public function portalDashboard()
+    {
+        ///get the portal dashboard data for a given user. this will be used for non-admin users
+        $userId = auth()->id();
         $userObject = new UsersModel();
         $userData = $userObject->findById($userId);
         if (!$userData) {
             return $this->respond(["message" => "User not found"], ResponseInterface::HTTP_NOT_FOUND);
+        }
+        $permissionsList = [];
+        //for admins use their roles to get permissions
+        if ($userData->user_type === 'admin') {
+            throw new \Exception("Admins are not allowed to use this endpoint");
+        } else {
+            //for non admins use their permissions from the app.settings.json file.
+            //also get their profile details from their profile table
+            $db = \Config\Database::connect();
+
+            $profileData = $db->table($userData->profile_table)->where(["uuid" => $userData->profile_table_uuid])->get()->getFirstRow();
+            if (!empty($profileData)) {
+
+                $userData->profile_data = $profileData;
+            }
+        }
+        $userData->permissions = $permissionsList;
+        return $this->respondCreated([
+            "user" => $userData,
+            "permissions" => $permissionsList
+        ]);
+    }
+
+    private function getUserDetails($userId)
+    {
+        $userObject = new UsersModel();
+        $userData = $userObject->findById($userId);
+        if (!$userData) {
+            throw new \Exception("User not found");
         }
         $permissionsList = [];
         //for admins use their roles to get permissions
@@ -483,15 +560,12 @@ class AuthController extends ResourceController
 
             $profileData = $db->table($userData->profile_table)->where(["uuid" => $userData->profile_table_uuid])->get()->getFirstRow();
             if (!empty($profileData)) {
-
+                //if images are stored in the profile table, get them
                 $userData->profile_data = $profileData;
             }
         }
         $userData->permissions = $permissionsList;
-        return $this->respondCreated([
-            "user" => $userData,
-            "permissions" => $permissionsList
-        ]);
+        return $userData;
     }
 
     /**
@@ -1683,7 +1757,7 @@ class AuthController extends ResourceController
             $model = new UsersModel();
             $builder = $param ? $model->search($param) : $model->builder();
 
-            $builder->select("id, uuid, display_name, user_type, username, status, status_message, active, created_at, regionId, position, picture, phone, email, role_name, CASE WHEN google_auth_secret IS NOT NULL THEN 'yes' ELSE 'no' END AS google_authenticator_setup")
+            $builder->select("id, uuid, display_name, user_type, username, email_address, status, status_message, active, created_at, regionId, position, picture, phone, email, role_name, CASE WHEN google_auth_secret IS NOT NULL THEN 'yes' ELSE 'no' END AS google_authenticator_setup")
             ;
             $filterArray = $model->createArrayFromAllowedFields($this->request->getVar());
 
@@ -1853,6 +1927,20 @@ class AuthController extends ResourceController
             }, $userTypesArray);
             return $this->respond([
                 'data' => $result,
+            ], ResponseInterface::HTTP_OK);
+        } catch (\Throwable $th) {
+            log_message('error', $th);
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+    }
+
+    public function getPortalUserTypes()
+    {
+        try {
+            $userTypesArray = Utils::getAppSettings("userTypesNames");
+
+            return $this->respond([
+                'data' => $userTypesArray,
             ], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
             log_message('error', $th);

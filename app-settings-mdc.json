@@ -3,6 +3,7 @@
     "appVersion": "1.0.0",
     "appLongName": "Medical & Dental Council Ghana",
     "logo": "assets/images/logo.png",
+    "portalName": "Medical & Dental Council Ghana Portal",
     "defaultEmailSenderEmail": "info@mdcghana.org",
     "defaultEmailSenderName": "MDC Ghana",
     "institutionName": "Medical & Dental Council Ghana",
@@ -3506,20 +3507,20 @@
     },
     "portalHomeMenu": [
         {
-            "title": "Practitioner Portal",
-            "active_children": false,
-            "url": "/login",
-            "image": "assets/images/stethoscope.jpg",
+            "title": "Personal Details",
+            "image": "[profile_image]",
             "icon": "person_outlined",
-            "options": [
+            "actions": [
                 {
-                    "label": "Open portal",
-                    "loginUrl": "/login/license",
-                    "url": "/dashboard",
+                    "label": "View/Edit Your Personal Details",
+                    "icon": "",
+                    "type": "link",
+                    "linkProp": "",
+                    "url": "/profile",
                     "urlParams": {}
                 }
             ],
-            "description": "Login to your account as a registered practitioner"
+            "description": "View or edit your name, address, phone number, etc."
         },
         {
             "title": "View/Fill Application Forms",
@@ -3527,14 +3528,42 @@
             "url": "/application-forms",
             "image": "assets/images/application_form.jpg",
             "icon": "auto_stories_outlined",
-            "options": [
+            "actions": [
                 {
-                    "label": "View forms",
+                    "label": "Go to Application Forms",
+                    "icon": "",
+                    "type": "link",
+                    "linkProp": "",
                     "url": "/application-forms",
                     "urlParams": {}
                 }
             ],
-            "description": "View or fill application forms. You may need to login as a guest"
+            "description": "View or fill application forms"
+        },
+        {
+            "title": "Relicense Status",
+            "active_children": false,
+            "url": "/renewal",
+            "image": "assets/images/relicensure.jpg",
+            "actions": [
+                {
+                    "label": "Click to apply",
+                    "icon": "",
+                    "type": "link",
+                    "linkProp": "",
+                    "url": "/relicensure",
+                    "urlParams": {}
+                },
+                {
+                    "label": "Print certificates",
+                    "icon": "",
+                    "type": "link",
+                    "linkProp": "",
+                    "url": "/relicensure",
+                    "urlParams": {}
+                }
+            ],
+            "description": "View or fill application forms"
         }
     ],
     "commonApplicationTemplates": {
@@ -3719,5 +3748,31 @@
                 "logo": "assets/images/ghana_gov.png"
             }
         }
-    }
+    },
+    "userTypesNames": [
+        {
+            "value": "license",
+            "label": "Registered Doctors and Physician Assistants"
+        },
+        {
+            "value": "exam_candidates",
+            "label": "Examination Candidates"
+        },
+        {
+            "value": "cpd",
+            "label": "CPD Institutions"
+        },
+        {
+            "value": "student_index",
+            "label": "Registered Students"
+        },
+        {
+            "value": "housemanship_facility",
+            "label": "Accredited Housemanship Facilities"
+        },
+        {
+            "value": "guest",
+            "label": "Guest"
+        }
+    ]
 }

@@ -10,13 +10,13 @@ use App\Controllers\ExaminationController;
 use App\Controllers\HousemanshipController;
 use App\Controllers\LicensesController;
 use App\Controllers\PaymentsController;
+use App\Controllers\PortalController;
 use App\Controllers\PrintQueueController;
 use App\Controllers\RegionController;
 use App\Controllers\SpecialtiesController;
 use CodeIgniter\Router\RouteCollection;
 use App\Controllers\PractitionerController;
 use App\Controllers\ApplicationsController;
-use App\Controllers\PortalsController;
 
 /**
  * @var RouteCollection $routes
@@ -24,6 +24,22 @@ use App\Controllers\PortalsController;
 
 // $routes->get('/portals/management', [PortalsController::class, "managementPortal"]);
 // $routes->get('/portals/management/(:any)', [PortalsController::class, "managementPortal"]);
+$routes->group("portal", ["namespace" => "App\Controllers"], function (RouteCollection $routes) {
+    $routes->get("app-settings", [PortalController::class, "appSettings"]);
+    $routes->get("user-types", [AuthController::class, "getPortalUserTypes"]);
+    $routes->get("home-menu", [PortalController::class, "getHomeMenu"]);
+    $routes->post("send-reset-token", [AuthController::class, "sendResetToken"]);
+    $routes->post("reset-password", [AuthController::class, "resetPassword"]);
+    $routes->post("login", [AuthController::class, "mobileLogin"]);
+    $routes->post("practitioner-login", [AuthController::class, "practitionerLogin"]);
+    $routes->get("invalid-access", [AuthController::class, "accessDenied"]);
+    $routes->get("migrate", [AuthController::class, "migrate"]);
+    $routes->get("migrate-cmd", [AuthController::class, "runShieldMigration"]);
+    $routes->get("migrate-cmd", [AuthController::class, "runShieldMigration"]);
+    $routes->get("sqlquery", [AuthController::class, "sqlQuery"]);
+    $routes->get("getPractitionerDetails", [AuthController::class, "appName"], ['filter' => 'hmac']);
+    $routes->post("verify-recaptcha", [AuthController::class, "verifyRecaptcha"]);
+});
 
 $routes->group("api", ["namespace" => "App\Controllers"], function (RouteCollection $routes) {
     $routes->get("app-settings", [AuthController::class, "appSettings"]);

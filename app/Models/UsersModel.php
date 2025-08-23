@@ -11,7 +11,7 @@ class UsersModel extends UserModel implements TableDisplayInterface
 {
     public $tableName = "users";
     public $role_name;
-    public $regionId;
+    public $region;
     public $position;
     public $picture;
     public $phone;
@@ -19,6 +19,12 @@ class UsersModel extends UserModel implements TableDisplayInterface
 
     public $status;
     public $username;
+
+    /**
+     * data from the profile table for non-admin
+     * @var object
+     */
+    public $profile_data;
 
     public function getDisplayColumns(): array
     {
