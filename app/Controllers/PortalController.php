@@ -2,6 +2,8 @@
 
 namespace App\Controllers;
 
+use App\Helpers\PortalHelper;
+use App\Helpers\Types\PortalHomeSubtitleType;
 use App\Helpers\Utils;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
@@ -21,19 +23,33 @@ class PortalController extends ResourceController
             $userId = auth("tokens")->id();
             $user = AuthHelper::getAuthUser($userId);
 
-            $portalHomeMenuItems = Utils::getAppSettings('portalHomeMenu');
+            $portalHomeMenuItems = Utils::getMultipleAppSettings(['portalHomeMenu', 'portalHomeSubTitleFields']);
             /**
              * @var PortalHomeConfigType[]
              */
-            $configs = [];
-            foreach ($portalHomeMenuItems as $config) {
+            $dashboardMenu = [];
+            foreach ($portalHomeMenuItems['portalHomeMenu'] as $config) {
                 $configObject = PortalHomeConfigType::fromArray($config);
 
                 //fill the configs with user data
-                $configs[] = AuthHelper::fillPortalHomeMenuForUser($user, $configObject);
+                $dashboardMenu[] = PortalHelper::fillPortalHomeMenuForUser($user, $configObject);
             }
+            /**
+             * @var PortalHomeSubtitleType[]
+             */
+            $subtitles = [];
+            /**
+             * @var PortalHomeSubtitleType[]
+             */
+            $subtitleObjects = [];
 
-            return $this->respond(["data" => $configs], ResponseInterface::HTTP_OK);
+            foreach ($portalHomeMenuItems['portalHomeSubTitleFields'] as $config) {
+                $subtitleObjects[] = PortalHomeSubtitleType::fromArray($config);
+            }
+            //fill the configs with user data
+            $subtitles = PortalHelper::fillPortalSubtitleForUser($user, $subtitleObjects);
+
+            return $this->respond(["data" => ["dashboardMenu" => $dashboardMenu, "subtitles" => $subtitles]], ResponseInterface::HTTP_OK);
 
         } catch (\Throwable $th) {
             log_message("error", $th);

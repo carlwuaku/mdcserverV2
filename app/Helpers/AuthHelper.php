@@ -1,11 +1,9 @@
 <?php
 namespace App\Helpers;
-use App\Helpers\Types\Alert;
-use App\Helpers\Types\CriteriaType;
-use App\Helpers\Types\PortalHomeConfigType;
+
 use App\Models\UsersModel;
 use App\Models\RolePermissionsModel;
-use CodeIgniter\Shield\Entities\User;
+
 class AuthHelper
 {
     public static function getAuthUser($userId)
@@ -46,35 +44,4 @@ class AuthHelper
         return $userData;
     }
 
-    public static function fillPortalHomeMenuForUser(User $user, PortalHomeConfigType $portalHomeConfig)
-    {
-
-        //strings may have variables in them like [var_name]. replace them
-        try {
-            $templateEngine = new TemplateEngineHelper();
-            $userData = array_merge([$user->display_name, $user->email_address], (array) $user->profile_data);
-            $portalHomeConfig->title = $templateEngine->process($portalHomeConfig->title, $userData);
-            $portalHomeConfig->description = $templateEngine->process($portalHomeConfig->description, $userData);
-            $portalHomeConfig->image = $templateEngine->process($portalHomeConfig->image, $userData);
-            //if the image is not a full url, add the base url to it
-            if (strpos($portalHomeConfig->image, "http") === false) {
-                $portalHomeConfig->image = base_url($portalHomeConfig->image);
-            }
-            //for the alerts, include them if the user matches the criteria
-            $alerts = [];
-            foreach ($portalHomeConfig->alerts as $alert) {
-                if (CriteriaType::matchesCriteria($userData, $alert->criteria)) {
-                    $alerts[] = new Alert(
-                        $templateEngine->process($alert->message, $userData),
-                        $alert->type
-                    );
-                }
-            }
-            $portalHomeConfig->alerts = $alerts;
-
-            return $portalHomeConfig;
-        } catch (\Throwable $th) {
-            throw $th;
-        }
-    }
 }

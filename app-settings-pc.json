@@ -4280,7 +4280,65 @@
                     "urlParams": {}
                 }
             ],
+            "alerts": [
+                {
+                    "criteria": [
+                        {
+                            "field": "in_good_standing",
+                            "operator": "equals",
+                            "value": [
+                                "In Good Standing"
+                            ]
+                        }
+                    ],
+                    "message": "You are in good standing",
+                    "type": "success"
+                },
+                {
+                    "criteria": [
+                        {
+                            "field": "in_good_standing",
+                            "operator": "not_equals",
+                            "value": [
+                                "In Good Standing"
+                            ]
+                        }
+                    ],
+                    "message": "You are in not good standing. Please renew your license",
+                    "type": "error"
+                }
+            ],
             "description": "View or fill application forms"
+        }
+    ],
+    "portalHomeSubTitleFields": [
+        {
+            "field": "register_type",
+            "label": "Register type",
+            "criteria": [
+                {
+                    "field": "type",
+                    "operator": "equals",
+                    "value": [
+                        "practitioners"
+                    ]
+                }
+            ],
+            "template": ""
+        },
+        {
+            "field": "business_type",
+            "label": "Business type",
+            "criteria": [
+                {
+                    "field": "business_type",
+                    "operator": "equals",
+                    "value": [
+                        "R"
+                    ]
+                }
+            ],
+            "template": ""
         }
     ],
     "commonApplicationTemplates": {

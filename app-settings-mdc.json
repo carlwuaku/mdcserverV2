@@ -3520,6 +3520,28 @@
                     "urlParams": {}
                 }
             ],
+            "alerts": [
+                {
+                    "criteria": [
+                        {
+                            "field": "type",
+                            "operator": "equals",
+                            "value": [
+                                "practitioners"
+                            ]
+                        },
+                        {
+                            "field": "register_type",
+                            "operator": "equals",
+                            "value": [
+                                "Permanent"
+                            ]
+                        }
+                    ],
+                    "message": "You have a Provisional License. Please renew your license within 1 year to avoid suspension of your license.",
+                    "type": "warning"
+                }
+            ],
             "description": "View or edit your name, address, phone number, etc."
         },
         {
@@ -3538,6 +3560,7 @@
                     "urlParams": {}
                 }
             ],
+            "alerts": [],
             "description": "View or fill application forms"
         },
         {
@@ -3563,7 +3586,51 @@
                     "urlParams": {}
                 }
             ],
+            "alerts": [
+                {
+                    "criteria": [
+                        {
+                            "field": "in_good_standing",
+                            "operator": "equals",
+                            "value": [
+                                "In Good Standing"
+                            ]
+                        }
+                    ],
+                    "message": "You are in good standing",
+                    "type": "success"
+                },
+                {
+                    "criteria": [
+                        {
+                            "field": "in_good_standing",
+                            "operator": "not_equals",
+                            "value": [
+                                "In Good Standing"
+                            ]
+                        }
+                    ],
+                    "message": "You are in not good standing. Please renew your license",
+                    "type": "error"
+                }
+            ],
             "description": "View or fill application forms"
+        }
+    ],
+    "portalHomeSubTitleFields": [
+        {
+            "field": "in_good_standing",
+            "label": "In Good Standing",
+            "criteria": [
+                {
+                    "field": "type",
+                    "operator": "equals",
+                    "value": [
+                        "practitioners"
+                    ]
+                }
+            ],
+            "template": ""
         }
     ],
     "commonApplicationTemplates": {
