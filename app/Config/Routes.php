@@ -27,18 +27,18 @@ use App\Controllers\ApplicationsController;
 $routes->group("portal", ["namespace" => "App\Controllers"], function (RouteCollection $routes) {
     $routes->get("app-settings", [PortalController::class, "appSettings"]);
     $routes->get("user-types", [AuthController::class, "getPortalUserTypes"]);
-    $routes->get("home-menu", [PortalController::class, "getHomeMenu"]);
+    $routes->get("home-menu", [PortalController::class, "getHomeMenu"], ["filter" => ["apiauth"]]);
+    $routes->get("profile", [PortalController::class, "getProfileFields"], ["filter" => ["apiauth"]]);
     $routes->post("send-reset-token", [AuthController::class, "sendResetToken"]);
     $routes->post("reset-password", [AuthController::class, "resetPassword"]);
     $routes->post("login", [AuthController::class, "mobileLogin"]);
-    $routes->post("practitioner-login", [AuthController::class, "practitionerLogin"]);
-    $routes->get("invalid-access", [AuthController::class, "accessDenied"]);
-    $routes->get("migrate", [AuthController::class, "migrate"]);
-    $routes->get("migrate-cmd", [AuthController::class, "runShieldMigration"]);
-    $routes->get("migrate-cmd", [AuthController::class, "runShieldMigration"]);
-    $routes->get("sqlquery", [AuthController::class, "sqlQuery"]);
-    $routes->get("getPractitionerDetails", [AuthController::class, "appName"], ['filter' => 'hmac']);
-    $routes->post("verify-recaptcha", [AuthController::class, "verifyRecaptcha"]);
+    $routes->post("applications/details/(:segment)", [ApplicationsController::class, "createApplicationFromPortal"], ["filter" => ["apiauth"]]);
+    $routes->get("applications/details/(:segment)", [ApplicationsController::class, "getApplicationsByUser/$1"], ["filter" => ["apiauth"]]);
+    $routes->get("applications/details", [ApplicationsController::class, "getApplicationsByUser"], ["filter" => ["apiauth"]]);
+    $routes->post("assets/new/(:segment)", [AssetController::class, "upload/$1"], ["filter" => ["apiauth"]]);
+    $routes->get('assets/image-render/(:segment)/(:segment)', [AssetController::class, "serveFile/$1/$2"]);
+    $routes->post("auth/verify-google-auth", [AuthController::class, "verifyAndEnableGoogleAuth"]);
+
 });
 
 $routes->group("api", ["namespace" => "App\Controllers"], function (RouteCollection $routes) {

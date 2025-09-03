@@ -44,4 +44,21 @@ class AuthHelper
         return $userData;
     }
 
+    /**
+     * Gets a unique identifier for the authenticated user.
+     * 
+     * This will use the license number if the user has a profile data
+     * with a license number. Otherwise, it will use the user name.
+     * 
+     * @param string $userId The user ID
+     * @return string The unique identifier
+     */
+    public static function getAuthUserUniqueId($userId)
+    {
+        $user = self::getAuthUser($userId);
+        //if the user has profile data, use the license number. else use the user name
+        $uniqueId = isset($user->profile_data['license_number']) ? $user->profile_data['license_number'] : $user->username;
+        return $uniqueId;
+    }
+
 }

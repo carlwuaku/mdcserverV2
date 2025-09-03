@@ -21,6 +21,7 @@ use App\Models\Licenses\LicenseRenewalModel;
 use App\Models\Licenses\LicensesModel;
 use Exception;
 use CodeIgniter\Exceptions\ConfigException;
+use App\Helpers\Types\ApplicationFormTemplateType;
 class Utils
 {
 
@@ -97,66 +98,73 @@ class Utils
     }
 
 
+
     /**
-     * Generate QR code
-     * @param string $qrText
-     * @param bool $saveFile
-     * @param string $filename
-     * @return string The path to the generated QR code image if $saveFile is true, otherwise the data URI
+     * Generate a QR code as a PNG image and save it to a file if specified or return a data URI.
+     * @param string $qrText The text to be encoded into the QR code.
+     * @param bool $saveFile Whether to save the QR code to a file or return a data URI.
+     * @param string $filename The file name to save the QR code to. If empty, a unique name will be generated.
+     * @return string The path to the saved file or a data URI.
+     * @throws \Throwable If something goes wrong.
      */
     public static function generateQRCode(string $qrText, bool $saveFile, string $filename = ""): string
     {
-        $writer = new PngWriter();
+        try {
+            $writer = new PngWriter();
 
-        // Create QR code
-        $qrCode = new QrCode(
-            data: $qrText,
-            encoding: new Encoding('UTF-8'),
-            errorCorrectionLevel: ErrorCorrectionLevel::Low,
-            size: 100,
-            margin: 10,
-            roundBlockSizeMode: RoundBlockSizeMode::Margin,
-            foregroundColor: new Color(0, 0, 0),
-            backgroundColor: new Color(255, 255, 255),
+            // Create QR code
+            $qrCode = new QrCode(
+                data: $qrText,
+                encoding: new Encoding('UTF-8'),
+                errorCorrectionLevel: ErrorCorrectionLevel::High,
+                size: 300,
+                margin: 10,
+                roundBlockSizeMode: RoundBlockSizeMode::Margin,
+                foregroundColor: new Color(0, 0, 0),
+                backgroundColor: new Color(255, 255, 255),
 
-        );
+            );
 
-        // Create generic logo
-        $logoPath = FCPATH . 'assets/images/logo.png';// PUBLICPATH . '/assets/images/logo.png';
-        $logo = new Logo(
-            path: $logoPath,
-            resizeToWidth: 50,
-            punchoutBackground: false
-        );
+            // Create generic logo
+            $logoPath = FCPATH . 'assets/images/logo.png';// PUBLICPATH . '/assets/images/logo.png';
+            $logo = new Logo(
+                path: $logoPath,
+                resizeToWidth: 50,
+                punchoutBackground: false
+            );
 
-        // Create generic label
-        $label = new Label(
-            text: 'Label',
-            textColor: new Color(255, 0, 0)
-        );
+            // Create generic label
+            $label = new Label(
+                text: 'Label',
+                textColor: new Color(255, 0, 0)
+            );
 
-        $result = $writer->write($qrCode);
+            $result = $writer->write($qrCode);
 
-        // Validate the result
-        // $writer->validateResult($result, $qrText);
+            // Validate the result
+            // $writer->validateResult($result, $qrText);
 
 
-        // $writer->validateResult($result, $qrText);
-        if ($saveFile) {
-            // Save it to a file
-            $mimetype = "png";
-            $file_name = empty($filename) ? uniqid() . ".$mimetype" : $filename . ".$mimetype";
-            //if the folder does not exist, create it
-            if (!file_exists(WRITEPATH . QRCODES_ASSETS_FOLDER)) {
-                mkdir(WRITEPATH . QRCODES_ASSETS_FOLDER);
+            // $writer->validateResult($result, $qrText);
+            if ($saveFile) {
+                // Save it to a file
+                $mimetype = "png";
+                $file_name = empty($filename) ? uniqid() . ".$mimetype" : $filename . ".$mimetype";
+                //if the folder does not exist, create it
+                if (!file_exists(WRITEPATH . QRCODES_ASSETS_FOLDER)) {
+                    mkdir(WRITEPATH . QRCODES_ASSETS_FOLDER);
+                }
+                $path = WRITEPATH . QRCODES_ASSETS_FOLDER . DIRECTORY_SEPARATOR . "$file_name";
+                $result->saveToFile($path);
+                return $path;
             }
-            $path = WRITEPATH . QRCODES_ASSETS_FOLDER . DIRECTORY_SEPARATOR . "$file_name";
-            $result->saveToFile($path);
-            return $path;
+            // Generate a data URI to include image data inline (i.e. inside an <img> tag)
+            $dataUri = $result->getDataUri();
+            return $dataUri;
+        } catch (\Throwable $th) {
+            throw $th;
         }
-        // Generate a data URI to include image data inline (i.e. inside an <img> tag)
-        $dataUri = $result->getDataUri();
-        return $dataUri;
+
     }
 
 
@@ -936,7 +944,7 @@ class Utils
         if (preg_match("/Duplicate entry '(.+?)' for key '(.+?)'/", $errorMessage, $matches)) {
             $duplicateValue = $matches[1];
             $keyName = $matches[2];
-            
+
             // Common key name mappings to user-friendly names
             $fieldMappings = [
                 'username' => 'username',
@@ -948,75 +956,75 @@ class Utils
                 'registration_number' => 'registration number',
                 'PRIMARY' => 'record'
             ];
-            
+
             $friendlyFieldName = $fieldMappings[$keyName] ?? 'value';
             return "The {$friendlyFieldName} '{$duplicateValue}' already exists.";
         }
-        
+
         // Foreign key constraint errors
         if (preg_match("/Cannot add or update a child row: a foreign key constraint fails/", $errorMessage)) {
             return "Cannot perform this operation because it would violate data integrity. Please ensure all referenced data exists.";
         }
-        
+
         if (preg_match("/Cannot delete or update a parent row: a foreign key constraint fails/", $errorMessage)) {
             return "Cannot delete this record because it is referenced by other data. Please remove the related records first.";
         }
-        
+
         // Data truncation errors
         if (preg_match("/Data too long for column '(.+?)'/", $errorMessage, $matches)) {
             $columnName = str_replace('_', ' ', $matches[1]);
             return "The value for '{$columnName}' is too long. Please provide a shorter value.";
         }
-        
+
         // Incorrect data type errors
         if (preg_match("/Incorrect .+ value: '(.+?)' for column '(.+?)'/", $errorMessage, $matches)) {
             $value = $matches[1];
             $columnName = str_replace('_', ' ', $matches[2]);
             return "Invalid value '{$value}' for field '{$columnName}'. Please check the format and try again.";
         }
-        
+
         // Column cannot be null errors
         if (preg_match("/Column '(.+?)' cannot be null/", $errorMessage, $matches)) {
             $columnName = str_replace('_', ' ', $matches[1]);
             return "The field '{$columnName}' is required and cannot be empty.";
         }
-        
+
         // Unknown column errors
         if (preg_match("/Unknown column '(.+?)' in '(.+?)'/", $errorMessage, $matches)) {
             return "Invalid field specified in the request. Please check your data and try again.";
         }
-        
+
         // Table doesn't exist errors
         if (preg_match("/Table '(.+?)' doesn't exist/", $errorMessage)) {
             return "The requested resource is not available. Please contact support.";
         }
-        
+
         // Connection errors
         if (preg_match("/(Connection refused|Can't connect to MySQL server)/", $errorMessage)) {
             return "Database connection error. Please try again later or contact support.";
         }
-        
+
         // Access denied errors
         if (preg_match("/Access denied for user/", $errorMessage)) {
             return "Database access error. Please contact support.";
         }
-        
+
         // Out of range errors
         if (preg_match("/Out of range value for column '(.+?)'/", $errorMessage, $matches)) {
             $columnName = str_replace('_', ' ', $matches[1]);
             return "The value for '{$columnName}' is outside the allowed range.";
         }
-        
+
         // Deadlock errors
         if (preg_match("/Deadlock found when trying to get lock/", $errorMessage)) {
             return "The operation could not be completed due to system contention. Please try again.";
         }
-        
+
         // Lock wait timeout
         if (preg_match("/Lock wait timeout exceeded/", $errorMessage)) {
             return "The operation timed out. Please try again.";
         }
-        
+
         // Default fallback for any other MySQL errors
         return "A database error occurred. Please verify your data is correct and try again. If the problem persists, contact support.";
     }
@@ -1259,5 +1267,63 @@ class Utils
             default:
                 throw new ConfigException("Invalid source table: $purpose");
         }
+    }
+
+    /**
+     * Get the default application form templates
+     *
+     * @return ApplicationFormTemplateType[] the default application form templates
+     */
+    public static function getDefaultApplicationFormTemplates()
+    {
+        $templates = self::getAppSettings(DEFAULT_APPLICATION_FORM_TEMPLATES);
+        if (!$templates) {
+            throw new Exception("Default application form templates not found");
+        }
+        return array_map(function ($template) {
+            return ApplicationFormTemplateType::fromArray($template);
+        }, $templates);
+    }
+
+
+    /**
+     * Get the names of the default application form templates
+     *
+     * @return string[] the names of the default application form templates
+     * @throws Exception if default application form templates are not found
+     */
+    public static function getDefaultApplicationFormTemplatesNames()
+    {
+        $templates = self::getAppSettings(DEFAULT_APPLICATION_FORM_TEMPLATES);
+        if (empty($templates)) {
+            throw new Exception("Default application form templates not found");
+        }
+        return array_map(function ($template) {
+            return $template['name'];
+        }, $templates);
+    }
+
+    /**
+     * Get a default application form template by name
+     *
+     * @param string $name the name of the default application form template
+     * @return ApplicationFormTemplateType the default application form template
+     * @throws Exception if the default application form templates are not found
+     * @throws Exception if the default application form template is not found
+     */
+    public static function getDefaultApplicationFormTemplate($name)
+    {
+
+        $templates = self::getAppSettings(DEFAULT_APPLICATION_FORM_TEMPLATES);
+        if ($templates === null) {
+            throw new Exception("Default application form templates not found");
+        }
+
+        foreach ($templates as $template) {
+            if ($template['form_name'] == $name) {
+                return ApplicationFormTemplateType::fromArray($template);
+            }
+        }
+        throw new Exception("Default application form template not found");
     }
 }

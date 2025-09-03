@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Helpers\PortalHelper;
 use App\Helpers\Types\PortalHomeSubtitleType;
 use App\Helpers\Utils;
+use App\Services\PortalService;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 use App\Helpers\Types\PortalHomeConfigType;
@@ -12,6 +13,11 @@ use App\Helpers\AuthHelper;
 
 class PortalController extends ResourceController
 {
+    private PortalService $portalService;
+    public function __construct()
+    {
+        $this->portalService = \Config\Services::portalService();
+    }
     /**
      * Gets the home menu for the logged in user. the settings in app-settings are used together with the user data to create the menu
      *
@@ -90,9 +96,26 @@ class PortalController extends ResourceController
             return $this->respond($data, ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
             log_message('error', $th);
-            return $this->respond(['message' => 'App settings file not found'], ResponseInterface::HTTP_NOT_FOUND);
+            return $this->respond(['message' => 'System error'], ResponseInterface::HTTP_NOT_FOUND);
         }
 
         // }, 3600); // Cache for 1 hour
+    }
+
+    /**
+     * Get the fields for the user profile form
+     *
+     * @return \CodeIgniter\HTTP\ResponseInterface
+     */
+    public function getProfileFields()
+    {
+        try {
+
+            $data = $this->portalService->getUserProfileFields();
+            return $this->respond(['data' => $data], ResponseInterface::HTTP_OK);
+        } catch (\Throwable $th) {
+            log_message('error', $th);
+            return $this->respond(['message' => 'Unable to get your profile. Please try again'], ResponseInterface::HTTP_NOT_FOUND);
+        }
     }
 }

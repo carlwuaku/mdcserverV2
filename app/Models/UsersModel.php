@@ -20,6 +20,15 @@ class UsersModel extends UserModel implements TableDisplayInterface
     public $status;
     public $username;
 
+    public $uuid;
+
+    public $user_type;
+
+    public $two_fa_deadline;
+
+    public $profile_table;
+    public $profile_table_uuid;
+
     /**
      * data from the profile table for non-admin
      * @var object

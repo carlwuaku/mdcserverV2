@@ -134,6 +134,7 @@ define("SETTING_RESET_PASSWORD_EMAIL_SUBJECT", "General.reset_password_email_sub
 define("SETTING_RESET_PASSWORD_CONFIRMATION_EMAIL_TEMPLATE", "General.reset_password_confirmation_email_template");
 define("SETTING_RESET_PASSWORD_CONFIRMATION_EMAIL_SUBJECT", "General.reset_password_confirmation_email_subject");
 define("SETTING_2_FACTOR_AUTHENTICATION_SETUP_EMAIL_TEMPLATE", "General.two_factor_authentication_setup_email_template");
+define("SETTING_2_FACTOR_AUTHENTICATION_SETUP_EMAIL_TEMPLATE_CODE_ONLY", "General.two_factor_authentication_setup_email_template_code_only");
 define("SETTING_2_FACTOR_AUTHENTICATION_SETUP_EMAIL_SUBJECT", "General.two_factor_authentication_setup_email_subject");
 define("SETTING_2_FACTOR_AUTHENTICATION_VERIFICATION_EMAIL_TEMPLATE", "General.two_factor_authentication_verification_email_template");
 define("SETTING_2_FACTOR_AUTHENTICATION_VERIFICATION_EMAIL_SUBJECT", "General.two_factor_authentication_verification_email_subject");
@@ -155,8 +156,9 @@ define("SETTING_USER_EXAM_CANDIDATE_ADDED_EMAIL_TEMPLATE", "General.user_exam_ca
 define("SETTING_USER_EXAM_CANDIDATE_ADDED_EMAIL_SUBJECT", "General.user_exam_candidate_added_email_subject");
 define("SETTING_EMAIL_HEADER_AND_FOOTER_TEMPLATE", "General.email_header_and_footer_template");
 define("SETTING_PASSWORD_RESET_TOKEN_TIMEOUT", "General.password_reset_token_timeout");
+define('SETTING_PORTAL_EDITABLE_FIELDS', 'portal_editable_fields');//for now we're not adding the class (General) to the key. we'll use the settings model directly for it
 
-
+define("DEFAULT_APPLICATION_FORM_TEMPLATES", "defaultApplicationFormTemplates");
 
 define("EVENT_USER_ADDED", "user_added");
 define("EVENT_INVOICE_PAYMENT_COMPLETED", "invoice_payment_completed");

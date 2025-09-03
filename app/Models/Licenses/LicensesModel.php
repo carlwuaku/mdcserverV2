@@ -460,7 +460,9 @@ class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormIn
                 "hint" => "",
                 "options" => [],
                 "value" => "",
-                "required" => false
+                "required" => false,
+                "assetType" => "practitioners_images",
+                "maxFileSize" => 1,
             ],
             [
                 "label" => "Postal Address",
@@ -574,6 +576,40 @@ class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormIn
                 "required" => true
             ],
         ];
+    }
+
+    /**
+     * Gets the fields that are only visible to admin users.
+     *
+     * These fields are not visible to normal users when viewing their license.
+     *
+     * @return array The list of fields.
+     */
+    public function getAdminFields(): array
+    {
+        return [
+            "license_type",
+            "status",
+            "require_revalidation",
+            "last_revalidation_date",
+            "portal_access"
+        ];
+    }
+
+    /**
+     * Get the form fields for the portal (public interface).
+     *
+     * This returns all the form fields, excluding the fields that are only visible to admin users.
+     * The excluded fields are the ones returned by `getAdminFields()`.
+     *
+     * @return array The list of form fields.
+     */
+    public function getFormFieldsForPortal(): array
+    {
+        $sensitiveFields = $this->getAdminFields();
+        return array_filter($this->getFormFields(), function ($field) use ($sensitiveFields) {
+            return !in_array($field['name'], $sensitiveFields);
+        });
     }
 
     /**

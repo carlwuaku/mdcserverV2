@@ -47,9 +47,9 @@ class ApplicationService
         $applicationCode = $data['application_code'] = Utils::generateApplicationCode($formType);
 
         // Get the form template
-        $template = $this->getApplicationTemplate($formType);
+        $template = ApplicationFormActionHelper::getApplicationTemplate($formType);
         if (!$template) {
-            throw new \RuntimeException("Form template not found");
+            throw new \InvalidArgumentException("Form template not found");
         }
 
         // Set initial status
@@ -134,7 +134,7 @@ class ApplicationService
         }
 
         // Get template and validate stage
-        $template = $this->getApplicationTemplate($applicationType);
+        $template = ApplicationFormActionHelper::getApplicationTemplate($applicationType);
         if (!$template) {
             throw new \RuntimeException("Application template not found");
         }
@@ -351,12 +351,12 @@ class ApplicationService
         $statuses = $builder->get()->getResultArray();
 
         // Get template stages
-        $template = $this->getApplicationTemplate($form);
+        $template = ApplicationFormActionHelper::getApplicationTemplate($form);
         if (!$template) {
             return $statuses;
         }
 
-        $stages = json_decode($template->stages, true);
+        $stages = is_string($template->stages) ? json_decode($template->stages, true) : $template->stages;
         return $this->mergeStatusesWithStages($statuses, $stages, $template, $form);
     }
 
@@ -485,19 +485,11 @@ class ApplicationService
         return $meta;
     }
 
-    private function getApplicationTemplate(string $formType): ?object
-    {
-        $applicationTemplateModel = new ApplicationTemplateModel();
-        return $applicationTemplateModel->builder()
-            ->select(['form_name', 'stages', 'initialStage', 'finalStage', 'on_submit_message'])
-            ->where('form_name', $formType)
-            ->get()
-            ->getFirstRow();
-    }
+
 
     private function processInitialStageActions(object $template, array &$data): void
     {
-        $stages = json_decode($template->stages, true);
+        $stages = is_string($template->stages) ? json_decode($template->stages, true) : $template->stages;
         if (empty($stages)) {
             return;
         }
@@ -566,7 +558,8 @@ class ApplicationService
             'application_code' => 'application_code',
             'status' => 'status',
             'practitioner_type' => 'practitioner_type',
-            'form_type' => 'form_type'
+            'form_type' => 'form_type',
+            'applicant_unique_id' => 'applicant_unique_id'
         ];
 
         foreach ($filterMappings as $filterKey => $column) {

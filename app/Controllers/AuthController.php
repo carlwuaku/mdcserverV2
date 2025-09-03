@@ -308,6 +308,20 @@ class AuthController extends ResourceController
     public function setupGoogleAuth()
     {
         $uuid = $this->request->getVar('uuid');
+        $secrets = $this->prep2FaSetupForUser($uuid);
+
+        $secret = $secrets['secret'];
+        $qrCodeUrl = $secrets['qr_code_url'];
+
+        return $this->respond([
+            'secret' => $secret, // User can manually enter this if they can't scan QR
+            'qr_code_url' => $qrCodeUrl,
+            'message' => 'Scan this QR code with Google Authenticator app'
+        ], ResponseInterface::HTTP_OK);
+    }
+
+    private function prep2FaSetupForUser(string $uuid)
+    {
         $userObject = new UsersModel();
 
         $userData = $userObject->where(["uuid" => $uuid])->first();
@@ -319,7 +333,7 @@ class AuthController extends ResourceController
         $secret = $authenticator->createSecret();
 
         // Create the QR code URL
-        $appName = getenv("GOOGLE_AUTHENTICATOR_APP_NAME"); // Replace with your app name
+        $appName = getenv("GOOGLE_AUTHENTICATOR_APP_NAME");
         $email = $userData->email;
         $qrCodeUrl = $authenticator->getQRCodeUrl($email, $secret, $appName);
 
@@ -327,16 +341,24 @@ class AuthController extends ResourceController
         $userObject->update($userData->id, [
             'two_fa_setup_token' => $secret
         ]);
-        $this->send2FaSetupEmail($email, $userData->display_name, $secret, $qrCodeUrl);
-
-        return $this->respond([
+        $this->send2FaSetupEmail($email, $userData->display_name, $secret, $qrCodeUrl, $uuid);
+        return [
             'secret' => $secret, // User can manually enter this if they can't scan QR
-            'qr_code_url' => $qrCodeUrl,
-            'message' => 'Scan this QR code with Google Authenticator app'
-        ], ResponseInterface::HTTP_OK);
+            'qr_code_url' => $qrCodeUrl
+        ];
     }
 
-    private function send2FaSetupEmail($email, $displayName, $secret, $qrCodeUrl): void
+    /**
+     * Send an email to the user with instructions on how to set up 2FA.
+     * @param string $email The user's email address
+     * @param string $displayName The user's display name
+     * @param string $secret The secret for the authenticator
+     * @param string $qrCodeUrl The URL of the QR code
+     * @param string $uuid The user's UUID
+     * @return void
+     * @throws \Exception If the email template or subject for 2FA not found
+     */
+    private function send2FaSetupEmail($email, $displayName, $secret, $qrCodeUrl, $uuid): void
     {
         try {
             $settings = service("settings");
@@ -346,8 +368,21 @@ class AuthController extends ResourceController
                 throw new \Exception("Email template or subject for 2FA not found");
             }
             $templateEngine = new TemplateEngineHelper();
-            $message = $templateEngine->process($messageTemplate, ['qr_code_url' => $qrCodeUrl, 'secret' => $secret, 'display_name' => $displayName]);
 
+            //save the qr code url as a file and generate a link for it. gmail does not accept inline images
+            $qrPath = "";//TODO; provide a link to an empty image
+            try {
+                $qrPath = Utils::generateQRCode($qrCodeUrl, true, $email . "_2fa_qr_code");
+            } catch (\Throwable $th) {
+                log_message('error', $th);
+                $messageTemplate = $settings->get(SETTING_2_FACTOR_AUTHENTICATION_SETUP_EMAIL_TEMPLATE_CODE_ONLY);
+            }
+
+
+            $message = $templateEngine->process($messageTemplate, ['qr_code_url' => $qrPath, 'secret' => $secret, 'display_name' => $displayName]);
+            //add the portal link to the message
+            $portalLink = getenv("PORTAL_URL");
+            $message .= "<p>Click here to continue the setup: <a href='" . $portalLink . '/' . $uuid . "'>" . $portalLink . "</a></p>";
 
             $emailConfig = new EmailConfig($message, $subject, $email);
 
@@ -500,10 +535,10 @@ class AuthController extends ResourceController
             $data['profile_data'] = array_diff_key((array) $userData->profile_data, array_flip($excludeProfileDataFields));
         }
         $permissionsList = $userData->permissions;
-        return $this->respondCreated([
+        return $this->respond([
             "user" => $data,
             "permissions" => $permissionsList
-        ]);
+        ], ResponseInterface::HTTP_OK);
     }
 
     public function portalDashboard()
@@ -531,10 +566,10 @@ class AuthController extends ResourceController
             }
         }
         $userData->permissions = $permissionsList;
-        return $this->respondCreated([
+        return $this->respond([
             "user" => $userData,
             "permissions" => $permissionsList
-        ]);
+        ], ResponseInterface::HTTP_OK);
     }
 
     private function getUserDetails($userId)
@@ -855,7 +890,17 @@ class AuthController extends ResourceController
 
             // Check if the user's two_fa_deadline is set and if it is in the past and has not set up 2FA
             if ($userData->two_fa_deadline && $userData->two_fa_deadline < date('Y-m-d') && empty($userData->google_auth_secret)) {
-                return $this->respond(['message' => 'The deadline to enable 2 factor authentication has passed. Please contact our office for support.'], ResponseInterface::HTTP_BAD_REQUEST);
+                // Set up 2FA. send the email to the user
+                $message = 'The deadline to enable 2 factor authentication has passed. The instructions to enable it have been sent to your email. Please check your email.';
+                try {
+                    $this->prep2FaSetupForUser($userData->uuid);
+                } catch (\Throwable $th) {
+
+                    log_message('error', "Error sending 2FA setup email: " . $th);
+                    $message = 'The deadline to enable 2 factor authentication has passed. We are unable to send the instructions to enable it to your email at this moment. Please try again in a few minutes or contact support if the problem persists.';
+                }
+
+                return $this->respond(['message' => $message], ResponseInterface::HTTP_BAD_REQUEST);
             }
 
             // Check if 2FA is enabled for this user

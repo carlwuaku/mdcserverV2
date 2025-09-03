@@ -47,7 +47,6 @@ class CriteriaType
         }
 
         foreach ($criteria as $criterion) {
-            log_message("info", "criterion " . print_r($criterion, true));
             $field = $criterion->field;
             $operator = $criterion->operator ?? 'equals';
             $expectedValues = $criterion->value;

@@ -3,6 +3,7 @@
 namespace Config;
 
 use App\Services\GhanaGovPaymentService;
+use App\Services\PortalService;
 use CodeIgniter\Config\BaseService;
 use App\Services\LicenseService;
 use App\Services\LicenseRenewalService;
@@ -109,5 +110,13 @@ class Services extends BaseService
             return static::getSharedInstance('ghanaGovPaymentService');
         }
         return new GhanaGovPaymentService();
+    }
+
+    public static function portalService(bool $getShared = true): PortalService
+    {
+        if ($getShared) {
+            return static::getSharedInstance('portalService');
+        }
+        return new PortalService();
     }
 }

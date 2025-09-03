@@ -791,4 +791,32 @@ class ApplicationFormActionHelper extends Utils
             return $data[$fieldName] ?? $matches[0];
         }, $template);
     }
+
+    /**
+     * Get the application template based on the form type
+     * @param string $formType the form type
+     * @return object|null the application template or null if not found
+     */
+    public static function getApplicationTemplate(string $formType): ?object
+    {
+        $applicationTemplateModel = new \App\Models\Applications\ApplicationTemplateModel();
+        $template = $applicationTemplateModel->builder()
+            ->select(['form_name', 'stages', 'initialStage', 'finalStage', 'on_submit_message'])
+            ->where('form_name', $formType)
+            ->get()
+            ->getFirstRow();
+        if (!$template) {
+            //check the default from the app-settings
+            try {
+                $template = Utils::getDefaultApplicationFormTemplate($formType);
+
+            } catch (\Throwable $th) {
+                log_message('error', "Error getting default template: " . $th);
+                $template = null;
+            }
+
+        }
+
+        return $template;
+    }
 }
