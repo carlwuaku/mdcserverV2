@@ -242,7 +242,7 @@ class ApplicationService
     public function getApplicationDetails(string $uuid): ?array
     {
         $model = new ApplicationsModel();
-        $data = $model->where('uuid', $uuid)->first();
+        $data = $model->where('uuid', $uuid)->orWhere('application_code', $uuid)->first();
 
         if (!$data) {
             return null;
@@ -259,7 +259,7 @@ class ApplicationService
     /**
      * Get applications with filtering and pagination
      */
-    public function getApplications(array $filters = []): array
+    public function getApplications(array $filters = [], array $exclusionFilters = []): array
     {
         $per_page = $filters['limit'] ?? 100;
         $page = $filters['page'] ?? 0;
@@ -274,7 +274,7 @@ class ApplicationService
         $builder->orderBy($sortBy, $sortOrder);
 
         // Apply filters
-        $this->applyApplicationFilters($builder, $filters);
+        $this->applyApplicationFilters($builder, $filters, $exclusionFilters);
 
         // Apply child parameters (JSON field filters)
         $this->applyChildParameters($builder, $filters);
@@ -552,7 +552,7 @@ class ApplicationService
         }
     }
 
-    private function applyApplicationFilters(BaseBuilder $builder, array $filters): void
+    private function applyApplicationFilters(BaseBuilder $builder, array $filters, array $exclusionFilters = []): void
     {
         $filterMappings = [
             'application_code' => 'application_code',
@@ -565,6 +565,12 @@ class ApplicationService
         foreach ($filterMappings as $filterKey => $column) {
             if (isset($filters[$filterKey]) && $filters[$filterKey] !== null) {
                 $builder->where($column, $filters[$filterKey]);
+            }
+        }
+
+        foreach ($filterMappings as $filterKey => $column) {
+            if (isset($exclusionFilters[$filterKey]) && $exclusionFilters[$filterKey] !== null) {
+                $builder->where($column . ' != ', $exclusionFilters[$filterKey]);
             }
         }
 

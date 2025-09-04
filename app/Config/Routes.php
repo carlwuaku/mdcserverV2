@@ -33,12 +33,17 @@ $routes->group("portal", ["namespace" => "App\Controllers"], function (RouteColl
     $routes->post("reset-password", [AuthController::class, "resetPassword"]);
     $routes->post("login", [AuthController::class, "mobileLogin"]);
     $routes->post("applications/details/(:segment)", [ApplicationsController::class, "createApplicationFromPortal"], ["filter" => ["apiauth"]]);
-    $routes->get("applications/details/(:segment)", [ApplicationsController::class, "getApplicationsByUser/$1"], ["filter" => ["apiauth"]]);
     $routes->get("applications/details", [ApplicationsController::class, "getApplicationsByUser"], ["filter" => ["apiauth"]]);
     $routes->post("assets/new/(:segment)", [AssetController::class, "upload/$1"], ["filter" => ["apiauth"]]);
     $routes->get('assets/image-render/(:segment)/(:segment)', [AssetController::class, "serveFile/$1/$2"]);
     $routes->post("auth/verify-google-auth", [AuthController::class, "verifyAndEnableGoogleAuth"]);
+    $routes->put("applications/details/(:segment)", [ApplicationsController::class, "updateApplication/$1"]);
+    $routes->delete("applications/details/(:segment)", [ApplicationsController::class, "deleteApplication/$1"], );
+    $routes->get("applications/details/(:segment)", [ApplicationsController::class, "getApplication/$1"], );
+    $routes->post("applications/details/(:segment)", [ApplicationsController::class, "createApplication"]);
+    $routes->get("applications/templates/(:segment)", [ApplicationsController::class, "getApplicationTemplateForFilling/$1"]);
 
+    $routes->get("applications/templates", [ApplicationsController::class, "getApplicationTemplates"]);
 });
 
 $routes->group("api", ["namespace" => "App\Controllers"], function (RouteCollection $routes) {
@@ -57,16 +62,7 @@ $routes->group("api", ["namespace" => "App\Controllers"], function (RouteCollect
     $routes->get("getPractitionerDetails", [AuthController::class, "appName"], ['filter' => 'hmac']);
     $routes->post("verify-recaptcha", [AuthController::class, "verifyRecaptcha"]);
 });
-$routes->group("guest", ["namespace" => "App\Controllers"], function (RouteCollection $routes) {
-    $routes->put("applications/details/(:segment)", [ApplicationsController::class, "updateApplication/$1"]);
-    $routes->delete("applications/details/(:segment)", [ApplicationsController::class, "deleteApplication/$1"], );
-    $routes->get("applications/details/(:segment)", [ApplicationsController::class, "getApplication/$1"], );
-    $routes->get("applications/details", [ApplicationsController::class, "getApplications"], );
-    $routes->post("applications/details/(:segment)", [ApplicationsController::class, "createApplication"]);
-    $routes->get("applications/templates/(:segment)", [ApplicationsController::class, "getApplicationTemplateForFilling/$1"]);
 
-    $routes->get("applications/templates", [ApplicationsController::class, "getApplicationTemplates"]);
-});
 
 $routes->group("print-queue", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
     $routes->post("templates/upload-docx", [PrintQueueController::class, "docxToHtml"], ["filter" => ["hasPermission:Create_Print_Templates"]]);

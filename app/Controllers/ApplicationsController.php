@@ -275,7 +275,7 @@ class ApplicationsController extends ResourceController
         }
     }
 
-    public function getApplicationsByUser(?string $formType = null)
+    public function getApplicationsByUser()
     {
         try {
             $userId = auth("tokens")->id();
@@ -284,13 +284,20 @@ class ApplicationsController extends ResourceController
             $filters = [
                 "applicant_unique_id" => $uniqueId,
             ];
+            $exclusionFilters = [];
+            $formType = $this->request->getGet('form_type');
             if ($formType) {
                 $filters["form_type"] = $formType;
+            } else {
+                //Portal Edits are a special kind of application. if not specified, exclude it
+
+                $exclusionFilters["form_type"] = PORTAL_EDIT_FORM_TYPE;
             }
+
             if ($status) {
                 $filters["status"] = $status;
             }
-            $result = $this->applicationService->getApplications($filters);
+            $result = $this->applicationService->getApplications($filters, $exclusionFilters);
 
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
@@ -546,9 +553,9 @@ class ApplicationsController extends ResourceController
                 'success' => false,
                 'message' => 'Action test failed: ' . $e,
                 'error_details' => [
-                    'file' => $e->getFile(),
-                    'line' => $e->getLine()
-                ]
+                        'file' => $e->getFile(),
+                        'line' => $e->getLine()
+                    ]
             ], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -573,12 +580,12 @@ class ApplicationsController extends ResourceController
             'success' => true,
             'message' => 'Test endpoint called successfully',
             'received_data' => [
-                'method' => $method,
-                'headers' => $headers,
-                'body' => $body,
-                'query_params' => $queryParams,
-                'timestamp' => date('Y-m-d H:i:s')
-            ],
+                    'method' => $method,
+                    'headers' => $headers,
+                    'body' => $body,
+                    'query_params' => $queryParams,
+                    'timestamp' => date('Y-m-d H:i:s')
+                ],
             'simulated_response' => [
                 'id' => rand(1000, 9999),
                 'status' => 'processed',
