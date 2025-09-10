@@ -6,6 +6,13 @@ use App\Models\RolePermissionsModel;
 
 class AuthHelper
 {
+    /**
+     * Get the user object with all the details including permissions.
+     *
+     * @param int $userId The user ID
+     * @return object{id: int, username: string, email: string, user_type: string, role_name: string, permissions: array, display_name:string, profile_data:array, profile_table_uuid:string, profile_table:string} The user object
+     * @throws \Exception
+     */
     public static function getAuthUser($userId)
     {
         $userObject = new UsersModel();

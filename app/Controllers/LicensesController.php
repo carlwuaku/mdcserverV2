@@ -8,6 +8,11 @@ use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 use OpenApi\Attributes as OA;
 use CodeIgniter\Shield\Exceptions\PermissionException;
+use App\Helpers\AuthHelper;
+use App\Helpers\LicenseUtils;
+use App\Traits\CacheInvalidatorTrait;
+use App\Helpers\Utils;
+use App\Helpers\CacheHelper;
 /**
  * @OA\Info(title="API Name", version="1.0")
  * @OA\Tag(name="Tag Name", description="Tag description")
@@ -18,6 +23,7 @@ use CodeIgniter\Shield\Exceptions\PermissionException;
  */
 class LicensesController extends ResourceController
 {
+    use CacheInvalidatorTrait;
     private LicenseService $licenseService;
     private LicenseRenewalService $renewalService;
 
@@ -35,6 +41,8 @@ class LicensesController extends ResourceController
             $data = $this->request->getVar();
             $result = $this->licenseService->createLicense($data);
 
+            // Invalidate cache
+            $this->invalidateCache('app_licenses_');
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
         } catch (\InvalidArgumentException $e) {
@@ -50,7 +58,7 @@ class LicensesController extends ResourceController
         try {
             $data = (array) $this->request->getVar();
             $result = $this->licenseService->updateLicense($uuid, $data);
-
+            $this->invalidateCache('app_licenses_');
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
         } catch (\InvalidArgumentException $e) {
@@ -67,6 +75,7 @@ class LicensesController extends ResourceController
     {
         try {
             $result = $this->licenseService->deleteLicense($uuid);
+            $this->invalidateCache('app_licenses_');
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
         } catch (\RuntimeException $e) {
@@ -81,6 +90,7 @@ class LicensesController extends ResourceController
     {
         try {
             $result = $this->licenseService->restoreLicense($uuid);
+            $this->invalidateCache('app_licenses_');
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
         } catch (\RuntimeException $e) {
@@ -170,7 +180,31 @@ class LicensesController extends ResourceController
         try {
             $data = $this->request->getPost();
             $result = $this->renewalService->createRenewal($data);
+            $this->invalidateCache(CACHE_KEY_PREFIX_RENEWALS);
+            return $this->respond($result, ResponseInterface::HTTP_OK);
 
+        } catch (\InvalidArgumentException $e) {
+            return $this->respond(['message' => $e->getMessage()], ResponseInterface::HTTP_BAD_REQUEST);
+        } catch (PermissionException $e) {
+            return $this->respond(['message' => $e->getMessage()], ResponseInterface::HTTP_UNAUTHORIZED);
+        } catch (\Throwable $e) {
+            log_message("error", $e);
+            return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function createRenewalByLicense()
+    {
+        try {
+            $userId = auth("tokens")->id();
+            $user = AuthHelper::getAuthUser($userId);
+            $data = $this->request->getPost();
+            $data['license_type'] = $user->profile_data['type'];
+            $data['license_uuid'] = $user->profile_data['uuid'];
+            $data['license_number'] = $user->profile_data['license_number'];
+
+            $result = $this->renewalService->createRenewal($data);
+            $this->invalidateCache(CACHE_KEY_PREFIX_RENEWALS);
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
         } catch (\InvalidArgumentException $e) {
@@ -188,7 +222,7 @@ class LicensesController extends ResourceController
         try {
             $data = (array) $this->request->getVar();
             $result = $this->renewalService->updateRenewal($uuid, $data);
-
+            $this->invalidateCache(CACHE_KEY_PREFIX_RENEWALS);
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
         } catch (\InvalidArgumentException $e) {
@@ -206,6 +240,7 @@ class LicensesController extends ResourceController
             $status = $this->request->getVar('status') ?? null;
 
             $result = $this->renewalService->updateBulkRenewals($data, $status);
+            $this->invalidateCache(CACHE_KEY_PREFIX_RENEWALS);
 
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
@@ -221,6 +256,8 @@ class LicensesController extends ResourceController
     {
         try {
             $result = $this->renewalService->deleteRenewal($uuid);
+            $this->invalidateCache(CACHE_KEY_PREFIX_RENEWALS);
+
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
         } catch (\RuntimeException $e) {
@@ -251,9 +288,43 @@ class LicensesController extends ResourceController
     public function getRenewals($license_uuid = null)
     {
         try {
-            $filters = $this->extractRequestFilters();
-            $result = $this->renewalService->getRenewals($license_uuid, $filters);
+            $cacheKey = Utils::generateHashedCacheKey(CACHE_KEY_PREFIX_RENEWALS, (array) $this->request->getVar());
+            return CacheHelper::remember($cacheKey, function () use ($license_uuid) {
+                $filters = $this->extractRequestFilters();
+                $result = $this->renewalService->getRenewals($license_uuid, $filters);
 
+                return $this->respond($result, ResponseInterface::HTTP_OK);
+            }, 900);
+
+        } catch (\InvalidArgumentException $e) {
+            return $this->respond(['message' => $e->getMessage()], ResponseInterface::HTTP_BAD_REQUEST);
+        } catch (\Throwable $e) {
+            log_message("error", $e);
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function getRenewalsByLicense()
+    {
+        try {
+            //use the uuid of the currently logged in user. this is for use by portal users
+            $userId = auth("tokens")->id();
+            $user = AuthHelper::getAuthUser($userId);
+            $filters = $this->extractRequestFilters();
+            $result = $this->renewalService->getRenewals($user->profile_table_uuid, $filters);
+            //remove unnecessary data fields
+            $allowedFields = ['first_name', 'last_name', 'middle_name', 'license_number', 'start_date', 'expiry', 'status', 'printable', 'editable']; // [First name	Last name	Middle name	License number	Start date	Expiry	Status]
+            foreach ($result['data'] as $renewal) {
+                $renewal->editable = true;
+                $renewal->printable = LicenseUtils::isRenewalStagePrintable($renewal->license_type, $renewal->status);
+            }
+            foreach ($result['data'] as $key => $renewal) {
+                $result['data'][$key] = array_intersect_key((array) $renewal, array_flip($allowedFields));
+                //status is  a printable one
+
+            }
+            //set the display fields
+            $result['displayColumns'] = ['license_number', 'start_date', 'expiry', 'status'];
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
         } catch (\InvalidArgumentException $e) {
@@ -282,6 +353,23 @@ class LicensesController extends ResourceController
     {
         try {
             $fields = $this->renewalService->getLicenseRenewalFormFields($licenseType);
+            return $this->respond(['data' => $fields], ResponseInterface::HTTP_OK);
+
+        } catch (\Throwable $e) {
+            log_message("error", $e);
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function getPractitionerRenewalFormFields()
+    {
+        try {
+            $userId = auth("tokens")->id();
+            $userData = AuthHelper::getAuthUser($userId);
+            //check if the person is eligible for renewal
+            //TODO: add the eligibility criteria to app-settings
+            $fields = $this->renewalService->getPortalLicenseRenewalFormFields($userData->profile_data['type']);
+
             return $this->respond(['data' => $fields], ResponseInterface::HTTP_OK);
 
         } catch (\Throwable $e) {

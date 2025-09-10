@@ -35,15 +35,18 @@ $routes->group("portal", ["namespace" => "App\Controllers"], function (RouteColl
     $routes->post("applications/details/(:segment)", [ApplicationsController::class, "createApplicationFromPortal"], ["filter" => ["apiauth"]]);
     $routes->get("applications/details", [ApplicationsController::class, "getApplicationsByUser"], ["filter" => ["apiauth"]]);
     $routes->post("assets/new/(:segment)", [AssetController::class, "upload/$1"], ["filter" => ["apiauth"]]);
-    $routes->get('assets/image-render/(:segment)/(:segment)', [AssetController::class, "serveFile/$1/$2"]);
+    $routes->get('assets/image-render/(:segment)/(:segment)', [AssetController::class, "serveFile/$1/$2"], ["filter" => ["apiauth"]]);
     $routes->post("auth/verify-google-auth", [AuthController::class, "verifyAndEnableGoogleAuth"]);
-    $routes->put("applications/details/(:segment)", [ApplicationsController::class, "updateApplication/$1"]);
-    $routes->delete("applications/details/(:segment)", [ApplicationsController::class, "deleteApplication/$1"], );
-    $routes->get("applications/details/(:segment)", [ApplicationsController::class, "getApplication/$1"], );
-    $routes->post("applications/details/(:segment)", [ApplicationsController::class, "createApplication"]);
-    $routes->get("applications/templates/(:segment)", [ApplicationsController::class, "getApplicationTemplateForFilling/$1"]);
+    $routes->put("applications/details/(:segment)", [ApplicationsController::class, "updateApplication/$1"], ["filter" => ["apiauth"]]);
+    $routes->delete("applications/details/(:segment)", [ApplicationsController::class, "deleteApplication/$1"], ["filter" => ["apiauth"]]);
+    $routes->get("applications/details/(:segment)", [ApplicationsController::class, "getApplication/$1"], ["filter" => ["apiauth"]]);
+    $routes->post("applications/details/(:segment)", [ApplicationsController::class, "createApplication"], ["filter" => ["apiauth"]]);
+    $routes->get("applications/templates/(:segment)", [ApplicationsController::class, "getApplicationTemplateForFilling/$1"], ["filter" => ["apiauth"]]);
+    $routes->get("applications/templates", [ApplicationsController::class, "getApplicationTemplates"], ["filter" => ["apiauth"]]);
+    $routes->get("renewals", [LicensesController::class, "getRenewalsByLicense"], ["filter" => ["apiauth"]]);
+    $routes->get("renewals/form", [LicensesController::class, "getPractitionerRenewalFormFields"], ["filter" => ["apiauth"]], );
+    $routes->post("renewals", [LicensesController::class, "createRenewalByLicense"], ["filter" => ["apiauth"]]);
 
-    $routes->get("applications/templates", [ApplicationsController::class, "getApplicationTemplates"]);
 });
 
 $routes->group("api", ["namespace" => "App\Controllers"], function (RouteCollection $routes) {

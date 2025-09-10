@@ -3569,25 +3569,41 @@
             "title": "Relicense Status",
             "active_children": false,
             "url": "/renewal",
-            "image": "assets/images/relicensure.jpg",
+            "image": "assets/images/010-gold-medal.png",
             "actions": [
                 {
                     "label": "Click to apply",
                     "icon": "",
                     "type": "link",
                     "linkProp": "",
-                    "url": "/relicensure",
+                    "url": "/relicensure/form",
                     "urlParams": {},
-                    "criteria": []
+                    "criteria": [
+                        {
+                            "field": "in_good_standing",
+                            "operator": "not_equals",
+                            "value": [
+                                "In Good Standing"
+                            ]
+                        }
+                    ]
                 },
                 {
-                    "label": "Print certificates",
+                    "label": "View history/Print certificates",
                     "icon": "",
                     "type": "link",
                     "linkProp": "",
-                    "url": "/relicensure",
+                    "url": "/renewals",
                     "urlParams": {},
-                    "criteria": []
+                    "criteria": [
+                        {
+                            "field": "in_good_standing",
+                            "operator": "equals",
+                            "value": [
+                                "In Good Standing"
+                            ]
+                        }
+                    ]
                 }
             ],
             "alerts": [

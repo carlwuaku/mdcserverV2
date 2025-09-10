@@ -349,7 +349,7 @@ class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, 
             $data = [];
             // $protectedFields = [];
             //make sure $formdata is an array
-            if (!is_array(value: $formData)) {
+            if (!is_array($formData)) {
                 $formData = (array) $formData;
             }
 

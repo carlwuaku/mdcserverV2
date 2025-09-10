@@ -1435,6 +1435,10 @@
                 "online_print_template",
                 "in_print_queue"
             ],
+            "canApplyForRenewalCriteria": [
+                {}
+            ],
+            "shouldApplyForRenewalCriteria": [],
             "detailsPageHeaderTabs": [
                 {
                     "label": "Register Type",
@@ -4264,34 +4268,18 @@
                     "icon": "",
                     "type": "link",
                     "linkProp": "",
-                    "url": "/relicensure/form",
+                    "url": "/renewals/form",
                     "urlParams": {},
-                    "criteria": [
-                        {
-                            "field": "in_good_standing",
-                            "operator": "not_equals",
-                            "value": [
-                                "In Good Standing"
-                            ]
-                        }
-                    ]
+                    "criteria": []
                 },
                 {
                     "label": "View history/Print certificates",
                     "icon": "",
                     "type": "link",
                     "linkProp": "",
-                    "url": "/relicensure",
+                    "url": "/renewals",
                     "urlParams": {},
-                    "criteria": [
-                        {
-                            "field": "in_good_standing",
-                            "operator": "equals",
-                            "value": [
-                                "In Good Standing"
-                            ]
-                        }
-                    ]
+                    "criteria": []
                 }
             ],
             "alerts": [

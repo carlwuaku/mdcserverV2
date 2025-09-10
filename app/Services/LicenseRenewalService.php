@@ -54,15 +54,15 @@ class LicenseRenewalService
         if (count($validStages) == 0) {
             throw new ConfigException("No valid stages found for license type $licenseType");
         }
-        //get the first stage
+        //get the first stage. in this case there's no need for the user to have permission to activate that stage since it's the default
         $stage = $validStages[0];
-        $this->validateRenewalStageActivation($data, $stage, $licenseType);
+        $this->validateRenewalStageActivation($data, $stage, $licenseType, false);
 
         $data['status'] = $stage->label;
 
 
 
-        $model = new LicenseRenewalModel($licenseType);
+        $model = new LicenseRenewalModel(licenseType: $licenseType);
 
         try {
             $model->db->transException(true)->transStart();
@@ -105,7 +105,7 @@ class LicenseRenewalService
      * @throws \InvalidArgumentException If the data validation fails.
      * @throws \CodeIgniter\Shield\Exceptions\PermissionException If the user does not have the required permission.
      */
-    private function validateRenewalStageActivation(array $data, RenewalStageType $stage, string $licenseType)
+    private function validateRenewalStageActivation(array $data, RenewalStageType $stage, string $licenseType, bool $requirePermission = true)
     {
         $rules = Utils::getLicenseRenewalStageValidation($licenseType, $stage->label);
         $validation = \Config\Services::validation();
@@ -113,13 +113,16 @@ class LicenseRenewalService
             log_message('error', json_encode($validation->getErrors()));
             throw new \InvalidArgumentException('Validation failed: ' . json_encode($validation->getErrors()));
         }
-        // Check if the user has the required permission for the first stage
-        $permission = $stage->permission;
-        $rpModel = new \App\Models\RolePermissionsModel();
-        if (!$rpModel->hasPermission(auth()->getUser()->role_name, $permission)) {
-            log_message("error", "User " . auth()->getUser()->username . " attempted to perform an activate renewal stage {$stage->label} without the required permission: $permission");
-            throw new \CodeIgniter\Shield\Exceptions\PermissionException("You do not have permission to perform this action");
+        // Check if the user has the required permission for the stage
+        if ($requirePermission) {
+            $permission = $stage->permission;
+            $rpModel = new \App\Models\RolePermissionsModel();
+            if (!$rpModel->hasPermission(auth()->getUser()->role_name, $permission)) {
+                log_message("error", "User " . auth()->getUser()->username . " attempted to activate renewal stage {$stage->label} without the required permission: $permission");
+                throw new \CodeIgniter\Shield\Exceptions\PermissionException("You do not have permission to perform this action");
+            }
         }
+
     }
 
 
@@ -344,8 +347,25 @@ class LicenseRenewalService
         ];
     }
 
+
     /**
-     * Get renewals with filtering and pagination
+     * Retrieves a list of license renewals
+     * @param string|null $license_uuid the uuid of the license to get the renewals for
+     * @param array $filters an array of filters. The following filters are supported:
+     * - limit: the number of records to return
+     * - page: the page of records to return
+     * - param: the search parameter
+     * - sortBy: the field to sort by
+     * - sortOrder: the order to sort in
+     * - isGazette: whether to return results in gazette mode
+     * - license_type: the license type
+     * - child_param: a search parameter for the license child table
+     * @return array{data: object[], total: int, displayColumns: array, columnLabels: array} an array containing the following:
+     * - data: the list of renewals
+     * - total: the total number of records
+     * - displayColumns: an array of column names to display
+     * - columnLabels: an array of column labels
+     * - columnFilters: an array of column filters
      */
     public function getRenewals(?string $license_uuid = null, array $filters = []): array
     {
@@ -353,7 +373,7 @@ class LicenseRenewalService
         $page = $filters['page'] ?? 0;
         $param = $filters['param'] ?? $filters['child_param'] ?? null;
         $sortBy = $filters['sortBy'] ?? "id";
-        $sortOrder = $filters['sortOrder'] ?? "asc";
+        $sortOrder = $filters['sortOrder'] ?? "desc";
         $isGazette = $filters['isGazette'] ?? null;
         $licenseType = $filters['license_type'] ?? null;
 
@@ -457,30 +477,20 @@ class LicenseRenewalService
     {
         $licenseModel = new LicenseRenewalModel();
         $licenseDef = Utils::getLicenseSetting($licenseType);
-        $renewalStages = (array) $licenseDef->renewalStages;
-
-        // we're removing the status field so that the application goes through the renewal stages
-        // $status = [
-        //     "label" => "Status",
-        //     "name" => "status",
-        //     "type" => "select",
-        //     "hint" => "",
-        //     "options" => [],
-        //     "value" => "",
-        //     "required" => true
-        // ];
-
-        // foreach (array_keys($renewalStages) as $key) {
-        //     $status["options"][] = [
-        //         "key" => $key,
-        //         "value" => $key
-        //     ];
-        // }
-
         $modelFields = $licenseModel->getFormFields();
-        // $modelFields[] = $status;
-
         return array_merge($modelFields, $licenseDef->renewalFields);
+    }
+
+    /**
+     * Get the form fields for the license renewal form for the given license type, but for the portal.
+     * @param string $licenseType the license type
+     * @return array the form fields
+     */
+    public function getPortalLicenseRenewalFormFields(string $licenseType): array
+    {
+        $licenseDef = Utils::getLicenseSetting($licenseType);
+
+        return $licenseDef->renewalFields;
     }
 
     /**
@@ -773,7 +783,14 @@ class LicenseRenewalService
 
             // Merge data_snapshot with item data
             if (property_exists($item, 'data_snapshot')) {
-                $item = (object) array_merge($item->data_snapshot, (array) $item);
+                //remove these fields from data_snapshot as they apply to the license object and may conflict with the renewal object
+                $fieldsToRemove = ['id', 'uuid', 'created_on', 'modified_on', 'deleted_at'];
+                foreach ($fieldsToRemove as $field) {
+                    if (array_key_exists($field, $item->data_snapshot)) {
+                        unset($item->data_snapshot[$field]);
+                    }
+                }
+                $item = (object) array_merge((array) $item, $item->data_snapshot);
                 unset($item->data_snapshot);
             }
 

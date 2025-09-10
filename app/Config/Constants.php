@@ -165,5 +165,6 @@ define("EVENT_INVOICE_PAYMENT_COMPLETED", "invoice_payment_completed");
 define("EVENT_APPLICATION_FORM_ACTION_COMPLETED", "application_form_action_completed");
 
 define("PORTAL_EDIT_FORM_TYPE", "Portal Edit");
-
+define("CACHE_KEY_PREFIX_LICENSES", "app_licenses_");
+define("CACHE_KEY_PREFIX_RENEWALS", "app_licenses_renewals_");
 

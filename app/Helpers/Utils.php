@@ -1326,4 +1326,15 @@ class Utils
         }
         throw new Exception("Default application form template not found");
     }
+
+    public static function generateHashedCacheKey(string $prefix, array $context): string
+    {
+        // Sort array to ensure consistent ordering
+        ksort($context);
+
+        // Create a hash of all context data
+        $contextHash = md5(serialize($context));
+
+        return $prefix . '_' . $contextHash;
+    }
 }

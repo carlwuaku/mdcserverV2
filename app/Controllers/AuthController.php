@@ -52,52 +52,60 @@ class AuthController extends ResourceController
 
     public function appSettings()
     {
-        // return CacheHelper::remember('app_settings', function() {
-        //read the data from app-settings.json at the root of the project
-        try {
-            $settings = ['appName', 'appVersion', 'appLongName', 'logo', 'whiteLogo', 'loginBackground'];
-            //if the user is logged in, add more settings
-            if (auth("tokens")->loggedIn()) {
-                $settings = array_merge($settings, [
-                    'sidebarMenu',
-                    'dashboardMenu',
-                    'searchTypes',
-                    'renewalBasicStatisticsFilterFields',
-                    'basicStatisticsFilterFields',
-                    'advancedStatisticsFilterFields',
-                    '
-                    licenseTypes',
-                    'cpdFilterFields',
-                    'housemanship',
-                    'examinations',
-                    'payments'
-                ]);
-            }
-            $data = Utils::getMultipleAppSettings($settings);
-
-            //if logo or other images are set append the base url to it
-            $imageProperties = ['logo', 'whiteLogo', 'institutionLogo', 'loginBackground'];
-            foreach ($imageProperties as $imageProperty) {
-                if (isset($data[$imageProperty])) {
-                    $data[$imageProperty] = base_url() . $data[$imageProperty];
+        return CacheHelper::remember('app_settings', function () {
+            //read the data from app-settings.json at the root of the project
+            try {
+                $settings = ['appName', 'appVersion', 'appLongName', 'logo', 'whiteLogo', 'loginBackground'];
+                //if the user is logged in, add more settings
+                if (auth("tokens")->loggedIn()) {
+                    $settings = array_merge($settings, [
+                        'sidebarMenu',
+                        'dashboardMenu',
+                        'searchTypes',
+                        'renewalBasicStatisticsFilterFields',
+                        'basicStatisticsFilterFields',
+                        'advancedStatisticsFilterFields',
+                        'licenseTypes',
+                        'cpdFilterFields',
+                        'housemanship',
+                        'examinations',
+                        'payments'
+                    ]);
                 }
-            }
-            $data['recaptchaSiteKey'] = getenv('RECAPTCHA_PUBLIC_KEY');
-            if (isset($data['portalHomeMenu'])) {
-                //set each image url relative to the base url
-                foreach ($data['portalHomeMenu'] as $key => $menu) {
-                    if (isset($menu['image'])) {
-                        $data['portalHomeMenu'][$key]['image'] = base_url() . $menu['image'];
+                $data = Utils::getMultipleAppSettings($settings);
+
+                //if logo or other images are set append the base url to it
+                $imageProperties = ['logo', 'whiteLogo', 'institutionLogo', 'loginBackground'];
+                foreach ($imageProperties as $imageProperty) {
+                    if (isset($data[$imageProperty])) {
+                        $data[$imageProperty] = base_url() . $data[$imageProperty];
                     }
                 }
+                $data['recaptchaSiteKey'] = getenv('RECAPTCHA_PUBLIC_KEY');
+                if (isset($data['portalHomeMenu'])) {
+                    //set each image url relative to the base url
+                    foreach ($data['portalHomeMenu'] as $key => $menu) {
+                        if (isset($menu['image'])) {
+                            $data['portalHomeMenu'][$key]['image'] = base_url() . $menu['image'];
+                        }
+                    }
+                }
+                //remove the following fields from the licenseTypes
+                $fieldsToRemove = ['table', 'uniqueKeyField', 'selectionFields', 'onCreateValidation', 'onUpdateValidation', 'implicitRenewalFields', 'renewalTable', 'renewalJsonFields', 'fieldsToUpdateOnRenewal', 'searchFields'];
+                foreach ($data['licenseTypes'] as $key => $licenseType) {
+                    foreach ($fieldsToRemove as $fieldToRemove) {
+                        if (isset($licenseType[$fieldToRemove])) {
+                            unset($data['licenseTypes'][$key][$fieldToRemove]);
+                        }
+                    }
+                }
+                return $this->respond($data, ResponseInterface::HTTP_OK);
+            } catch (\Throwable $th) {
+                log_message('error', $th);
+                return $this->respond(['message' => 'App settings file not found'], ResponseInterface::HTTP_NOT_FOUND);
             }
-            return $this->respond($data, ResponseInterface::HTTP_OK);
-        } catch (\Throwable $th) {
-            log_message('error', $th);
-            return $this->respond(['message' => 'App settings file not found'], ResponseInterface::HTTP_NOT_FOUND);
-        }
 
-        // }, 3600); // Cache for 1 hour
+        }, 3600); // Cache for 1 hour
     }
 
 
@@ -634,142 +642,6 @@ class AuthController extends ResourceController
         return $this->respond(['message' => "You're not logged in"], ResponseInterface::HTTP_UNAUTHORIZED);
     }
 
-    // public function mobileLogin()
-    // {
-    //     // Check if 2FA code is required for this request
-    //     $is2faVerification = $this->request->getVar('verification_mode') === '2fa';
-    //     // Validate credentials
-    //     $rules = setting('Validation.login') ?? [
-    //         // 'email' => config('auth')->emailValidationRules,
-    //         'password' => [
-    //             'label' => 'Auth.password',
-    //             'rules' => 'required',
-    //         ],
-    //         'device_name' => [
-    //             'label' => 'Device Name',
-    //             'rules' => "required|string|in_list[admin portal,practitioners portal]",
-    //             'errors' => [
-    //                 'in_list' => 'Invalid request',
-    //             ],
-    //         ],
-    //         'user_type' => [
-    //             'label' => 'User Type',
-    //             'rules' => 'required|string',
-    //         ],
-    //     ];
-
-    //     if ($is2faVerification) {
-    //         // When verifying 2FA, we need the code and token
-    //         $rules = [
-    //             'token' => 'required',
-    //             'code' => 'required|min_length[6]|max_length[6]|numeric',
-    //             'device_name' => [
-    //                 'label' => 'Device Name',
-    //                 'rules' => "required|string|in_list['admin portal','practitioners portal']",
-    //             ],
-    //         ];
-    //     }
-
-
-    //     if (!$this->validateData($this->request->getPost(), $rules, [], config('Auth')->DBGroup)) {
-    //         return $this->response
-    //             ->setJSON(['errors' => $this->validator->getErrors()])
-    //             ->setStatusCode(401);
-    //     }
-    //     //make sure the user_type is a valid one
-    //     $userType = $this->request->getVar('user_type');
-    //     $deviceName = $this->request->getVar('device_name');
-    //     if (!in_array($userType, USER_TYPES)) {
-    //         return $this->respond(['message' => 'Invalid user type'], ResponseInterface::HTTP_BAD_REQUEST);
-    //     }
-    //     if ($is2faVerification) {
-    //         // 2FA VERIFICATION FLOW
-    //         $token = $this->request->getVar('token');
-    //         $code = $this->request->getVar('code');
-
-    //         $userObject = new UsersModel();
-    //         $userData = $userObject->where(["two_fa_verification_token" => $token])->first();
-
-    //         if (!$userData) {
-    //             return $this->respond(["message" => "User not found"], ResponseInterface::HTTP_NOT_FOUND);
-    //         }
-
-    //         // Verify Google Authenticator code
-    //         $authenticator = new GoogleAuthenticator();
-    //         $secret = $userData->google_auth_secret;
-
-    //         if (!$secret) {
-    //             return $this->respond(["message" => "2FA not set up for this account"], ResponseInterface::HTTP_BAD_REQUEST);
-    //         }
-
-    //         if (!$authenticator->verifyCode($secret, $code, 2)) {
-    //             return $this->respond(["message" => "Invalid verification code"], ResponseInterface::HTTP_BAD_REQUEST);
-    //         }
-
-    //         // 2FA succeeded, log the user in
-    //         auth()->login($userData);
-    //         $userObject->update($userData->id, [
-    //             'two_fa_verification_token' => null
-    //         ]);
-    //     } else {
-    //         // Get the credentials for login
-    //         $credentials = $this->request->getPost(setting('Auth.validFields'));
-    //         $credentials = array_filter($credentials);
-    //         $credentials['password'] = $this->request->getPost('password');
-
-    //         // Attempt to login
-    //         $result = auth()->attempt($credentials);
-    //         if (!$result->isOK()) {
-    //             return $this->response
-    //                 ->setJSON(['message' => $result->reason()])
-    //                 ->setStatusCode(401);
-    //         }
-    //         //check if the user is the correct type
-    //         $userObject = new UsersModel();
-    //         $userData = $userObject->findById(auth()->id());
-    //         if ($userData->user_type !== $userType) {
-    //             return $this->respond(['message' => 'Invalid user type'], ResponseInterface::HTTP_BAD_REQUEST);
-    //         }
-    //         // if the device name is admin portal, check if the user is an admin
-    //         if ($deviceName === 'admin portal' && $userData->user_type !== 'admin') {
-    //             return $this->respond(['message' => 'Invalid user type'], ResponseInterface::HTTP_BAD_REQUEST);
-    //         }
-
-    //         // if the device name is practitioners portal, make sure the user is not an admin
-    //         if ($deviceName === 'practitioners portal' && $userData->user_type === 'admin') {
-    //             return $this->respond(['message' => 'Invalid user type'], ResponseInterface::HTTP_BAD_REQUEST);
-    //         }
-
-
-    //         // check if the user's two_fa_deadline is set and if it is in the past and has not set up 2FA
-    //         if ($userData->two_fa_deadline && $userData->two_fa_deadline < date('Y-m-d') && empty($userData->google_auth_secret)) {
-    //             return $this->respond(['message' => 'The deadline to enable 2 factor authentication has passed. Please contact our office for support.'], ResponseInterface::HTTP_BAD_REQUEST);
-    //         }
-    //         // Check if 2FA is enabled for this user
-    //         if (!empty($userData->google_auth_secret)) {
-    //             // Don't actually log them in yet - require 2FA verification
-    //             auth()->logout();
-    //             //generate a new random token
-    //             $token = bin2hex(random_bytes(16));
-    //             // Store the token in the session or database for later verification
-    //             $userObject->update($userData->id, [
-    //                 'two_fa_verification_token' => $token
-    //             ]);
-    //             return $this->respond([
-    //                 "message" => "2FA verification required",
-    //                 "requires_2fa" => true,
-    //                 "token" => $token,
-    //             ], ResponseInterface::HTTP_OK);
-    //         }
-    //     }
-
-
-    //     // Generate token and return to client
-    //     $token = auth()->user()->generateAccessToken(service('request')->getVar('device_name'));
-
-    //     return $this->response
-    //         ->setJSON(['token' => $token->raw_token]);
-    // }
 
     public function mobileLogin()
     {
@@ -1410,30 +1282,33 @@ class AuthController extends ResourceController
      */
     public function getRoles()
     {
-        $per_page = $this->request->getVar('limit') ? (int) $this->request->getVar('limit') : 100;
-        $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
-        $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted') === "yes";
-        $param = $this->request->getVar('param');
-        $sortBy = $this->request->getVar('sortBy') ?? "id";
-        $sortOrder = $this->request->getVar('sortOrder') ?? "asc";
-        $model = new RolesModel();
-        $builder = $param ? $model->search($param) : $model->builder();
-        $builder->join('users', "roles.role_name = users.role_name", "left")
-            ->select("roles.*, count(users.id) as number_of_users")
-            ->groupBy('roles.role_name');
-        if ($withDeleted) {
-            $model->withDeleted();
-        }
-        $builder->orderBy($sortBy, $sortOrder);
-        $totalBuilder = clone $builder;
-        $total = $totalBuilder->countAllResults();
-        $result = $builder->get($per_page, $page)->getResult();
+        $cacheKey = Utils::generateHashedCacheKey("get_roles", (array) $this->request->getVar());
+        return CacheHelper::remember($cacheKey, function () {
+            $per_page = $this->request->getVar('limit') ? (int) $this->request->getVar('limit') : 100;
+            $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
+            $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted') === "yes";
+            $param = $this->request->getVar('param');
+            $sortBy = $this->request->getVar('sortBy') ?? "id";
+            $sortOrder = $this->request->getVar('sortOrder') ?? "asc";
+            $model = new RolesModel();
+            $builder = $param ? $model->search($param) : $model->builder();
+            $builder->join('users', "roles.role_name = users.role_name", "left")
+                ->select("roles.*, count(users.id) as number_of_users")
+                ->groupBy('roles.role_name');
+            if ($withDeleted) {
+                $model->withDeleted();
+            }
+            $builder->orderBy($sortBy, $sortOrder);
+            $totalBuilder = clone $builder;
+            $total = $totalBuilder->countAllResults();
+            $result = $builder->get($per_page, $page)->getResult();
 
-        return $this->respond([
-            'data' => $result,
-            'total' => $total,
-            'displayColumns' => $model->getDisplayColumns()
-        ], ResponseInterface::HTTP_OK);
+            return $this->respond([
+                'data' => $result,
+                'total' => $total,
+                'displayColumns' => $model->getDisplayColumns()
+            ], ResponseInterface::HTTP_OK);
+        });
     }
 
     /**

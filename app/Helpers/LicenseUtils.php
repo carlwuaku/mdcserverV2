@@ -56,7 +56,7 @@ class LicenseUtils extends Utils
             $data = array_merge($license, $data);
 
 
-            $qrCode = Utils::generateQRCode($qrText, false);
+            $qrCode = Utils::generateQRCode($qrText, true);
             $data['qr_code'] = $qrCode;
             $data['qr_text'] = $qrText;
 
@@ -64,9 +64,9 @@ class LicenseUtils extends Utils
 
             $formData = $model->createArrayFromAllowedFields($data, true);
             $formData['data_snapshot'] = json_encode(self::getLicenseDetails($license_uuid));
-            // log_message('info', print_r($formData, true));
-            // log_message('info', $model->builder()->set($formData)->getCompiledInsert());
-
+            //remove the created_on and modified_on fields from the form data
+            unset($formData['created_on']);
+            unset($formData['modified_on']);
             $model->set($formData)->insert();
             $id = $model->getInsertID();
             // log_message('info', 'Renewal created successfully');
@@ -325,6 +325,19 @@ class LicenseUtils extends Utils
     }
 
     /**
+     * Checks if a given stage is printable on the renewal certificate for a given license type.
+     * @param string $licenseType The type of license.
+     * @param string $stage The renewal stage.
+     * @return bool True if the stage is printable, false otherwise.
+     */
+    public static function isRenewalStagePrintable($licenseType, $stage)
+    {
+        $licenseDef = Utils::getLicenseSetting($licenseType);
+        $renewalStages = (array) $licenseDef->renewalStages;
+        return array_key_exists($stage, $renewalStages) && $renewalStages[$stage]['printable'];
+    }
+
+    /**
      * Returns an array of renewal stages for a given license type.
      *
      * @param string $licenseType The type of license.
@@ -362,25 +375,15 @@ class LicenseUtils extends Utils
     /**
      * checks if a license is eligible for relicensure. this is used when a license holder wants to renew their license from the portal
      * @param mixed $reg_num
-     * @param array{restrict:bool, year:string, cpdTotalCutoff:int, cpdCategoriesCutoffs:int, register:string, revalidationPeriod:int, revalidationMessage:string, revalidationManualMessage: string, permitRetention:bool  } $options
+     * @param \App\Helpers\Types\LicenseRenewalEligibilityCriteriaType $options
+     * @param string $year
      * @throws \Exception
      * @return array{message: string, result: bool, score: int}
      */
-    public static function is_eligible_relicensure(
+    public static function isEligibleForRenewal(
         $reg_num,
-        $options = [
-            "restrict" => true,
-            "year" => "",
-            "cpdTotalCutoff" => 0,
-            "category1Cutoff" => 0,
-            "category2Cutoff" => 0,
-            "category3Cutoff" => 0,
-            "register" => "",
-            "revalidationPeriod" => 0,
-            "revalidationMessage" => "",
-            "revalidationManualMessage" => "",
-            "permitRetention" => false
-        ]
+        $options,
+        $year
     ) {
         $licenseDetails = [];
         try {
@@ -391,7 +394,7 @@ class LicenseUtils extends Utils
         if ($licenseDetails['status'] == 0) {
             throw new Exception("Practitioner is inactive");
         }
-        $requires_revalidation = self::licenseRequiresRevalidation($licenseDetails, $options["revalidationPeriod"], $options['revalidationMessage'], $options['revalidationManualMessage']);
+        $requires_revalidation = self::licenseRequiresRevalidation($licenseDetails, $options->revalidationPeriod, $options->revalidationMessage, $options->revalidationManualMessage);
         if ($requires_revalidation['result']) {
             return array(
                 "result" => false,
@@ -400,10 +403,10 @@ class LicenseUtils extends Utils
             );
         }
 
-        $year = empty($options['year']) ? date("Y") : intval($options['year']);
+        $cpdYear = $year ?? date("Y");
 
         //IF the restrict settings are set to true, then the person needs to be in good standing at the moment
-        if ($options['restrict']) {
+        if ($options->restrict) {
             $isInGoodStanding = self::licenseIsInGoodStanding($reg_num, date("Y-m-d"));
 
             if (!$isInGoodStanding) {
@@ -416,10 +419,10 @@ class LicenseUtils extends Utils
             }
         }
 
-        $cpd = self::getCPDAttendanceAndScores($reg_num, $year);
+        $cpd = self::getCPDAttendanceAndScores($reg_num, $cpdYear);
 
         //if the person was granted permission, ignore the cpd
-        if ($options['permitRetention']) {
+        if ($options->permitRetention) {
             return array(
                 "result" => "1",
                 "score" => $cpd['score'],
@@ -429,11 +432,11 @@ class LicenseUtils extends Utils
 
 
         //if the person did not meet the minimum requirement, just return false
-        if ($cpd['score'] < $options['cpdTotalCutoff'] && $options['register'] == 'Permanent') {
+        if ($cpd['score'] < $options->cpdTotalCutoff && $options->register == 'Permanent') {
             return array(
                 "result" => "-1",
                 "score" => $cpd['score'],
-                "message" => "You did not meet the minimum CPD requirement. You obtained {$cpd['score']} credit points. The minimum required is {$options['cpdTotalCutoff']} credit points"
+                "message" => "You did not meet the minimum CPD requirement. You obtained {$cpd['score']} credit points. The minimum required is {$options->cpdTotalCutoff} credit points"
             );
         }
 
@@ -449,28 +452,28 @@ class LicenseUtils extends Utils
             }
         }
         //else check if they met the requirments for the categories
-        if ($person_cat_1_score < $options['category1Cutoff']) {
+        if ($person_cat_1_score < $options->category1Cutoff) {
             return array(
                 "result" => false,
                 "score" => $cpd['score'],
                 "message" => "Obtained minimum total, but did not meet minimum requirement for cpd category 1."
-                    . " Had $person_cat_1_score, minimum is {$options['category1Cutoff']}"
+                    . " Had $person_cat_1_score, minimum is {$options->category1Cutoff}"
             );
         }
-        if ($person_cat_2_score < $options['category2Cutoff']) {
+        if ($person_cat_2_score < $options->category2Cutoff) {
             return array(
                 "result" => false,
                 "score" => $cpd['score'],
                 "message" => "Obtained minimum total, but did not meet minimum requirement for cpd category 2."
-                    . " Had $person_cat_2_score, minimum is {$options['category2Cutoff']}"
+                    . " Had $person_cat_2_score, minimum is {$options->category2Cutoff}"
             );
         }
-        if ($person_cat_3_score < $options['category3Cutoff']) {
+        if ($person_cat_3_score < $options->category3Cutoff) {
             return array(
                 "result" => false,
                 "score" => $cpd['score'],
                 "message" => "Obtained minimum total, but did not meet minimum requirement for cpd category 3."
-                    . " Had $person_cat_3_score, minimum is {$options['category3Cutoff']}"
+                    . " Had $person_cat_3_score, minimum is {$options->category3Cutoff}"
             );
         }
         return array(
