@@ -6,13 +6,14 @@ namespace App\Helpers;
 
 use CodeIgniter\Events\Events;
 use stdClass;
+use App\Helpers\Types\CriteriaType;
 
 
 class ApplicationFormActionHelper extends Utils
 {
     /**
      * this method runs a provided action on the application form
-     * @param object{type:string, config_type:string, config:object} $action
+     * @param object{type:string, config_type:string, config:object, criteria: CriteriaType[]} $action
      * @param array $data
      * @return array
      */
@@ -26,6 +27,9 @@ class ApplicationFormActionHelper extends Utils
                     $result = self::sendEmailToApplicant($action, $data);
                     break;
                 case 'admin_email':
+                    $result = self::sendEmailToAdmin($action, $data);
+                    break;
+                case 'payment':
                     $result = self::sendEmailToAdmin($action, $data);
                     break;
                 case 'api_call':
@@ -45,6 +49,14 @@ class ApplicationFormActionHelper extends Utils
             throw $th;
         }
 
+    }
+
+    private static function runPaymentCall($action, $data)
+    {
+        if (CriteriaType::matchesCriteria($data, $action->criteria)) {
+            unset($action->criteria);
+            $actions[] = $action;
+        }
     }
 
     private static function runInternalApiCall($action, $data)

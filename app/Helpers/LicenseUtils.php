@@ -8,6 +8,20 @@ use SimpleSoftwareIO\QrCode\Generator;
 use App\Models\ActivitiesModel;
 use App\Helpers\Types\RenewalStageType;
 
+class RenewalEligibilityResponse
+{
+    public bool $isEligible;
+    public string $reason;
+    public int $score;
+
+    public function __construct(bool $isEligible, string $reason, int $score = 0)
+    {
+        $this->isEligible = $isEligible;
+        $this->reason = $reason;
+        $this->score = $score;
+    }
+}
+
 class LicenseUtils extends Utils
 {
     // public static function getLicenseName(LicensesModel $license)
@@ -338,6 +352,19 @@ class LicenseUtils extends Utils
     }
 
     /**
+     * Checks if a given stage can be deleted by a portal user. admins can delete any stage.
+     * @param string $licenseType The type of license.
+     * @param string $stage The renewal stage.
+     * @return bool True if the stage is printable, false otherwise.
+     */
+    public static function isRenewalStageDeletable($licenseType, $stage)
+    {
+        $licenseDef = Utils::getLicenseSetting($licenseType);
+        $renewalStages = (array) $licenseDef->renewalStages;
+        return array_key_exists($stage, $renewalStages) && $renewalStages[$stage]['deletableByUser'];
+    }
+
+    /**
      * Returns an array of renewal stages for a given license type.
      *
      * @param string $licenseType The type of license.
@@ -372,13 +399,35 @@ class LicenseUtils extends Utils
         return $result;
     }
 
+
+    /**
+     * Gets the user actions for a given renewal stage.
+     *
+     * @param object $licenseDef The license definition.
+     * @param string $stage The stage to get the actions for.
+     * @return string The user actions for the given stage.
+     * @throws \Exception If the stage is not found.
+     */
+    public static function getRenewalStageActions(object $licenseDef, string $stage): string
+    {
+        $renewalStages = (array) $licenseDef->renewalStages;
+        if (array_key_exists($stage, $renewalStages)) {
+            /**
+             * @var string[]
+             */
+            return $renewalStages[$stage]['userActions'];
+        }
+        ;
+        throw new Exception("Renewal stage not found");
+    }
+
     /**
      * checks if a license is eligible for relicensure. this is used when a license holder wants to renew their license from the portal
      * @param mixed $reg_num
      * @param \App\Helpers\Types\LicenseRenewalEligibilityCriteriaType $options
      * @param string $year
      * @throws \Exception
-     * @return array{message: string, result: bool, score: int}
+     * @return \App\Helpers\RenewalEligibilityResponse
      */
     public static function isEligibleForRenewal(
         $reg_num,
@@ -389,18 +438,15 @@ class LicenseUtils extends Utils
         try {
             $licenseDetails = self::getLicenseDetails($reg_num);
         } catch (\Throwable $th) {
-            throw new Exception($th->getMessage());
+            log_message('error', $th);
+            throw $th;
         }
         if ($licenseDetails['status'] == 0) {
             throw new Exception("Practitioner is inactive");
         }
         $requires_revalidation = self::licenseRequiresRevalidation($licenseDetails, $options->revalidationPeriod, $options->revalidationMessage, $options->revalidationManualMessage);
         if ($requires_revalidation['result']) {
-            return array(
-                "result" => false,
-                "score" => 0,
-                "message" => $requires_revalidation['message']
-            );
+            return new RenewalEligibilityResponse(false, $requires_revalidation['message']);
         }
 
         $cpdYear = $year ?? date("Y");
@@ -411,75 +457,94 @@ class LicenseUtils extends Utils
 
             if (!$isInGoodStanding) {
                 //not in good standing
-                return array(
-                    "result" => false,
-                    "score" => 0,
-                    "message" => "Practitioners must be in good standing to use the online portal"
-                );
+                return new RenewalEligibilityResponse(false, "Practitioners must be in good standing to use the online portal");
             }
         }
+        try {
+            $cpd = self::getCPDAttendanceAndScores($reg_num, $cpdYear);
+        } catch (\Throwable $th) {
+            log_message('error', "Error getting CPD score for practitioner: " . $reg_num);
+            log_message('error', $th);
+            throw $th;
+        }
 
-        $cpd = self::getCPDAttendanceAndScores($reg_num, $cpdYear);
 
         //if the person was granted permission, ignore the cpd
         if ($options->permitRetention) {
-            return array(
-                "result" => "1",
-                "score" => $cpd['score'],
-                "message" => "Practitioner has been granted exception to proceed with relicensure despite CPD requirement."
-            );
+            return new RenewalEligibilityResponse(true, "Practitioner has been granted exception to proceed with relicensure despite CPD requirement.", $cpd['score']);
         }
 
+        //cpd requirements apply to permanent register only
+        if (strtolower($options->register) == strtolower(PERMANENT)) {
 
-        //if the person did not meet the minimum requirement, just return false
-        if ($cpd['score'] < $options->cpdTotalCutoff && $options->register == 'Permanent') {
-            return array(
-                "result" => "-1",
-                "score" => $cpd['score'],
-                "message" => "You did not meet the minimum CPD requirement. You obtained {$cpd['score']} credit points. The minimum required is {$options->cpdTotalCutoff} credit points"
-            );
-        }
 
-        $attendance = $cpd['attendance'];
-        $person_cat_1_score = $person_cat_2_score = $person_cat_3_score = 0;
-        foreach ($attendance as $value) {
-            if ((int) $value['category'] === 1) {
-                $person_cat_1_score += $value['credits'];
-            } else if ((int) $value['category'] === 2) {
-                $person_cat_2_score += $value['credits'];
-            } else if ((int) $value['category'] === 3) {
-                $person_cat_3_score += $value['credits'];
+            //if the person did not meet the minimum requirement, just return false
+            if ($cpd['score'] < $options->cpdTotalCutoff) {
+                log_message('debug', " register: " . print_r($options, true));
+                return new RenewalEligibilityResponse(
+                    false,
+                    "You did not meet the minimum CPD requirement. You obtained {$cpd['score']} credit points. The minimum required is {$options->cpdTotalCutoff} credit points",
+                    $cpd['score']
+                );
+            }
+
+            $attendance = $cpd['attendance'];
+            $person_cat_1_score = $person_cat_2_score = $person_cat_3_score = 0;
+            foreach ($attendance as $value) {
+                if ((int) $value['category'] === 1) {
+                    $person_cat_1_score += $value['credits'];
+                } else if ((int) $value['category'] === 2) {
+                    $person_cat_2_score += $value['credits'];
+                } else if ((int) $value['category'] === 3) {
+                    $person_cat_3_score += $value['credits'];
+                }
+            }
+            //else check if they met the requirments for the categories
+            if ($person_cat_1_score < $options->category1Cutoff) {
+                return new RenewalEligibilityResponse(
+                    false,
+                    "Obtained minimum total, but did not meet minimum requirement for CPD category 1."
+                    . " You obtained $person_cat_1_score credit points. The minimum required for this category is {$options->category1Cutoff}",
+                    $cpd['score']
+                );
+
+            }
+            if ($person_cat_2_score < $options->category2Cutoff) {
+                return new RenewalEligibilityResponse(
+                    false,
+                    "Obtained minimum total, but did not meet minimum requirement for CPD category 2."
+                    . " You obtained $person_cat_2_score credit points. The minimum required for this category is {$options->category2Cutoff}",
+                    $cpd['score']
+                );
+
+            }
+            if ($person_cat_3_score < $options->category3Cutoff) {
+                return new RenewalEligibilityResponse(
+                    false,
+                    "Obtained minimum total, but did not meet minimum requirement for CPD category 3."
+                    . " You obtained $person_cat_3_score credit points. The minimum required for this category is {$options->category3Cutoff}",
+                    $cpd['score']
+                );
+
             }
         }
-        //else check if they met the requirments for the categories
-        if ($person_cat_1_score < $options->category1Cutoff) {
-            return array(
-                "result" => false,
-                "score" => $cpd['score'],
-                "message" => "Obtained minimum total, but did not meet minimum requirement for cpd category 1."
-                    . " Had $person_cat_1_score, minimum is {$options->category1Cutoff}"
-            );
-        }
-        if ($person_cat_2_score < $options->category2Cutoff) {
-            return array(
-                "result" => false,
-                "score" => $cpd['score'],
-                "message" => "Obtained minimum total, but did not meet minimum requirement for cpd category 2."
-                    . " Had $person_cat_2_score, minimum is {$options->category2Cutoff}"
-            );
-        }
-        if ($person_cat_3_score < $options->category3Cutoff) {
-            return array(
-                "result" => false,
-                "score" => $cpd['score'],
-                "message" => "Obtained minimum total, but did not meet minimum requirement for cpd category 3."
-                    . " Had $person_cat_3_score, minimum is {$options->category3Cutoff}"
-            );
-        }
-        return array(
-            "result" => true,
-            "score" => $cpd['score'],
-            "message" => "Meets all CPD requirements"
+
+        return new RenewalEligibilityResponse(
+            true,
+            "Meets all requirements",
+            $cpd['score']
         );
+    }
+
+    public static function portalRenewalApplicationOpen(string $licenseType)
+    {
+        //TODO: check if portal renewal application is open for the given license type
+        return true;
+    }
+
+    public static function mustApplyWhileInGoodStanding(string $licenseType)
+    {
+        $licenseDef = Utils::getLicenseSetting($licenseType);
+        return $licenseDef->mustBeInGoodStandingToRenew;
     }
 }

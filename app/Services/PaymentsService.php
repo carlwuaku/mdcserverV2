@@ -17,6 +17,7 @@ use App\Models\Payments\PaymentFileUploadsViewModel;
 use App\Models\PrintTemplateModel;
 use Exception;
 use CodeIgniter\Events\Events;
+use App\Helpers\Types\PaymentMethodType;
 
 /**
  * License Service - Handles all license-related business logic
@@ -388,6 +389,56 @@ class PaymentsService
             'data' => $result,
             'message' => "Invoice found",
         ];
+    }
+
+    /**
+     * Retrieve an invoice by its external uuid. This uuid is the purpose_table_uuid column in the invoices table
+     * @param string $uuid The uuid of the invoice
+     * @return array{data: array, message: string} The invoice details
+     * @throws \InvalidArgumentException If the invoice is not found
+     */
+    public function getInvoiceByExternalUuid($uuid): array
+    {
+        $result = $this->invoiceModel->where('purpose_table_uuid', $uuid)->first();
+
+        if (!$result) {
+            throw new \InvalidArgumentException("Invoice not found");
+        }
+        $result['items'] = $this->invoiceLineItemModel->where('invoice_uuid', $result['uuid'])->get()->getResult();
+        //look in the payment settings in app-settings for the purpose of payment. if specified get the values. else, all payment methods
+        $paymentSettings = Utils::getPaymentSettings();
+        $paymentMethods = [];
+        // log_message("debug", print_r($paymentSettings['purposes'][$result['purpose']]['paymentMethods'], true));
+        if (isset($paymentSettings['purposes'][$result['purpose']])) {
+            $paymentMethods = $paymentSettings['purposes'][$result['purpose']]['paymentMethods'];
+        }
+        log_message("debug", "payment methods " . print_r($paymentMethods, true));
+
+        $allPaymentMethods = $paymentSettings['paymentMethods'];
+        $result['payment_methods'] = [];
+        log_message("debug", "all payment methods " . print_r($allPaymentMethods, true));
+        if (count($paymentMethods) === 0) {
+            $result['payment_methods'] = array_map(function ($value) {
+                return PaymentMethodType::fromArray($value); }, array_values($allPaymentMethods));
+        } else {
+            foreach ($paymentMethods as $methodName) {
+                if (in_array($methodName, array_keys($allPaymentMethods))) {
+
+                    $result['payment_methods'][] = PaymentMethodType::fromArray($allPaymentMethods[$methodName]);
+                }
+            }
+        }
+
+
+
+        return [
+            'data' => $result,
+            'message' => "Invoice found",
+        ];
+    }
+
+    private function parsePaymentMethod($paymentMethod)
+    {
     }
 
     /**

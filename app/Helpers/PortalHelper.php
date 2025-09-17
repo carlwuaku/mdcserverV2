@@ -5,11 +5,20 @@ use App\Helpers\Types\Alert;
 use App\Helpers\Types\CriteriaType;
 use App\Helpers\Types\PortalHomeConfigType;
 use App\Helpers\Types\PortalHomeSubtitleType;
+use App\Models\UsersModel;
 use CodeIgniter\Shield\Entities\User;
 class PortalHelper
 {
 
-    public static function fillPortalHomeMenuForUser(User $user, PortalHomeConfigType $portalHomeConfig)
+    /**
+     * Fills the portal home menu for the given user, given the config.
+     * The title, description, image, alerts and actions are filtered based on the criteria in the config.
+     * The title, description and image are also processed by the template engine to replace any variables.
+     * @param UsersModel $user
+     * @param PortalHomeConfigType $portalHomeConfig
+     * @return PortalHomeConfigType
+     */
+    public static function fillPortalHomeMenuForUser(UsersModel $user, PortalHomeConfigType $portalHomeConfig)
     {
 
         //strings may have variables in them like [var_name]. replace them
@@ -52,11 +61,11 @@ class PortalHelper
     /**
      * Fills the portal home subtitle for the given user, given the config.
      * The subtitle is filtered based on the criteria in the config.
-     * @param User $user
+     * @param UsersModel $user
      * @param PortalHomeSubtitleType[] $portalHomeSubtitleConfig
      * @return PortalHomeSubtitleType[]
      */
-    public static function fillPortalSubtitleForUser(User $user, array $portalHomeSubtitleConfig)
+    public static function fillPortalSubtitleForUser(UsersModel $user, array $portalHomeSubtitleConfig)
     {
         try {
             $userData = array_merge([$user->display_name, $user->email_address], (array) $user->profile_data);

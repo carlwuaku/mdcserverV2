@@ -9,29 +9,36 @@ use CodeIgniter\Database\BaseBuilder;
 
 class UsersModel extends UserModel implements TableDisplayInterface
 {
-    public $tableName = "users";
-    public $role_name;
-    public $region;
-    public $position;
-    public $picture;
-    public $phone;
-    public $email_address;
+    public string $tableName = "users";
+    public string $role_name;
+    public ?string $region;
+    public ?string $position;
+    public ?string $picture;
+    public ?string $phone;
+    public string $email_address;
 
-    public $status;
-    public $username;
+    public ?string $status;
+    public string $username;
 
-    public $uuid;
+    public string $uuid;
 
-    public $user_type;
+    public string $user_type;
 
-    public $two_fa_deadline;
+    public ?string $two_fa_deadline;
 
-    public $profile_table;
-    public $profile_table_uuid;
+    public ?string $profile_table;
+    public ?string $profile_table_uuid;
+
+    public string $display_name;
+
+    public ?string $status_message;
+
+    public ?string $active;
+
 
     /**
      * data from the profile table for non-admin
-     * @var object
+     * @var array
      */
     public $profile_data;
 
@@ -54,6 +61,26 @@ class UsersModel extends UserModel implements TableDisplayInterface
             'email_address',
             'google_authenticator_setup'
         ];
+    }
+
+    public function fromCIUserEntity(\CodeIgniter\Shield\Entities\User $user)
+    {
+        $this->username = $user->username;
+        $this->display_name = $user->display_name;
+        $this->status = $user->status;
+        $this->status_message = $user->status_message;
+        $this->active = $user->active;
+        $this->role_name = $user->role_name;
+        $this->position = $user->position;
+        $this->picture = $user->picture;
+        $this->phone = $user->phone;
+        $this->email_address = $user->email_address;
+        $this->user_type = $user->user_type;
+        $this->two_fa_deadline = $user->two_fa_deadline;
+        $this->profile_table = $user->profile_table;
+        $this->profile_table_uuid = $user->profile_table_uuid;
+        $this->region = $user->region;
+        return $this;
     }
 
     public function getDisplayColumnLabels(): array

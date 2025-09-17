@@ -181,7 +181,6 @@ class TemplateEngineHelper
             function ($matches) use ($data) {
                 $arrayProperty = trim($matches[1]);
                 $loopTemplate = $matches[2];
-                log_message('debug', 'Processing loop: ' . $loopTemplate);
 
                 // Get the array data
                 if (!property_exists($data, $arrayProperty) || !is_array($data->$arrayProperty)) {

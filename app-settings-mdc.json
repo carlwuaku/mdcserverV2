@@ -1048,6 +1048,8 @@
                     "permission": "Mark_Practitioners_Renewal_Pending_Payment",
                     "printable": false,
                     "onlineCertificatePrintable": false,
+                    "deletableByUser": true,
+                    "userActions": "make_payment",
                     "title": "Pending Payment",
                     "active_children": false,
                     "url": "/licenses/renewal",
@@ -1106,6 +1108,8 @@
                     "permission": "Mark_Practitioners_Renewal_Pending_Approval",
                     "printable": false,
                     "onlineCertificatePrintable": false,
+                    "deletableByUser": false,
+                    "userActions": "",
                     "title": "Pending Approval",
                     "active_children": false,
                     "url": "/licenses/renewal",
@@ -1192,6 +1196,8 @@
                     "permission": "Mark_Practitioners_Renewal_Approved",
                     "printable": true,
                     "onlineCertificatePrintable": true,
+                    "deletableByUser": false,
+                    "userActions": "",
                     "title": "Approved",
                     "active_children": false,
                     "url": "/licenses/renewal",
@@ -1253,6 +1259,18 @@
                 "online_print_template",
                 "in_print_queue"
             ],
+            "canApplyForRenewalCriteria": [
+                {}
+            ],
+            "shouldApplyForRenewalCriteria": [],
+            "mustBeInGoodStandingToRenew": true,
+            "renewalCpdCategory1Cutoff": 0,
+            "renewalCpdCategory2Cutoff": 0,
+            "renewalCpdCategory3Cutoff": 0,
+            "renewalCpdTotalCutoff": 0,
+            "daysFromRenewalExpiryToOpenApplication": 0,
+            "revalidationPeriodInYears": 3,
+            "revalidationMessage": "You are required to validate your data before renewing your license",
             "renewalJsonFields": [
                 "qualifications"
             ],
@@ -2162,6 +2180,18 @@
             ],
             "fieldsToUpdateOnRenewal": [],
             "renewalFilterFields": [],
+            "canApplyForRenewalCriteria": [
+                {}
+            ],
+            "shouldApplyForRenewalCriteria": [],
+            "mustBeInGoodStandingToRenew": true,
+            "renewalCpdCategory1Cutoff": 0,
+            "renewalCpdCategory2Cutoff": 0,
+            "renewalCpdCategory3Cutoff": 0,
+            "renewalCpdTotalCutoff": 0,
+            "daysFromRenewalExpiryToOpenApplication": 0,
+            "revalidationPeriodInYears": 3,
+            "revalidationMessage": "You are required to validate your data before renewing your license",
             "detailsPageHeaderTabs": [
                 {
                     "label": "Practitioner Type",
@@ -3576,14 +3606,48 @@
                     "icon": "",
                     "type": "link",
                     "linkProp": "",
-                    "url": "/relicensure/form",
+                    "url": "/renewals/form",
                     "urlParams": {},
                     "criteria": [
                         {
                             "field": "in_good_standing",
-                            "operator": "not_equals",
+                            "operator": "equals",
                             "value": [
-                                "In Good Standing"
+                                "Not In Good Standing"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Click to make payment",
+                    "icon": "",
+                    "type": "link",
+                    "linkProp": "",
+                    "url": "/renewals/form",
+                    "urlParams": {},
+                    "criteria": [
+                        {
+                            "field": "in_good_standing",
+                            "operator": "equals",
+                            "value": [
+                                "Pending Payment"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Click to apply",
+                    "icon": "",
+                    "type": "link",
+                    "linkProp": "",
+                    "url": "/renewals/form",
+                    "urlParams": {},
+                    "criteria": [
+                        {
+                            "field": "in_good_standing",
+                            "operator": "equals",
+                            "value": [
+                                "Not In Good Standing"
                             ]
                         }
                     ]
@@ -3595,15 +3659,7 @@
                     "linkProp": "",
                     "url": "/renewals",
                     "urlParams": {},
-                    "criteria": [
-                        {
-                            "field": "in_good_standing",
-                            "operator": "equals",
-                            "value": [
-                                "In Good Standing"
-                            ]
-                        }
-                    ]
+                    "criteria": []
                 }
             ],
             "alerts": [
@@ -3624,14 +3680,27 @@
                     "criteria": [
                         {
                             "field": "in_good_standing",
-                            "operator": "not_equals",
+                            "operator": "equals",
                             "value": [
-                                "In Good Standing"
+                                "Not In Good Standing"
                             ]
                         }
                     ],
                     "message": "You are in not good standing. Please renew your license",
-                    "type": "error"
+                    "type": "danger"
+                },
+                {
+                    "criteria": [
+                        {
+                            "field": "in_good_standing",
+                            "operator": "equals",
+                            "value": [
+                                "Pending Payment"
+                            ]
+                        }
+                    ],
+                    "message": "Your relicensure is pending payment. Please make payment",
+                    "type": "warning"
                 }
             ],
             "description": "View or fill application forms"
@@ -3819,6 +3888,7 @@
         },
         "paymentMethods": {
             "In-Person": {
+                "label": "In-Person",
                 "type": "offline",
                 "isActive": true,
                 "onStart": "offlinePayment",
@@ -3827,6 +3897,7 @@
                 "logo": "assets/images/offline_payment.png"
             },
             "Ghana.gov Platform": {
+                "label": "Ghana.gov Platform",
                 "type": "online",
                 "isActive": true,
                 "onStart": "ghana_gov",

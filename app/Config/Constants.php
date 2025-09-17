@@ -168,3 +168,8 @@ define("PORTAL_EDIT_FORM_TYPE", "Portal Edit");
 define("CACHE_KEY_PREFIX_LICENSES", "app_licenses_");
 define("CACHE_KEY_PREFIX_RENEWALS", "app_licenses_renewals_");
 
+define("IN_GOOD_STANDING", "In Good Standing");
+define("NOT_IN_GOOD_STANDING", "Not In Good Standing");
+define("PERMANENT", "Permanent");
+define("APPROVED", "Approved");
+

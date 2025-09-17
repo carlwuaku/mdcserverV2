@@ -1267,6 +1267,8 @@
                     "permission": "Mark_Practitioners_Renewal_Pending_Payment",
                     "printable": false,
                     "onlineCertificatePrintable": false,
+                    "deletableByUser": true,
+                    "userActions": "make_payment",
                     "title": "Pending Payment",
                     "active_children": false,
                     "url": "/licenses/renewal/practitioners",
@@ -1293,6 +1295,32 @@
                                 "body_mapping": [],
                                 "query_params": []
                             }
+                        },
+                        {
+                            "type": "create_invoice",
+                            "config_type": "payment",
+                            "config": {
+                                "template": "",
+                                "subject": "",
+                                "admin_email": "",
+                                "endpoint": "",
+                                "method": "",
+                                "auth_token": "",
+                                "headers": [],
+                                "body_mapping": [],
+                                "query_params": [],
+                                "paymentPurpose": "Pharmacist Renewal",
+                                "paymentInvoiceItems": []
+                            },
+                            "criteria": [
+                                {
+                                    "field": "practitioner_type",
+                                    "operator": "equals",
+                                    "value": [
+                                        "Pharmacist"
+                                    ]
+                                }
+                            ]
                         }
                     ]
                 },
@@ -1352,6 +1380,8 @@
                     "permission": "Mark_Practitioners_Renewal_Approved",
                     "printable": true,
                     "onlineCertificatePrintable": true,
+                    "deletableByUser": false,
+                    "userActions": "",
                     "title": "Approved",
                     "active_children": false,
                     "url": "/licenses/renewal/practitioners",
@@ -1439,6 +1469,14 @@
                 {}
             ],
             "shouldApplyForRenewalCriteria": [],
+            "mustBeInGoodStandingToRenew": false,
+            "renewalCpdCategory1Cutoff": 4,
+            "renewalCpdCategory2Cutoff": 3,
+            "renewalCpdCategory3Cutoff": 3,
+            "renewalCpdTotalCutoff": 10,
+            "daysFromRenewalExpiryToOpenApplication": 0,
+            "revalidationPeriodInYears": 3,
+            "revalidationMessage": "You are required to validate your data before renewing your license",
             "detailsPageHeaderTabs": [
                 {
                     "label": "Register Type",
@@ -2176,6 +2214,8 @@
                     "permission": "Mark_Facilities_Renewal_Pending_Payment",
                     "printable": false,
                     "onlineCertificatePrintable": false,
+                    "deletableByUser": true,
+                    "userActions": "make_payment",
                     "title": "Pending Payment",
                     "active_children": false,
                     "url": "/licenses/renewal/facilities",
@@ -2214,6 +2254,8 @@
                     "permission": "Mark_Facilities_Renewal_Pending_Regional_Approval",
                     "printable": false,
                     "onlineCertificatePrintable": false,
+                    "deletableByUser": false,
+                    "userActions": "",
                     "title": "Pending Regional Approval",
                     "active_children": false,
                     "url": "/licenses/renewal/facilities",
@@ -2236,6 +2278,8 @@
                     "permission": "Mark_Facilities_Renewal_Pending_Authorization",
                     "printable": false,
                     "onlineCertificatePrintable": false,
+                    "deletableByUser": false,
+                    "userActions": "",
                     "title": "Pending Authorization",
                     "active_children": false,
                     "url": "/licenses/renewal/facilities",
@@ -2305,6 +2349,8 @@
                     "permission": "Mark_Facilities_Renewal_Approved",
                     "printable": true,
                     "onlineCertificatePrintable": true,
+                    "deletableByUser": false,
+                    "userActions": "",
                     "title": "Approved",
                     "active_children": false,
                     "url": "/licenses/renewal/facilities",
@@ -2391,6 +2437,18 @@
                 "online_print_template",
                 "in_print_queue"
             ],
+            "canApplyForRenewalCriteria": [
+                {}
+            ],
+            "shouldApplyForRenewalCriteria": [],
+            "mustBeInGoodStandingToRenew": false,
+            "renewalCpdCategory1Cutoff": 0,
+            "renewalCpdCategory2Cutoff": 0,
+            "renewalCpdCategory3Cutoff": 0,
+            "renewalCpdTotalCutoff": 0,
+            "daysFromRenewalExpiryToOpenApplication": 0,
+            "revalidationPeriodInYears": 3,
+            "revalidationMessage": "You are required to validate your data before renewing your license",
             "fieldsToUpdateOnRenewal": [],
             "detailsPageHeaderTabs": [
                 {
@@ -2799,6 +2857,8 @@
                     "permission": "Mark_Otcms_Renewal_Pending_Authorization",
                     "printable": false,
                     "onlineCertificatePrintable": false,
+                    "deletableByUser": false,
+                    "userActions": "",
                     "title": "Pending Authorization",
                     "active_children": false,
                     "url": "/licenses/renewal/otcms",
@@ -2884,6 +2944,8 @@
                     "permission": "Mark_Otcms_Renewal_Approved",
                     "printable": true,
                     "onlineCertificatePrintable": true,
+                    "deletableByUser": false,
+                    "userActions": "",
                     "title": "Approved",
                     "active_children": false,
                     "url": "/licenses/renewal/otcms",
@@ -2942,6 +3004,18 @@
                 "online_print_template",
                 "in_print_queue"
             ],
+            "canApplyForRenewalCriteria": [
+                {}
+            ],
+            "shouldApplyForRenewalCriteria": [],
+            "mustBeInGoodStandingToRenew": false,
+            "renewalCpdCategory1Cutoff": 0,
+            "renewalCpdCategory2Cutoff": 0,
+            "renewalCpdCategory3Cutoff": 0,
+            "renewalCpdTotalCutoff": 0,
+            "daysFromRenewalExpiryToOpenApplication": 0,
+            "revalidationPeriodInYears": 3,
+            "revalidationMessage": "You are required to validate your data before renewing your license",
             "detailsPageHeaderTabs": [
                 {
                     "label": "Status",
@@ -3351,6 +3425,18 @@
             },
             "renewalJsonFields": [],
             "fieldsToUpdateOnRenewal": [],
+            "canApplyForRenewalCriteria": [
+                {}
+            ],
+            "shouldApplyForRenewalCriteria": [],
+            "mustBeInGoodStandingToRenew": false,
+            "renewalCpdCategory1Cutoff": 0,
+            "renewalCpdCategory2Cutoff": 0,
+            "renewalCpdCategory3Cutoff": 0,
+            "renewalCpdTotalCutoff": 0,
+            "daysFromRenewalExpiryToOpenApplication": 0,
+            "revalidationPeriodInYears": 3,
+            "revalidationMessage": "You are required to validate your data before renewing your license",
             "renewalFilterFields": [],
             "detailsPageHeaderTabs": [
                 {
@@ -4270,7 +4356,49 @@
                     "linkProp": "",
                     "url": "/renewals/form",
                     "urlParams": {},
-                    "criteria": []
+                    "criteria": [
+                        {
+                            "field": "in_good_standing",
+                            "operator": "equals",
+                            "value": [
+                                "Not In Good Standing"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Click to make payment",
+                    "icon": "",
+                    "type": "link",
+                    "linkProp": "",
+                    "url": "/renewals/form",
+                    "urlParams": {},
+                    "criteria": [
+                        {
+                            "field": "in_good_standing",
+                            "operator": "equals",
+                            "value": [
+                                "Pending Payment"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Click to apply",
+                    "icon": "",
+                    "type": "link",
+                    "linkProp": "",
+                    "url": "/renewals/form",
+                    "urlParams": {},
+                    "criteria": [
+                        {
+                            "field": "in_good_standing",
+                            "operator": "equals",
+                            "value": [
+                                "Not In Good Standing"
+                            ]
+                        }
+                    ]
                 },
                 {
                     "label": "View history/Print certificates",
@@ -4300,14 +4428,27 @@
                     "criteria": [
                         {
                             "field": "in_good_standing",
-                            "operator": "not_equals",
+                            "operator": "equals",
                             "value": [
-                                "In Good Standing"
+                                "Not In Good Standing"
                             ]
                         }
                     ],
                     "message": "You are in not good standing. Please renew your license",
-                    "type": "error"
+                    "type": "danger"
+                },
+                {
+                    "criteria": [
+                        {
+                            "field": "in_good_standing",
+                            "operator": "equals",
+                            "value": [
+                                "Pending Payment"
+                            ]
+                        }
+                    ],
+                    "message": "Your relicensure is pending payment. Please make payment",
+                    "type": "warning"
                 }
             ],
             "description": "View or fill application forms"
@@ -4667,6 +4808,7 @@
         },
         "paymentMethods": {
             "In-Person": {
+                "label": "In-Person",
                 "type": "offline",
                 "isActive": true,
                 "onStart": "offlinePayment",
@@ -4675,6 +4817,7 @@
                 "logo": "assets/images/offline_payment.png"
             },
             "Ghana.gov Platform": {
+                "label": "Ghana.gov Platform",
                 "type": "online",
                 "isActive": true,
                 "onStart": "ghana_gov",

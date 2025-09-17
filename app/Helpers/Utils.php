@@ -22,6 +22,9 @@ use App\Models\Licenses\LicensesModel;
 use Exception;
 use CodeIgniter\Exceptions\ConfigException;
 use App\Helpers\Types\ApplicationFormTemplateType;
+use App\Models\SettingsModel;
+use App\Helpers\Types\DataResponseType;
+use App\Helpers\Types\AppSettingsLicenseType;
 class Utils
 {
 
@@ -56,7 +59,7 @@ class Utils
         $file = APPPATH . DIRECTORY_SEPARATOR . 'Templates' . DIRECTORY_SEPARATOR . $fileName;
         if (!file_exists($file)) {
             log_message('error', "Template file not found: $file");
-            throw new \Exception("Template file not found", 1);
+            throw new Exception("Template file not found", 1);
         }
         return file_get_contents($file);
     }
@@ -229,21 +232,17 @@ class Utils
     /**
      * get the table name, fields, other settings for a license type
      * @param string $license
-     * @return object {table: string, uniqueKeyField: string,selectionFields:array, displayColumns: array, fields: array, onCreateValidation: array, 
-     * onUpdateValidation: array, renewalFields: array, implicitRenewalFields: array, renewalTable: string, renewalStages: object, 
-     * fieldsToUpdateOnRenewal: array, basicStatisticsFields: array,
-     *  basicStatisticsFilterFields: array, advancedStatisticsFields: array, renewalFilterFields: array, 
-     *  renewalBasicStatisticsFields: array, renewalSearchFields: array, gazetteTableColumns: array, renewalJsonFields: array}
+     * @return AppSettingsLicenseType
      */
+
     public static function getLicenseSetting(string $license): object
     {
         $licenses = self::getAppSettings("licenseTypes");
         if (!$licenses || !array_key_exists($license, $licenses)) {
-            throw new \Exception("License not found");
+            throw new Exception("License not found");
         }
-        return (object) $licenses[$license];
+        return AppSettingsLicenseType::fromArray($licenses[$license]);
     }
-
     /**
      * get the fields defined in app.settings.json for a license type.
      * @param string $license
@@ -315,6 +314,7 @@ class Utils
     {
         try {
             $licenseDef = self::getLicenseSetting($license);
+            log_message('info', "licenseDef: " . print_r($licenseDef, true));
             /** @var array {label: string, name: string, hint: string, options: array, type: string, value: string, required: bool} */
 
             $fields = $licenseDef->renewalStages[$stage]['fields'];
@@ -1073,13 +1073,15 @@ class Utils
             $builder->join($subtable, $model->getTableName() . '.license_number = ' . $subtable . '.' . $uniqueKeyField);
             $data = $model->first();
         } else {
-            $data = $model->first();
-            $licenseType = $data['type'];
+
             try {
+                $data = $model->first();
+                $licenseType = $data['type'];
                 $subModel = new LicensesModel();
                 $licenseDetails = $subModel->getLicenseDetailsFromSubTable($uuid, $licenseType);
                 $data = array_merge($data, $licenseDetails);
             } catch (\Throwable $th) {
+                log_message('error', "License with no details {{$data['license_number']} }" . $th);
                 log_message('error', "License with no details {{$data['license_number']} }" . $th->getMessage());
             }
         }
@@ -1337,4 +1339,48 @@ class Utils
 
         return $prefix . '_' . $contextHash;
     }
+
+    /**
+     * Retrieves all settings, with optional filtering by a search parameter.
+     *
+     * @param string|null $param Optional search parameter to filter settings by.
+     * @param string $sortBy The field to sort the results by. Defaults to "id".
+     * @param string $sortOrder The direction to sort the results by. Defaults to "asc".
+     * @param int $per_page The number of results to return per page. Defaults to 100.
+     * @param int $page The page number to return. Defaults to 0.
+     * @return DataResponseType<\App\Helpers\Types\SettingsType>
+     */
+    public static function getAllSettings(?string $param = null, string $sortBy = "id", string $sortOrder = "asc", int $per_page = 100, int $page = 0): DataResponseType
+    {
+        $settingsModel = new SettingsModel();
+        $builder = $param ? $settingsModel->search($param) : $settingsModel->builder();
+        $builder->orderBy($sortBy, $sortOrder);
+        $totalBuilder = clone $builder;
+        $total = $totalBuilder->countAllResults();
+        /**
+         * @var \App\Helpers\Types\SettingsType[] $result
+         */
+        $result = $builder->get($per_page, $page)->getResult();
+        foreach ($result as $value) {
+            if ($value->type !== 'string') {
+                $value->value = unserialize($value->value);
+            }
+        }
+        /** @var DataResponseType<\App\Helpers\Types\SettingsType>*/
+        $response = new DataResponseType($result, $total, $settingsModel->getDisplayColumns(), []);
+        return $response;
+    }
+
+    public static function getSetting($name)
+    {
+        $settings = service("settings");
+        $value = $settings->get($name);
+        //legacy settings may be lists represented as ; separated strings
+        if (is_string($value) && strpos($value, ';') !== false) {
+            $value = explode(';', $value);
+        }
+        return $value;
+    }
+
+
 }

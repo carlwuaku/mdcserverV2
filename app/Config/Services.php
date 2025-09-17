@@ -11,6 +11,7 @@ use App\Services\ApplicationService;
 use App\Services\ApplicationTemplateService;
 use App\Services\ExaminationService;
 use App\Services\PaymentsService;
+use App\Services\SettingsService;
 
 /**
  * Services Configuration file.
@@ -118,5 +119,13 @@ class Services extends BaseService
             return static::getSharedInstance('portalService');
         }
         return new PortalService();
+    }
+
+    public static function settingsService(bool $getShared = true): SettingsService
+    {
+        if ($getShared) {
+            return static::getSharedInstance('serviceService');
+        }
+        return new SettingsService();
     }
 }

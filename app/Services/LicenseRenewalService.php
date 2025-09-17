@@ -3,15 +3,20 @@
 namespace App\Services;
 
 use App\Helpers\LicenseUtils;
+use App\Helpers\Types\LicenseRenewalEligibilityCriteriaType;
 use App\Helpers\Types\RenewalStageType;
 use App\Helpers\Utils;
 use App\Models\ActivitiesModel;
 use App\Models\Licenses\LicenseRenewalModel;
 use App\Models\Licenses\LicensesModel;
+use App\Models\UsersModel;
 use CodeIgniter\Database\BaseBuilder;
 use CodeIgniter\Exceptions\ConfigException;
 use Exception;
 use App\Helpers\ApplicationFormActionHelper;
+use App\Helpers\AuthHelper;
+use App\Helpers\Types\PractitionerPortalRenewalViewModelType;
+use DateTime;
 /**
  * License Renewal Service - Handles all license renewal-related business logic
  */
@@ -305,9 +310,14 @@ class LicenseRenewalService
     }
 
     /**
-     * Delete a license renewal
+     * Delete a license renewal.
+     *
+     * @param string $uuid The uuid of the renewal
+     * @param string $userUuid The uuid of the user performing the deletion, used for permission checks
+     * @return array A response with a success message
+     * @throws \RuntimeException If the renewal does not exist or the delete fails
      */
-    public function deleteRenewal(string $uuid): array
+    public function deleteRenewal(string $uuid, string $userUuid = null): array
     {
         $model = new LicenseRenewalModel();
         $data = $model->where(["uuid" => $uuid])->first();
@@ -315,7 +325,18 @@ class LicenseRenewalService
         if (!$data) {
             throw new \RuntimeException("License renewal not found");
         }
-
+        //if a userUuid is provided, make sure the renewal record matches that user's uuid
+        if ($userUuid) {
+            if ($data['license_uuid'] != $userUuid) {
+                log_message('error', "User with uuid $userUuid does not have permission to delete renewal with uuid $uuid");
+                throw new \RuntimeException("You do not have permission to delete this renewal");
+            }
+            //make sure the status of the renewal is deletable
+            if (!LicenseUtils::isRenewalStageDeletable($data['license_type'], $data['status'])) {
+                log_message('error', "Renewal with uuid $uuid cannot be deleted by user with uuid $userUuid because its status is {$data['status']}");
+                throw new \RuntimeException("This renewal cannot be deleted");
+            }
+        }
         if (!$model->where('uuid', $uuid)->delete()) {
             throw new \RuntimeException('Failed to delete renewal: ' . json_encode($model->errors()));
         }
@@ -594,6 +615,143 @@ class LicenseRenewalService
         }
     }
 
+    /**
+     * Gets the portal renewal model for the given user.
+     *
+     * This will return whether the user is eligible for renewal and what actions they can take.
+     *
+     * The response will contain the following properties:
+     * - actions: an array of actions that the user can perform. This can be "fill_form" if the user is eligible to apply for renewal, or an empty array if not.
+     * - data: the form data that the user needs to fill out if they are eligible for renewal. This will be empty if the user is not eligible.
+     * - message: a message that will be displayed to the user explaining what they can do next.
+     *
+     * @param string $userId the id of the user
+     * @return PractitionerPortalRenewalViewModelType the response containing the actions, data and message for the user
+     */
+    public function getPractitionerPortalRenewal(string $userId)
+    {
+
+        $userData = AuthHelper::getAuthUser($userId);
+        //for some institutions practitioners have to apply to be in good standing while they're still in good standing. others require that they apply after it's expired
+
+        $licenseType = $userData->profile_data['type'];
+        $licenseNumber = $userData->profile_data['license_number'];
+
+        if (empty($licenseType)) {
+            log_message('error', "License type not found for user: $userId");
+            throw new \InvalidArgumentException("License type not found");
+        }
+        /**
+         * @var PractitionerPortalRenewalViewModelType
+         */
+        $response = new PractitionerPortalRenewalViewModelType("", null, '', []);
+
+
+        $renewalModel = new LicenseRenewalModel($licenseType);
+        $lastRenewal = $renewalModel->where('license_number', $licenseNumber)->orderBy('id', 'desc')->first();
+        /** @var string */
+        $isInGoodStanding = NOT_IN_GOOD_STANDING;//this will be 'In Good Standing' if the last renewal was approved and in the validity period, 'Not In Good Standing' if expired or not available, or some other status if the renewal is in progress 
+        $lastRenewalId = null;
+        if (!$lastRenewal) {
+            $isInGoodStanding = NOT_IN_GOOD_STANDING;
+        } else {
+            $lastRenewalId = $lastRenewal['uuid'];
+            $startDate = new DateTime($lastRenewal['start_date']);
+            $expiry = $lastRenewal['expiry']
+                ? new DateTime($lastRenewal['expiry'])
+                : (new DateTime($startDate->format('Y') . '-12-31'));
+
+            $today = new DateTime();
+            $inDateRange = $today >= $startDate && $today <= $expiry;
+            if (!$inDateRange) {
+                $isInGoodStanding = NOT_IN_GOOD_STANDING;
+            } else {
+                $isInGoodStanding = $lastRenewal['status'] === APPROVED
+                    ? IN_GOOD_STANDING
+                    : $lastRenewal['status'];
+            }
+
+        }
+        //get the following settings: revalidationPeriod, cpd_category_1_cutoff, cpd_category_2_cutoff, cpd_category_3_cutoff, cpd_cutoff, revalidation_period
+        $licenseDef = Utils::getLicenseSetting($licenseType);
+        $permitRenewal = false;//TODO: check if  the user has been allowed to bypass eligibility criteria
+        //get the year for the renewal
+        $eligibilityCriteria = new LicenseRenewalEligibilityCriteriaType(
+            $licenseDef->mustBeInGoodStandingToRenew,
+            '',
+            $licenseDef->renewalCpdTotalCutoff,
+            $licenseDef->renewalCpdCategory1Cutoff,
+            $licenseDef->renewalCpdCategory2Cutoff,
+            $licenseDef->renewalCpdCategory3Cutoff,
+            $userData->profile_data['register_type'],
+            $licenseDef->revalidationPeriodInYears,
+            $licenseDef->revalidationMessage,
+            '',
+            $permitRenewal
+        );
+        /** @var string */
+        $isInGoodStanding = $userData->profile_data['in_good_standing'];//this will be 'In Good Standing' if the last renewal was approved and in the validity period, 'Not In Good Standing' if expired or not available, or some other status if the renewal is in progress 
+        $mustBeInGoodStandingToRenew = $licenseDef->mustBeInGoodStandingToRenew;
+        $onlineApplicationsOpen = LicenseUtils::portalRenewalApplicationOpen($userData->profile_data['type']);//TODO;Utils::getSetting('online_applications_open');
+        //check if the person is eligible for renewal. the cpd year is the year after the last_renewal_start if it's available and is not more than a year ago
+        $cpdYear = date("Y", strtotime("-1 year"));
+
+        $isEligibleForRenewal = LicenseUtils::isEligibleForRenewal($licenseNumber, $eligibilityCriteria, $cpdYear);
+        $eligible = $isEligibleForRenewal->isEligible;
+        //and within the validity period
+        if ($isInGoodStanding === IN_GOOD_STANDING) {
+            if ($mustBeInGoodStandingToRenew) {
+                if ($eligible) {
+                    //check if online applications are open
+                    if ($onlineApplicationsOpen) {
+                        $response = new PractitionerPortalRenewalViewModelType(
+                            "fill_form",
+                            null,
+                            "Please fill the application form to apply for renewal",
+                            $this->getPortalLicenseRenewalFormFields($userData->profile_data['type']),
+                            false,
+                            $lastRenewalId
+                        );
+
+                    } else {
+                        $response = new PractitionerPortalRenewalViewModelType("", null, "Online applications are closed", [], false, $lastRenewalId);
+
+                    }
+                } else {
+                    $response = new PractitionerPortalRenewalViewModelType("", null, "You are not eligible for renewal - " . $isEligibleForRenewal->reason, [], false, $lastRenewalId);
+
+                }
+            } else {
+                $response = new PractitionerPortalRenewalViewModelType("", null, "You are in good standing", [], false, $lastRenewalId);
+            }
+        } else if ($isInGoodStanding === NOT_IN_GOOD_STANDING) {
+            if ($mustBeInGoodStandingToRenew) {
+                $response = new PractitionerPortalRenewalViewModelType("", null, "You need to be in good standing to apply for renewal. Please contact us for support.", [], false);
+                //TODO: make this message configurable
+            } else {
+                if ($eligible) {
+                    //check if online applications are open
+                    if ($onlineApplicationsOpen) {
+                        $response = new PractitionerPortalRenewalViewModelType("fill_form", null, "You are eligible for renewal", $this->getPortalLicenseRenewalFormFields($userData->profile_data['type']), false);
+                    } else {
+                        $response = new PractitionerPortalRenewalViewModelType("", null, "Online applications are closed", [], false, $lastRenewalId);
+
+                    }
+                } else {
+                    $response = new PractitionerPortalRenewalViewModelType("", null, "You are not eligible for renewal - " . $isEligibleForRenewal->reason, [], false, null);
+                }
+            }
+        } else {
+            //there's a renewal in progress. get possible actions from the licenseDef and guide the user as to what to do next
+            $actions = LicenseUtils::getRenewalStageActions($licenseDef, $isInGoodStanding);
+            $withdrawable = LicenseUtils::isRenewalStageDeletable($licenseType, $isInGoodStanding);
+            $response = new PractitionerPortalRenewalViewModelType($actions, null, "Your application for renewal is in progress. Status: $isInGoodStanding", [], $withdrawable, $lastRenewalId);
+        }
+
+
+        return $response;
+    }
+
     // Private helper methods
 
     /**
@@ -784,7 +942,7 @@ class LicenseRenewalService
             // Merge data_snapshot with item data
             if (property_exists($item, 'data_snapshot')) {
                 //remove these fields from data_snapshot as they apply to the license object and may conflict with the renewal object
-                $fieldsToRemove = ['id', 'uuid', 'created_on', 'modified_on', 'deleted_at'];
+                $fieldsToRemove = ['id', 'uuid', 'created_on', 'modified_on', 'deleted_at', 'status'];
                 foreach ($fieldsToRemove as $field) {
                     if (array_key_exists($field, $item->data_snapshot)) {
                         unset($item->data_snapshot[$field]);

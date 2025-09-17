@@ -35,7 +35,9 @@ class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormIn
         'last_renewal_status',
         'deleted_at',
         'created_on',
-        'register_type'
+        'register_type',
+        'last_revalidation_date',
+        'requires_revalidation'
     ];
 
     protected bool $allowEmptyInserts = false;
@@ -105,6 +107,8 @@ class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormIn
             'district',
             'created_on',
             'portal_access',
+            'last_revalidation_date',
+            'requires_revalidation'
         ];
         if ($this->licenseType) {
             $licenseTypes = Utils::getAppSettings("licenseTypes");
@@ -259,9 +263,8 @@ class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormIn
         $builder
             ->select(implode(', ', $filteredColumns))
             ->select("(CASE  
-            when last_renewal_status = 'Approved' and '$this->renewalDate' BETWEEN last_renewal_start AND last_renewal_expiry THEN 'In Good Standing'
-            when last_renewal_status = 'Pending Payment' and '$this->renewalDate' BETWEEN last_renewal_start AND last_renewal_expiry THEN 'Pending Payment'
-            when last_renewal_status = 'Pending Approval' and '$this->renewalDate' BETWEEN last_renewal_start AND last_renewal_expiry THEN 'Pending Approval'
+            WHEN last_renewal_status = 'Approved' and '$this->renewalDate' BETWEEN last_renewal_start AND last_renewal_expiry THEN 'In Good Standing'
+            WHEN '$this->renewalDate' BETWEEN last_renewal_start AND last_renewal_expiry THEN last_renewal_status
              ELSE 'Not In Good Standing'
              END) as in_good_standing");
         // ->

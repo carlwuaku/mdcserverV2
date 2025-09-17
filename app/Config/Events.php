@@ -6,6 +6,8 @@ use App\Helpers\PaymentUtils;
 use CodeIgniter\Events\Events;
 use App\Helpers\Utils;
 use App\Helpers\ApplicationFormActionHelper;
+use Codeigniter\Database\Query;
+
 /*
  * --------------------------------------------------------------------
  * Application Events
@@ -105,6 +107,14 @@ Events::on(EVENT_APPLICATION_FORM_ACTION_COMPLETED, static function (object $act
 
     } catch (\Throwable $e) {
 
+    }
+});
+
+Events::on('DBQuery', function (Query $query) {
+    if ($query->hasError()) {
+        log_message('error', 'Database Query Error: ' . $query->getQuery());
+        log_message('error', 'Database Error: ' . $query->getErrorMessage());
+        log_message('error', 'Database Error Code: ' . $query->getErrorCode());
     }
 });
 

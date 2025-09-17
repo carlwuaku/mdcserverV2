@@ -7,14 +7,11 @@ use App\Helpers\Utils;
 use App\Models\PermissionsModel;
 use App\Models\RolePermissionsModel;
 use App\Models\RolesModel;
-use CodeIgniter\Events\Events;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 use CodeIgniter\Shield\Entities\User;
 use App\Models\UsersModel;
 use CodeIgniter\Database\MigrationRunner;
-use Google\ReCaptcha\ReCaptcha;
-use mysqli_sql_exception;
 use ReCaptcha\ReCaptcha as ReCaptchaReCaptcha;
 use App\Helpers\CacheHelper;
 use Vectorface\GoogleAuthenticator;
@@ -542,7 +539,7 @@ class AuthController extends ResourceController
         if ($userData->profile_data) {
             $data['profile_data'] = array_diff_key((array) $userData->profile_data, array_flip($excludeProfileDataFields));
         }
-        $permissionsList = $userData->permissions;
+        $permissionsList = AuthHelper::getAuthUserPermissions($userData);
         return $this->respond([
             "user" => $data,
             "permissions" => $permissionsList

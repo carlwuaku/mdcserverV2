@@ -268,6 +268,24 @@ class LicensesController extends ResourceController
         }
     }
 
+    public function deleteRenewalByLicense($uuid)
+    {
+        try {
+            $userId = auth("tokens")->id();
+            $user = AuthHelper::getAuthUser($userId);
+            //make sure the uuid belongs to the user
+            $result = $this->renewalService->deleteRenewal($uuid, $user->profile_data['uuid']);
+            $this->invalidateCache(CACHE_KEY_PREFIX_RENEWALS);
+
+            return $this->respond($result, ResponseInterface::HTTP_OK);
+
+        } catch (\RuntimeException $e) {
+            return $this->respond(['message' => $e->getMessage()], ResponseInterface::HTTP_NOT_FOUND);
+        } catch (\Throwable $e) {
+            log_message("error", $e);
+            return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
     public function getRenewal($uuid)
     {
         try {
@@ -312,10 +330,10 @@ class LicensesController extends ResourceController
             $user = AuthHelper::getAuthUser($userId);
             $filters = $this->extractRequestFilters();
             $result = $this->renewalService->getRenewals($user->profile_table_uuid, $filters);
-            //remove unnecessary data fields
-            $allowedFields = ['first_name', 'last_name', 'middle_name', 'license_number', 'start_date', 'expiry', 'status', 'printable', 'editable']; // [First name	Last name	Middle name	License number	Start date	Expiry	Status]
+            //remove unnecessary data fields and add the printable and deletable fields
+            $allowedFields = ['first_name', 'last_name', 'middle_name', 'license_number', 'start_date', 'expiry', 'status', 'printable', 'deletable', 'uuid'];
             foreach ($result['data'] as $renewal) {
-                $renewal->editable = true;
+                $renewal->deletable = LicenseUtils::isRenewalStageDeletable($renewal->license_type, $renewal->status);
                 $renewal->printable = LicenseUtils::isRenewalStagePrintable($renewal->license_type, $renewal->status);
             }
             foreach ($result['data'] as $key => $renewal) {
@@ -365,12 +383,9 @@ class LicensesController extends ResourceController
     {
         try {
             $userId = auth("tokens")->id();
-            $userData = AuthHelper::getAuthUser($userId);
-            //check if the person is eligible for renewal
-            //TODO: add the eligibility criteria to app-settings
-            $fields = $this->renewalService->getPortalLicenseRenewalFormFields($userData->profile_data['type']);
+            $state = $this->renewalService->getPractitionerPortalRenewal($userId);
 
-            return $this->respond(['data' => $fields], ResponseInterface::HTTP_OK);
+            return $this->respond(["data" => $state], ResponseInterface::HTTP_OK);
 
         } catch (\Throwable $e) {
             log_message("error", $e);

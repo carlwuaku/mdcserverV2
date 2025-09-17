@@ -212,6 +212,29 @@ class PaymentsController extends ResourceController
         }
     }
 
+    /**
+     * Get an invoice by external uuid, e.g. a renewal uuid
+     *
+     * @param string $uuid The external uuid of the invoice
+     *
+     * @return ResponseInterface
+     *
+
+     */
+    public function getInvoiceByExternal($uuid)
+    {
+        try {
+            $result = $this->paymentsService->getInvoiceByExternalUuid($uuid);
+            return $this->respond($result, ResponseInterface::HTTP_OK);
+
+        } catch (\InvalidArgumentException $e) {
+            return $this->respond(['message' => $e->getMessage()], ResponseInterface::HTTP_BAD_REQUEST);
+        } catch (\Throwable $e) {
+            log_message("error", $e);
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     public function deleteInvoice($uuid)
     {
         try {
