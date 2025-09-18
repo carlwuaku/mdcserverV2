@@ -4814,7 +4814,7 @@
                 "onStart": "offlinePayment",
                 "onComplete": "offlinePaymentComplete",
                 "description": "Pay this invoice in person at any bank branch, via mobile money, or via a bank up and upload evidence of payment",
-                "logo": "assets/images/offline_payment.png"
+                "logo": "assets/images/bank.png"
             },
             "Ghana.gov Platform": {
                 "label": "Ghana.gov Platform",
@@ -4823,7 +4823,7 @@
                 "onStart": "ghana_gov",
                 "onComplete": "ghana_gov",
                 "description": "Pay this invoice online via the Ghana.gov platform",
-                "logo": "assets/images/ghana_gov.png"
+                "logo": "assets/images/gov-logo.png"
             }
         }
     },

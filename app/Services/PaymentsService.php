@@ -419,7 +419,8 @@ class PaymentsService
         log_message("debug", "all payment methods " . print_r($allPaymentMethods, true));
         if (count($paymentMethods) === 0) {
             $result['payment_methods'] = array_map(function ($value) {
-                return PaymentMethodType::fromArray($value); }, array_values($allPaymentMethods));
+                return PaymentMethodType::fromArray($value);
+            }, array_values($allPaymentMethods));
         } else {
             foreach ($paymentMethods as $methodName) {
                 if (in_array($methodName, array_keys($allPaymentMethods))) {
@@ -462,7 +463,7 @@ class PaymentsService
         }
 
         // Log activity
-        $this->activitiesModel->logActivity("Deleted invoice {$data['application_id']} for {$data['name']} {$data['unique_id']}.");
+        $this->activitiesModel->logActivity("Deleted invoice {$data['application_id']} for  {$data['unique_id']}.");
 
         return true;
     }
@@ -543,6 +544,17 @@ class PaymentsService
         return $invoiceLineItemId;
     }
 
+    /**
+     * Creates an invoice payment option for a given invoice and payment method.
+     *
+     * @param string $invoiceUuid The UUID of the invoice
+     * @param InvoicePaymentOptionType $item The payment method to add to the invoice
+     *
+     * @return int The ID of the created invoice payment option
+     *
+     * @throws \InvalidArgumentException If the validation fails
+     * @throws \RuntimeException If the insert fails
+     */
     private function createInvoicePaymentOption(string $invoiceUuid, InvoicePaymentOptionType $item)
     {
         // Validate and process the data
@@ -573,71 +585,170 @@ class PaymentsService
     }
 
 
-    public function generatePresetInovicesForMultipleUuids(string $purpose, array $uuids, $dueDate, array $additionalInvoiceItems)
+    /**
+     * Generates preset invoices for multiple uuids.
+     *
+     * This function takes a purpose, an array of uuids, a due date, and an array of additional invoice items.
+     * It validates the purpose and gets the configuration, then gets the details for each uuid,
+     * generates a preset invoice for each uuid, and finally returns an array containing the
+     * successful and failed uuids.
+     *
+     * @param string $purpose The purpose of the invoice
+     * @param array $uuids An array of uuids
+     * @param mixed $dueDate The due date of the invoice
+     * @param array $additionalInvoiceItems An array of additional invoice items
+     * @return array An array containing the successful and failed uuids
+     * @throws \Throwable If there is an error generating the preset invoices
+     */
+    public function generatePresetInvoicesForMultipleUuids(string $purpose, array $uuids, $dueDate, array $additionalInvoiceItems)
     {
         try {
             $success = [];
             $fail = [];
-            //get the settings for the purpose
-            /**
-             * @var array{defaultInvoiceItems: array {criteria: array {field:string, value:string[]}[], feeServiceCodes: array}[], paymentMethods: array, sourceTableName: string, description: string}
-             */
-            $purposes = Utils::getPaymentSettings()["purposes"];
-            //get the default fees
-            if (!isset($purposes[$purpose])) {
-                throw new \InvalidArgumentException("Invalid payment purpose: $purpose");
-            }
-            $sourceTable = $purposes[$purpose]["sourceTableName"];
-            $descriptionTemplate = $purposes[$purpose]["description"];
-            $paymentMethods = $purposes[$purpose]["paymentMethods"];
 
             foreach ($uuids as $uuid) {
-                $details = Utils::getUuidDetailsForPayment($purpose, $uuid);
-                $templateEngineHelper = new TemplateEngineHelper();
-                $description = $templateEngineHelper->process($descriptionTemplate, $details);
                 try {
-
-                    $defaultFees = $this->getInvoiceDefaultFees($purpose, $uuid);
-                    $invoiceData = [
-                        'first_name' => array_key_exists("first_name", $details) ? $details["first_name"] : $details["name"],
-                        'last_name' => array_key_exists("last_name", $details) ? $details["last_name"] : $details["unique_id"],
-                        'email' => $details["email"],
-                        'phone_number' => $details["phone"],
-                        'purpose_table' => $sourceTable,
-                        'purpose_table_uuid' => $uuid,
-                        'purpose' => $purpose,
-                        'due_date' => $dueDate,
-                        'unique_id' => $details["unique_id"],
-                        'description' => $description
-                    ];
-                    $itemsArray = array_map(function ($item) {
-                        $itemObj = new PaymentInvoiceItemType(0, '', '', 0, 0, 0);
-                        return $itemObj->createFromRequest($item);
-                    }, $additionalInvoiceItems);
-
-                    $paymentOptionsArray = count($paymentMethods) > 0 ? array_map(function ($paymentMethod) {
-                        $paymentOptionObj = new InvoicePaymentOptionType(0, $paymentMethod);
-                        return $paymentOptionObj;
-                    }, $paymentMethods) : [];
-
-                    $invoiceItems = array_merge($defaultFees, $itemsArray);
-                    $this->createInvoice($invoiceData, $invoiceItems, $paymentOptionsArray);
+                    $this->generatePresetInvoiceForSingleUuid($purpose, $uuid, $dueDate, $additionalInvoiceItems);
+                    $details = Utils::getUuidDetailsForPayment($purpose, $uuid);
                     $success[] = $details["name"];
                 } catch (\Throwable $th) {
+                    $details = Utils::getUuidDetailsForPayment($purpose, $uuid);
                     log_message("error", $th);
                     $fail[] = $details["name"];
                     throw $th;
                 }
-
-
             }
 
             return ["success" => $success, "fail" => $fail];
         } catch (Exception $e) {
             throw $e;
         }
+    }
 
+    /**
+     * Generates a preset invoice for a single UUID.
+     *
+     * This function takes a purpose, a UUID, a due date, and an array of additional invoice items.
+     * It validates the purpose and gets the configuration, then gets the details for the UUID,
+     * generates a description from a template, prepares the invoice data, gets the default fees
+     * and additional items, prepares the payment options, and finally creates the invoice.
+     *
+     * @param string $purpose The purpose of the invoice
+     * @param string $uuid The UUID of the invoice
+     * @param mixed $dueDate The due date of the invoice
+     * @param array $additionalInvoiceItems An array of additional invoice items
+     * @return array{invoiceData: array, invoiceItems: array, paymentOptions: array} An array containing the invoice data, invoice items, and payment options
+     * @throws \Throwable If there is an error generating the preset invoice
+     */
+    public function generatePresetInvoiceForSingleUuid(string $purpose, string $uuid, $dueDate, array $additionalInvoiceItems)
+    {
+        try {
+            // Validate purpose and get configuration
+            $purposeConfig = $this->getPurposeConfiguration($purpose);
 
+            // Get details for the UUID
+            $details = Utils::getUuidDetailsForPayment($purpose, $uuid);
+
+            // Generate description from template
+            $description = $this->generateInvoiceDescription($purposeConfig['description'], $details);
+
+            // Prepare invoice data
+            $invoiceData = $this->prepareInvoiceData($details, $purposeConfig['sourceTableName'], $uuid, $purpose, $dueDate, $description);
+
+            // Get default fees and additional items
+            $defaultFees = $this->getInvoiceDefaultFees($purpose, $uuid);
+            $additionalItems = $this->prepareAdditionalInvoiceItems($additionalInvoiceItems);
+            $invoiceItems = array_merge($defaultFees, $additionalItems);
+
+            // Prepare payment options
+            $paymentOptions = $this->preparePaymentOptions($purposeConfig['paymentMethods']);
+
+            // Create the invoice
+            $this->createInvoice($invoiceData, $invoiceItems, $paymentOptions);
+            return ["invoiceData" => $invoiceData, "invoiceItems" => $invoiceItems, "paymentOptions" => $paymentOptions];
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+
+    }
+
+    /**
+     * Gets the configuration for the given payment purpose.
+     *
+     * The configuration is an array that contains the default invoice items, fee service codes, payment methods, source table name, and description.
+     *
+     * @param string $purpose The payment purpose
+     * @return array The configuration for the given payment purpose
+     * @throws \InvalidArgumentException If the payment purpose is invalid
+     */
+    private function getPurposeConfiguration(string $purpose): array
+    {
+        /**
+         * @var array{defaultInvoiceItems: array {criteria: array {field:string, value:string[]}[], feeServiceCodes: array}[], paymentMethods: array, sourceTableName: string, description: string}
+         */
+        $purposes = Utils::getPaymentSettings()["purposes"];
+
+        if (!isset($purposes[$purpose])) {
+            throw new \InvalidArgumentException("Invalid payment purpose: $purpose");
+        }
+
+        return $purposes[$purpose];
+    }
+
+    /**
+     * Generates an invoice description based on the given template and details.
+     *
+     * This function uses the TemplateEngineHelper to process the given template with the given details.
+     * The resulting string is the invoice description.
+     *
+     * @param string $descriptionTemplate The template to use for generating the invoice description
+     * @param array $details The details to use for generating the invoice description
+     * @return string The generated invoice description
+     */
+    private function generateInvoiceDescription(string $descriptionTemplate, array $details): string
+    {
+        $templateEngineHelper = new TemplateEngineHelper();
+        return $templateEngineHelper->process($descriptionTemplate, $details);
+    }
+
+    private function prepareInvoiceData(array $details, string $sourceTable, string $uuid, string $purpose, $dueDate, string $description): array
+    {
+        return [
+            'first_name' => array_key_exists("first_name", $details) ? $details["first_name"] : $details["name"],
+            'last_name' => array_key_exists("last_name", $details) ? $details["last_name"] : $details["unique_id"],
+            'email' => $details["email"],
+            'phone_number' => $details["phone"],
+            'purpose_table' => $sourceTable,
+            'purpose_table_uuid' => $uuid,
+            'purpose' => $purpose,
+            'due_date' => $dueDate,
+            'unique_id' => $details["unique_id"],
+            'description' => $description
+        ];
+    }
+
+    private function prepareAdditionalInvoiceItems(array $additionalInvoiceItems): array
+    {
+        return array_map(function ($item) {
+            $itemObj = new PaymentInvoiceItemType(0, '', '', 0, 0, 0);
+            return $itemObj->createFromRequest($item);
+        }, $additionalInvoiceItems);
+    }
+
+    /**
+     * Prepares the payment options for the invoice.
+     *
+     * If there are payment methods provided, it will return an array of InvoicePaymentOptionType objects.
+     * Otherwise, it will return an empty array.
+     *
+     * @param array $paymentMethods The payment methods to prepare.
+     * @return array An array of InvoicePaymentOptionType objects or an empty array.
+     */
+    private function preparePaymentOptions(array $paymentMethods): array
+    {
+        return count($paymentMethods) > 0 ? array_map(function ($paymentMethod) {
+            return new InvoicePaymentOptionType(0, $paymentMethod);
+        }, $paymentMethods) : [];
     }
 
     public function uploadPaymentEvidence(string $uuid)
@@ -702,6 +813,17 @@ class PaymentsService
     }
 
 
+    /**
+     * Creates a payment file upload for a given invoice.
+     * @param array $data Associative array of data to be inserted in the payment_file_uploads table.
+     *                    The required keys are "invoice_uuid", "file_path", and "payment_date".
+     *                    The "invoice_uuid" is the uuid of the invoice.
+     *                    The "file_path" is the path of the uploaded file.
+     *                    The "payment_date" is the date when the payment was made.
+     * @return int The ID of the created payment file upload.
+     * @throws \InvalidArgumentException If the validation of the data fails.
+     * @throws \RuntimeException If the database insertion fails.
+     */
     public function createPaymentFileUpload(array $data)
     {
         // Validate and process the data
@@ -736,6 +858,14 @@ class PaymentsService
         return $id;
     }
 
+    /**
+     * Approves a payment file upload.
+     * @param array $data The data to update. Must contain the following keys:
+     *  - id: The id of the payment file upload.
+     * @throws \InvalidArgumentException If the validation fails.
+     * @throws \Throwable If an error occurs while updating the payment file upload.
+     * @return void
+     */
     public function approvePaymentFileUpload(array $data)
     {
         try {

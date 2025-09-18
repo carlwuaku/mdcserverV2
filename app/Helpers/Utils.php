@@ -314,7 +314,6 @@ class Utils
     {
         try {
             $licenseDef = self::getLicenseSetting($license);
-            log_message('info', "licenseDef: " . print_r($licenseDef, true));
             /** @var array {label: string, name: string, hint: string, options: array, type: string, value: string, required: bool} */
 
             $fields = $licenseDef->renewalStages[$stage]['fields'];

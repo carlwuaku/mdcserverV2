@@ -151,7 +151,7 @@ class PaymentsController extends ResourceController
             $additionalItems = $this->request->getVar('additionalItems');
             //this selects the items of the invoice based on the purpose and adds any additional items
             $dueDate = $this->request->getVar('dueDate');
-            $result = $this->paymentsService->generatePresetInovicesForMultipleUuids($purpose, $uuid, $dueDate, $additionalItems);
+            $result = $this->paymentsService->generatePresetInvoicesForMultipleUuids($purpose, $uuid, $dueDate, $additionalItems);
 
             return $this->respond(["data" => $result, "message" => "Invoice created successfully"], ResponseInterface::HTTP_OK);
 

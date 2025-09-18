@@ -7,17 +7,18 @@ namespace App\Helpers;
 use CodeIgniter\Events\Events;
 use stdClass;
 use App\Helpers\Types\CriteriaType;
+use App\Helpers\Types\ApplicationStageType;
 
 
 class ApplicationFormActionHelper extends Utils
 {
     /**
      * this method runs a provided action on the application form
-     * @param object{type:string, config_type:string, config:object, criteria: CriteriaType[]} $action
+     * @param ApplicationStageType $action
      * @param array $data
      * @return array
      */
-    public static function runAction($action, $data)
+    public static function runAction(ApplicationStageType $action, array $data)
     {
         try {
             $result = [];
@@ -30,7 +31,7 @@ class ApplicationFormActionHelper extends Utils
                     $result = self::sendEmailToAdmin($action, $data);
                     break;
                 case 'payment':
-                    $result = self::sendEmailToAdmin($action, $data);
+                    $result = self::runPayment($action, $data);
                     break;
                 case 'api_call':
                     $result = self::callApi($action, $data);
@@ -51,12 +52,31 @@ class ApplicationFormActionHelper extends Utils
 
     }
 
-    private static function runPaymentCall($action, $data)
+    /**
+     * Run a payment action
+     * If the action type is 'create_invoice', generate an invoice for the application
+     * If the action has criteria, check if the data matches the criteria. If it does, add the action to the list of actions to run.
+     * @param ApplicationStageType $action The payment action to run
+     * @param array $data The data to use when running the action
+     * @return array{invoiceData: array, invoiceItems: array, paymentOptions: array} The result of running the action
+     */
+    private static function runPayment(ApplicationStageType $action, array $data)
     {
-        if (CriteriaType::matchesCriteria($data, $action->criteria)) {
-            unset($action->criteria);
-            $actions[] = $action;
+        if ($action->type == 'create_invoice') {
+            //convert to criteriatype array
+            $criteria = array_map(function ($criterion) {
+                return CriteriaType::fromArray($criterion);
+            }, $action->criteria);
+            if (CriteriaType::matchesCriteria($data, $criteria)) {
+                return self::generateInvoice($action, $data);
+            } else {
+                throw new \InvalidArgumentException('No matching criteria found for payment action: ' . $action->type);
+            }
+
+        } else {
+            throw new \InvalidArgumentException('Unsupported payment action type: ' . $action->type);
         }
+
     }
 
     private static function runInternalApiCall($action, $data)
@@ -135,8 +155,25 @@ class ApplicationFormActionHelper extends Utils
         return $data;
     }
 
-    private static function generateInvoice($action, $data)
+    private static function generateInvoice(ApplicationStageType $action, array $data)
     {
+        try {
+            log_message('info', 'Generating invoice for action: ' . print_r($action, true));
+            $paymentsService = \Config\Services::paymentsService();
+
+            $purpose = array_key_exists('paymentPurpose', $action->config) ? $action->config['paymentPurpose'] : $action->config['payment_purpose'];
+            /**
+             * @var string
+             */
+            $uuid = $data['uuid']; //comma separated uuids
+            $additionalItems = [];//TODO: should there be additional items?
+            //this is by default a year from today
+            $dueDate = date("Y-m-d", strtotime("+1 year"));
+            return $paymentsService->generatePresetInvoiceForSingleUuid($purpose, $uuid, $dueDate, $additionalItems);
+        } catch (\Exception $e) {
+            log_message('error', 'Error generating invoice: ' . $e->getMessage());
+            throw $e;
+        }
     }
 
     // /**

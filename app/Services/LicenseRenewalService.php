@@ -82,10 +82,20 @@ class LicenseRenewalService
                 if (!$renewalDetails) {
                     throw new Exception("Renewal not found with id $renewalId");
                 }
+                //add the data_snapshot to the renewal details
+                //TODO: REFACTOR
+                $dataSnapshot = array_key_exists("data_snapshot", $renewalDetails) && $renewalDetails['data_snapshot'] ? json_decode($renewalDetails['data_snapshot'], true) : [];
+                $fieldsToRemove = ['id', 'uuid', 'created_on', 'modified_on', 'deleted_at', 'status'];
+                foreach ($fieldsToRemove as $field) {
+                    if (array_key_exists($field, $dataSnapshot)) {
+                        unset($dataSnapshot[$field]);
+                    }
+                }
+                $renewalDetails = array_merge($renewalDetails, $dataSnapshot);
                 //run the actions for that stage
                 $this->runRenewalActions($renewalDetails, $stage);
             } catch (\Throwable $th) {
-                log_message('error', "Error getting renewal details: " . json_encode($renewalDetails) . "<br>" . $th);
+                log_message('error', "Error getting renewal details: " . $license_uuid . "<br>" . $th);
             }
 
             return [

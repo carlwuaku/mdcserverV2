@@ -13,6 +13,8 @@ class ApplicationFormTemplateActionConfig
     public ?array $headers;
     public ?array $bodyMapping;
     public ?array $queryParams;
+    public ?string $payment_purpose;
+    public ?array $payment_invoice_items;
 
     public function __construct(
         ?string $template = null,
@@ -23,7 +25,9 @@ class ApplicationFormTemplateActionConfig
         ?string $authToken = null,
         ?array $headers = null,
         ?array $bodyMapping = null,
-        ?array $queryParams = null
+        ?array $queryParams = null,
+        ?string $payment_purpose = null,
+        ?array $payment_invoice_items = null
     ) {
         $this->template = $template;
         $this->subject = $subject;
@@ -34,6 +38,8 @@ class ApplicationFormTemplateActionConfig
         $this->headers = $headers;
         $this->bodyMapping = $bodyMapping;
         $this->queryParams = $queryParams;
+        $this->payment_purpose = $payment_purpose;
+        $this->payment_invoice_items = $payment_invoice_items;
     }
 
     public function toArray(): array
@@ -58,6 +64,10 @@ class ApplicationFormTemplateActionConfig
             $result['body_mapping'] = $this->bodyMapping;
         if ($this->queryParams !== null)
             $result['query_params'] = $this->queryParams;
+        if ($this->payment_purpose !== null)
+            $result['payment_purpose'] = $this->payment_purpose;
+        if ($this->payment_invoice_items !== null)
+            $result['payment_invoice_items'] = $this->payment_invoice_items;
 
         return $result;
     }
@@ -73,7 +83,9 @@ class ApplicationFormTemplateActionConfig
             $data['auth_token'] ?? null,
             $data['headers'] ?? null,
             $data['body_mapping'] ?? null,
-            $data['query_params'] ?? null
+            $data['query_params'] ?? null,
+            $data['payment_purpose'] ?? null,
+            $data['payment_invoice_items'] ?? null
         );
     }
 }
@@ -84,12 +96,14 @@ class ApplicationStageType
     public const CONFIG_TYPE_ADMIN_EMAIL = 'admin_email';
     public const CONFIG_TYPE_API_CALL = 'api_call';
     public const CONFIG_TYPE_INTERNAL_API_CALL = 'internal_api_call';
+    public const CONFIG_TYPE_PAYMENT = 'payment';
 
     public const VALID_CONFIG_TYPES = [
         self::CONFIG_TYPE_EMAIL,
         self::CONFIG_TYPE_ADMIN_EMAIL,
         self::CONFIG_TYPE_API_CALL,
-        self::CONFIG_TYPE_INTERNAL_API_CALL
+        self::CONFIG_TYPE_INTERNAL_API_CALL,
+        self::CONFIG_TYPE_PAYMENT
     ];
 
     public string $type;
@@ -97,11 +111,14 @@ class ApplicationStageType
     public string $config_type;
     public array $config;
 
+    public array $criteria;
+
     public function __construct(
         string $type,
         ?string $label,
         string $configType,
-        array $config
+        array $config,
+        array $criteria = []
     ) {
         $this->validateConfigType($configType);
 
@@ -109,6 +126,7 @@ class ApplicationStageType
         $this->label = $label;
         $this->config_type = $configType;
         $this->config = $config;
+        $this->criteria = $criteria;
     }
 
     /**
@@ -149,6 +167,13 @@ class ApplicationStageType
                     $errors[] = "Subject is required for admin_email config type";
                 }
                 break;
+
+            case self::CONFIG_TYPE_PAYMENT:
+                if (empty($this->config['payment_purpose'])) {
+                    $errors[] = "Payment purpose is required for payment config type";
+                }
+                break;
+
 
             case self::CONFIG_TYPE_API_CALL:
             case self::CONFIG_TYPE_INTERNAL_API_CALL:
@@ -235,7 +260,8 @@ class ApplicationStageType
             'type' => $this->type,
             'label' => $this->label,
             'config_type' => $this->config_type,
-            'config' => $this->config
+            'config' => $this->config,
+            'criteria' => $this->criteria
         ];
     }
 
@@ -254,7 +280,8 @@ class ApplicationStageType
             $data['type'],
             $data['label'] ?? null,
             $data['config_type'] ?? $data['configType'] ?? null,
-            $config
+            $config,
+            $data['criteria'] ?? []
         );
     }
 
