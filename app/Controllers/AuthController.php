@@ -49,7 +49,9 @@ class AuthController extends ResourceController
 
     public function appSettings()
     {
-        return CacheHelper::remember('app_settings', function () {
+        $userId = auth("tokens")->id();
+        $cacheKey = $userId ? "app_settings_{$userId}" : "app_settings";
+        return CacheHelper::remember("$cacheKey", function () {
             //read the data from app-settings.json at the root of the project
             try {
                 $settings = ['appName', 'appVersion', 'appLongName', 'logo', 'whiteLogo', 'loginBackground'];
@@ -89,16 +91,20 @@ class AuthController extends ResourceController
                 }
                 //remove the following fields from the licenseTypes
                 $fieldsToRemove = ['table', 'uniqueKeyField', 'selectionFields', 'onCreateValidation', 'onUpdateValidation', 'implicitRenewalFields', 'renewalTable', 'renewalJsonFields', 'fieldsToUpdateOnRenewal', 'searchFields'];
-                foreach ($data['licenseTypes'] as $key => $licenseType) {
-                    foreach ($fieldsToRemove as $fieldToRemove) {
-                        if (isset($licenseType[$fieldToRemove])) {
-                            unset($data['licenseTypes'][$key][$fieldToRemove]);
+                if (isset($data['licenseTypes']) && is_array($data['licenseTypes'])) {
+                    foreach ($data['licenseTypes'] as $key => $licenseType) {
+                        foreach ($fieldsToRemove as $fieldToRemove) {
+                            if (isset($licenseType[$fieldToRemove])) {
+                                unset($data['licenseTypes'][$key][$fieldToRemove]);
+                            }
                         }
                     }
                 }
+
                 return $this->respond($data, ResponseInterface::HTTP_OK);
             } catch (\Throwable $th) {
                 log_message('error', $th);
+                CacheHelper::delete('app_settings');
                 return $this->respond(['message' => 'App settings file not found'], ResponseInterface::HTTP_NOT_FOUND);
             }
 

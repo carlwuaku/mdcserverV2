@@ -310,7 +310,7 @@ class LicenseUtils extends Utils
         $last_revalidation = !array_key_exists('last_revalidation_date', $licenseDetails) || $licenseDetails['last_revalidation_date'] == null ? $licenseDetails['created_on'] : $licenseDetails['last_revalidation_date'];
         $revalidationPeriod = intval($revalidationPeriod);
         $diff = self::getDaysDifference($last_revalidation);
-        if ($diff > $revalidationPeriod) {
+        if ($diff > $revalidationPeriod * 365) {
             return ["result" => true, "message" => $templateObject->process($revalidationMessage, array_merge(["days" => $diff], (array) $licenseDetails))];
         } else {
             return ["result" => false, "message" => "Practitioner does not require revalidation"];

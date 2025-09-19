@@ -343,6 +343,23 @@ class PaymentsService
         return "Updated $numRows invoices successfully";
     }
 
+    public function updateInvoicePaymentMethod($uuid, $paymentMethod)
+    {
+        try {
+            $oldData = $this->invoiceModel->where(['uuid' => $uuid])->first();
+            if (!$oldData) {
+                throw new \InvalidArgumentException("Invoice not found");
+            }
+            $invoiceData = $this->invoiceModel->createArrayFromAllowedFields(['selected_payment_method' => $paymentMethod]);
+            $this->invoiceModel->update($oldData['id'], $invoiceData);
+            $this->activitiesModel->logActivity("Updated payment method for invoice $uuid", null, "Payment");
+            return true;
+
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+    }
+
     public function getInvoices(array $filters = []): array
     {
         $per_page = $filters['limit'] ?? 100;
@@ -405,6 +422,7 @@ class PaymentsService
             throw new \InvalidArgumentException("Invoice not found");
         }
         $result['items'] = $this->invoiceLineItemModel->where('invoice_uuid', $result['uuid'])->get()->getResult();
+        $result['pendingUploads'] = $this->paymentFileUploadsModel->where('invoice_uuid', $result['uuid'])->where('status', 'Pending')->get()->getResult();
         //look in the payment settings in app-settings for the purpose of payment. if specified get the values. else, all payment methods
         $paymentSettings = Utils::getPaymentSettings();
         $paymentMethods = [];
@@ -412,11 +430,10 @@ class PaymentsService
         if (isset($paymentSettings['purposes'][$result['purpose']])) {
             $paymentMethods = $paymentSettings['purposes'][$result['purpose']]['paymentMethods'];
         }
-        log_message("debug", "payment methods " . print_r($paymentMethods, true));
 
         $allPaymentMethods = $paymentSettings['paymentMethods'];
         $result['payment_methods'] = [];
-        log_message("debug", "all payment methods " . print_r($allPaymentMethods, true));
+
         if (count($paymentMethods) === 0) {
             $result['payment_methods'] = array_map(function ($value) {
                 return PaymentMethodType::fromArray($value);

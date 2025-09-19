@@ -172,4 +172,6 @@ define("IN_GOOD_STANDING", "In Good Standing");
 define("NOT_IN_GOOD_STANDING", "Not In Good Standing");
 define("PERMANENT", "Permanent");
 define("APPROVED", "Approved");
+define("PAYMENT_METHOD_IN_PERSON", "In-Person");
+define("PAYMENT_METHOD_GHANA_GOV_PLATFORM", "Ghana.gov Platform");
 

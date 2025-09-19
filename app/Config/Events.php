@@ -6,6 +6,7 @@ use App\Helpers\PaymentUtils;
 use CodeIgniter\Events\Events;
 use App\Helpers\Utils;
 use App\Helpers\ApplicationFormActionHelper;
+use App\Helpers\Types\ApplicationStageType;
 use Codeigniter\Database\Query;
 
 /*
@@ -87,8 +88,8 @@ Events::on(EVENT_INVOICE_PAYMENT_COMPLETED, static function (string $uuid) {
     $model->db->transException(true)->transStart();
     try {
         foreach ($onPaymentCompletedActions as $action) {
-            //the ApplicationFormActionHelper expects an object for the cofig, and some data to process.  
-            $result = ApplicationFormActionHelper::runAction((object) $action, $invoiceDetails);
+            //the ApplicationFormActionHelper expects an ApplicationStageType object for the cofig, and some data to process.  
+            $result = ApplicationFormActionHelper::runAction(ApplicationStageType::fromArray($action), $invoiceDetails);
             log_message("info", "action ran for invoice payment" . json_encode($invoiceDetails) . " <br> Results: " . json_encode($result));
         }
 
