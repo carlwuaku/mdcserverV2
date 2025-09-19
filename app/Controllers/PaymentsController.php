@@ -6,6 +6,7 @@ use App\Services\GhanaGovPaymentService;
 use App\Services\PaymentsService;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
+use App\Helpers\AuthHelper;
 
 class PaymentsController extends ResourceController
 {
@@ -151,7 +152,7 @@ class PaymentsController extends ResourceController
             $additionalItems = $this->request->getVar('additionalItems');
             //this selects the items of the invoice based on the purpose and adds any additional items
             $dueDate = $this->request->getVar('dueDate');
-            $result = $this->paymentsService->generatePresetInovicesForMultipleUuids($purpose, $uuid, $dueDate, $additionalItems);
+            $result = $this->paymentsService->generatePresetInvoicesForMultipleUuids($purpose, $uuid, $dueDate, $additionalItems);
 
             return $this->respond(["data" => $result, "message" => "Invoice created successfully"], ResponseInterface::HTTP_OK);
 
@@ -186,6 +187,23 @@ class PaymentsController extends ResourceController
         }
     }
 
+    public function updateInvoicePaymentMethod($uuid)
+    {
+        try {
+            $paymentMethod = $this->request->getVar("payment_method") ?? null;
+            if (empty($paymentMethod)) {
+                throw new \InvalidArgumentException("payment_method is required");
+            }
+            $result = $this->paymentsService->updateInvoicePaymentMethod($uuid, $paymentMethod);
+            return $this->respond($result, ResponseInterface::HTTP_OK);
+        } catch (\InvalidArgumentException $e) {
+            return $this->respond(['message' => $e->getMessage()], ResponseInterface::HTTP_BAD_REQUEST);
+        } catch (\Throwable $e) {
+            log_message("error", $e);
+            return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     public function getInvoices()
     {
         try {
@@ -206,6 +224,29 @@ class PaymentsController extends ResourceController
             $result = $this->paymentsService->getInvoice($uuid);
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
+        } catch (\Throwable $e) {
+            log_message("error", $e);
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Get an invoice by external uuid, e.g. a renewal uuid
+     *
+     * @param string $uuid The external uuid of the invoice
+     *
+     * @return ResponseInterface
+     *
+
+     */
+    public function getInvoiceByExternal($uuid)
+    {
+        try {
+            $result = $this->paymentsService->getInvoiceByExternalUuid($uuid);
+            return $this->respond($result, ResponseInterface::HTTP_OK);
+
+        } catch (\InvalidArgumentException $e) {
+            return $this->respond(['message' => $e->getMessage()], ResponseInterface::HTTP_BAD_REQUEST);
         } catch (\Throwable $e) {
             log_message("error", $e);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
@@ -258,6 +299,7 @@ class PaymentsController extends ResourceController
     public function submitOfflinePayment(string $uuid)
     {
         try {
+
             $data = $this->request->getVar();
 
             $result = $this->paymentsService->submitOfflinePayment($uuid, (array) $data);
@@ -269,6 +311,38 @@ class PaymentsController extends ResourceController
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+    // public function submitOfflinePaymentByLicense(string $invoiceUuid)
+    // {
+    //     try {
+    //         $userId = auth("tokens")->id();
+    //         $user = AuthHelper::getAuthUser($userId);
+    //         /**
+    //          * @var object
+    //          */
+    //         $data = $this->request->getVar();
+    //         //make sure the uuid belongs to the user
+    //         $invoice = $this->paymentsService->getInvoice($invoiceUuid);
+    //         if (!$invoice) {
+    //             return $this->respond(['message' => "Invoice not found"], ResponseInterface::HTTP_NOT_FOUND);
+    //         }
+
+    //         if (array_key_exists('unique_id', $invoice) && $invoice['unique_id'] != $user->profile_data['license_number']) {
+    //             return $this->respond(['message' => "Invalid invoice number"], ResponseInterface::HTTP_NOT_FOUND);
+    //         }
+    //         $invoiceData = [
+    //             "payment_file" => $data->payment_file,
+    //             "payment_date" => $data->payment_date
+    //         ];
+    //         $result = $this->paymentsService->submitOfflinePayment($invoiceUuid, $invoiceData);
+
+    //         return $this->respond(['data' => $result, 'message' => 'Payment submitted successfully'], ResponseInterface::HTTP_OK);
+
+    //     } catch (\Throwable $e) {
+    //         log_message("error", $e);
+    //         return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+    //     }
+    // }
 
     public function paymentDone()
     {

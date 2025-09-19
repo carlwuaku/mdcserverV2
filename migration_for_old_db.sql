@@ -984,7 +984,8 @@ INSERT INTO
         phone,
         created_on,
         form_data,
-        form_type
+        form_type,
+        applicant_unique_id
     )
 SELECT
     `picture`,
@@ -1150,7 +1151,8 @@ SELECT
         "license",
         `license`
     ) as form_data,
-    'Practitioners Permanent Registration Application' as form_type
+    'Practitioners Permanent Registration Application' as form_type,
+    `intern_code` as applicant_unique_id
 FROM
     mdc.`bf_permanent_registration_application`;
 
@@ -1170,7 +1172,8 @@ INSERT INTO
         phone,
         created_on,
         form_data,
-        form_type
+        form_type,
+        applicant_unique_id
     )
 SELECT
     `picture`,
@@ -1338,7 +1341,8 @@ SELECT
         "additional_qualification",
         `additional_qualification`
     ) as form_data,
-    'Practitioners Temporary Registration Application' as form_type
+    'Practitioners Temporary Registration Application' as form_type,
+    `intern_code` as applicant_unique_id,
 FROM
     mdc.`bf_temporary_registration_application`;
 
@@ -1358,7 +1362,8 @@ INSERT INTO
         phone,
         created_on,
         form_data,
-        form_type
+        form_type,
+        applicant_unique_id
     )
 SELECT
     `picture`,
@@ -1444,7 +1449,8 @@ SELECT
         "type",
         `type`
     ) as form_data,
-    'Practitioners Provisional Registration Application' as form_type
+    'Practitioners Provisional Registration Application' as form_type,
+    `intern_code` as applicant_unique_id
 FROM
     mdc.`bf_intern_pre_registration`;
 
@@ -1512,7 +1518,8 @@ INSERT INTO
         status,
         application_code,
         created_on,
-        form_data
+        form_data,
+        applicant_unique_id
     )
 SELECT
     practitioner_type,
@@ -1521,7 +1528,8 @@ SELECT
     status,
     application_code,
     created_on,
-    form_data
+    form_data,
+    last_name as applicant_unique_id
 FROM
     portal_edits_with_attachments;
 
@@ -1660,8 +1668,8 @@ FROM
 #END IMPORT PA WORK HISTORY#
 #IMPORT CPD PROVIDERS#
 #BEFORE RUNNING THIS SCRIPT, MAKE SURE THE bf_cpd_facilities table has only unique names
-INSERT IGNORE INTO
-    ci4_mdc4.`cpd_providers` (
+INSERT
+    IGNORE INTO ci4_mdc4.`cpd_providers` (
         `name`,
         `location`,
         `phone`,
@@ -1844,7 +1852,8 @@ INSERT INTO
         phone,
         created_on,
         form_data,
-        form_type
+        form_type,
+        applicant_unique_id
     )
 SELECT
     null,
@@ -1881,7 +1890,8 @@ SELECT
         "license_number",
         `lic_num`
     ) as form_data,
-    'CPD Attendance' as form_type
+    'CPD Attendance' as form_type,
+    lic_num as applicant_unique_id
 FROM
     mdc.`bf_cpd_attendance_temp`
     JOIN mdc.`bf_cpd` ON mdc.`bf_cpd`.id = mdc.`bf_cpd_attendance_temp`.cpd_id;

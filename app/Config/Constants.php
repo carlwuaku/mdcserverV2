@@ -105,6 +105,7 @@ define("QRCODES_ASSETS_FOLDER", "qr_codes");
 define("UPLOADS_FOLDER", "uploads");
 define("PRIORITY_FIELDS", ["picture", "license_number", "name", "first_name", "middle_name", "last_name", "status", "facility_type", "email", "phone_number"]);
 define("USER_TYPES", ['admin', 'license', 'cpd', 'student_index', 'guest', 'housemanship_facility', 'exam_candidate']);
+define("USER_TYPES_LICENSED_USERS", ['exam_candidate', 'license']);
 define("DATABASE_DATE_FIELDS", [
     'date_of_birth',
     'registration_date',
@@ -133,6 +134,7 @@ define("SETTING_RESET_PASSWORD_EMAIL_SUBJECT", "General.reset_password_email_sub
 define("SETTING_RESET_PASSWORD_CONFIRMATION_EMAIL_TEMPLATE", "General.reset_password_confirmation_email_template");
 define("SETTING_RESET_PASSWORD_CONFIRMATION_EMAIL_SUBJECT", "General.reset_password_confirmation_email_subject");
 define("SETTING_2_FACTOR_AUTHENTICATION_SETUP_EMAIL_TEMPLATE", "General.two_factor_authentication_setup_email_template");
+define("SETTING_2_FACTOR_AUTHENTICATION_SETUP_EMAIL_TEMPLATE_CODE_ONLY", "General.two_factor_authentication_setup_email_template_code_only");
 define("SETTING_2_FACTOR_AUTHENTICATION_SETUP_EMAIL_SUBJECT", "General.two_factor_authentication_setup_email_subject");
 define("SETTING_2_FACTOR_AUTHENTICATION_VERIFICATION_EMAIL_TEMPLATE", "General.two_factor_authentication_verification_email_template");
 define("SETTING_2_FACTOR_AUTHENTICATION_VERIFICATION_EMAIL_SUBJECT", "General.two_factor_authentication_verification_email_subject");
@@ -154,11 +156,22 @@ define("SETTING_USER_EXAM_CANDIDATE_ADDED_EMAIL_TEMPLATE", "General.user_exam_ca
 define("SETTING_USER_EXAM_CANDIDATE_ADDED_EMAIL_SUBJECT", "General.user_exam_candidate_added_email_subject");
 define("SETTING_EMAIL_HEADER_AND_FOOTER_TEMPLATE", "General.email_header_and_footer_template");
 define("SETTING_PASSWORD_RESET_TOKEN_TIMEOUT", "General.password_reset_token_timeout");
+define('SETTING_PORTAL_EDITABLE_FIELDS', 'portal_editable_fields');//for now we're not adding the class (General) to the key. we'll use the settings model directly for it
 
-
+define("DEFAULT_APPLICATION_FORM_TEMPLATES", "defaultApplicationFormTemplates");
 
 define("EVENT_USER_ADDED", "user_added");
 define("EVENT_INVOICE_PAYMENT_COMPLETED", "invoice_payment_completed");
 define("EVENT_APPLICATION_FORM_ACTION_COMPLETED", "application_form_action_completed");
 
+define("PORTAL_EDIT_FORM_TYPE", "Portal Edit");
+define("CACHE_KEY_PREFIX_LICENSES", "app_licenses_");
+define("CACHE_KEY_PREFIX_RENEWALS", "app_licenses_renewals_");
+
+define("IN_GOOD_STANDING", "In Good Standing");
+define("NOT_IN_GOOD_STANDING", "Not In Good Standing");
+define("PERMANENT", "Permanent");
+define("APPROVED", "Approved");
+define("PAYMENT_METHOD_IN_PERSON", "In-Person");
+define("PAYMENT_METHOD_GHANA_GOV_PLATFORM", "Ghana.gov Platform");
 

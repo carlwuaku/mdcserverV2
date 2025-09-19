@@ -10,13 +10,13 @@ use App\Controllers\ExaminationController;
 use App\Controllers\HousemanshipController;
 use App\Controllers\LicensesController;
 use App\Controllers\PaymentsController;
+use App\Controllers\PortalController;
 use App\Controllers\PrintQueueController;
 use App\Controllers\RegionController;
 use App\Controllers\SpecialtiesController;
 use CodeIgniter\Router\RouteCollection;
 use App\Controllers\PractitionerController;
 use App\Controllers\ApplicationsController;
-use App\Controllers\PortalsController;
 
 /**
  * @var RouteCollection $routes
@@ -24,6 +24,34 @@ use App\Controllers\PortalsController;
 
 // $routes->get('/portals/management', [PortalsController::class, "managementPortal"]);
 // $routes->get('/portals/management/(:any)', [PortalsController::class, "managementPortal"]);
+$routes->group("portal", ["namespace" => "App\Controllers"], function (RouteCollection $routes) {
+    $routes->get("app-settings", [PortalController::class, "appSettings"]);
+    $routes->get("user-types", [AuthController::class, "getPortalUserTypes"]);
+    $routes->get("home-menu", [PortalController::class, "getHomeMenu"], ["filter" => ["apiauth"]]);
+    $routes->get("profile", [PortalController::class, "getProfileFields"], ["filter" => ["apiauth"]]);
+    $routes->post("send-reset-token", [AuthController::class, "sendResetToken"]);
+    $routes->post("reset-password", [AuthController::class, "resetPassword"]);
+    $routes->post("login", [AuthController::class, "mobileLogin"]);
+    $routes->post("applications/details/(:segment)", [ApplicationsController::class, "createApplicationFromPortal"], ["filter" => ["apiauth"]]);
+    $routes->get("applications/details", [ApplicationsController::class, "getApplicationsByUser"], ["filter" => ["apiauth"]]);
+    $routes->post("assets/new/(:segment)", [AssetController::class, "upload/$1"], ["filter" => ["apiauth"]]);
+    $routes->get('assets/image-render/(:segment)/(:segment)', [AssetController::class, "serveFile/$1/$2"], ["filter" => ["apiauth"]]);
+    $routes->post("auth/verify-google-auth", [AuthController::class, "verifyAndEnableGoogleAuth"]);
+    $routes->put("applications/details/(:segment)", [ApplicationsController::class, "updateApplication/$1"], ["filter" => ["apiauth"]]);
+    $routes->delete("applications/details/(:segment)", [ApplicationsController::class, "deleteApplication/$1"], ["filter" => ["apiauth"]]);
+    $routes->get("applications/details/(:segment)", [ApplicationsController::class, "getApplication/$1"], ["filter" => ["apiauth"]]);
+    $routes->post("applications/details/(:segment)", [ApplicationsController::class, "createApplication"], ["filter" => ["apiauth"]]);
+    $routes->get("applications/templates/(:segment)", [ApplicationsController::class, "getApplicationTemplateForFilling/$1"], ["filter" => ["apiauth"]]);
+    $routes->get("applications/templates", [ApplicationsController::class, "getApplicationTemplates"], ["filter" => ["apiauth"]]);
+    $routes->get("renewals", [LicensesController::class, "getRenewalsByLicense"], ["filter" => ["apiauth"]]);
+    $routes->get("renewals/form", [LicensesController::class, "getPractitionerRenewalFormFields"], ["filter" => ["apiauth"]], );
+    $routes->post("renewals", [LicensesController::class, "createRenewalByLicense"], ["filter" => ["apiauth"]]);
+    $routes->delete("renewals/(:segment)", [LicensesController::class, "deleteRenewalByLicense/$1"], ["filter" => ["apiauth"]]);
+    $routes->get("payment/external-invoice/(:segment)", [PaymentsController::class, "getInvoiceByExternal/$1"], ["filter" => ["apiauth"]], );
+    $routes->put("payment/invoice/payment_method/(:segment)", [PaymentsController::class, "updateInvoicePaymentMethod/$1"], ["filter" => ["apiauth"]], );
+    $routes->post("payment/invoices/manual-payment", [PaymentsController::class, "createPaymentFileUpload"], ["filter" => ["apiauth"]]);
+
+});
 
 $routes->group("api", ["namespace" => "App\Controllers"], function (RouteCollection $routes) {
     $routes->get("app-settings", [AuthController::class, "appSettings"]);
@@ -41,16 +69,7 @@ $routes->group("api", ["namespace" => "App\Controllers"], function (RouteCollect
     $routes->get("getPractitionerDetails", [AuthController::class, "appName"], ['filter' => 'hmac']);
     $routes->post("verify-recaptcha", [AuthController::class, "verifyRecaptcha"]);
 });
-$routes->group("guest", ["namespace" => "App\Controllers"], function (RouteCollection $routes) {
-    $routes->put("applications/details/(:segment)", [ApplicationsController::class, "updateApplication/$1"]);
-    $routes->delete("applications/details/(:segment)", [ApplicationsController::class, "deleteApplication/$1"], );
-    $routes->get("applications/details/(:segment)", [ApplicationsController::class, "getApplication/$1"], );
-    $routes->get("applications/details", [ApplicationsController::class, "getApplications"], );
-    $routes->post("applications/details/(:segment)", [ApplicationsController::class, "createApplication"]);
-    $routes->get("applications/templates/(:segment)", [ApplicationsController::class, "getApplicationTemplateForFilling/$1"]);
 
-    $routes->get("applications/templates", [ApplicationsController::class, "getApplicationTemplates"]);
-});
 
 $routes->group("print-queue", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
     $routes->post("templates/upload-docx", [PrintQueueController::class, "docxToHtml"], ["filter" => ["hasPermission:Create_Print_Templates"]]);

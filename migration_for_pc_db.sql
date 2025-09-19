@@ -1376,7 +1376,8 @@ INSERT INTO
         status,
         application_code,
         created_on,
-        form_data
+        form_data,
+        applicant_unique_id
     )
 SELECT
     practitioner_type,
@@ -1385,7 +1386,8 @@ SELECT
     status,
     application_code,
     created_on,
-    form_data
+    form_data,
+    last_name as applicant_unique_id
 FROM
     portal_edits_with_attachments;
 
@@ -1727,7 +1729,8 @@ INSERT INTO
         phone,
         created_on,
         form_data,
-        form_type
+        form_type,
+        applicant_unique_id
     )
 SELECT
     null,

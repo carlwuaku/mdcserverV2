@@ -60,6 +60,9 @@ writable/session/*
 writable/uploads/*
 !writable/uploads/index.html
 
+writable/qr_codes/*
+!writable/qr_codes/index.html
+
 writable/debugbar/*
 !writable/debugbar/.gitkeep
 

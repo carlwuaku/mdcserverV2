@@ -17,6 +17,11 @@ use OpenApi\Attributes as OA;
  */
 class AdminController extends ResourceController
 {
+    /**
+     * Get a setting or all settings if no setting name is provided
+     * @param string|null $name the name of the setting to retrieve
+     * @return ResponseInterface
+     */
     #[OA\Get(
         path: '/api/users',
         responses: [

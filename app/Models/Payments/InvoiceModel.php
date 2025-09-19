@@ -45,7 +45,8 @@ class InvoiceModel extends MyBaseModel implements TableDisplayInterface
         'online_payment_response',
         'mda_branch_code',
         'description',
-        'invoice_template'
+        'invoice_template',
+        'selected_payment_method'
     ];
 
     protected bool $allowEmptyInserts = false;
@@ -55,7 +56,7 @@ class InvoiceModel extends MyBaseModel implements TableDisplayInterface
     protected array $castHandlers = [];
 
     // Dates
-    protected $useTimestamps = false;
+    protected $useTimestamps = true;
     protected $dateFormat = 'datetime';
     protected $createdField = 'created_at';
     protected $updatedField = 'updated_at';
@@ -114,7 +115,8 @@ class InvoiceModel extends MyBaseModel implements TableDisplayInterface
             'online_payment_status',
             'online_payment_response',
             'mda_branch_code',
-            'description'
+            'description',
+            'selected_payment_method'
         ];
 
     }

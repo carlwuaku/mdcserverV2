@@ -3,6 +3,9 @@
     "appVersion": "1.0.0",
     "appLongName": "Pharmacy Council Ghana",
     "logo": "assets/images/pc-logo.png",
+    "whiteLogo": "assets/images/pc-logo-white.png",
+    "loginBackground": "assets/images/pc-login-bg.jpg",
+    "portalName": "Pharmacy Council Ghana",
     "defaultEmailSenderEmail": "info@pcghana.org",
     "defaultEmailSenderName": "Pharmacy Council Ghana",
     "institutionName": "Pharmacy Council Ghana",
@@ -1264,6 +1267,8 @@
                     "permission": "Mark_Practitioners_Renewal_Pending_Payment",
                     "printable": false,
                     "onlineCertificatePrintable": false,
+                    "deletableByUser": true,
+                    "userActions": "make_payment",
                     "title": "Pending Payment",
                     "active_children": false,
                     "url": "/licenses/renewal/practitioners",
@@ -1290,6 +1295,32 @@
                                 "body_mapping": [],
                                 "query_params": []
                             }
+                        },
+                        {
+                            "type": "create_invoice",
+                            "config_type": "payment",
+                            "config": {
+                                "template": "",
+                                "subject": "",
+                                "admin_email": "",
+                                "endpoint": "",
+                                "method": "",
+                                "auth_token": "",
+                                "headers": [],
+                                "body_mapping": [],
+                                "query_params": [],
+                                "paymentPurpose": "Pharmacist Renewal",
+                                "paymentInvoiceItems": []
+                            },
+                            "criteria": [
+                                {
+                                    "field": "practitioner_type",
+                                    "operator": "equals",
+                                    "value": [
+                                        "Pharmacist"
+                                    ]
+                                }
+                            ]
                         }
                     ]
                 },
@@ -1349,6 +1380,8 @@
                     "permission": "Mark_Practitioners_Renewal_Approved",
                     "printable": true,
                     "onlineCertificatePrintable": true,
+                    "deletableByUser": false,
+                    "userActions": "",
                     "title": "Approved",
                     "active_children": false,
                     "url": "/licenses/renewal/practitioners",
@@ -1432,6 +1465,18 @@
                 "online_print_template",
                 "in_print_queue"
             ],
+            "canApplyForRenewalCriteria": [
+                {}
+            ],
+            "shouldApplyForRenewalCriteria": [],
+            "mustBeInGoodStandingToRenew": false,
+            "renewalCpdCategory1Cutoff": 4,
+            "renewalCpdCategory2Cutoff": 3,
+            "renewalCpdCategory3Cutoff": 3,
+            "renewalCpdTotalCutoff": 10,
+            "daysFromRenewalExpiryToOpenApplication": 0,
+            "revalidationPeriodInYears": 3,
+            "revalidationMessage": "You are required to validate your data before renewing your license",
             "detailsPageHeaderTabs": [
                 {
                     "label": "Register Type",
@@ -2169,6 +2214,8 @@
                     "permission": "Mark_Facilities_Renewal_Pending_Payment",
                     "printable": false,
                     "onlineCertificatePrintable": false,
+                    "deletableByUser": true,
+                    "userActions": "make_payment",
                     "title": "Pending Payment",
                     "active_children": false,
                     "url": "/licenses/renewal/facilities",
@@ -2207,6 +2254,8 @@
                     "permission": "Mark_Facilities_Renewal_Pending_Regional_Approval",
                     "printable": false,
                     "onlineCertificatePrintable": false,
+                    "deletableByUser": false,
+                    "userActions": "",
                     "title": "Pending Regional Approval",
                     "active_children": false,
                     "url": "/licenses/renewal/facilities",
@@ -2229,6 +2278,8 @@
                     "permission": "Mark_Facilities_Renewal_Pending_Authorization",
                     "printable": false,
                     "onlineCertificatePrintable": false,
+                    "deletableByUser": false,
+                    "userActions": "",
                     "title": "Pending Authorization",
                     "active_children": false,
                     "url": "/licenses/renewal/facilities",
@@ -2298,6 +2349,8 @@
                     "permission": "Mark_Facilities_Renewal_Approved",
                     "printable": true,
                     "onlineCertificatePrintable": true,
+                    "deletableByUser": false,
+                    "userActions": "",
                     "title": "Approved",
                     "active_children": false,
                     "url": "/licenses/renewal/facilities",
@@ -2384,6 +2437,18 @@
                 "online_print_template",
                 "in_print_queue"
             ],
+            "canApplyForRenewalCriteria": [
+                {}
+            ],
+            "shouldApplyForRenewalCriteria": [],
+            "mustBeInGoodStandingToRenew": false,
+            "renewalCpdCategory1Cutoff": 0,
+            "renewalCpdCategory2Cutoff": 0,
+            "renewalCpdCategory3Cutoff": 0,
+            "renewalCpdTotalCutoff": 0,
+            "daysFromRenewalExpiryToOpenApplication": 0,
+            "revalidationPeriodInYears": 3,
+            "revalidationMessage": "You are required to validate your data before renewing your license",
             "fieldsToUpdateOnRenewal": [],
             "detailsPageHeaderTabs": [
                 {
@@ -2792,6 +2857,8 @@
                     "permission": "Mark_Otcms_Renewal_Pending_Authorization",
                     "printable": false,
                     "onlineCertificatePrintable": false,
+                    "deletableByUser": false,
+                    "userActions": "",
                     "title": "Pending Authorization",
                     "active_children": false,
                     "url": "/licenses/renewal/otcms",
@@ -2877,6 +2944,8 @@
                     "permission": "Mark_Otcms_Renewal_Approved",
                     "printable": true,
                     "onlineCertificatePrintable": true,
+                    "deletableByUser": false,
+                    "userActions": "",
                     "title": "Approved",
                     "active_children": false,
                     "url": "/licenses/renewal/otcms",
@@ -2935,6 +3004,18 @@
                 "online_print_template",
                 "in_print_queue"
             ],
+            "canApplyForRenewalCriteria": [
+                {}
+            ],
+            "shouldApplyForRenewalCriteria": [],
+            "mustBeInGoodStandingToRenew": false,
+            "renewalCpdCategory1Cutoff": 0,
+            "renewalCpdCategory2Cutoff": 0,
+            "renewalCpdCategory3Cutoff": 0,
+            "renewalCpdTotalCutoff": 0,
+            "daysFromRenewalExpiryToOpenApplication": 0,
+            "revalidationPeriodInYears": 3,
+            "revalidationMessage": "You are required to validate your data before renewing your license",
             "detailsPageHeaderTabs": [
                 {
                     "label": "Status",
@@ -3344,6 +3425,18 @@
             },
             "renewalJsonFields": [],
             "fieldsToUpdateOnRenewal": [],
+            "canApplyForRenewalCriteria": [
+                {}
+            ],
+            "shouldApplyForRenewalCriteria": [],
+            "mustBeInGoodStandingToRenew": false,
+            "renewalCpdCategory1Cutoff": 0,
+            "renewalCpdCategory2Cutoff": 0,
+            "renewalCpdCategory3Cutoff": 0,
+            "renewalCpdTotalCutoff": 0,
+            "daysFromRenewalExpiryToOpenApplication": 0,
+            "revalidationPeriodInYears": 3,
+            "revalidationMessage": "You are required to validate your data before renewing your license",
             "renewalFilterFields": [],
             "detailsPageHeaderTabs": [
                 {
@@ -4199,35 +4292,212 @@
     },
     "portalHomeMenu": [
         {
-            "title": "Practitioner Portal",
-            "active_children": false,
-            "url": "/login",
-            "image": "assets/images/stethoscope.jpg",
+            "title": "Personal Details",
+            "image": "[picture]",
             "icon": "person_outlined",
-            "options": [
+            "actions": [
                 {
-                    "label": "Open portal",
-                    "loginUrl": "/login/license",
-                    "url": "/dashboard",
-                    "urlParams": {}
+                    "label": "View/Edit Your Personal Details",
+                    "icon": "",
+                    "type": "link",
+                    "linkProp": "",
+                    "url": "/profile",
+                    "urlParams": {},
+                    "criteria": []
                 }
             ],
-            "description": "Login to your account as a registered practitioner"
+            "alerts": [
+                {
+                    "criteria": [],
+                    "message": "You have a Provisional License. Please renew your license within 1 year to avoid suspension of your license.",
+                    "type": "warning"
+                }
+            ],
+            "description": "View or edit your name, address, phone number, etc."
         },
         {
             "title": "View/Fill Application Forms",
             "active_children": false,
-            "url": "/application-forms",
-            "image": "assets/images/application_form.jpg",
+            "url": "/applications",
+            "image": "assets/images/application.png",
             "icon": "auto_stories_outlined",
-            "options": [
+            "actions": [
                 {
-                    "label": "View forms",
-                    "url": "/application-forms",
-                    "urlParams": {}
+                    "label": "View/Print Your Previous Applications",
+                    "icon": "",
+                    "type": "link",
+                    "linkProp": "",
+                    "url": "/applications",
+                    "urlParams": {},
+                    "criteria": []
+                },
+                {
+                    "label": "View/Fill Application Forms",
+                    "icon": "",
+                    "type": "link",
+                    "linkProp": "",
+                    "url": "/applications/forms",
+                    "urlParams": {},
+                    "criteria": []
                 }
             ],
-            "description": "View or fill application forms. You may need to login as a guest"
+            "description": "View or fill application forms"
+        },
+        {
+            "title": "Relicense Status",
+            "active_children": false,
+            "url": "/renewal",
+            "image": "assets/images/010-gold-medal.png",
+            "actions": [
+                {
+                    "label": "Click to apply",
+                    "icon": "",
+                    "type": "link",
+                    "linkProp": "",
+                    "url": "/renewals/form",
+                    "urlParams": {},
+                    "criteria": [
+                        {
+                            "field": "in_good_standing",
+                            "operator": "equals",
+                            "value": [
+                                "Not In Good Standing"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Click to make payment",
+                    "icon": "",
+                    "type": "link",
+                    "linkProp": "",
+                    "url": "/renewals/form",
+                    "urlParams": {},
+                    "criteria": [
+                        {
+                            "field": "in_good_standing",
+                            "operator": "equals",
+                            "value": [
+                                "Pending Payment"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Click to apply",
+                    "icon": "",
+                    "type": "link",
+                    "linkProp": "",
+                    "url": "/renewals/form",
+                    "urlParams": {},
+                    "criteria": [
+                        {
+                            "field": "in_good_standing",
+                            "operator": "equals",
+                            "value": [
+                                "Not In Good Standing"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "View history/Print certificates",
+                    "icon": "",
+                    "type": "link",
+                    "linkProp": "",
+                    "url": "/renewals",
+                    "urlParams": {},
+                    "criteria": []
+                }
+            ],
+            "alerts": [
+                {
+                    "criteria": [
+                        {
+                            "field": "in_good_standing",
+                            "operator": "equals",
+                            "value": [
+                                "In Good Standing"
+                            ]
+                        }
+                    ],
+                    "message": "You are in good standing",
+                    "type": "success"
+                },
+                {
+                    "criteria": [
+                        {
+                            "field": "in_good_standing",
+                            "operator": "equals",
+                            "value": [
+                                "Not In Good Standing"
+                            ]
+                        }
+                    ],
+                    "message": "You are in not good standing. Please renew your license",
+                    "type": "danger"
+                },
+                {
+                    "criteria": [
+                        {
+                            "field": "in_good_standing",
+                            "operator": "equals",
+                            "value": [
+                                "Pending Payment"
+                            ]
+                        }
+                    ],
+                    "message": "Your relicensure is pending payment. Please make payment",
+                    "type": "warning"
+                }
+            ],
+            "description": "View or fill application forms"
+        }
+    ],
+    "portalHomeSubTitleFields": [
+        {
+            "field": "register_type",
+            "label": "Register type",
+            "criteria": [
+                {
+                    "field": "type",
+                    "operator": "equals",
+                    "value": [
+                        "practitioners"
+                    ]
+                }
+            ],
+            "template": ""
+        },
+        {
+            "field": "business_type",
+            "label": "Business type",
+            "criteria": [
+                {
+                    "field": "business_type",
+                    "operator": "equals",
+                    "value": [
+                        "R"
+                    ]
+                }
+            ],
+            "template": ""
+        }
+    ],
+    "portalProfileFields": [
+        {
+            "field": "register_type",
+            "label": "Register type",
+            "criteria": [
+                {
+                    "field": "type",
+                    "operator": "equals",
+                    "value": [
+                        "practitioners"
+                    ]
+                }
+            ],
+            "template": ""
         }
     ],
     "commonApplicationTemplates": {
@@ -4237,9 +4507,7 @@
             "form_url": "licenses/config/exam_candidates"
         }
     },
-    "letterContainer": {
-        "html": "<html lang=\"en\"><head><meta charset=\"utf-8\"><title>Exam Registration Letter <\/title><link href=\"https:\/\/cdn.jsdelivr.net\/npm\/bootstrap@5.0.2\/dist\/css\/bootstrap.min.css\" rel=\"stylesheet\" integrity=\"sha384-EVSTQN3\/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC\" crossorigin=\"anonymous\"><style>label{ font-weight: bold;} .watermarked{ position: relative; overflow: hidden;} .bold{ font-weight: bold;} .font-20{ font-size: 20px;} .font-13{ font-size: 13px;} .weird-font{ font-size: 21px;} .watermarked::before{ position: absolute; top: 12cm; left: 6cm; display: block; width: 300%; height: 300%; opacity: 0.1; content: url('<?php echo base_url() . \"assets\/images\/mdc_logo.png\" ?>');} body{ background: #f7f7f7;} .page{ background: white; display: block; margin: 0 auto; margin-bottom: 0.5cm; box-shadow: 0 0 0.5cm rgba(0, 0, 0, 0.5); padding: 4%; font-family: Calibri, 'Trebuchet MS', sans-serif; font-size: 16px;} .align-right{ text-align: end;} .a4{ width: 21cm; page-break-after: always;} .caps{ text-transform: uppercase;} .break{ page-break-before: always;} @media print{ body, page{ margin: 0; box-shadow: 0;} .break{ page-break-before: always;} .a4{ width: unset !important; height: unset !important; page-break-after: always;} .no-print{ display: none;}} .margin-30{ margin-bottom: 30px;} .content{ margin-bottom: 30px !important;} .sticky-bottom{ position: sticky; bottom: 0; z-index: 1030;} <\/style><script src=\"https:\/\/code.jquery.com\/jquery-3.5.1.js\"><\/script><\/head><body><div id=\"letter\" class=\"a4 page watermarked\">[##content##] <\/div><\/body><\/html>"
-    },
+    "letterContainer": {},
     "renewalRules": [
         {
             "name": "Temporary License Rule",
@@ -4540,21 +4808,820 @@
         },
         "paymentMethods": {
             "In-Person": {
+                "label": "In-Person",
                 "type": "offline",
                 "isActive": true,
                 "onStart": "offlinePayment",
                 "onComplete": "offlinePaymentComplete",
                 "description": "Pay this invoice in person at any bank branch, via mobile money, or via a bank up and upload evidence of payment",
-                "logo": "assets/images/offline_payment.png"
+                "logo": "assets/images/bank.png"
             },
             "Ghana.gov Platform": {
+                "label": "Ghana.gov Platform",
                 "type": "online",
                 "isActive": true,
                 "onStart": "ghana_gov",
                 "onComplete": "ghana_gov",
                 "description": "Pay this invoice online via the Ghana.gov platform",
-                "logo": "assets/images/ghana_gov.png"
+                "logo": "assets/images/gov-logo.png"
             }
         }
-    }
+    },
+    "userTypesNames": [
+        {
+            "value": "license",
+            "label": "Registered Pharmacists, Pharmacy Technicians, OTCMS & Pharmacies"
+        },
+        {
+            "value": "exam_candidates",
+            "label": "Examination Candidates"
+        },
+        {
+            "value": "cpd",
+            "label": "CPD Institutions"
+        },
+        {
+            "value": "student_index",
+            "label": "Registered Students"
+        },
+        {
+            "value": "housemanship_facility",
+            "label": "Accredited Housemanship Facilities"
+        },
+        {
+            "value": "guest",
+            "label": "Guest"
+        }
+    ],
+    "defaultApplicationFormTemplates": [
+        {
+            "form_name": "Portal Edit",
+            "description": null,
+            "guidelines": "<p></p>",
+            "header": "<p>t</p>",
+            "footer": "<p></p>",
+            "data": [
+                {
+                    "name": "first_name",
+                    "type": "text",
+                    "required": true,
+                    "hint": "Enter your first name",
+                    "label": "First Name",
+                    "options": [],
+                    "value": ""
+                },
+                {
+                    "name": "last_name",
+                    "type": "text",
+                    "required": true,
+                    "hint": "Enter your last name",
+                    "label": "Last Name",
+                    "options": [],
+                    "value": ""
+                },
+                {
+                    "name": "email",
+                    "type": "email",
+                    "required": true,
+                    "hint": "Enter your email",
+                    "label": "Email",
+                    "options": [],
+                    "value": ""
+                },
+                {
+                    "label": "File attachment",
+                    "name": "file_attachment",
+                    "hint": "",
+                    "options": [],
+                    "type": "file",
+                    "assetType": "applications",
+                    "value": "",
+                    "required": false,
+                    "api_url": "",
+                    "apiKeyProperty": "",
+                    "apiLabelProperty": "",
+                    "showOnly": false
+                }
+            ],
+            "open_date": "2025-08-01",
+            "close_date": "2025-08-31",
+            "on_submit_email": null,
+            "on_submit_message": "<p>thank you for your application</p>",
+            "deleted_at": null,
+            "updated_at": null,
+            "created_on": "2025-08-05 10:44:39",
+            "modified_on": "2025-08-05 10:44:39",
+            "on_approve_email_template": null,
+            "on_deny_email_template": null,
+            "approve_url": null,
+            "deny_url": null,
+            "stages": [
+                {
+                    "name": "Pending",
+                    "description": "application is pending approval",
+                    "allowedTransitions": [
+                        "Approved"
+                    ],
+                    "allowedUserRoles": [
+                        "Developers"
+                    ],
+                    "actions": [
+                        {
+                            "type": "email",
+                            "config_type": "email",
+                            "config": {
+                                "template": "the application will be printed",
+                                "subject": "Your application is being processed",
+                                "endpoint": "",
+                                "method": "GET",
+                                "admin_email": "",
+                                "auth_token": "",
+                                "headers": [],
+                                "body_mapping": [],
+                                "query_params": []
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Approved",
+                    "description": "your application has been approved successfully",
+                    "allowedTransitions": [
+                        "Pending"
+                    ],
+                    "allowedUserRoles": [
+                        "Developers"
+                    ],
+                    "actions": [
+                        {
+                            "type": "email",
+                            "config_type": "email",
+                            "config": {
+                                "template": "your letter has been sent to the address",
+                                "subject": "Your letter has been sent",
+                                "endpoint": "",
+                                "method": "GET",
+                                "admin_email": "",
+                                "auth_token": "",
+                                "headers": [],
+                                "body_mapping": [],
+                                "query_params": []
+                            }
+                        },
+                        {
+                            "type": "api_call",
+                            "config_type": "api_call",
+                            "config": {
+                                "template": "",
+                                "subject": "",
+                                "admin_email": "",
+                                "endpoint": "http://localhost:8080/licenses/renewal/details",
+                                "method": "PUT",
+                                "auth_token": "__self__",
+                                "headers": [],
+                                "body_mapping": [
+                                    {
+                                        "api_field": "status",
+                                        "mapping_type": "static",
+                                        "source_field": "",
+                                        "static_value": "Paid",
+                                        "template": "",
+                                        "transform_type": "",
+                                        "default_value": ""
+                                    },
+                                    {
+                                        "api_field": "batch_number",
+                                        "mapping_type": "template",
+                                        "source_field": "",
+                                        "static_value": "00",
+                                        "template": "001-[year]",
+                                        "transform_type": "",
+                                        "default_value": ""
+                                    }
+                                ],
+                                "query_params": []
+                            }
+                        }
+                    ]
+                }
+            ],
+            "initialStage": "Pending",
+            "finalStage": "Approved",
+            "picture": null,
+            "restrictions": null,
+            "available_externally": "1"
+        },
+        {
+            "form_name": "Practitioners Provisional Registration Application",
+            "description": null,
+            "guidelines": "<p></p>",
+            "header": "<p>t</p>",
+            "footer": "<p></p>",
+            "data": [
+                {
+                    "name": "first_name",
+                    "type": "text",
+                    "required": true,
+                    "hint": "Enter your first name",
+                    "label": "First Name",
+                    "options": [],
+                    "value": ""
+                },
+                {
+                    "name": "last_name",
+                    "type": "text",
+                    "required": true,
+                    "hint": "Enter your last name",
+                    "label": "Last Name",
+                    "options": [],
+                    "value": ""
+                },
+                {
+                    "name": "email",
+                    "type": "email",
+                    "required": true,
+                    "hint": "Enter your email",
+                    "label": "Email",
+                    "options": [],
+                    "value": ""
+                },
+                {
+                    "label": "File attachment",
+                    "name": "file_attachment",
+                    "hint": "",
+                    "options": [],
+                    "type": "file",
+                    "assetType": "applications",
+                    "value": "",
+                    "required": false,
+                    "api_url": "",
+                    "apiKeyProperty": "",
+                    "apiLabelProperty": "",
+                    "showOnly": false
+                }
+            ],
+            "open_date": "2025-08-01",
+            "close_date": "2025-08-31",
+            "on_submit_email": null,
+            "on_submit_message": "<p>thank you for your application</p>",
+            "deleted_at": null,
+            "updated_at": null,
+            "created_on": "2025-08-05 10:44:39",
+            "modified_on": "2025-08-05 10:44:39",
+            "on_approve_email_template": null,
+            "on_deny_email_template": null,
+            "approve_url": null,
+            "deny_url": null,
+            "stages": [
+                {
+                    "name": "Received",
+                    "description": "application received",
+                    "allowedTransitions": [
+                        "Processed"
+                    ],
+                    "allowedUserRoles": null,
+                    "actions": [
+                        {
+                            "type": "email",
+                            "config_type": "email",
+                            "config": {
+                                "template": "theapplication will be printed",
+                                "subject": "Your application is being processed",
+                                "endpoint": "",
+                                "method": "GET",
+                                "admin_email": "",
+                                "auth_token": "",
+                                "headers": [],
+                                "body_mapping": [],
+                                "query_params": []
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Processed",
+                    "description": "your application has been processed successfully",
+                    "allowedTransitions": [
+                        "Received"
+                    ],
+                    "allowedUserRoles": null,
+                    "actions": [
+                        {
+                            "type": "email",
+                            "config_type": "email",
+                            "config": {
+                                "template": "your letter has been sent to the address",
+                                "subject": "Your letter has been sent",
+                                "endpoint": "",
+                                "method": "GET",
+                                "admin_email": "",
+                                "auth_token": "",
+                                "headers": [],
+                                "body_mapping": [],
+                                "query_params": []
+                            }
+                        },
+                        {
+                            "type": "api_call",
+                            "config_type": "api_call",
+                            "config": {
+                                "template": "",
+                                "subject": "",
+                                "admin_email": "",
+                                "endpoint": "http://localhost:8080/licenses/renewal/details",
+                                "method": "PUT",
+                                "auth_token": "__self__",
+                                "headers": [],
+                                "body_mapping": [
+                                    {
+                                        "api_field": "status",
+                                        "mapping_type": "static",
+                                        "source_field": "",
+                                        "static_value": "Paid",
+                                        "template": "",
+                                        "transform_type": "",
+                                        "default_value": ""
+                                    },
+                                    {
+                                        "api_field": "batch_number",
+                                        "mapping_type": "template",
+                                        "source_field": "",
+                                        "static_value": "00",
+                                        "template": "001-[year]",
+                                        "transform_type": "",
+                                        "default_value": ""
+                                    }
+                                ],
+                                "query_params": []
+                            }
+                        }
+                    ]
+                }
+            ],
+            "initialStage": "Received",
+            "finalStage": "Processed",
+            "picture": null,
+            "restrictions": null,
+            "available_externally": "1"
+        },
+        {
+            "form_name": "Practitioners Permanent Registration Application",
+            "description": null,
+            "guidelines": "<p></p>",
+            "header": "<p>t</p>",
+            "footer": "<p></p>",
+            "data": [
+                {
+                    "name": "first_name",
+                    "type": "text",
+                    "required": true,
+                    "hint": "Enter your first name",
+                    "label": "First Name",
+                    "options": [],
+                    "value": ""
+                },
+                {
+                    "name": "last_name",
+                    "type": "text",
+                    "required": true,
+                    "hint": "Enter your last name",
+                    "label": "Last Name",
+                    "options": [],
+                    "value": ""
+                },
+                {
+                    "name": "email",
+                    "type": "email",
+                    "required": true,
+                    "hint": "Enter your email",
+                    "label": "Email",
+                    "options": [],
+                    "value": ""
+                },
+                {
+                    "label": "File attachment",
+                    "name": "file_attachment",
+                    "hint": "",
+                    "options": [],
+                    "type": "file",
+                    "assetType": "applications",
+                    "value": "",
+                    "required": false,
+                    "api_url": "",
+                    "apiKeyProperty": "",
+                    "apiLabelProperty": "",
+                    "showOnly": false
+                }
+            ],
+            "open_date": "2025-08-01",
+            "close_date": "2025-08-31",
+            "on_submit_email": null,
+            "on_submit_message": "<p>thank you for your application</p>",
+            "deleted_at": null,
+            "updated_at": null,
+            "created_on": "2025-08-05 10:44:39",
+            "modified_on": "2025-08-05 10:44:39",
+            "on_approve_email_template": null,
+            "on_deny_email_template": null,
+            "approve_url": null,
+            "deny_url": null,
+            "stages": [
+                {
+                    "name": "Received",
+                    "description": "application received",
+                    "allowedTransitions": [
+                        "Processed"
+                    ],
+                    "allowedUserRoles": null,
+                    "actions": [
+                        {
+                            "type": "email",
+                            "config_type": "email",
+                            "config": {
+                                "template": "theapplication will be printed",
+                                "subject": "Your application is being processed",
+                                "endpoint": "",
+                                "method": "GET",
+                                "admin_email": "",
+                                "auth_token": "",
+                                "headers": [],
+                                "body_mapping": [],
+                                "query_params": []
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Processed",
+                    "description": "your application has been processed successfully",
+                    "allowedTransitions": [
+                        "Received"
+                    ],
+                    "allowedUserRoles": null,
+                    "actions": [
+                        {
+                            "type": "email",
+                            "config_type": "email",
+                            "config": {
+                                "template": "your letter has been sent to the address",
+                                "subject": "Your letter has been sent",
+                                "endpoint": "",
+                                "method": "GET",
+                                "admin_email": "",
+                                "auth_token": "",
+                                "headers": [],
+                                "body_mapping": [],
+                                "query_params": []
+                            }
+                        },
+                        {
+                            "type": "api_call",
+                            "config_type": "api_call",
+                            "config": {
+                                "template": "",
+                                "subject": "",
+                                "admin_email": "",
+                                "endpoint": "http://localhost:8080/licenses/renewal/details",
+                                "method": "PUT",
+                                "auth_token": "__self__",
+                                "headers": [],
+                                "body_mapping": [
+                                    {
+                                        "api_field": "status",
+                                        "mapping_type": "static",
+                                        "source_field": "",
+                                        "static_value": "Paid",
+                                        "template": "",
+                                        "transform_type": "",
+                                        "default_value": ""
+                                    },
+                                    {
+                                        "api_field": "batch_number",
+                                        "mapping_type": "template",
+                                        "source_field": "",
+                                        "static_value": "00",
+                                        "template": "001-[year]",
+                                        "transform_type": "",
+                                        "default_value": ""
+                                    }
+                                ],
+                                "query_params": []
+                            }
+                        }
+                    ]
+                }
+            ],
+            "initialStage": "Received",
+            "finalStage": "Processed",
+            "picture": null,
+            "restrictions": null,
+            "available_externally": "1"
+        },
+        {
+            "form_name": "Examination Candidates Registration Application",
+            "description": null,
+            "guidelines": "<p></p>",
+            "header": "<p>t</p>",
+            "footer": "<p></p>",
+            "data": [
+                {
+                    "name": "first_name",
+                    "type": "text",
+                    "required": true,
+                    "hint": "Enter your first name",
+                    "label": "First Name",
+                    "options": [],
+                    "value": ""
+                },
+                {
+                    "name": "last_name",
+                    "type": "text",
+                    "required": true,
+                    "hint": "Enter your last name",
+                    "label": "Last Name",
+                    "options": [],
+                    "value": ""
+                },
+                {
+                    "name": "email",
+                    "type": "email",
+                    "required": true,
+                    "hint": "Enter your email",
+                    "label": "Email",
+                    "options": [],
+                    "value": ""
+                },
+                {
+                    "label": "File attachment",
+                    "name": "file_attachment",
+                    "hint": "",
+                    "options": [],
+                    "type": "file",
+                    "assetType": "applications",
+                    "value": "",
+                    "required": false,
+                    "api_url": "",
+                    "apiKeyProperty": "",
+                    "apiLabelProperty": "",
+                    "showOnly": false
+                }
+            ],
+            "open_date": "2025-08-01",
+            "close_date": "2025-08-31",
+            "on_submit_email": null,
+            "on_submit_message": "<p>thank you for your application</p>",
+            "deleted_at": null,
+            "updated_at": null,
+            "created_on": "2025-08-05 10:44:39",
+            "modified_on": "2025-08-05 10:44:39",
+            "on_approve_email_template": null,
+            "on_deny_email_template": null,
+            "approve_url": null,
+            "deny_url": null,
+            "stages": [
+                {
+                    "name": "Received",
+                    "description": "application received",
+                    "allowedTransitions": [
+                        "Processed"
+                    ],
+                    "allowedUserRoles": null,
+                    "actions": [
+                        {
+                            "type": "email",
+                            "config_type": "email",
+                            "config": {
+                                "template": "theapplication will be printed",
+                                "subject": "Your application is being processed",
+                                "endpoint": "",
+                                "method": "GET",
+                                "admin_email": "",
+                                "auth_token": "",
+                                "headers": [],
+                                "body_mapping": [],
+                                "query_params": []
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Processed",
+                    "description": "your application has been processed successfully",
+                    "allowedTransitions": [
+                        "Received"
+                    ],
+                    "allowedUserRoles": null,
+                    "actions": [
+                        {
+                            "type": "email",
+                            "config_type": "email",
+                            "config": {
+                                "template": "your letter has been sent to the address",
+                                "subject": "Your letter has been sent",
+                                "endpoint": "",
+                                "method": "GET",
+                                "admin_email": "",
+                                "auth_token": "",
+                                "headers": [],
+                                "body_mapping": [],
+                                "query_params": []
+                            }
+                        },
+                        {
+                            "type": "api_call",
+                            "config_type": "api_call",
+                            "config": {
+                                "template": "",
+                                "subject": "",
+                                "admin_email": "",
+                                "endpoint": "http://localhost:8080/licenses/renewal/details",
+                                "method": "PUT",
+                                "auth_token": "__self__",
+                                "headers": [],
+                                "body_mapping": [
+                                    {
+                                        "api_field": "status",
+                                        "mapping_type": "static",
+                                        "source_field": "",
+                                        "static_value": "Paid",
+                                        "template": "",
+                                        "transform_type": "",
+                                        "default_value": ""
+                                    },
+                                    {
+                                        "api_field": "batch_number",
+                                        "mapping_type": "template",
+                                        "source_field": "",
+                                        "static_value": "00",
+                                        "template": "001-[year]",
+                                        "transform_type": "",
+                                        "default_value": ""
+                                    }
+                                ],
+                                "query_params": []
+                            }
+                        }
+                    ]
+                }
+            ],
+            "initialStage": "Received",
+            "finalStage": "Processed",
+            "picture": null,
+            "restrictions": null,
+            "available_externally": "1"
+        },
+        {
+            "form_name": "Practitioners Temporary Registration Application",
+            "description": null,
+            "guidelines": "<p></p>",
+            "header": "<p>t</p>",
+            "footer": "<p></p>",
+            "data": [
+                {
+                    "name": "first_name",
+                    "type": "text",
+                    "required": true,
+                    "hint": "Enter your first name",
+                    "label": "First Name",
+                    "options": [],
+                    "value": ""
+                },
+                {
+                    "name": "last_name",
+                    "type": "text",
+                    "required": true,
+                    "hint": "Enter your last name",
+                    "label": "Last Name",
+                    "options": [],
+                    "value": ""
+                },
+                {
+                    "name": "email",
+                    "type": "email",
+                    "required": true,
+                    "hint": "Enter your email",
+                    "label": "Email",
+                    "options": [],
+                    "value": ""
+                },
+                {
+                    "label": "File attachment",
+                    "name": "file_attachment",
+                    "hint": "",
+                    "options": [],
+                    "type": "file",
+                    "assetType": "applications",
+                    "value": "",
+                    "required": false,
+                    "api_url": "",
+                    "apiKeyProperty": "",
+                    "apiLabelProperty": "",
+                    "showOnly": false
+                }
+            ],
+            "open_date": "2025-08-01",
+            "close_date": "2025-08-31",
+            "on_submit_email": null,
+            "on_submit_message": "<p>thank you for your application</p>",
+            "deleted_at": null,
+            "updated_at": null,
+            "created_on": "2025-08-05 10:44:39",
+            "modified_on": "2025-08-05 10:44:39",
+            "on_approve_email_template": null,
+            "on_deny_email_template": null,
+            "approve_url": null,
+            "deny_url": null,
+            "stages": [
+                {
+                    "name": "Received",
+                    "description": "application received",
+                    "allowedTransitions": [
+                        "Processed"
+                    ],
+                    "allowedUserRoles": null,
+                    "actions": [
+                        {
+                            "type": "email",
+                            "config_type": "email",
+                            "config": {
+                                "template": "theapplication will be printed",
+                                "subject": "Your application is being processed",
+                                "endpoint": "",
+                                "method": "GET",
+                                "admin_email": "",
+                                "auth_token": "",
+                                "headers": [],
+                                "body_mapping": [],
+                                "query_params": []
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Processed",
+                    "description": "your application has been processed successfully",
+                    "allowedTransitions": [
+                        "Received"
+                    ],
+                    "allowedUserRoles": null,
+                    "actions": [
+                        {
+                            "type": "email",
+                            "config_type": "email",
+                            "config": {
+                                "template": "your letter has been sent to the address",
+                                "subject": "Your letter has been sent",
+                                "endpoint": "",
+                                "method": "GET",
+                                "admin_email": "",
+                                "auth_token": "",
+                                "headers": [],
+                                "body_mapping": [],
+                                "query_params": []
+                            }
+                        },
+                        {
+                            "type": "api_call",
+                            "config_type": "api_call",
+                            "config": {
+                                "template": "",
+                                "subject": "",
+                                "admin_email": "",
+                                "endpoint": "http://localhost:8080/licenses/renewal/details",
+                                "method": "PUT",
+                                "auth_token": "__self__",
+                                "headers": [],
+                                "body_mapping": [
+                                    {
+                                        "api_field": "status",
+                                        "mapping_type": "static",
+                                        "source_field": "",
+                                        "static_value": "Paid",
+                                        "template": "",
+                                        "transform_type": "",
+                                        "default_value": ""
+                                    },
+                                    {
+                                        "api_field": "batch_number",
+                                        "mapping_type": "template",
+                                        "source_field": "",
+                                        "static_value": "00",
+                                        "template": "001-[year]",
+                                        "transform_type": "",
+                                        "default_value": ""
+                                    }
+                                ],
+                                "query_params": []
+                            }
+                        }
+                    ]
+                }
+            ],
+            "initialStage": "Received",
+            "finalStage": "Processed",
+            "picture": null,
+            "restrictions": null,
+            "available_externally": "1"
+        }
+    ]
 }

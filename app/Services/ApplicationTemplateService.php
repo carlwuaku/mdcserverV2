@@ -183,18 +183,19 @@ class ApplicationTemplateService
             throw new \InvalidArgumentException("Please provide a form type");
         }
 
-        $applicationTemplateModel = new ApplicationTemplateModel();
-        $template = $applicationTemplateModel->builder()
-            ->select(['form_name', 'stages', 'initialStage', 'finalStage'])
-            ->where('form_name', $form)
-            ->get()
-            ->getFirstRow();
+        // $applicationTemplateModel = new ApplicationTemplateModel();
+        $template = ApplicationFormActionHelper::getApplicationTemplate($form);
+        //  $applicationTemplateModel->builder()
+        //     ->select(['form_name', 'stages', 'initialStage', 'finalStage'])
+        //     ->where('form_name', $form)
+        //     ->get()
+        //     ->getFirstRow();
 
         if (!$template) {
             throw new \RuntimeException("The selected form is not configured properly");
         }
 
-        return json_decode($template->stages, true);
+        return is_string($template->stages) ? json_decode($template->stages, true) : $template->stages;
     }
 
     /**
@@ -490,7 +491,6 @@ class ApplicationTemplateService
             }
         }
         $data['data'] = json_decode($data['data'], true);
-        $data['stages'] = json_decode($data['stages'], true);
         return $data;
     }
 }

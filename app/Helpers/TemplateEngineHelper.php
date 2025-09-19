@@ -157,7 +157,6 @@ class TemplateEngineHelper
         $data->portal_url = $appSettings["portalUrl"];
         $data->institution_website = $appSettings["institutionWebsite"];
         $data->current_year = date('Y');
-        log_message('debug', 'Processing template: ' . print_r($data, true));
         // Process loops first (they might contain variables)
         $template = $this->processLoops($template, $data);
 
@@ -182,7 +181,6 @@ class TemplateEngineHelper
             function ($matches) use ($data) {
                 $arrayProperty = trim($matches[1]);
                 $loopTemplate = $matches[2];
-                log_message('debug', 'Processing loop: ' . $loopTemplate);
 
                 // Get the array data
                 if (!property_exists($data, $arrayProperty) || !is_array($data->$arrayProperty)) {

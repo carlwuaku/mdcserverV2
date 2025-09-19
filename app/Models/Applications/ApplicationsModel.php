@@ -30,8 +30,8 @@ class ApplicationsModel extends MyBaseModel implements TableDisplayInterface
         'deleted_at',
         'email',
         'phone',
-        'qr_code'
-
+        'qr_code',
+        'applicant_unique_id'
     ];
 
     protected bool $allowEmptyInserts = false;
