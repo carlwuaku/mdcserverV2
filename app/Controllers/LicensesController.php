@@ -439,6 +439,21 @@ class LicensesController extends ResourceController
         }
     }
 
+    public function printRenewalByLicense(string $renewalUuid)
+    {
+        try {
+            $userId = auth("tokens")->id();
+            $user = AuthHelper::getAuthUser($userId);
+            $result = $this->renewalService->getRenewalOnlinePrintTemplateForLicense($renewalUuid, $user->profile_data['uuid']);
+
+            return $this->respond(['data' => $result, 'message' => 'Success'], ResponseInterface::HTTP_OK);
+
+        } catch (\Throwable $th) {
+            log_message('error', $th->getMessage());
+            return $this->respond(['message' => "Server error", 'data' => null], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+    }
+
     // Private helper methods
 
     /**

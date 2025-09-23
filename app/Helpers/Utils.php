@@ -1381,5 +1381,17 @@ class Utils
         return $value;
     }
 
+    public static function getDefaultPrintTemplates()
+    {
+        /**
+         * @var object{template_name:string, template_content:string}[]
+         */
+        $templates = self::getAppSettings(DEFAULT_PRINT_TEMPLATES);
+        if ($templates === null) {
+            throw new Exception("Default print templates not found");
+        }
+
+        return $templates;
+    }
 
 }

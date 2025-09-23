@@ -45,11 +45,13 @@ $routes->group("portal", ["namespace" => "App\Controllers"], function (RouteColl
     $routes->get("applications/templates", [ApplicationsController::class, "getApplicationTemplates"], ["filter" => ["apiauth"]]);
     $routes->get("renewals", [LicensesController::class, "getRenewalsByLicense"], ["filter" => ["apiauth"]]);
     $routes->get("renewals/form", [LicensesController::class, "getPractitionerRenewalFormFields"], ["filter" => ["apiauth"]], );
+    $routes->get("renewals/(:segment)/print", [LicensesController::class, "printRenewalByLicense/$1"], ["filter" => ["apiauth"]], );
     $routes->post("renewals", [LicensesController::class, "createRenewalByLicense"], ["filter" => ["apiauth"]]);
     $routes->delete("renewals/(:segment)", [LicensesController::class, "deleteRenewalByLicense/$1"], ["filter" => ["apiauth"]]);
     $routes->get("payment/external-invoice/(:segment)", [PaymentsController::class, "getInvoiceByExternal/$1"], ["filter" => ["apiauth"]], );
     $routes->put("payment/invoice/payment_method/(:segment)", [PaymentsController::class, "updateInvoicePaymentMethod/$1"], ["filter" => ["apiauth"]], );
     $routes->post("payment/invoices/manual-payment", [PaymentsController::class, "createPaymentFileUpload"], ["filter" => ["apiauth"]]);
+    $routes->delete("payment/invoices/manual-payment/(:segment)", [PaymentsController::class, "deletePaymentFileUpload/$1"], ["filter" => ["apiauth"]]);
 
 });
 

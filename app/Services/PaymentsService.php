@@ -847,7 +847,8 @@ class PaymentsService
         $rules = [
             "invoice_uuid" => "required|is_not_unique[invoices.uuid]",
             "file_path" => "required",
-            "payment_date" => "required|valid_date"
+            "payment_date" => "required|valid_date",
+            "reference_number" => "required"
         ];
 
         $validator = \Config\Services::validation();

@@ -380,6 +380,13 @@ class ApplicationFormActionHelper extends Utils
                 throw new \InvalidArgumentException('Renewal status is required for update');
             }
             $status = $bodyMappingData['status'];
+            //add the in_print_queue, print_template and online_print_template to the renewalData object if not already set in the data
+            $fieldsToAddFromBodyMapping = ['in_print_queue', 'print_template', 'online_print_template'];
+            foreach ($fieldsToAddFromBodyMapping as $field) {
+                if (!property_exists($renewalData, $field) && isset($bodyMappingData[$field])) {
+                    $renewalData->{$field} = $bodyMappingData[$field];
+                }
+            }
             //the updateBulkRenewals function expects an array of renewal data objects. since the event callback passes in a single renewal object, we need to wrap it in an array
 
             $result = $renewalService->updateBulkRenewals([$renewalData], $status);
@@ -649,7 +656,8 @@ class ApplicationFormActionHelper extends Utils
                 'license_type' => '@practitioner_type',
                 'status' => 'pending',
                 'start_date' => '@start_date',
-                'expiry' => '@expiry'
+                'expiry' => '@expiry',
+
             ];
 
             $renewalData = self::mapDataToBody($defaultMapping, $data);
@@ -712,7 +720,7 @@ class ApplicationFormActionHelper extends Utils
     private static function mapDataToBody($bodyMapping, $data)
     {
         $body = [];
-
+        log_message('info', 'Mapping data to body: ' . print_r($bodyMapping, true));
         foreach ($bodyMapping as $apiField => $mapping) {
             if (is_array($mapping)) {
                 // Handle complex mapping with transformations

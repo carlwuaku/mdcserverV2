@@ -12,7 +12,7 @@ class PrintTemplateModel extends MyBaseModel implements TableDisplayInterface
     protected $returnType = 'array';
     protected $useSoftDeletes = false;
     protected $protectFields = true;
-    protected $allowedFields = ['uuid', 'template_name', 'template_content', 'created_by', 'active'];
+    protected $allowedFields = ['uuid', 'template_name', 'template_content', 'created_by', 'active', 'is_default'];
 
     protected bool $allowEmptyInserts = false;
     protected bool $updateOnlyChanged = true;
@@ -76,7 +76,7 @@ class PrintTemplateModel extends MyBaseModel implements TableDisplayInterface
         return [];
     }
 
-     public $searchFields = [
+    public $searchFields = [
         'template_name',
         'template_content'
     ];

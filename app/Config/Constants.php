@@ -159,6 +159,7 @@ define("SETTING_PASSWORD_RESET_TOKEN_TIMEOUT", "General.password_reset_token_tim
 define('SETTING_PORTAL_EDITABLE_FIELDS', 'portal_editable_fields');//for now we're not adding the class (General) to the key. we'll use the settings model directly for it
 
 define("DEFAULT_APPLICATION_FORM_TEMPLATES", "defaultApplicationFormTemplates");
+define("DEFAULT_PRINT_TEMPLATES", "defaultPrintTemplates");
 
 define("EVENT_USER_ADDED", "user_added");
 define("EVENT_INVOICE_PAYMENT_COMPLETED", "invoice_payment_completed");
