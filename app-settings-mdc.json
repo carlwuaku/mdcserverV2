@@ -3698,6 +3698,33 @@
                 }
             ],
             "description": "View or fill application forms"
+        },
+        {
+            "title": "Continuous Professional Development (CPD)",
+            "image": "assets/images/011-work.png",
+            "icon": "",
+            "actions": [
+                {
+                    "label": "View Details/Previous years' data",
+                    "icon": "",
+                    "type": "link",
+                    "linkProp": "",
+                    "url": "/cpd/history",
+                    "urlParams": {},
+                    "criteria": []
+                },
+                {
+                    "label": "View CPD Schedule",
+                    "icon": "",
+                    "type": "link",
+                    "linkProp": "",
+                    "url": "/cpd/schedule",
+                    "urlParams": {},
+                    "criteria": []
+                }
+            ],
+            "alerts": [],
+            "description": "Your CPD score"
         }
     ],
     "portalHomeSubTitleFields": [

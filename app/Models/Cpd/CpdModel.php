@@ -87,12 +87,16 @@ class CpdModel extends MyBaseModel implements TableDisplayInterface
         return [];
     }
 
-    public function addCustomFields(BaseBuilder $builder): BaseBuilder
+    public function addCustomFields(BaseBuilder $builder, string $userType = "admin"): BaseBuilder
     {
         $providerModel = new CpdProviderModel();
         $attendanceModel = new CpdAttendanceModel();
+        $selectClause = "{$this->table}.*, {$providerModel->table}.name as provider_name, count({$attendanceModel->table}.id) as number_of_attendants";
+        if ($userType !== "admin") {
+            $selectClause = "{$this->table}.topic,{$this->table}.credits, {$this->table}.category, {$this->table}.online, {$providerModel->table}.name as provider_name, {$providerModel->table}.email as provider_email, {$providerModel->table}.phone as provider_phone";
 
-        $builder->select("{$this->table}.*, {$providerModel->table}.name as provider_name, count({$attendanceModel->table}.id) as number_of_attendants")->
+        }
+        $builder->select($selectClause)->
             join($providerModel->table, "{$this->table}.provider_uuid = {$providerModel->table}.uuid", "left")->
             join($attendanceModel->table, "{$this->table}.uuid = {$attendanceModel->table}.cpd_uuid", "left")
             ->groupBy("{$this->table}.id");

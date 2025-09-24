@@ -4306,13 +4306,7 @@
                     "criteria": []
                 }
             ],
-            "alerts": [
-                {
-                    "criteria": [],
-                    "message": "You have a Provisional License. Please renew your license within 1 year to avoid suspension of your license.",
-                    "type": "warning"
-                }
-            ],
+            "alerts": [],
             "description": "View or edit your name, address, phone number, etc."
         },
         {
@@ -4384,23 +4378,6 @@
                     ]
                 },
                 {
-                    "label": "Click to apply",
-                    "icon": "",
-                    "type": "link",
-                    "linkProp": "",
-                    "url": "/renewals/form",
-                    "urlParams": {},
-                    "criteria": [
-                        {
-                            "field": "in_good_standing",
-                            "operator": "equals",
-                            "value": [
-                                "Not In Good Standing"
-                            ]
-                        }
-                    ]
-                },
-                {
                     "label": "View history/Print certificates",
                     "icon": "",
                     "type": "link",
@@ -4452,6 +4429,33 @@
                 }
             ],
             "description": "View or fill application forms"
+        },
+        {
+            "title": "Continuous Professional Development (CPD)",
+            "image": "assets/images/011-work.png",
+            "icon": "",
+            "actions": [
+                {
+                    "label": "View Details/Previous years' data",
+                    "icon": "",
+                    "type": "link",
+                    "linkProp": "",
+                    "url": "/cpd/history",
+                    "urlParams": {},
+                    "criteria": []
+                },
+                {
+                    "label": "View CPD Schedule",
+                    "icon": "",
+                    "type": "link",
+                    "linkProp": "",
+                    "url": "/cpd/schedule",
+                    "urlParams": {},
+                    "criteria": []
+                }
+            ],
+            "alerts": [],
+            "description": "Your CPD score"
         }
     ],
     "portalHomeSubTitleFields": [
