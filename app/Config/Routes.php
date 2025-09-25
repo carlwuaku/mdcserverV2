@@ -54,6 +54,8 @@ $routes->group("portal", ["namespace" => "App\Controllers"], function (RouteColl
     $routes->delete("payment/invoices/manual-payment/(:segment)", [PaymentsController::class, "deletePaymentFileUpload/$1"], ["filter" => ["apiauth"]]);
     $routes->get("cpd/details", [CpdController::class, "getCpds"], ["filter" => ["apiauth"]], );
     $routes->get("cpd/attendance", [CpdController::class, "getLicenseCpdAttendances"], ["filter" => ["apiauth"]]);
+    $routes->get("work-history", [PractitionerController::class, "getPractitionerWorkHistories"], ["filter" => ["apiauth"]]);
+    $routes->get("qualifications", [PractitionerController::class, "getPractitionerQualifications"], ["filter" => ["apiauth"]]);
 
 });
 

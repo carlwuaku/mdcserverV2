@@ -4295,6 +4295,7 @@
             "title": "Personal Details",
             "image": "[picture]",
             "icon": "person_outlined",
+            "dataPoints": [],
             "actions": [
                 {
                     "label": "View/Edit Your Personal Details",
@@ -4315,6 +4316,7 @@
             "url": "/applications",
             "image": "assets/images/application.png",
             "icon": "auto_stories_outlined",
+            "dataPoints": [],
             "actions": [
                 {
                     "label": "View/Print Your Previous Applications",
@@ -4342,6 +4344,7 @@
             "active_children": false,
             "url": "/renewal",
             "image": "assets/images/010-gold-medal.png",
+            "dataPoints": [],
             "actions": [
                 {
                     "label": "Click to apply",
@@ -4428,12 +4431,37 @@
                     "type": "warning"
                 }
             ],
-            "description": "View or fill application forms"
+            "description": "Check your current relicensure status, & your previous relicensure records, & print your retention certificate"
         },
         {
             "title": "Continuous Professional Development (CPD)",
             "image": "assets/images/011-work.png",
             "icon": "",
+            "dataPoints": [
+                {
+                    "criteria": [
+                        {
+                            "field": "type",
+                            "operator": "equals",
+                            "value": [
+                                "practitioners"
+                            ]
+                        },
+                        {
+                            "field": "register_type",
+                            "operator": "equals",
+                            "value": [
+                                "Permanent"
+                            ]
+                        }
+                    ],
+                    "dataSource": "api",
+                    "apiUrl": "portal/cpd/attendance?year=[current_year]",
+                    "apiProperty": "score",
+                    "message": "[score] Credits",
+                    "type": "warning"
+                }
+            ],
             "actions": [
                 {
                     "label": "View Details/Previous years' data",
@@ -4456,6 +4484,44 @@
             ],
             "alerts": [],
             "description": "Your CPD score"
+        },
+        {
+            "title": "Qualifications",
+            "image": "assets/images/graduated.png",
+            "icon": "",
+            "dataPoints": [],
+            "actions": [
+                {
+                    "label": "View Qualifications",
+                    "icon": "",
+                    "type": "link",
+                    "linkProp": "",
+                    "url": "/qualifications",
+                    "urlParams": {},
+                    "criteria": []
+                }
+            ],
+            "alerts": [],
+            "description": "View your qualifications recognized by the Council"
+        },
+        {
+            "title": "Work History",
+            "image": "assets/images/recruitment.png",
+            "icon": "",
+            "dataPoints": [],
+            "actions": [
+                {
+                    "label": "View your work history",
+                    "icon": "",
+                    "type": "link",
+                    "linkProp": "",
+                    "url": "/work-history",
+                    "urlParams": {},
+                    "criteria": []
+                }
+            ],
+            "alerts": [],
+            "description": "View/edit your work history"
         }
     ],
     "portalHomeSubTitleFields": [

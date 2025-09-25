@@ -118,11 +118,76 @@ class Alert
     }
 }
 
+class DataPoint
+{
+
+    public string $dataSource;
+    public string $apiUrl;
+    public string $message;
+    public string $type;
+
+    /**
+     * a list of criteria which must all be met for the alert to be shown
+     * @var CriteriaType[]
+     */
+    public array $criteria;
+
+    public function __construct(
+        string $dataSource = '',
+        string $apiUrl = '',
+        string $message = '',
+        string $type = '',
+        array $criteria = []
+    ) {
+        $this->dataSource = $dataSource;
+        $this->apiUrl = $apiUrl;
+        $this->message = $message;
+        $this->type = $type;
+        $this->criteria = $criteria;
+    }
+
+    public function toArray(): array
+    {
+        return [
+            'dataSource' => $this->dataSource,
+            'apiUrl' => $this->apiUrl,
+            'message' => $this->message,
+            'type' => $this->type,
+            'criteria' => $this->criteria
+        ];
+    }
+
+    public static function fromArray(array $data): self
+    {
+        /**
+         * @var CriteriaType[]
+         */
+        $alertCriteria = [];
+        if (isset($data['criteria']) && is_array($data['criteria'])) {
+            foreach ($data['criteria'] as $criteriaData) {
+                $alertCriteria[] = CriteriaType::fromArray($criteriaData);
+            }
+        }
+        return new self(
+            $data['dataSource'] ?? '',
+            $data['apiUrl'] ?? '',
+            $data['message'] ?? '',
+            $data['type'] ?? '',
+            $alertCriteria
+        );
+    }
+}
+
 class PortalHomeConfigType
 {
     public string $title;
     public string $image;
     public string $icon;
+    /**
+     * links to be included
+     * @var DataPoint[]
+     */
+    public array $dataPoints;
     /**
      * links to be included
      * @var Action[]
@@ -141,7 +206,8 @@ class PortalHomeConfigType
         string $icon = '',
         array $actions = [],
         string $description = '',
-        array $alerts = []
+        array $alerts = [],
+        array $dataPoints = []
     ) {
         $this->title = $title;
         $this->image = $image;
@@ -149,6 +215,7 @@ class PortalHomeConfigType
         $this->actions = $actions;
         $this->description = $description;
         $this->alerts = $alerts;
+        $this->dataPoints = $dataPoints;
     }
 
 
@@ -160,7 +227,9 @@ class PortalHomeConfigType
             'image' => $this->image,
             'icon' => $this->icon,
             'actions' => array_map(fn($action) => $action->toArray(), $this->actions),
-            'description' => $this->description
+            'description' => $this->description,
+            'alerts' => array_map(fn($alert) => $alert->toArray(), $this->alerts),
+
         ];
     }
 
@@ -184,6 +253,12 @@ class PortalHomeConfigType
                 $alerts[] = Alert::fromArray($alertData);
             }
         }
+        $dataPoints = [];
+        if (isset($data['dataPoints']) && is_array($data['dataPoints'])) {
+            foreach ($data['dataPoints'] as $dataPointData) {
+                $dataPoints[] = DataPoint::fromArray($dataPointData);
+            }
+        }
 
         return new self(
             $data['title'] ?? '',
@@ -191,7 +266,8 @@ class PortalHomeConfigType
             $data['icon'] ?? '',
             $actions,
             $data['description'] ?? '',
-            $alerts
+            $alerts,
+            $dataPoints
         );
     }
 

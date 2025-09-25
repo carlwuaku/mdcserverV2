@@ -11,7 +11,7 @@ use CodeIgniter\RESTful\ResourceController;
 use CodeIgniter\HTTP\ResponseInterface;
 use App\Models\Practitioners\PractitionerModel;
 use App\Helpers\Utils;
-use \Exception;
+use App\Helpers\AuthHelper;
 use SimpleSoftwareIO\QrCode\Generator;
 
 
@@ -183,6 +183,8 @@ class PractitionerController extends ResourceController
     public function getPractitionerQualifications()
     {
         try {
+            $userId = auth("tokens")->id();
+            $user = AuthHelper::getAuthUser($userId);
             $per_page = $this->request->getVar('limit') ? (int) $this->request->getVar('limit') : 100;
             $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
             $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted') === "yes";
@@ -192,6 +194,10 @@ class PractitionerController extends ResourceController
 
             $model = new PractitionerAdditionalQualificationsModel();
             $registration_number = $this->request->getGet('registration_number');
+            //if user is not admin, they can only view their own work history
+            if (!$user->type !== "admin") {
+                $registration_number = $user->profile_data['license_number'];
+            }
             $builder = $param ? $model->search($param) : $model->builder();
             if ($registration_number !== null) {
                 $builder->where(["registration_number" => $registration_number]);
@@ -437,6 +443,8 @@ class PractitionerController extends ResourceController
     public function getPractitionerWorkHistories()
     {
         try {
+            $userId = auth("tokens")->id();
+            $user = AuthHelper::getAuthUser($userId);
             $per_page = $this->request->getVar('limit') ? (int) $this->request->getVar('limit') : 100;
             $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
             $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted') === "yes";
@@ -446,6 +454,10 @@ class PractitionerController extends ResourceController
 
             $model = new PractitionerWorkHistoryModel();
             $registration_number = $this->request->getGet('registration_number');
+            //if user is not admin, they can only view their own work history
+            if (!$user->type !== "admin") {
+                $registration_number = $user->profile_data['license_number'];
+            }
             $builder = $param ? $model->search($param) : $model->builder();
             if ($registration_number !== null) {
                 $builder->where(["registration_number" => $registration_number]);
