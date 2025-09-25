@@ -4306,13 +4306,7 @@
                     "criteria": []
                 }
             ],
-            "alerts": [
-                {
-                    "criteria": [],
-                    "message": "You have a Provisional License. Please renew your license within 1 year to avoid suspension of your license.",
-                    "type": "warning"
-                }
-            ],
+            "alerts": [],
             "description": "View or edit your name, address, phone number, etc."
         },
         {
@@ -4384,23 +4378,6 @@
                     ]
                 },
                 {
-                    "label": "Click to apply",
-                    "icon": "",
-                    "type": "link",
-                    "linkProp": "",
-                    "url": "/renewals/form",
-                    "urlParams": {},
-                    "criteria": [
-                        {
-                            "field": "in_good_standing",
-                            "operator": "equals",
-                            "value": [
-                                "Not In Good Standing"
-                            ]
-                        }
-                    ]
-                },
-                {
                     "label": "View history/Print certificates",
                     "icon": "",
                     "type": "link",
@@ -4452,6 +4429,33 @@
                 }
             ],
             "description": "View or fill application forms"
+        },
+        {
+            "title": "Continuous Professional Development (CPD)",
+            "image": "assets/images/011-work.png",
+            "icon": "",
+            "actions": [
+                {
+                    "label": "View Details/Previous years' data",
+                    "icon": "",
+                    "type": "link",
+                    "linkProp": "",
+                    "url": "/cpd/history",
+                    "urlParams": {},
+                    "criteria": []
+                },
+                {
+                    "label": "View CPD Schedule",
+                    "icon": "",
+                    "type": "link",
+                    "linkProp": "",
+                    "url": "/cpd/schedule",
+                    "urlParams": {},
+                    "criteria": []
+                }
+            ],
+            "alerts": [],
+            "description": "Your CPD score"
         }
     ],
     "portalHomeSubTitleFields": [
@@ -4706,27 +4710,15 @@
                 ],
                 "onPaymentCompletedActions": [
                     {
-                        "type": "email",
-                        "config_type": "email",
-                        "config": {
-                            "template": "theapplication will be printed",
-                            "subject": "Your application is being processed",
-                            "admin_email": "",
-                            "endpoint": "",
-                            "method": "GET",
-                            "auth_token": "",
-                            "headers": [],
-                            "body_mapping": [],
-                            "query_params": []
-                        }
-                    },
-                    {
                         "type": "update_renewal_status",
                         "config_type": "internal_api_call",
                         "label": "Update renewal status",
                         "config": {
                             "body_mapping": {
-                                "status": "Approved"
+                                "status": "Approved",
+                                "in_print_queue": "0",
+                                "print_template": "Default Pharmacists/Technicians Renewal Certificate Template",
+                                "online_print_template": "Default Pharmacists/Technicians Renewal Certificate Template"
                             }
                         }
                     }
@@ -4771,7 +4763,10 @@
                         "label": "Update renewal status",
                         "config": {
                             "body_mapping": {
-                                "status": "Approved"
+                                "status": "Approved",
+                                "in_print_queue": "0",
+                                "print_template": "Default Pharmacists/Technicians Renewal Certificate Template",
+                                "online_print_template": "Default Pharmacists/Technicians Renewal Certificate Template"
                             }
                         }
                     }
@@ -5622,6 +5617,12 @@
             "picture": null,
             "restrictions": null,
             "available_externally": "1"
+        }
+    ],
+    "defaultPrintTemplates": [
+        {
+            "template_name": "Default Pharmacists/Technicians Renewal Certificate Template",
+            "template_content": "<html><body><p>the application will be printed</p></body></html>"
         }
     ]
 }

@@ -100,11 +100,10 @@
             "children": [
                 {
                     "title": "View/Search Licenses",
-                    "url": "/licenses/list",
+                    "url": "/licenses/list/practitioners",
                     "icon": "",
                     "children": [],
                     "urlParams": {
-                        "licenseType": "practitioners",
                         "child_practitioner_type": "Doctor"
                     }
                 },
@@ -116,21 +115,19 @@
                 },
                 {
                     "title": "Basic Reports",
-                    "url": "/licenses/reports",
+                    "url": "/licenses/reports/practitioners",
                     "icon": "",
                     "children": [],
                     "urlParams": {
-                        "licenseType": "practitioners",
                         "child_practitioner_type": "Doctor"
                     }
                 },
                 {
                     "title": "Advanced Reports",
-                    "url": "/licenses/advanced-reports",
+                    "url": "/licenses/advanced-reports/practitioners",
                     "icon": "",
                     "children": [],
                     "urlParams": {
-                        "licenseType": "practitioners",
                         "child_practitioner_type": "Doctor"
                     }
                 }
@@ -145,11 +142,10 @@
             "children": [
                 {
                     "title": "View/Search Licenses",
-                    "url": "/licenses/list",
+                    "url": "/licenses/list/practitioners",
                     "icon": "",
                     "children": [],
                     "urlParams": {
-                        "licenseType": "practitioners",
                         "child_practitioner_type": "Physician Assistant"
                     }
                 },
@@ -161,21 +157,19 @@
                 },
                 {
                     "title": "Basic Reports",
-                    "url": "/licenses/reports",
+                    "url": "/licenses/reports/practitioners",
                     "icon": "",
                     "children": [],
                     "urlParams": {
-                        "licenseType": "practitioners",
                         "child_practitioner_type": "Physician Assistant"
                     }
                 },
                 {
                     "title": "Advanced Reports",
-                    "url": "/licenses/advanced-reports",
+                    "url": "/licenses/advanced-reports/practitioners",
                     "icon": "",
                     "children": [],
                     "urlParams": {
-                        "licenseType": "practitioners",
                         "child_practitioner_type": "Physician Assistant"
                     }
                 }
@@ -3704,6 +3698,33 @@
                 }
             ],
             "description": "View or fill application forms"
+        },
+        {
+            "title": "Continuous Professional Development (CPD)",
+            "image": "assets/images/011-work.png",
+            "icon": "",
+            "actions": [
+                {
+                    "label": "View Details/Previous years' data",
+                    "icon": "",
+                    "type": "link",
+                    "linkProp": "",
+                    "url": "/cpd/history",
+                    "urlParams": {},
+                    "criteria": []
+                },
+                {
+                    "label": "View CPD Schedule",
+                    "icon": "",
+                    "type": "link",
+                    "linkProp": "",
+                    "url": "/cpd/schedule",
+                    "urlParams": {},
+                    "criteria": []
+                }
+            ],
+            "alerts": [],
+            "description": "Your CPD score"
         }
     ],
     "portalHomeSubTitleFields": [
@@ -3839,12 +3860,30 @@
                 ],
                 "onPaymentCompletedActions": [
                     {
+                        "type": "email",
+                        "config_type": "email",
+                        "config": {
+                            "template": "the application will be printed",
+                            "subject": "Your application is being processed",
+                            "admin_email": "",
+                            "endpoint": "",
+                            "method": "GET",
+                            "auth_token": "",
+                            "headers": [],
+                            "body_mapping": [],
+                            "query_params": []
+                        }
+                    },
+                    {
                         "type": "update_renewal_status",
                         "config_type": "internal_api_call",
                         "label": "Update renewal status",
                         "config": {
                             "body_mapping": {
-                                "status": "Approved"
+                                "status": "Approved",
+                                "in_print_queue": "0",
+                                "print_template": "Default Doctors/PA Renewal Certificate Template",
+                                "online_print_template": "Default Doctors/PA Renewal Certificate Template"
                             }
                         }
                     }
@@ -3874,12 +3913,30 @@
                 ],
                 "onPaymentCompletedActions": [
                     {
+                        "type": "email",
+                        "config_type": "email",
+                        "config": {
+                            "template": "the application will be printed",
+                            "subject": "Your application is being processed",
+                            "admin_email": "",
+                            "endpoint": "",
+                            "method": "GET",
+                            "auth_token": "",
+                            "headers": [],
+                            "body_mapping": [],
+                            "query_params": []
+                        }
+                    },
+                    {
                         "type": "update_renewal_status",
                         "config_type": "internal_api_call",
                         "label": "Update renewal status",
                         "config": {
                             "body_mapping": {
-                                "status": "Approved"
+                                "status": "Approved",
+                                "in_print_queue": "0",
+                                "print_template": "Default Doctors/PA Renewal Certificate Template",
+                                "online_print_template": "Default Doctors/PA Renewal Certificate Template"
                             }
                         }
                     }
@@ -4698,6 +4755,12 @@
             "picture": null,
             "restrictions": null,
             "available_externally": "1"
+        }
+    ],
+    "defaultPrintTemplates": [
+        {
+            "template_name": "Default Doctors/PA Renewal Certificate Template",
+            "template_content": "<html><body><p>the application will be printed</p></body></html>"
         }
     ]
 }

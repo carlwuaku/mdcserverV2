@@ -9,6 +9,7 @@ use App\Helpers\Utils;
 use App\Models\ActivitiesModel;
 use App\Models\Licenses\LicenseRenewalModel;
 use App\Models\Licenses\LicensesModel;
+use App\Models\PrintTemplateModel;
 use App\Models\UsersModel;
 use CodeIgniter\Database\BaseBuilder;
 use CodeIgniter\Exceptions\ConfigException;
@@ -17,6 +18,8 @@ use App\Helpers\ApplicationFormActionHelper;
 use App\Helpers\AuthHelper;
 use App\Helpers\Types\PractitionerPortalRenewalViewModelType;
 use DateTime;
+use App\Helpers\TemplateEngineHelper;
+
 /**
  * License Renewal Service - Handles all license renewal-related business logic
  */
@@ -1029,5 +1032,26 @@ class LicenseRenewalService
             "xAxisLabel" => $field->xAxisLabel,
             "yAxisLabel" => $field->yAxisLabel,
         ];
+    }
+
+    public function getRenewalOnlinePrintTemplateForLicense(string $renewalUuid, string $licenseUuid)
+    {
+        //make sure the uuid belongs to the user
+        $renewal = Utils::getLicenseRenewalDetails($renewalUuid);
+        if (empty($renewal)) {
+            throw new \InvalidArgumentException("Renewal not found");
+        }
+
+        if ($renewal['license_uuid'] != $licenseUuid) {
+            throw new \InvalidArgumentException("You do not have permission to view this renewal");
+        }
+        $templateModel = new PrintTemplateModel();
+        $template = $templateModel->where('template_name', $renewal['online_print_template'])->first();
+        if (empty($template)) {
+            throw new \InvalidArgumentException("Renewal online print template not found");
+        }
+
+        $templateEngine = new TemplateEngineHelper();
+        return $templateEngine->process($template['template_content'], $renewal);
     }
 }

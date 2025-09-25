@@ -70,14 +70,6 @@ class ApplicationTemplateModel extends MyBaseModel implements TableDisplayInterf
 
     public $searchFields = [
         'form_name',
-        'status',
-        'form_type',
-        'first_name',
-        'middle_name',
-        'last_name',
-        'email',
-        'phone',
-        'application_code',
     ];
 
     public function getDisplayColumns(): array

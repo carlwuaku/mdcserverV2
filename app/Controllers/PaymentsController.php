@@ -416,7 +416,7 @@ class PaymentsController extends ResourceController
         try {
             $result = $this->paymentsService->deletePaymentFileUpload($id);
 
-            return $this->respond($result, ResponseInterface::HTTP_OK);
+            return $this->respond(['data' => $result, 'message' => "Payment deleted successfully"], ResponseInterface::HTTP_OK);
 
         } catch (\Throwable $e) {
             log_message("error", $e);

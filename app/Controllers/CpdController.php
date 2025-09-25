@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Helpers\AuthHelper;
 use App\Helpers\CpdUtils;
 use App\Models\Cpd\CpdProviderModel;
 use CodeIgniter\HTTP\ResponseInterface;
@@ -177,6 +178,8 @@ class CpdController extends ResourceController
     public function getCpds()
     {
         try {
+            $userId = auth("tokens")->id();
+            $user = AuthHelper::getAuthUser($userId);
             $per_page = $this->request->getVar('limit') ? (int) $this->request->getVar('limit') : 100;
             $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
             $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted') === "yes";
@@ -190,7 +193,7 @@ class CpdController extends ResourceController
 
 
             $builder = $param ? $model->search($param) : $model->builder();
-            $builder = $model->addCustomFields($builder);
+            $builder = $model->addCustomFields($builder, $user->user_type);
             if ($year) {
                 $builder->where("YEAR(date)", $year);
             }
@@ -207,10 +210,11 @@ class CpdController extends ResourceController
             $totalBuilder = clone $builder;
             $total = $totalBuilder->countAllResults();
             $result = $builder->get($per_page, $page)->getResult();
+            $displayColumns = $user->user_type === "admin" ? $model->getDisplayColumns() : ['topic', 'category', 'credits', 'provider_name', 'provider_email', 'provider_phone'];
             return $this->respond([
                 'data' => $result,
                 'total' => $total,
-                'displayColumns' => $model->getDisplayColumns(),
+                'displayColumns' => $displayColumns,
                 'columnFilters' => $model->getDisplayColumnFilters()
             ], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
@@ -578,6 +582,8 @@ class CpdController extends ResourceController
     public function getCpdAttendances()
     {
         try {
+
+
             $per_page = $this->request->getVar('limit') ? (int) $this->request->getVar('limit') : 100;
             $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
             $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted') === "yes";
@@ -624,9 +630,15 @@ class CpdController extends ResourceController
     public function getLicenseCpdAttendances()
     {
         try {
-
+            $userId = auth("tokens")->id();
+            $user = AuthHelper::getAuthUser($userId);
             $model = new CpdAttendanceModel();
             $licenseNumber = $this->request->getVar('license_number');
+            //if the user is not admin, they can only see their own data
+            if ($user->user_type !== "admin") {
+                $licenseNumber = $user->profile_data['license_number'];
+            }
+
             if (empty($licenseNumber)) {
                 return $this->respond(['message' => "License number is required"], ResponseInterface::HTTP_BAD_REQUEST);
             }

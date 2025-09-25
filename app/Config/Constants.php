@@ -106,6 +106,7 @@ define("UPLOADS_FOLDER", "uploads");
 define("PRIORITY_FIELDS", ["picture", "license_number", "name", "first_name", "middle_name", "last_name", "status", "facility_type", "email", "phone_number"]);
 define("USER_TYPES", ['admin', 'license', 'cpd', 'student_index', 'guest', 'housemanship_facility', 'exam_candidate']);
 define("USER_TYPES_LICENSED_USERS", ['exam_candidate', 'license']);
+define("USER_TYPES_LICENSED_USERS", ['exam_candidate', 'license']);
 define("DATABASE_DATE_FIELDS", [
     'date_of_birth',
     'registration_date',
@@ -159,6 +160,7 @@ define("SETTING_PASSWORD_RESET_TOKEN_TIMEOUT", "General.password_reset_token_tim
 define('SETTING_PORTAL_EDITABLE_FIELDS', 'portal_editable_fields');//for now we're not adding the class (General) to the key. we'll use the settings model directly for it
 
 define("DEFAULT_APPLICATION_FORM_TEMPLATES", "defaultApplicationFormTemplates");
+define("DEFAULT_PRINT_TEMPLATES", "defaultPrintTemplates");
 
 define("EVENT_USER_ADDED", "user_added");
 define("EVENT_INVOICE_PAYMENT_COMPLETED", "invoice_payment_completed");

@@ -20,7 +20,8 @@ class PaymentFileUploadsModel extends MyBaseModel implements TableDisplayInterfa
         'invoice_uuid',
         'file_path',
         'payment_date',
-        'status'
+        'status',
+        'reference_number'
     ];
 
     protected bool $allowEmptyInserts = false;
