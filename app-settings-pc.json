@@ -4458,7 +4458,7 @@
                     "dataSource": "api",
                     "apiUrl": "portal/cpd/attendance?year=[current_year]",
                     "apiProperty": "score",
-                    "message": "[score] Credits",
+                    "message": "Credits",
                     "type": "warning"
                 }
             ],

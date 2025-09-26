@@ -125,6 +125,7 @@ class DataPoint
     public string $apiUrl;
     public string $message;
     public string $type;
+    public string $apiProperty;
 
     /**
      * a list of criteria which must all be met for the alert to be shown
@@ -137,13 +138,15 @@ class DataPoint
         string $apiUrl = '',
         string $message = '',
         string $type = '',
-        array $criteria = []
+        array $criteria = [],
+        string $apiProperty = ''
     ) {
         $this->dataSource = $dataSource;
         $this->apiUrl = $apiUrl;
         $this->message = $message;
         $this->type = $type;
         $this->criteria = $criteria;
+        $this->apiProperty = $apiProperty;
     }
 
     public function toArray(): array
@@ -153,7 +156,8 @@ class DataPoint
             'apiUrl' => $this->apiUrl,
             'message' => $this->message,
             'type' => $this->type,
-            'criteria' => $this->criteria
+            'criteria' => $this->criteria,
+            'apiProperty' => $this->apiProperty
         ];
     }
 
@@ -173,7 +177,8 @@ class DataPoint
             $data['apiUrl'] ?? '',
             $data['message'] ?? '',
             $data['type'] ?? '',
-            $alertCriteria
+            $alertCriteria,
+            $data['apiProperty'] ?? ''
         );
     }
 }
