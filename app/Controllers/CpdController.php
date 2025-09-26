@@ -434,7 +434,10 @@ class CpdController extends ResourceController
                     "cpd_uuid" => $data['cpd_uuid'],
                     "license_number" => $license,
                     "attendance_date" => $data['attendance_date'],
-                    "venue" => $data['venue']
+                    "venue" => $data['venue'],
+                    "topic" => $cpd['topic'],
+                    "category" => $cpd['category'],
+                    "credits" => $cpd['credits'],
                 ];
                 if (!$model->insert($licenseData)) {
                     $failed[] = $license;

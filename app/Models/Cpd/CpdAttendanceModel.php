@@ -19,7 +19,10 @@ class CpdAttendanceModel extends MyBaseModel implements TableDisplayInterface
         'cpd_uuid',
         'license_number',
         'attendance_date',
-        'venue'
+        'venue',
+        'topic',
+        'category',
+        'credits'
     ];
 
     protected bool $allowEmptyInserts = false;

@@ -32,7 +32,7 @@ class PortalHelper
             if (strpos($portalHomeConfig->image, "http") === false) {
                 $portalHomeConfig->image = base_url($portalHomeConfig->image);
             }
-            //for the alerts and actions, include them if the user matches the criteria
+            //for the dataPoints, alerts and actions, include them if the user matches the criteria
             $alerts = [];
             foreach ($portalHomeConfig->alerts as $alert) {
                 if (CriteriaType::matchesCriteria($userData, $alert->criteria)) {
@@ -51,7 +51,21 @@ class PortalHelper
                     $actions[] = $action;
                 }
             }
+            $dataPoints = [];
+            foreach ($portalHomeConfig->dataPoints as $dataPoint) {
+                if (CriteriaType::matchesCriteria($userData, $dataPoint->criteria)) {
+                    //the dataPoint url may contain placeholders. look for anything in the form of [placeholder] and replace it with data from the user/preset data
+                    $templateEngine->addCustomDateFormat("current_year", "Y");
+                    $dataPoint->apiUrl = $templateEngine->process($dataPoint->apiUrl, $userData);
+                    log_message('info', 'Template data: ' . json_encode($dataPoint->apiUrl));
+
+                    unset($dataPoint->criteria);
+                    $dataPoints[] = $dataPoint;
+                }
+            }
+            $portalHomeConfig->dataPoints = $dataPoints;
             $portalHomeConfig->actions = $actions;
+
             return $portalHomeConfig;
         } catch (\Throwable $th) {
             throw $th;

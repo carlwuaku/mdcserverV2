@@ -45,6 +45,7 @@ class TemplateEngineHelper
     private array $transformers;
     private $resourceLoader;
     private $settingsLoader;
+    private $customDateFormats = [];
 
     public function __construct(callable $resourceLoader = null, callable $settingsLoader = null)
     {
@@ -77,6 +78,29 @@ class TemplateEngineHelper
     public function setDefaultDateFormat(string $format): void
     {
         $this->defaultDateFormat = $format;
+    }
+
+    public function setCustomDateFormats(array $formats): void
+    {
+        $this->customDateFormats = $formats;
+    }
+
+    public function getCustomDateFormats(): array
+    {
+        return $this->customDateFormats;
+    }
+
+    public function addCustomDateFormat(string $pattern, string $format): void
+    {
+        $this->customDateFormats[$pattern] = $format;
+    }
+
+    public function getCustomDateFormat(string $pattern): string
+    {
+        if (!isset($this->customDateFormats[$pattern])) {
+            return null;
+        }
+        return $this->customDateFormats[$pattern];
     }
 
     /**
@@ -240,7 +264,9 @@ class TemplateEngineHelper
             // Handle date fields - either by pattern match or explicit transformation
             $finalPropertyName = $this->getFinalPropertyName($varName);
             if ($this->isDateField($finalPropertyName)) {
-                $value = $this->formatDate($value);
+                //check if a format was provided for that field
+                $format = $this->getCustomDateFormat($finalPropertyName);
+                $value = $this->formatDate($value, $format);
             }
 
             // Apply additional transformation if specified
