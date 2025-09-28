@@ -49,7 +49,9 @@ class ApplicationTemplateService
             $totalBuilder = clone $builder;
             $total = $totalBuilder->countAllResults();
             $result = $builder->get($per_page, $page)->getResult();
-
+            //add the default templates
+            $defaultTemplates = Utils::getDefaultApplicationFormTemplates();
+            $result = array_merge($result, $defaultTemplates);
             return [
                 'data' => $result,
                 'total' => $total,
@@ -69,6 +71,11 @@ class ApplicationTemplateService
         $data = $model->first();
 
         if (!$data) {
+            //look in the default templates
+            $defaultTemplate = Utils::getDefaultApplicationFormTemplate($uuid);
+            if ($defaultTemplate) {
+                return $defaultTemplate->toArray();
+            }
             return null;
         }
 
@@ -482,6 +489,11 @@ class ApplicationTemplateService
         $builder->select("uuid, header,form_name, footer, data, open_date, close_date, on_submit_message, description, guidelines")->where('uuid', $uuid)->orWhere('form_name', $uuid);
         $data = $model->first();
         if (!$data) {
+            //look in the default templates
+            $defaultTemplate = Utils::getDefaultApplicationFormTemplate($uuid);
+            if ($defaultTemplate) {
+                return $defaultTemplate->toArray();
+            }
             throw new Exception("Application template not found");
         }
         if (!empty($data['open_date']) && !empty($data['close_date'])) {

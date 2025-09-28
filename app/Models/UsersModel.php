@@ -10,7 +10,7 @@ use CodeIgniter\Database\BaseBuilder;
 class UsersModel extends UserModel implements TableDisplayInterface
 {
     public string $tableName = "users";
-    public string $role_name;
+    public ?string $role_name;
     public ?string $region;
     public ?string $position;
     public ?string $picture;
@@ -42,6 +42,16 @@ class UsersModel extends UserModel implements TableDisplayInterface
      */
     public $profile_data;
 
+    /**
+     * Check if the user is an admin user.
+     * 
+     * @return bool True if the user is an admin, false otherwise.
+     */
+    public function isAdmin(): bool
+    {
+        return $this->user_type === 'admin';
+    }
+
     public function getDisplayColumns(): array
     {
         return [
@@ -54,7 +64,7 @@ class UsersModel extends UserModel implements TableDisplayInterface
             'last_active',
             'deleted_at',
             'role_name',
-            'regionId',
+            'region',
             'position',
             'picture',
             'phone',
@@ -97,7 +107,7 @@ class UsersModel extends UserModel implements TableDisplayInterface
         'last_active',
         'deleted_at',
         'role_name',
-        'regionId',
+        'region',
         'position',
         'picture',
         'phone',
@@ -114,7 +124,7 @@ class UsersModel extends UserModel implements TableDisplayInterface
     protected $defaultProfileSelect = [
         'display_name',
         'role_name',
-        'regionId',
+        'region',
         'position',
         'picture',
         'phone',

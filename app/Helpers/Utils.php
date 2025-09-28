@@ -1321,7 +1321,8 @@ class Utils
         }
 
         foreach ($templates as $template) {
-            if ($template['form_name'] == $name) {
+            if ($template['form_name'] == $name || $template['uuid'] == $name) {
+                log_message("info", "Default application form template found: " . json_encode($template));
                 return ApplicationFormTemplateType::fromArray($template);
             }
         }

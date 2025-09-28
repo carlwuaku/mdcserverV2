@@ -76,7 +76,7 @@ class ActivitiesModel extends MyBaseModel implements TableDisplayInterface
             "created_on",
             "deleted_at"
         ];
-        $userColumns = ["display_name", "email"];
+        $userColumns = ["display_name", "email_address"];
         $builder->join($userTable, "$thisTable.user_id = $userTable.id", "left")
             ->select(implode(', ', array_map(function ($col) {
                 return 'activities.' . $col;

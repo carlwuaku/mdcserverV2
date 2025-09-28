@@ -1680,7 +1680,7 @@ class AuthController extends ResourceController
             $model = new UsersModel();
             $builder = $param ? $model->search($param) : $model->builder();
 
-            $builder->select("id, uuid, display_name, user_type, username, email_address, status, status_message, active, created_at, regionId, position, picture, phone, email, role_name, CASE WHEN google_auth_secret IS NOT NULL THEN 'yes' ELSE 'no' END AS google_authenticator_setup")
+            $builder->select("id, uuid, display_name, user_type, username, email_address, status, status_message, active, created_at, region, position, picture, phone, role_name, CASE WHEN google_auth_secret IS NOT NULL THEN 'yes' ELSE 'no' END AS google_authenticator_setup")
             ;
             $filterArray = $model->createArrayFromAllowedFields($this->request->getVar());
 

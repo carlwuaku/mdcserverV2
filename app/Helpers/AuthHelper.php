@@ -85,4 +85,18 @@ class AuthHelper
         return $uniqueId;
     }
 
+    /**
+     * Checks if the given user is an admin.
+     * 
+     * @param string $userId The user ID
+     * @return bool True if the user is an admin, false otherwise
+     */
+    public static function isUserAdmin($userId)
+    {
+        $user = self::getAuthUser($userId);
+        return $user->user_type === 'admin';
+    }
+
+
+
 }

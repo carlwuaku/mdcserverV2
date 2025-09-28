@@ -403,82 +403,90 @@ class LicenseRenewalService
      */
     public function getRenewals(?string $license_uuid = null, array $filters = []): array
     {
-        $per_page = $filters['limit'] ?? 100;
-        $page = $filters['page'] ?? 0;
-        $param = $filters['param'] ?? $filters['child_param'] ?? null;
-        $sortBy = $filters['sortBy'] ?? "id";
-        $sortOrder = $filters['sortOrder'] ?? "desc";
-        $isGazette = $filters['isGazette'] ?? null;
-        $licenseType = $filters['license_type'] ?? null;
+        try {
+            $per_page = $filters['limit'] ?? 100;
+            $page = $filters['page'] ?? 0;
+            $param = $filters['param'] ?? $filters['child_param'] ?? null;
+            $sortBy = $filters['sortBy'] ?? "id";
+            $sortOrder = $filters['sortOrder'] ?? "desc";
+            $isGazette = $filters['isGazette'] ?? null;
+            $licenseType = $filters['license_type'] ?? null;
 
-        //if the lisense_uuid was provided, we use it to determine the license type
-        if ($license_uuid !== null && $licenseType === null) {
-            $licenseModel = new LicensesModel();
-            $licenseData = $licenseModel->builder()->select("type")->where("uuid", $license_uuid)->get()->getRow();
-            if ($licenseData) {
-                $licenseType = $licenseData->type;
+            //if the lisense_uuid was provided, we use it to determine the license type
+            if ($license_uuid !== null && $licenseType === null) {
+                $licenseModel = new LicensesModel();
+                $licenseData = $licenseModel->builder()->select("type")->where("uuid", $license_uuid)->get()->getRow();
+                if ($licenseData) {
+                    $licenseType = $licenseData->type;
+                }
             }
-        }
 
-        if (empty($licenseType)) {
-            throw new \InvalidArgumentException("License type is required");
-        }
-
-        $model = new LicenseRenewalModel($licenseType);
-        $renewalTable = $model->getTableName();
-
-        $licenseSettings = Utils::getLicenseSetting($licenseType);
-        $renewalSubTable = $licenseSettings->renewalTable;
-        $renewalSubTableJsonFields = $licenseSettings->renewalJsonFields;
-
-        // Configure search fields
-        $searchFields = $licenseSettings->renewalSearchFields;
-        $searchFields['table'] = $renewalSubTable;
-        $model->joinSearchFields = $searchFields;
-
-        $builder = $param ? $model->search($param) : $model->builder();
-        $addSelectClause = true;
-
-        // Handle gazette mode
-        if ($isGazette) {
-            $builder = $this->configureGazetteQuery($builder, $licenseSettings, $renewalTable, $renewalSubTable);
-            $addSelectClause = false;
-        }
-
-        // Apply filters
-        $builder = $this->applyRenewalFilters($builder, $filters, $renewalTable, $license_uuid, $licenseType);
-
-        // Apply child parameters
-        $builder = $this->applyRenewalChildParameters($builder, $filters, $licenseType);
-
-        // Add license details
-        $addJoin = !$param; // If param exists, join might already be added
-        $builder = $model->addLicenseDetails($builder, $licenseType, true, $addJoin, '', '', $addSelectClause);
-
-        // Handle JSON fields
-        if (!empty($renewalSubTableJsonFields) && !empty($renewalSubTable)) {
-            foreach ($renewalSubTableJsonFields as $jsonField) {
-                $builder->select("JSON_UNQUOTE($renewalSubTable.$jsonField) as $jsonField");
+            if (empty($licenseType)) {
+                throw new \InvalidArgumentException("License type is required");
             }
+
+            $model = new LicenseRenewalModel($licenseType);
+            $renewalTable = $model->getTableName();
+
+            $licenseSettings = Utils::getLicenseSetting($licenseType);
+            $renewalSubTable = $licenseSettings->renewalTable;
+            $renewalSubTableJsonFields = $licenseSettings->renewalJsonFields;
+
+            // Configure search fields
+            $searchFields = $licenseSettings->renewalSearchFields;
+            $searchFields['table'] = $renewalSubTable;
+            $model->joinSearchFields = $searchFields;
+
+            $builder = $param ? $model->search($param) : $model->builder();
+            $addSelectClause = true;
+
+            // Handle gazette mode
+            if ($isGazette) {
+                $builder = $this->configureGazetteQuery($builder, $licenseSettings, $renewalTable, $renewalSubTable);
+                $addSelectClause = false;
+            }
+
+            // Apply filters
+            $builder = $this->applyRenewalFilters($builder, $filters, $renewalTable, $license_uuid, $licenseType);
+
+            // Apply child parameters
+            $builder = $this->applyRenewalChildParameters($builder, $filters, $licenseType);
+
+            // Add license details
+            $addJoin = !$param; // If param exists, join might already be added
+            $builder = $model->addLicenseDetails($builder, $licenseType, true, $addJoin, '', '', $addSelectClause);
+
+            // Handle JSON fields
+            if (!empty($renewalSubTableJsonFields) && !empty($renewalSubTable)) {
+                foreach ($renewalSubTableJsonFields as $jsonField) {
+                    $builder->select("JSON_UNQUOTE($renewalSubTable.$jsonField) as $jsonField");
+                }
+            }
+
+            $builder->orderBy($model->getTableName() . ".$sortBy", $sortOrder);
+            // Get total count
+            $total = $builder->countAllResults(false);
+            $builder->limit($per_page, $page);
+
+            $result = $builder->get()->getResult();
+
+            // Process results
+            $data = $this->processRenewalResults($result, $renewalSubTableJsonFields);
+
+            return [
+                'data' => $data,
+                'total' => $total,
+                'displayColumns' => $model->getDisplayColumns(),
+                'columnLabels' => $model->getDisplayColumnLabels(),
+                'columnFilters' => $model->getDisplayColumnFilters()
+            ];
+        } catch (\CodeIgniter\Database\Exceptions\DatabaseException $th) {
+            log_message('error', "Database error: " . $th);
+            throw new \RuntimeException("Database error: " . $th->getMessage());
+        } catch (\Throwable $th) {
+            throw $th;
         }
 
-        $builder->orderBy($model->getTableName() . ".$sortBy", $sortOrder);
-        // Get total count
-        $total = $builder->countAllResults(false);
-        $builder->limit($per_page, $page);
-
-        $result = $builder->get()->getResult();
-
-        // Process results
-        $data = $this->processRenewalResults($result, $renewalSubTableJsonFields);
-
-        return [
-            'data' => $data,
-            'total' => $total,
-            'displayColumns' => $model->getDisplayColumns(),
-            'columnLabels' => $model->getDisplayColumnLabels(),
-            'columnFilters' => $model->getDisplayColumnFilters()
-        ];
     }
 
     /**

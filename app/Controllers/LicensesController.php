@@ -306,9 +306,10 @@ class LicensesController extends ResourceController
     public function getRenewals($license_uuid = null)
     {
         try {
-            $cacheKey = Utils::generateHashedCacheKey(CACHE_KEY_PREFIX_RENEWALS, (array) $this->request->getVar());
-            return CacheHelper::remember($cacheKey, function () use ($license_uuid) {
-                $filters = $this->extractRequestFilters();
+            $filters = $this->extractRequestFilters();
+            $cacheKey = Utils::generateHashedCacheKey(CACHE_KEY_PREFIX_RENEWALS, $filters);
+            return CacheHelper::remember($cacheKey, function () use ($license_uuid, $filters) {
+
                 $result = $this->renewalService->getRenewals($license_uuid, $filters);
 
                 return $this->respond($result, ResponseInterface::HTTP_OK);

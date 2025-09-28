@@ -7,7 +7,7 @@ use CodeIgniter\HTTP\ResponseInterface;
 use App\Services\ExaminationService;
 use CodeIgniter\RESTful\ResourceController;
 use CodeIgniter\Database\Exceptions\DatabaseException;
-
+use App\Helpers\AuthHelper;
 
 class ExaminationController extends ResourceController
 {
@@ -122,6 +122,14 @@ class ExaminationController extends ResourceController
         try {
 
             $filters = $this->extractRequestFilters();
+            $userId = auth("tokens")->id();
+            $user = AuthHelper::getAuthUser($userId);
+            $mode = "exam";
+            $isAdmin = $user->isAdmin();
+            if (!$isAdmin) {
+                $filters['intern_code'] = $user->profile_data['license_number'];
+                $mode = "candidate";
+            }
             $result = $this->examinationService->getExamApplications($filters);
 
             return $this->respond($result, ResponseInterface::HTTP_OK);
@@ -135,7 +143,17 @@ class ExaminationController extends ResourceController
     {
         try {
             $filters = $this->extractRequestFilters();
-            $result = $this->examinationService->getExamRegistrations($filters);
+            //if not an admin, only return their own registrations
+            $userId = auth("tokens")->id();
+            $user = AuthHelper::getAuthUser($userId);
+            $mode = "exam";
+            $isAdmin = $user->isAdmin();
+            if (!$isAdmin) {
+                $filters['intern_code'] = $user->profile_data['license_number'];
+                $mode = "candidate";
+            }
+
+            $result = $this->examinationService->getExamRegistrations($filters, $mode, $isAdmin);
 
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
@@ -455,6 +473,9 @@ class ExaminationController extends ResourceController
 
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
+        } catch (\InvalidArgumentException $e) {
+            log_message("error", $e);
+            return $this->respond(['message' => $e->getMessage()], ResponseInterface::HTTP_BAD_REQUEST);
         } catch (\Throwable $e) {
             log_message("error", $e);
             return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
@@ -491,9 +512,36 @@ class ExaminationController extends ResourceController
             log_message("error", $e);
             return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
+    }
 
 
+    public function getExaminationsForCandidateApplication()
+    {
+        try {
+            $userId = auth("tokens")->id();
+            $user = AuthHelper::getAuthUser($userId);
+            $result = $this->examinationService->getExaminationsForCandidateApplication($user->profile_data['license_number']);
 
+            return $this->respond(["data" => $result['exams'], "message" => $result['message']], ResponseInterface::HTTP_OK);
+        } catch (\InvalidArgumentException $e) {
+            log_message("error", $e);
+            return $this->respond(["data" => [], 'message' => $e->getMessage()], ResponseInterface::HTTP_BAD_REQUEST);
+
+        } catch (\Throwable $e) {
+            log_message("error", $e);
+            return $this->respond(["data" => [], 'message' => "Server error. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
+    public function createExaminationApplication($examId)
+    {
+        $userId = auth("tokens")->id();
+        $user = AuthHelper::getAuthUser($userId);
+
+        $result = $this->examinationService->createExaminationApplication(["exam_id" => $examId, "intern_code" => $user->profile_data['license_number']]);
+
+        return $this->respond($result, ResponseInterface::HTTP_OK);
     }
 
     private function extractRequestFilters(): array
