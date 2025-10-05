@@ -195,7 +195,7 @@ class PractitionerController extends ResourceController
             $model = new PractitionerAdditionalQualificationsModel();
             $registration_number = $this->request->getGet('registration_number');
             //if user is not admin, they can only view their own work history
-            if (!$user->type !== "admin") {
+            if ($user->user_type !== "admin") {
                 $registration_number = $user->profile_data['license_number'];
             }
             $builder = $param ? $model->search($param) : $model->builder();
@@ -215,7 +215,7 @@ class PractitionerController extends ResourceController
                 'displayColumns' => $model->getDisplayColumns()
             ], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -455,7 +455,7 @@ class PractitionerController extends ResourceController
             $model = new PractitionerWorkHistoryModel();
             $registration_number = $this->request->getGet('registration_number');
             //if user is not admin, they can only view their own work history
-            if (!$user->type !== "admin") {
+            if ($user->user_type !== "admin") {
                 $registration_number = $user->profile_data['license_number'];
             }
             $builder = $param ? $model->search($param) : $model->builder();

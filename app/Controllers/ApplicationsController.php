@@ -174,7 +174,7 @@ class ApplicationsController extends ResourceController
     {
         try {
             $requestData = $this->request->getVar();
-            $result = $this->applicationService->updateApplication($uuid, $requestData);
+            $result = $this->applicationService->updateApplication($uuid, (array) $requestData);
 
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
@@ -553,9 +553,9 @@ class ApplicationsController extends ResourceController
                 'success' => false,
                 'message' => 'Action test failed: ' . $e,
                 'error_details' => [
-                        'file' => $e->getFile(),
-                        'line' => $e->getLine()
-                    ]
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine()
+                ]
             ], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -580,12 +580,12 @@ class ApplicationsController extends ResourceController
             'success' => true,
             'message' => 'Test endpoint called successfully',
             'received_data' => [
-                    'method' => $method,
-                    'headers' => $headers,
-                    'body' => $body,
-                    'query_params' => $queryParams,
-                    'timestamp' => date('Y-m-d H:i:s')
-                ],
+                'method' => $method,
+                'headers' => $headers,
+                'body' => $body,
+                'query_params' => $queryParams,
+                'timestamp' => date('Y-m-d H:i:s')
+            ],
             'simulated_response' => [
                 'id' => rand(1000, 9999),
                 'status' => 'processed',

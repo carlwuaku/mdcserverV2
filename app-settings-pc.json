@@ -13,6 +13,7 @@
     "institutionAddress": "P.O. Box 115, Accra, Ghana",
     "institutionEmail": "info@pcghana.org",
     "institutionPhone": "+233 302 302 302",
+    "institutionWhatsapp": "+233 302 302 302",
     "institutionWebsite": "https://pcghana.org",
     "portalUrl": "https://practitioners.pharmacycouncilghana.org",
     "sidebarMenu": [
@@ -4522,6 +4523,76 @@
             ],
             "alerts": [],
             "description": "View/edit your work history"
+        },
+        {
+            "title": "Examinations",
+            "image": "assets/images/school.png",
+            "icon": "",
+            "dataPoints": [],
+            "actions": [
+                {
+                    "label": "Apply for migration",
+                    "icon": "",
+                    "type": "link",
+                    "linkProp": "",
+                    "url": "/applications/provisional_registration",
+                    "urlParams": {},
+                    "criteria": [
+                        {
+                            "field": "state",
+                            "operator": "equals",
+                            "value": [
+                                "Apply for migration"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Apply for an examination",
+                    "icon": "",
+                    "type": "link",
+                    "linkProp": "",
+                    "url": "/examinations/apply",
+                    "urlParams": {},
+                    "criteria": [
+                        {
+                            "field": "state",
+                            "operator": "equals",
+                            "value": [
+                                "Apply for examination"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Manage applications",
+                    "icon": "",
+                    "type": "link",
+                    "linkProp": "",
+                    "url": "/examinations/applications",
+                    "urlParams": {},
+                    "criteria": [
+                        {
+                            "field": "state",
+                            "operator": "equals",
+                            "value": [
+                                "Apply for examination"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "View examination status or results",
+                    "icon": "",
+                    "type": "link",
+                    "linkProp": "",
+                    "url": "/examinations/history",
+                    "urlParams": {},
+                    "criteria": []
+                }
+            ],
+            "alerts": [],
+            "description": "Apply for examinations and view your examination history"
         }
     ],
     "portalHomeSubTitleFields": [
@@ -4554,6 +4625,8 @@
             "template": ""
         }
     ],
+    "portalContactUsTitle": "Reach Us",
+    "portalContactUsSubTitle": "You can find general information about the Council, procedures, policies, and download various application forms on our website.",
     "portalProfileFields": [
         {
             "field": "register_type",

@@ -12,7 +12,9 @@
     "institutionEmail": "info@mdcghana.org",
     "institutionPhone": "+233 302 302 302",
     "institutionWebsite": "https://www.mdcghana.org",
+    "institutionWhatsapp": "+233 302 302 302",
     "portalUrl": "https://portal.mdcghana.org",
+    "portalFooterBackground": "assets/images/mountains.jpg",
     "sidebarMenu": [
         {
             "title": "Dashboard",
@@ -534,6 +536,20 @@
             "apiLabelProperty": "country_of_practice",
             "apiType": "select",
             "selection_mode": "multiple"
+        },
+        {
+            "label": "Register Type",
+            "name": "register_type",
+            "hint": "",
+            "options": [],
+            "type": "api",
+            "value": "",
+            "required": false,
+            "api_url": "admin/distinct-values/licenses/register_type",
+            "apiKeyProperty": "register_type",
+            "apiLabelProperty": "register_type",
+            "apiType": "select",
+            "selection_mode": "multiple"
         }
     ],
     "advancedStatisticsFilterFields": [
@@ -604,6 +620,20 @@
             "apiLabelProperty": "country_of_practice",
             "apiType": "select",
             "selection_mode": "multiple"
+        },
+        {
+            "label": "Register Type",
+            "name": "register_type",
+            "hint": "",
+            "options": [],
+            "type": "api",
+            "value": "",
+            "required": false,
+            "api_url": "admin/distinct-values/licenses/register_type",
+            "apiKeyProperty": "register_type",
+            "apiLabelProperty": "register_type",
+            "apiType": "select",
+            "selection_mode": "multiple"
         }
     ],
     "licenseTypes": {
@@ -627,7 +657,6 @@
                 "marital_status",
                 "maiden_name",
                 "provisional_number",
-                "register_type",
                 "college_membership",
                 "subspecialty"
             ],
@@ -638,6 +667,7 @@
                 "middle_name",
                 "last_name",
                 "practitioner_type",
+                "register_type",
                 "email",
                 "phone",
                 "sex",
@@ -1489,20 +1519,6 @@
                     "selection_mode": "multiple"
                 },
                 {
-                    "label": "Register Type",
-                    "name": "register_type",
-                    "hint": "",
-                    "options": [],
-                    "type": "api",
-                    "value": "",
-                    "required": false,
-                    "api_url": "admin/distinct-values/practitioners/register_type",
-                    "apiKeyProperty": "register_type",
-                    "apiLabelProperty": "register_type",
-                    "apiType": "select",
-                    "selection_mode": "multiple"
-                },
-                {
                     "label": "College Membership",
                     "name": "college_membership",
                     "hint": "",
@@ -1677,20 +1693,6 @@
                     "api_url": "admin/distinct-values/practitioners/subspecialty",
                     "apiKeyProperty": "subspecialty",
                     "apiLabelProperty": "subspecialty",
-                    "apiType": "select",
-                    "selection_mode": "multiple"
-                },
-                {
-                    "label": "Register Type",
-                    "name": "register_type",
-                    "hint": "",
-                    "options": [],
-                    "type": "api",
-                    "value": "",
-                    "required": false,
-                    "api_url": "admin/distinct-values/practitioners/register_type",
-                    "apiKeyProperty": "register_type",
-                    "apiLabelProperty": "register_type",
                     "apiType": "select",
                     "selection_mode": "multiple"
                 },
@@ -2152,6 +2154,32 @@
                         }
                     ],
                     "type": "select",
+                    "value": "",
+                    "required": false,
+                    "api_url": "",
+                    "apiKeyProperty": "",
+                    "apiLabelProperty": "",
+                    "apiType": ""
+                },
+                {
+                    "label": "State",
+                    "name": "state",
+                    "hint": "",
+                    "options": [
+                        {
+                            "key": "Apply for migration",
+                            "value": "Apply for migration"
+                        },
+                        {
+                            "key": "Apply for examination",
+                            "value": "Apply for migration"
+                        },
+                        {
+                            "key": "Migrated",
+                            "value": "Migrated"
+                        }
+                    ],
+                    "type": "hidden",
                     "value": "",
                     "required": false,
                     "api_url": "",
@@ -2688,7 +2716,7 @@
                         "license_type": "practitioners",
                         "status": "Pending Approval"
                     },
-                    "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Pending Approval&child_practitioner_type=Physician Assistant",
+                    "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Pending Approval&renewal_practitioner_type=Physician Assistant",
                     "apiCountText": "",
                     "permissions": [
                         "View_License_Renewal"
@@ -2704,7 +2732,7 @@
                         "license_type": "practitioners",
                         "status": "Pending Payment"
                     },
-                    "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Pending Payment&child_practitioner_type=Physician Assistant",
+                    "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Pending Payment&renewal_practitioner_type=Physician Assistant",
                     "apiCountText": "",
                     "permissions": [
                         "View_License_Renewal"
@@ -2915,34 +2943,30 @@
         {
             "title": "Search Doctors",
             "active_children": false,
-            "url": "/licenses",
+            "url": "/licenses/list/practitioners",
             "icon": "person_outlined",
             "children": [],
             "urlParams": {
-                "licenseType": "practitioners",
                 "child_practitioner_type": "Doctor"
             }
         },
         {
             "title": "Search Physician Assistants",
             "active_children": false,
-            "url": "/licenses",
+            "url": "/licenses/list/practitioners",
             "icon": "person_outlined",
             "children": [],
             "urlParams": {
-                "licenseType": "practitioners",
                 "child_practitioner_type": "Physician Assistant"
             }
         },
         {
             "title": "Search Examination Candidates",
             "active_children": false,
-            "url": "/licenses",
+            "url": "/licenses/list/exam_candidates",
             "icon": "person_outlined",
             "children": [],
-            "urlParams": {
-                "licenseType": "exam_candidates"
-            }
+            "urlParams": {}
         },
         {
             "title": "Search CPD Topics",
@@ -3532,7 +3556,7 @@
     "portalHomeMenu": [
         {
             "title": "Personal Details",
-            "image": "[profile_image]",
+            "image": "[picture]",
             "icon": "person_outlined",
             "dataPoints": [],
             "actions": [
@@ -3568,28 +3592,54 @@
                     "type": "warning"
                 }
             ],
-            "description": "View or edit your name, address, phone number, etc."
+            "description": "View or edit your name, address, phone number, etc.",
+            "criteria": [
+                {
+                    "field": "user_type",
+                    "operator": "equals",
+                    "value": [
+                        "license"
+                    ]
+                },
+                {
+                    "field": "type",
+                    "operator": "equals",
+                    "value": [
+                        "practitioners",
+                        "exam_candidates"
+                    ]
+                }
+            ]
         },
         {
             "title": "View/Fill Application Forms",
             "active_children": false,
-            "url": "/application-forms",
-            "image": "assets/images/application_form.jpg",
+            "url": "/applications",
+            "image": "assets/images/application.png",
             "icon": "auto_stories_outlined",
             "dataPoints": [],
             "actions": [
                 {
-                    "label": "Go to Application Forms",
+                    "label": "View/Print Your Previous Applications",
                     "icon": "",
                     "type": "link",
                     "linkProp": "",
-                    "url": "/application-forms",
+                    "url": "/applications",
+                    "urlParams": {},
+                    "criteria": []
+                },
+                {
+                    "label": "View/Fill Application Forms",
+                    "icon": "",
+                    "type": "link",
+                    "linkProp": "",
+                    "url": "/applications/forms",
                     "urlParams": {},
                     "criteria": []
                 }
             ],
-            "alerts": [],
-            "description": "View or fill application forms"
+            "description": "View or fill application forms",
+            "criteria": []
         },
         {
             "title": "Relicense Status",
@@ -3628,23 +3678,6 @@
                             "operator": "equals",
                             "value": [
                                 "Pending Payment"
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "label": "Click to apply",
-                    "icon": "",
-                    "type": "link",
-                    "linkProp": "",
-                    "url": "/renewals/form",
-                    "urlParams": {},
-                    "criteria": [
-                        {
-                            "field": "in_good_standing",
-                            "operator": "equals",
-                            "value": [
-                                "Not In Good Standing"
                             ]
                         }
                     ]
@@ -3700,7 +3733,23 @@
                     "type": "warning"
                 }
             ],
-            "description": "View or fill application forms"
+            "description": "View or fill application forms",
+            "criteria": [
+                {
+                    "field": "user_type",
+                    "operator": "equals",
+                    "value": [
+                        "license"
+                    ]
+                },
+                {
+                    "field": "type",
+                    "operator": "equals",
+                    "value": [
+                        "practitioners"
+                    ]
+                }
+            ]
         },
         {
             "title": "Continuous Professional Development (CPD)",
@@ -3727,7 +3776,7 @@
                     "dataSource": "api",
                     "apiUrl": "portal/cpd/attendance?year=[current_year]",
                     "apiProperty": "score",
-                    "message": "[score] Credits",
+                    "message": " Credits",
                     "type": "warning"
                 }
             ],
@@ -3752,7 +3801,23 @@
                 }
             ],
             "alerts": [],
-            "description": "Your CPD score"
+            "description": "Your CPD score",
+            "criteria": [
+                {
+                    "field": "user_type",
+                    "operator": "equals",
+                    "value": [
+                        "license"
+                    ]
+                },
+                {
+                    "field": "type",
+                    "operator": "equals",
+                    "value": [
+                        "practitioners"
+                    ]
+                }
+            ]
         },
         {
             "title": "Qualifications",
@@ -3771,7 +3836,23 @@
                 }
             ],
             "alerts": [],
-            "description": "View your qualifications recognized by the Council"
+            "description": "View your qualifications recognized by the Council",
+            "criteria": [
+                {
+                    "field": "user_type",
+                    "operator": "equals",
+                    "value": [
+                        "license"
+                    ]
+                },
+                {
+                    "field": "type",
+                    "operator": "equals",
+                    "value": [
+                        "practitioners"
+                    ]
+                }
+            ]
         },
         {
             "title": "Work History",
@@ -3790,13 +3871,108 @@
                 }
             ],
             "alerts": [],
-            "description": "View/edit your work history"
+            "description": "View/edit your work history",
+            "criteria": [
+                {
+                    "field": "user_type",
+                    "operator": "equals",
+                    "value": [
+                        "license"
+                    ]
+                },
+                {
+                    "field": "type",
+                    "operator": "equals",
+                    "value": [
+                        "practitioners"
+                    ]
+                }
+            ]
+        },
+        {
+            "title": "Examinations",
+            "image": "assets/images/school.png",
+            "icon": "",
+            "dataPoints": [],
+            "actions": [
+                {
+                    "label": "Apply for migration",
+                    "icon": "",
+                    "type": "link",
+                    "linkProp": "",
+                    "url": "/applications/provisional_registration",
+                    "urlParams": {},
+                    "criteria": [
+                        {
+                            "field": "state",
+                            "operator": "equals",
+                            "value": [
+                                "Apply for migration"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Apply for an examination",
+                    "icon": "",
+                    "type": "link",
+                    "linkProp": "",
+                    "url": "/examinations/apply",
+                    "urlParams": {},
+                    "criteria": [
+                        {
+                            "field": "state",
+                            "operator": "equals",
+                            "value": [
+                                "Apply for examination"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Manage applications",
+                    "icon": "",
+                    "type": "link",
+                    "linkProp": "",
+                    "url": "/examinations/applications",
+                    "urlParams": {},
+                    "criteria": [
+                        {
+                            "field": "state",
+                            "operator": "equals",
+                            "value": [
+                                "Apply for examination"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "View examination status or results",
+                    "icon": "",
+                    "type": "link",
+                    "linkProp": "",
+                    "url": "/examinations/history",
+                    "urlParams": {},
+                    "criteria": []
+                }
+            ],
+            "alerts": [],
+            "description": "Apply for examinations and view your examination history",
+            "criteria": [
+                {
+                    "field": "type",
+                    "operator": "equals",
+                    "value": [
+                        "exam_candidates"
+                    ]
+                }
+            ]
         }
     ],
     "portalHomeSubTitleFields": [
         {
             "field": "in_good_standing",
-            "label": "In Good Standing",
+            "label": "Renewal Status",
             "criteria": [
                 {
                     "field": "type",
@@ -3807,8 +3983,25 @@
                 }
             ],
             "template": ""
+        },
+        {
+            "field": "category",
+            "label": "Category",
+            "criteria": [
+                {
+                    "field": "type",
+                    "operator": "equals",
+                    "value": [
+                        "practitioners",
+                        "exam_candidates"
+                    ]
+                }
+            ],
+            "template": ""
         }
     ],
+    "portalContactUsTitle": "Reach Us",
+    "portalContactUsSubTitle": "You can find general information about the Council, procedures, policies, and download various application forms on our website.",
     "commonApplicationTemplates": {
         "exam_candidates": {
             "label": "Examination Candidates Application",
@@ -3900,6 +4093,9 @@
             }
         }
     },
+    "allowedTestEmails": [
+        "wuakuc@gmail.com"
+    ],
     "payments": {
         "purposes": {
             "Doctors Renewal": {
@@ -4058,6 +4254,7 @@
     ],
     "defaultApplicationFormTemplates": [
         {
+            "uuid": "portal-edit",
             "form_name": "Portal Edit",
             "description": null,
             "guidelines": "<p></p>",
@@ -4107,7 +4304,7 @@
                 }
             ],
             "open_date": "2025-08-01",
-            "close_date": "2025-08-31",
+            "close_date": "2100-12-31",
             "on_submit_email": null,
             "on_submit_message": "<p>thank you for your application</p>",
             "deleted_at": null,
@@ -4120,18 +4317,20 @@
             "deny_url": null,
             "stages": [
                 {
-                    "name": "Received",
-                    "description": "application received",
+                    "name": "Pending",
+                    "description": "application is pending approval",
                     "allowedTransitions": [
-                        "Processed"
+                        "Approved"
                     ],
-                    "allowedUserRoles": null,
+                    "allowedUserRoles": [
+                        "Developers"
+                    ],
                     "actions": [
                         {
                             "type": "email",
                             "config_type": "email",
                             "config": {
-                                "template": "theapplication will be printed",
+                                "template": "the application will be printed",
                                 "subject": "Your application is being processed",
                                 "endpoint": "",
                                 "method": "GET",
@@ -4145,12 +4344,14 @@
                     ]
                 },
                 {
-                    "name": "Processed",
-                    "description": "your application has been processed successfully",
+                    "name": "Approved",
+                    "description": "your application has been approved successfully",
                     "allowedTransitions": [
-                        "Received"
+                        "Pending"
                     ],
-                    "allowedUserRoles": null,
+                    "allowedUserRoles": [
+                        "Developers"
+                    ],
                     "actions": [
                         {
                             "type": "email",
@@ -4204,13 +4405,14 @@
                     ]
                 }
             ],
-            "initialStage": "Received",
-            "finalStage": "Processed",
+            "initialStage": "Pending",
+            "finalStage": "Approved",
             "picture": null,
             "restrictions": null,
-            "available_externally": "1"
+            "available_externally": "0"
         },
         {
+            "uuid": "practitioners-provisional-registration-application",
             "form_name": "Practitioners Provisional Registration Application",
             "description": null,
             "guidelines": "<p></p>",
@@ -4260,7 +4462,7 @@
                 }
             ],
             "open_date": "2025-08-01",
-            "close_date": "2025-08-31",
+            "close_date": "2100-08-31",
             "on_submit_email": null,
             "on_submit_message": "<p>thank you for your application</p>",
             "deleted_at": null,
@@ -4364,6 +4566,7 @@
             "available_externally": "1"
         },
         {
+            "uuid": "practitioners-permanent-registration-application",
             "form_name": "Practitioners Permanent Registration Application",
             "description": null,
             "guidelines": "<p></p>",
@@ -4413,7 +4616,7 @@
                 }
             ],
             "open_date": "2025-08-01",
-            "close_date": "2025-08-31",
+            "close_date": "2100-08-31",
             "on_submit_email": null,
             "on_submit_message": "<p>thank you for your application</p>",
             "deleted_at": null,
@@ -4517,6 +4720,7 @@
             "available_externally": "1"
         },
         {
+            "uuid": "examination-candidates-registration-application",
             "form_name": "Examination Candidates Registration Application",
             "description": null,
             "guidelines": "<p></p>",
@@ -4566,7 +4770,7 @@
                 }
             ],
             "open_date": "2025-08-01",
-            "close_date": "2025-08-31",
+            "close_date": "2100-08-31",
             "on_submit_email": null,
             "on_submit_message": "<p>thank you for your application</p>",
             "deleted_at": null,
@@ -4670,6 +4874,7 @@
             "available_externally": "1"
         },
         {
+            "uuid": "practitioners-temporary-registration-application",
             "form_name": "Practitioners Temporary Registration Application",
             "description": null,
             "guidelines": "<p></p>",
@@ -4719,7 +4924,7 @@
                 }
             ],
             "open_date": "2025-08-01",
-            "close_date": "2025-08-31",
+            "close_date": "2100-08-31",
             "on_submit_email": null,
             "on_submit_message": "<p>thank you for your application</p>",
             "deleted_at": null,

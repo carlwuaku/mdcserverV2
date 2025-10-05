@@ -24,7 +24,10 @@ class PortalHelper
         //strings may have variables in them like [var_name]. replace them
         try {
             $templateEngine = new TemplateEngineHelper();
-            $userData = array_merge([$user->display_name, $user->email_address], (array) $user->profile_data);
+            $userData = array_merge(["display_name" => $user->display_name, "email_address" => $user->email_address, "user_type" => $user->user_type], (array) $user->profile_data);
+            if (!CriteriaType::matchesCriteria($userData, $portalHomeConfig->criteria)) {
+                throw new \Exception("User does not match criteria");
+            }
             $portalHomeConfig->title = $templateEngine->process($portalHomeConfig->title, $userData);
             $portalHomeConfig->description = $templateEngine->process($portalHomeConfig->description, $userData);
             $portalHomeConfig->image = $templateEngine->process($portalHomeConfig->image, $userData);

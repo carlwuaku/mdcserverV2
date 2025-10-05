@@ -26,8 +26,12 @@ class PortalService
         $userData = array_merge((array) $user, (array) $user->profile_data);
         $settingsModel = new SettingsModel();
         $editableFieldsSetting = $settingsModel->where('key', SETTING_PORTAL_EDITABLE_FIELDS)->get()->getFirstRow('array');// semi-colon-separated string, if any
-        log_message('info', 'Editable fields setting: ' . print_r($editableFieldsSetting, true));
-        $editableFields = $editableFieldsSetting ? unserialize($editableFieldsSetting['value']) : [];
+        $editableFields = [];
+        try {
+            $editableFields = $editableFieldsSetting ? unserialize($editableFieldsSetting['value']) : [];
+        } catch (\Throwable $th) {
+            $editableFields = $editableFieldsSetting ? explode(';', ($editableFieldsSetting['value'])) : [];
+        }
 
         //for licenses, get the fields from license types in app-settings
         if (in_array($user->user_type, USER_TYPES_LICENSED_USERS)) {

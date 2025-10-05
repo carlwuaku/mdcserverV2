@@ -51,7 +51,7 @@ class ApplicationService
         if (!$template) {
             throw new \InvalidArgumentException("Form template not found");
         }
-
+        $data['template'] = $template->data;
         // Set initial status
         if (empty($template->initialStage)) {
             $data['status'] = "Pending approval";
@@ -249,6 +249,7 @@ class ApplicationService
         }
 
         $data['form_data'] = json_decode($data['form_data'], true);
+        $data['template'] = empty($data['template']) ? [] : json_decode($data['template'], true);
 
         return [
             'data' => $data,

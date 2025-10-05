@@ -15,7 +15,7 @@ use App\Models\ActivitiesModel;
 use App\Helpers\Types\ExaminationLetterCriteriaType;
 use App\Helpers\Types\ExaminationLetterType;
 use App\Models\Licenses\LicensesModel;
-
+use App\Helpers\AuthHelper;
 
 /**
  * ExaminationService class
@@ -63,7 +63,7 @@ class ExaminationService
             "open_from" => "required|valid_date",
             "open_to" => "required|valid_date",
             "type" => "required",
-            "scores_names" => "required|array",
+            "scores_names" => "required",
         ];
 
         $validator = \Config\Services::validation();
@@ -558,12 +558,14 @@ class ExaminationService
         return $total;
     }
 
+
     /**
      * Retrieves all exam registrations.
-     * may be filtered by intern code, exam ID
+     * 
+     * @param array{limit?: int, page?: int, withDeleted?: string, param?: string, sortBy?: string, sortOrder?: string, intern_code?: string, exam_id?: string, result?: string} $filters
      * @return array Returns an array of all exam registrations.
      */
-    public function getExamRegistrations(array $filters = []): array
+    public function getExamRegistrations(array $filters = [], string $mode = "exam", $forAdmin = true): array
     {
         $per_page = $filters['limit'] ?? 100;
         $page = $filters['page'] ?? 0;
@@ -571,7 +573,6 @@ class ExaminationService
         $param = $filters['param'] ?? $filters['child_param'] ?? null;
         $sortBy = $filters['sortBy'] ?? "created_at";
         $sortOrder = $filters['sortOrder'] ?? "asc";
-        $mode = "exam";
         // Build query
         $builder = $param ? $this->examinationRegistrationsModel->search($param) : $this->examinationRegistrationsModel->builder();
         $builder = $this->examinationRegistrationsModel->addCustomFields($builder);
@@ -610,12 +611,25 @@ class ExaminationService
         $total = $builder->countAllResults(false);
         $result = $builder->get($per_page, $page)->getResult();
         foreach ($result as &$resultItem) {
+            //if not for admin remove these fields
+            $fieldsToRemove = ["id", "number_of_exams", "practitioner_type", "first_name", "middle_name", "last_name", "created_at", "publish_result_date", "exam_id"];
             $scoreString = [];
             $scores = $resultItem->scores ? json_decode($resultItem->scores) : [];
             foreach ($scores as $score) {
                 $scoreString[] = $score->title . ": " . $score->score;
             }
             $resultItem->scores = implode(", ", $scoreString);
+            if (!$forAdmin) {
+
+                //if not an admin, hide the result if the publish result date is in the future or is null or invalid
+                if (empty($resultItem->publish_result_date) || (!empty($resultItem->publish_result_date) && date("Y-m-d", strtotime($resultItem->publish_result_date)) > date("Y-m-d"))) {
+                    $resultItem->result = null;
+                    $resultItem->scores = null;
+                }
+                foreach ($fieldsToRemove as $field) {
+                    unset($resultItem->{$field});
+                }
+            }
         }
         return [
             'data' => $result,
@@ -659,7 +673,7 @@ class ExaminationService
             }
             //check if the candidate is eligible for the exam
 
-            ExaminationsUtils::candidateIsEligibleForExamination($registration['intern_code'], $registration['exam_id'], false);
+            ExaminationsUtils::candidateIsEligibleForExamination($registration['intern_code'], $registration['exam_id'], false, false);
 
             $registrationData = $this->examinationRegistrationsModel->createArrayFromAllowedFields($registration);
             $registrationData['scores'] = json_encode($data['scores'] ?? []);
@@ -738,11 +752,21 @@ class ExaminationService
 
     public function deleteExaminationApplication(string $id): array
     {
+        $userId = auth("tokens")->id();
+        $user = AuthHelper::getAuthUser($userId);
+
         $model = $this->examinationApplicationsModel;
         $data = $model->where(["id" => $id])->first();
 
+
         if (!$data) {
-            throw new \RuntimeException("Application not found");
+            throw new \InvalidArgumentException("Application not found");
+        }
+        //if not an admin, only delete their own applications
+        if (!$user->isAdmin() && $data['intern_code'] != $user->profile_data['license_number']) {
+            log_message("error", "Unauthorized attempt to delete application for {$data['intern_code']}");
+            throw new \InvalidArgumentException('Failed to delete application');
+
         }
 
         if (!$model->where('id', $id)->delete()) {
@@ -820,6 +844,7 @@ class ExaminationService
         $uuids = [];
         $validator = \Config\Services::validation();
         $validator->setRules($rules);
+        $uuidResultsKey = [];
         for ($i = 0; $i < count($data); $i++) {
             $registration = (array) $data[$i];
             if (!$validator->run($registration)) {
@@ -834,18 +859,21 @@ class ExaminationService
             ];
 
             $updateData[] = $registrationData;
-            $uuids[] = "'{$registration['uuid']}'";
+            $uuids[] = $registration['uuid'];
             $activityLogMessages[] = "Set result for  exam registration for intern code {$registration['intern_code']} index number {$registration['index_number']}";
+            $uuidResultsKey[$registration['uuid']] = $registration['result'];
         }
         $examinationRegistrations = $this->examinationRegistrationsModel->select("{$this->examinationRegistrationsModel->table}.*, {$this->examinationsModel->table}.exam_type")->join($this->examinationsModel->table, "{$this->examinationsModel->table}.id = {$this->examinationRegistrationsModel->table}.exam_id")->whereIn("{$this->examinationRegistrationsModel->table}.uuid", $uuids)->findAll();
         $this->examinationRegistrationsModel->db->transException(true)->transStart();
         $numRows = $this->examinationRegistrationsModel->updateBatch($updateData, 'uuid', count($updateData));
+        log_message("info", print_r($examinationRegistrations, true));
         //get all the examination registrations for the uuids
         foreach ($examinationRegistrations as $examinationRegistration) {
             $candidateStateData = [
                 'intern_code' => $examinationRegistration['intern_code'],
-                'state' => ExaminationsUtils::getExamCandidateStateFromExamResult($examinationRegistration['exam_type'], $examinationRegistration['result'])
+                'state' => ExaminationsUtils::getExamCandidateStateFromExamResult($examinationRegistration['exam_type'], $uuidResultsKey[$examinationRegistration['uuid']])
             ];
+            log_message("info", print_r($candidateStateData, true));
             $licenseModel = new LicensesModel('exam_candidates');
             $licenseModel->createOrUpdateLicenseDetails("exam_candidates", $candidateStateData);
         }
@@ -884,6 +912,8 @@ class ExaminationService
             'state' => ExaminationsUtils::determineCandidateState($oldData['intern_code']),
             'intern_code' => $oldData['intern_code']
         ];
+        log_message("info", print_r($candidateStateData, true));
+
         $licenseModel = new LicensesModel('exam_candidates');
         $licenseModel->createOrUpdateLicenseDetails("exam_candidates", $candidateStateData);
         $this->examinationRegistrationsModel->db->transComplete();
@@ -1186,5 +1216,72 @@ class ExaminationService
         } else {
             throw new \RuntimeException("Failed to open file");
         }
+    }
+
+    /**
+     * Retrieves all valid examinations for a candidate application given an intern code
+     * @param string $internCode The intern code of the candidate
+     * @return array An array of valid examinations for the candidate application
+     * @throws \Exception If no valid examinations are found for the candidate application
+     */
+    public function getExaminationsForCandidateApplication(string $internCode)
+    {
+        try {
+            $exams = ExaminationsUtils::getValidExaminationsForApplication($internCode, true);
+            return $exams;
+        } catch (\Exception $th) {
+            throw $th;
+        }
+    }
+
+    /**
+     * Creates a new examination application for a candidate.
+     * 
+     * The function will validate the data using the following rules:
+     * - intern_code must be a required and is not unique in the exam_candidates table
+     * - exam_id must be a required and is not unique in the examinations table
+     *
+     * If the data is invalid, an InvalidArgumentException will be thrown with a message containing the validation errors.
+     *
+     * If the data is valid, the function will insert the data into the examination_applications table and start a database transaction.
+     * If the insertion is successful, the function will commit the database transaction and return true.
+     * If the insertion fails, the function will roll back the database transaction and rethrow the exception that occurred.
+     *
+     * @param array $data The data for the examination application
+     * @return bool True if the examination application was created successfully, false otherwise
+     * @throws \InvalidArgumentException If the data is invalid
+     * @throws \Throwable If an error occurs while inserting the data into the database
+     */
+    public function createExaminationApplication(array $data)
+    {
+        // Validate and process the data
+        $rules = [
+            "intern_code" => "required|is_not_unique[exam_candidates.intern_code]",
+            "exam_id" => "required|is_not_unique[examinations.id]",
+
+        ];
+        $validator = \Config\Services::validation();
+        $validator->setRules($rules);
+        if (!$validator->run($data)) {
+            $message = implode(" ", array_values($validator->getErrors()));
+            throw new \InvalidArgumentException("Validation failed: " . $message);
+        }
+
+        $internCode = $data['intern_code'];
+        $validExams = ExaminationsUtils::getValidExaminationsForApplication($internCode, true);
+        $validExamIds = array_column($validExams['exams'], 'id');
+        if (!in_array($data['exam_id'], $validExamIds)) {
+            throw new \InvalidArgumentException("The candidate is not eligible for this examination. They may be in a different category or have not met the requirements.");
+        }
+        // Insert into the database
+        $data = $this->examinationApplicationsModel->createArrayFromAllowedFields($data);
+
+        $this->examinationApplicationsModel->db->transException(true)->transStart();
+        $this->examinationApplicationsModel->insert($data);
+
+        $this->examinationsModel->db->transComplete();
+
+        // Return true
+        return true;
     }
 }

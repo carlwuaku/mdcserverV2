@@ -188,12 +188,15 @@ class ExaminationApplicationsModel extends MyBaseModel implements TableDisplayIn
     public function addCustomFields(BaseBuilder $builder): BaseBuilder
     {
         $licensesModel = new LicensesModel();
+        $examModel = new ExaminationsModel();
         $licenseDef = Utils::getLicenseSetting("exam_candidates");
         $fields = $licenseDef->selectionFields;
         $licenseTypeTable = $licenseDef->table;
 
-        $builder->select("{$this->table}.*, first_name, middle_name, last_name, picture, email, phone, category, specialty, practitioner_type, qualification, training_institution, number_of_exams")->
+        $builder->select("{$this->table}.*, first_name, middle_name, last_name, picture, email, phone, category, specialty, practitioner_type, qualification, training_institution, number_of_exams, title, exam_type")->
             join($licenseTypeTable, "{$this->table}.intern_code = {$licenseTypeTable}.intern_code", "left")
+            ->join($examModel->getTableName(), "{$this->table}.exam_id = {$examModel->getTableName()}.id", "left")
+
             ->join($licensesModel->table, "{$this->table}.intern_code = {$licensesModel->table}.license_number", "left")
         ;
 

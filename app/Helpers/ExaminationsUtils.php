@@ -12,7 +12,7 @@ class ExaminationsUtils extends Utils
      * @param bool $useApplicationDates
      * @return array{message: string, exams: array{id:string, uuid:string, exam_type:string, open_from: string, open_to: string, type: string, publish_scores: bool, publish_score_date: string, title: string}[]}
      */
-    public static function getValidExaminationsForApplication($internCode, $useApplicationDates = true)
+    public static function getValidExaminationsForApplication(string $internCode, bool $useApplicationDates = true, bool $restrictIfApplications = true)
     {
         try {
             $candidate = LicenseUtils::getLicenseDetails($internCode);
@@ -21,6 +21,13 @@ class ExaminationsUtils extends Utils
 
                 //get the exam registrations for the intern code
                 $examRegistrations = self::getExaminationRegistrations(['intern_code' => $internCode]);
+                $examApplications = self::getExaminationApplications(['intern_code' => $internCode]);
+                //only one application can be accepted at a time
+                if (count($examApplications) > 0 && $restrictIfApplications) {
+                    $message = "Applicant $internCode has an application under review. Cannot apply for any more examination.";
+                    log_message('error', $message);
+                    throw new \InvalidArgumentException($message);
+                }
                 //if the person has passed any exam_type, then they cannot apply for the same exam_type again. So we need to filter out those exam types from the applicable exams.
                 //also, if there is currently a registration for an exam_type (the result has not been set), then they cannot apply for the same exam_type again. So we need to filter out those exam types from the applicable exams.
                 //so basically they can only apply for exam types that they have taken before and failed or been absent for, or have never taken before.
@@ -55,7 +62,7 @@ class ExaminationsUtils extends Utils
                 }
                 //if there is a pending registration, then they cannot apply for any exam
                 if ($hasPendingRegistration) {
-                    $message = "Intern code $internCode has a pending registration. Cannot apply for examination.";
+                    $message = "Applicant $internCode has a pending registration. Cannot apply for examination.";
                     log_message('error', $message);
                     throw new \InvalidArgumentException($message);
                 }
@@ -157,6 +164,40 @@ class ExaminationsUtils extends Utils
     }
 
     /**
+     * Retrieves all exam applications.
+     * The function takes an array of filters as an argument.
+     * The filters should be an associative array with the following keys:
+     * intern_code, exam_id.
+     * The function first filters the array of filters by the above keys.
+     * It then joins the examination applications table with the examinations table on the exam_id field.
+     * It selects all fields from the examination applications table and the fields exam_type, open_from, open_to, type, publish_scores, publish_score_date, title from the examinations table.
+     * The function then applies the filters and retrieves the records.
+     * Finally, it returns the result array.
+     * @param array $filters
+     * @return array
+     */
+    public static function getExaminationApplications(array $filters = [])
+    {
+        $filterFields = ["intern_code", "exam_id"];
+        $filters = self::filterArrayByKeys($filters, $filterFields);
+        $model = new \App\Models\Examinations\ExaminationApplicationsModel();
+        $examModel = new \App\Models\Examinations\ExaminationsModel();
+        $builder = $model->builder();
+        $builder->select("$examModel->table.exam_type, $examModel->table.open_from, $examModel->table.open_to, $examModel->table.type as exam_practitioner_type, $examModel->table.publish_scores, $examModel->table.publish_score_date, $examModel->table.title, $model->table.*");
+        foreach ($filters as $key => $value) {
+            if (is_array($value)) {
+                $builder->whereIn("$model->table.$key", $value);
+            } else {
+                $builder->where("$model->table.$key", $value);
+            }
+        }
+        $builder->join($examModel->table, "$examModel->table.id = $model->table.exam_id", 'left');
+        $builder->orderBy('created_at', 'asc');
+        $result = $builder->get()->getResultArray();
+        return $result;
+    }
+
+    /**
      * This function checks if a candidate is eligible to apply for a given examination.
      * It takes the intern code and exam ID as parameters and an optional boolean parameter to indicate whether to use the application dates.
      * It first calls the function getValidExaminationsForApplication to get the valid examinations for the given intern code and parameters.
@@ -168,10 +209,10 @@ class ExaminationsUtils extends Utils
      * @return bool whether the candidate is eligible for the given examination
      * @throws \InvalidArgumentException if the candidate is not eligible for the given examination
      */
-    public static function candidateIsEligibleForExamination(string $internCode, string $examId, bool $useApplicationDates = true): bool
+    public static function candidateIsEligibleForExamination(string $internCode, string $examId, bool $useApplicationDates = true, bool $restrictIfApplications = true): bool
     {
         try {
-            $validExams = self::getValidExaminationsForApplication($internCode, $useApplicationDates);
+            $validExams = self::getValidExaminationsForApplication($internCode, $useApplicationDates, $restrictIfApplications);
             if ($validExams['message'] !== APPLY_FOR_EXAMINATION) {
                 throw new \InvalidArgumentException("Intern code is not in a valid state to apply for examination");
             }
@@ -424,7 +465,8 @@ class ExaminationsUtils extends Utils
         if (!array_key_exists($result, $examStateSettings)) {
             throw new \CodeIgniter\Exceptions\ConfigException("No state defined for result: $result");
         }
-        $state = $examType['required_previous_exam_result'][$result];
+        log_message('info', "exam type: $examType, result: $result, state: " . print_r($examStateSettings, true));
+        $state = $examStateSettings[$result];
         if (!in_array($state, EXAM_CANDIDATES_VALID_STATES)) {
             throw new \CodeIgniter\Exceptions\ConfigException("Invalid state: $state");
         }
@@ -457,7 +499,7 @@ class ExaminationsUtils extends Utils
         //4. if there's a pass, look in the config for what state to set based on the exam type
         //5. if there's no pass, set the state to 'apply_for_examination'
         try {
-            self::getLicenseDetails($internCode, 'intern_code', 'exam_candidates');
+            self::getLicenseDetails($internCode, 'intern_code', 'practitioners');
             return MIGRATED;
         } catch (\Exception $th) {
             //not migrated, check for the results

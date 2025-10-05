@@ -37,25 +37,38 @@ class ApplicationTemplateService
             $sortOrder
         ]));
 
-        return CacheHelper::remember($cacheKey, function () use ($per_page, $page, $withDeleted, $param, $sortBy, $sortOrder) {
-            $model = new ApplicationTemplateModel();
-            $builder = $param ? $model->search($param) : $model->builder();
+        // return CacheHelper::remember($cacheKey, function () use ($per_page, $page, $withDeleted, $param, $sortBy, $sortOrder) {
+        $model = new ApplicationTemplateModel();
+        //add the default templates
+        $defaultTemplates = Utils::getDefaultApplicationFormTemplates();
+        $builder = $param ? $model->search($param) : $model->builder();
 
-            if ($withDeleted) {
-                $model->withDeleted();
+        if ($withDeleted) {
+            $model->withDeleted();
+        }
+
+        $builder->orderBy($sortBy, $sortOrder);
+        $totalBuilder = clone $builder;
+        $total = $totalBuilder->countAllResults() + count($defaultTemplates);
+        $result = $builder->get($per_page, $page)->getResult();
+        log_message('debug', print_r($result, true));
+        $result = array_merge($result, $defaultTemplates);
+        //filter out by available_external 
+        $filtered_result = [];
+        foreach ($result as $application) {
+            if ($application->available_externally == 1) {
+                $filtered_result[] = $application;
             }
-
-            $builder->orderBy($sortBy, $sortOrder);
-            $totalBuilder = clone $builder;
-            $total = $totalBuilder->countAllResults();
-            $result = $builder->get($per_page, $page)->getResult();
-
-            return [
-                'data' => $result,
-                'total' => $total,
-                'displayColumns' => $model->getDisplayColumns()
-            ];
-        }, 3600);
+        }
+        //  = array_filter($result, function ($template) {
+        //     return $template->available_externally == 1;
+        // });
+        return [
+            'data' => $filtered_result,
+            'total' => $total,
+            'displayColumns' => $model->getDisplayColumns()
+        ];
+        // }, 3600);
     }
 
     /**
@@ -69,6 +82,11 @@ class ApplicationTemplateService
         $data = $model->first();
 
         if (!$data) {
+            //look in the default templates
+            $defaultTemplate = Utils::getDefaultApplicationFormTemplate($uuid);
+            if ($defaultTemplate) {
+                return $defaultTemplate->toArray();
+            }
             return null;
         }
 
@@ -482,6 +500,11 @@ class ApplicationTemplateService
         $builder->select("uuid, header,form_name, footer, data, open_date, close_date, on_submit_message, description, guidelines")->where('uuid', $uuid)->orWhere('form_name', $uuid);
         $data = $model->first();
         if (!$data) {
+            //look in the default templates
+            $defaultTemplate = Utils::getDefaultApplicationFormTemplate($uuid);
+            if ($defaultTemplate) {
+                return $defaultTemplate->toArray();
+            }
             throw new Exception("Application template not found");
         }
         if (!empty($data['open_date']) && !empty($data['close_date'])) {

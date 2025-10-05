@@ -56,6 +56,14 @@ $routes->group("portal", ["namespace" => "App\Controllers"], function (RouteColl
     $routes->get("cpd/attendance", [CpdController::class, "getLicenseCpdAttendances"], ["filter" => ["apiauth"]]);
     $routes->get("work-history", [PractitionerController::class, "getPractitionerWorkHistories"], ["filter" => ["apiauth"]]);
     $routes->get("qualifications", [PractitionerController::class, "getPractitionerQualifications"], ["filter" => ["apiauth"]]);
+    $routes->get("examinations/applications/list", [ExaminationController::class, "getExaminationsForCandidateApplication"], ["filter" => ["apiauth"]]);
+    $routes->get("examinations/applications", [ExaminationController::class, "getExaminationApplications"], ["filter" => ["apiauth"]]);
+    $routes->get("examinations/history", [ExaminationController::class, "getExaminationRegistrations"], ["filter" => ["apiauth"]]);
+    $routes->get("examinations/registrations/(:segment)/letter/registration", [ExaminationController::class, "getCandidateRegistrationLetter/$1"], ["filter" => ["apiauth"]]);
+    $routes->get("examinations/registrations/(:segment)/letter/result", [ExaminationController::class, "getCandidateResultLetter/$1"], ["filter" => ["apiauth"]]);
+    $routes->post("examinations/applications/(:segment)", [ExaminationController::class, "createExaminationApplication/$1"], ["filter" => ["apiauth"]]);
+    $routes->delete("examinations/applications/(:segment)", [ExaminationController::class, "deleteExaminationApplication/$1"], ["filter" => ["apiauth"]]);
+
 
 });
 

@@ -38,7 +38,12 @@ class PortalController extends ResourceController
                 $configObject = PortalHomeConfigType::fromArray($config);
 
                 //fill the configs with user data
-                $dashboardMenu[] = PortalHelper::fillPortalHomeMenuForUser($user, $configObject);
+                try {
+                    $dashboardMenu[] = PortalHelper::fillPortalHomeMenuForUser($user, $configObject);
+                } catch (\Throwable $th) {
+                    //do nothing. user does not meet criteria for this config
+                }
+
             }
             /**
              * @var PortalHomeSubtitleType[]
@@ -70,7 +75,7 @@ class PortalController extends ResourceController
         // return CacheHelper::remember('app_settings', function() {
         //read the data from app-settings.json at the root of the project
         try {
-            $settings = ['appName', 'appVersion', 'appLongName', 'logo', 'whiteLogo', 'loginBackground'];
+            $settings = ['appName', 'appVersion', 'appLongName', 'logo', 'whiteLogo', 'loginBackground', 'portalContactUsTitle', 'portalContactUsSubTitle', 'institutionEmail', 'portalFooterBackground', 'institutionPhone', 'institutionWebsite', 'institutionAddress', 'institutionWhatsapp'];
             //if the user is logged in, add more settings
             // if (auth("tokens")->loggedIn()) {
             //     $settings = array_merge($settings, ['portalHomeMenu']);
@@ -78,7 +83,7 @@ class PortalController extends ResourceController
             $data = Utils::getMultipleAppSettings($settings);
 
             //if logo or other images are set append the base url to it
-            $imageProperties = ['logo', 'whiteLogo', 'institutionLogo', 'loginBackground'];
+            $imageProperties = ['logo', 'whiteLogo', 'institutionLogo', 'loginBackground', 'portalFooterBackground'];
             foreach ($imageProperties as $imageProperty) {
                 if (isset($data[$imageProperty])) {
                     $data[$imageProperty] = base_url() . $data[$imageProperty];
