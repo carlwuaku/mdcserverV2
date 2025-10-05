@@ -858,7 +858,7 @@ class ApplicationFormActionHelper extends Utils
     {
         $applicationTemplateModel = new \App\Models\Applications\ApplicationTemplateModel();
         $template = $applicationTemplateModel->builder()
-            ->select(['form_name', 'stages', 'initialStage', 'finalStage', 'on_submit_message'])
+            ->select(['form_name', 'stages', 'initialStage', 'finalStage', 'on_submit_message', 'data'])
             ->where('form_name', $formType)
             ->get()
             ->getFirstRow();

@@ -204,6 +204,7 @@ class PortalHomeConfigType
      * @var Alert[]
      */
     public array $alerts;
+    public array $criteria;
 
     public function __construct(
         string $title = '',
@@ -212,7 +213,8 @@ class PortalHomeConfigType
         array $actions = [],
         string $description = '',
         array $alerts = [],
-        array $dataPoints = []
+        array $dataPoints = [],
+        array $criteria = []
     ) {
         $this->title = $title;
         $this->image = $image;
@@ -221,6 +223,7 @@ class PortalHomeConfigType
         $this->description = $description;
         $this->alerts = $alerts;
         $this->dataPoints = $dataPoints;
+        $this->criteria = $criteria;
     }
 
 
@@ -234,6 +237,8 @@ class PortalHomeConfigType
             'actions' => array_map(fn($action) => $action->toArray(), $this->actions),
             'description' => $this->description,
             'alerts' => array_map(fn($alert) => $alert->toArray(), $this->alerts),
+            'dataPoints' => array_map(fn($dataPoint) => $dataPoint->toArray(), $this->dataPoints),
+            'criteria' => $this->criteria
 
         ];
     }
@@ -264,6 +269,12 @@ class PortalHomeConfigType
                 $dataPoints[] = DataPoint::fromArray($dataPointData);
             }
         }
+        $criteria = [];
+        if (isset($data['criteria']) && is_array($data['criteria'])) {
+            foreach ($data['criteria'] as $criteriaData) {
+                $criteria[] = CriteriaType::fromArray($criteriaData);
+            }
+        }
 
         return new self(
             $data['title'] ?? '',
@@ -272,7 +283,8 @@ class PortalHomeConfigType
             $actions,
             $data['description'] ?? '',
             $alerts,
-            $dataPoints
+            $dataPoints,
+            $criteria
         );
     }
 

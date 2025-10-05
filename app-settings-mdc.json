@@ -12,7 +12,9 @@
     "institutionEmail": "info@mdcghana.org",
     "institutionPhone": "+233 302 302 302",
     "institutionWebsite": "https://www.mdcghana.org",
+    "institutionWhatsapp": "+233 302 302 302",
     "portalUrl": "https://portal.mdcghana.org",
+    "portalFooterBackground": "assets/images/mountains.jpg",
     "sidebarMenu": [
         {
             "title": "Dashboard",
@@ -3590,7 +3592,24 @@
                     "type": "warning"
                 }
             ],
-            "description": "View or edit your name, address, phone number, etc."
+            "description": "View or edit your name, address, phone number, etc.",
+            "criteria": [
+                {
+                    "field": "user_type",
+                    "operator": "equals",
+                    "value": [
+                        "license"
+                    ]
+                },
+                {
+                    "field": "type",
+                    "operator": "equals",
+                    "value": [
+                        "practitioners",
+                        "exam_candidates"
+                    ]
+                }
+            ]
         },
         {
             "title": "View/Fill Application Forms",
@@ -3619,7 +3638,8 @@
                     "criteria": []
                 }
             ],
-            "description": "View or fill application forms"
+            "description": "View or fill application forms",
+            "criteria": []
         },
         {
             "title": "Relicense Status",
@@ -3713,7 +3733,23 @@
                     "type": "warning"
                 }
             ],
-            "description": "View or fill application forms"
+            "description": "View or fill application forms",
+            "criteria": [
+                {
+                    "field": "user_type",
+                    "operator": "equals",
+                    "value": [
+                        "license"
+                    ]
+                },
+                {
+                    "field": "type",
+                    "operator": "equals",
+                    "value": [
+                        "practitioners"
+                    ]
+                }
+            ]
         },
         {
             "title": "Continuous Professional Development (CPD)",
@@ -3765,7 +3801,23 @@
                 }
             ],
             "alerts": [],
-            "description": "Your CPD score"
+            "description": "Your CPD score",
+            "criteria": [
+                {
+                    "field": "user_type",
+                    "operator": "equals",
+                    "value": [
+                        "license"
+                    ]
+                },
+                {
+                    "field": "type",
+                    "operator": "equals",
+                    "value": [
+                        "practitioners"
+                    ]
+                }
+            ]
         },
         {
             "title": "Qualifications",
@@ -3784,7 +3836,23 @@
                 }
             ],
             "alerts": [],
-            "description": "View your qualifications recognized by the Council"
+            "description": "View your qualifications recognized by the Council",
+            "criteria": [
+                {
+                    "field": "user_type",
+                    "operator": "equals",
+                    "value": [
+                        "license"
+                    ]
+                },
+                {
+                    "field": "type",
+                    "operator": "equals",
+                    "value": [
+                        "practitioners"
+                    ]
+                }
+            ]
         },
         {
             "title": "Work History",
@@ -3803,7 +3871,23 @@
                 }
             ],
             "alerts": [],
-            "description": "View/edit your work history"
+            "description": "View/edit your work history",
+            "criteria": [
+                {
+                    "field": "user_type",
+                    "operator": "equals",
+                    "value": [
+                        "license"
+                    ]
+                },
+                {
+                    "field": "type",
+                    "operator": "equals",
+                    "value": [
+                        "practitioners"
+                    ]
+                }
+            ]
         },
         {
             "title": "Examinations",
@@ -3873,7 +3957,16 @@
                 }
             ],
             "alerts": [],
-            "description": "Apply for examinations and view your examination history"
+            "description": "Apply for examinations and view your examination history",
+            "criteria": [
+                {
+                    "field": "type",
+                    "operator": "equals",
+                    "value": [
+                        "exam_candidates"
+                    ]
+                }
+            ]
         }
     ],
     "portalHomeSubTitleFields": [
@@ -3890,8 +3983,25 @@
                 }
             ],
             "template": ""
+        },
+        {
+            "field": "category",
+            "label": "Category",
+            "criteria": [
+                {
+                    "field": "type",
+                    "operator": "equals",
+                    "value": [
+                        "practitioners",
+                        "exam_candidates"
+                    ]
+                }
+            ],
+            "template": ""
         }
     ],
+    "portalContactUsTitle": "Reach Us",
+    "portalContactUsSubTitle": "You can find general information about the Council, procedures, policies, and download various application forms on our website.",
     "commonApplicationTemplates": {
         "exam_candidates": {
             "label": "Examination Candidates Application",
@@ -4299,7 +4409,7 @@
             "finalStage": "Approved",
             "picture": null,
             "restrictions": null,
-            "available_externally": "1"
+            "available_externally": "0"
         },
         {
             "uuid": "practitioners-provisional-registration-application",
