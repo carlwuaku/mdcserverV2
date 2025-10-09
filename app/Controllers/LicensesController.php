@@ -202,7 +202,7 @@ class LicensesController extends ResourceController
             $data['license_type'] = $user->profile_data['type'];
             $data['license_uuid'] = $user->profile_data['uuid'];
             $data['license_number'] = $user->profile_data['license_number'];
-
+            //TODO:check if applications open
             $result = $this->renewalService->createRenewal($data);
             $this->invalidateCache(CACHE_KEY_PREFIX_RENEWALS);
             return $this->respond($result, ResponseInterface::HTTP_OK);

@@ -3042,20 +3042,47 @@
             "1": {
                 "number_of_facilities": 1,
                 "application_form_fields": [],
-                "available_to": [
-                    {}
+                "criteria": [
+                    {
+                        "field": "practitioner_type",
+                        "value": [
+                            "Physician Assistant",
+                            "Doctor"
+                        ]
+                    }
                 ],
                 "allowRepeatRegion": true
             },
             "2": {
                 "number_of_facilities": 2,
                 "application_form_fields": [],
-                "available_to": [
-                    {}
+                "criteria": [
+                    {
+                        "field": "practitioner_type",
+                        "value": [
+                            "Doctor"
+                        ]
+                    }
                 ],
                 "allowRepeatRegion": false
             }
-        }
+        },
+        "applicationFormTags": [
+            {
+                "name": "Direct Entry",
+                "value": "Direct Entry",
+                "implicit": false,
+                "criteria": [],
+                "description": ""
+            },
+            {
+                "name": "Priority",
+                "value": "Priority",
+                "implicit": false,
+                "criteria": [],
+                "description": "select if you're rich"
+            }
+        ]
     },
     "examinations": {
         "examination_types": {
@@ -3964,6 +3991,41 @@
                     "operator": "equals",
                     "value": [
                         "exam_candidates"
+                    ]
+                }
+            ]
+        },
+        {
+            "title": "Housemanship",
+            "image": "assets/images/007-mansion.png",
+            "icon": "",
+            "dataPoints": [],
+            "actions": [
+                {
+                    "label": "Open Housemanship",
+                    "icon": "",
+                    "type": "link",
+                    "linkProp": "",
+                    "url": "/housemanship/history",
+                    "urlParams": {},
+                    "criteria": []
+                }
+            ],
+            "alerts": [],
+            "description": "View/Apply for housemanship placement",
+            "criteria": [
+                {
+                    "field": "type",
+                    "operator": "equals",
+                    "value": [
+                        "practitioners"
+                    ]
+                },
+                {
+                    "field": "register_type",
+                    "operator": "equals",
+                    "value": [
+                        "Provisional"
                     ]
                 }
             ]
@@ -5032,6 +5094,20 @@
         {
             "template_name": "Default Doctors/PA Renewal Certificate Template",
             "template_content": "<html><body><p>the application will be printed</p></body></html>"
+        }
+    ],
+    "settings": [
+        {
+            "key": "housemanship_applications_open",
+            "value": {
+                "criteria": [],
+                "value": "yes"
+            },
+            "label": "Housemanship applications open",
+            "control_type": "yes-no",
+            "class": "General",
+            "type": "string",
+            "description": "Whether housemanship applications can be submitted from the portal or not"
         }
     ]
 }

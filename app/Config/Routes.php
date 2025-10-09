@@ -63,6 +63,13 @@ $routes->group("portal", ["namespace" => "App\Controllers"], function (RouteColl
     $routes->get("examinations/registrations/(:segment)/letter/result", [ExaminationController::class, "getCandidateResultLetter/$1"], ["filter" => ["apiauth"]]);
     $routes->post("examinations/applications/(:segment)", [ExaminationController::class, "createExaminationApplication/$1"], ["filter" => ["apiauth"]]);
     $routes->delete("examinations/applications/(:segment)", [ExaminationController::class, "deleteExaminationApplication/$1"], ["filter" => ["apiauth"]]);
+    $routes->get("housemanship/applications", [HousemanshipController::class, "getHousemanshipPostingApplications"], ["filter" => ["apiauth"]]);
+    $routes->get("housemanship/postings", [HousemanshipController::class, "getHousemanshipPostings"], ["filter" => ["apiauth"]]);
+    $routes->get("housemanship/settings/applications/open/(:num)", [HousemanshipController::class, "isPostingApplicationOpen/$1"], ["filter" => ["apiauth"]]);
+    $routes->get("housemanship/postings/applications/form/(:num)", [HousemanshipController::class, "getHousemanshipPostingApplicationFormFields/$1"], ["filter" => ["apiauth"]]);
+    $routes->get("housemanship/postings/letter/(:segment)", [HousemanshipController::class, "generateHousemanshipPostingLetter/$1"], ["filter" => ["apiauth"]]);
+    $routes->post("housemanship/postings/applications", [HousemanshipController::class, "createHousemanshipPostingApplication"], ["filter" => ["apiauth"]]);
+    $routes->delete("housemanship/postings/applications/(:segment)", [HousemanshipController::class, "deleteHousemanshipPostingApplication/$1"], ["filter" => ["apiauth"]]);
 
 
 });

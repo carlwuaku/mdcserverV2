@@ -108,4 +108,55 @@ class HousemanshipApplicationDetailsModel extends MyBaseModel implements FormInt
 
         ];
     }
+
+    public function getNonAdminFormFields(): array
+    {
+        $facilitiesModel = new HousemanshipFacilitiesModel();
+        $facilitiesList = $facilitiesModel->getDistinctValuesAsKeyValuePairs('name');
+
+        $disciplinesModel = new HousemanshipDisciplinesModel();
+        $disciplinesList = $disciplinesModel->getDistinctValuesAsKeyValuePairs('name');
+        return [
+            [
+                "label" => "Discpline",
+                "name" => "discipline",
+                "type" => "select",
+                "hint" => "",
+                "options" => $disciplinesList,
+                "value" => "",
+                "required" => true,
+                "api_url" => "housemanship/disciplines",
+                "apiKeyProperty" => "name",
+                "apiLabelProperty" => "name",
+                "apiType" => "select"
+            ],
+            [
+                "label" => "First Choice",
+                "name" => "first_choice",
+                "type" => "select",
+                "hint" => "",
+                "options" => $facilitiesList,
+                "value" => "",
+                "required" => true,
+                "api_url" => "",
+                "apiKeyProperty" => "name",
+                "apiLabelProperty" => "name",
+                "apiType" => "select"
+            ],
+            [
+                "label" => "Second Choice",
+                "name" => "second_choice",
+                "type" => "select",
+                "hint" => "",
+                "options" => $facilitiesList,
+                "value" => "",
+                "required" => true,
+                "api_url" => "",
+                "apiKeyProperty" => "name",
+                "apiLabelProperty" => "name",
+                "apiType" => "select"
+            ]
+
+        ];
+    }
 }

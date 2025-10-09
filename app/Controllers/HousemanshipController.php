@@ -2,8 +2,9 @@
 
 namespace App\Controllers;
 
-use App\Controllers\BaseController;
+use App\Helpers\AuthHelper;
 use App\Helpers\LicenseUtils;
+use App\Helpers\Types\CriteriaType;
 use App\Helpers\Types\HousemanshipPostingType;
 use App\Models\Housemanship\HousemanshipApplicationDetailsModel;
 use App\Models\Housemanship\HousemanshipApplicationModel;
@@ -13,7 +14,7 @@ use App\Models\Housemanship\HousemanshipFacilityAvailabilityModel;
 use App\Models\Housemanship\HousemanshipFacilityCapacitiesModel;
 use App\Models\Housemanship\HousemanshipPostingDetailsModel;
 use App\Models\Housemanship\HousemanshipPostingsModel;
-use App\Models\Licenses\LicensesModel;
+use App\Services\HousemanshipService;
 use ArrayObject;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
@@ -26,6 +27,11 @@ use App\Helpers\HousemanshipUtils;
 class HousemanshipController extends ResourceController
 {
     private $activityModule = "housemanship";
+    private HousemanshipService $housemanshipService;
+    public function __construct()
+    {
+        $this->housemanshipService = \Config\Services::housemanshipService();
+    }
     public function createHousemanshipFacility()
     {
         try {
@@ -933,12 +939,18 @@ class HousemanshipController extends ResourceController
             $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted') === "yes";
             $param = $this->request->getVar('param');
             $sortBy = $this->request->getVar('sortBy') ?? "id";
-            $sortOrder = $this->request->getVar('sortOrder') ?? "asc";
+            $sortOrder = $this->request->getVar('sortOrder') ?? "desc";
             $facilityName = $this->request->getVar('facility_name');
             $model = new HousemanshipPostingsModel();
             $detailsModel = new HousemanshipPostingDetailsModel();
 
             $filterArray = $model->createArrayFromAllowedFields((array) $this->request->getGet());
+            //if the user is not an admin, they can only view their own postings
+            $userId = auth("tokens")->id();
+            $userData = AuthHelper::getAuthUser($userId);
+            if (!$userData->isAdmin()) {
+                $filterArray['license_number'] = $userData->profile_data['license_number'];
+            }
             // Validate inputs here
             $tableName = $model->table;
             $builder = $param ? $model->search($param)->select("$tableName.*") : $model->builder()->select("$tableName.*");
@@ -1006,7 +1018,8 @@ class HousemanshipController extends ResourceController
                 'data' => $parentRecords,
                 'total' => $total,
                 'displayColumns' => $displayColumns,
-                'columnFilters' => $model->getDisplayColumnFilters()
+                'columnFilters' => $model->getDisplayColumnFilters(),
+                'sortColumns' => $model->getSortColumns(),
             ], ResponseInterface::HTTP_OK);
         } catch (Exception $th) {
             log_message("error", $th);
@@ -1060,25 +1073,42 @@ class HousemanshipController extends ResourceController
     public function createHousemanshipPostingApplication()
     {
         try {
-            $rules = [
-                "license_number" => "required|is_not_unique[licenses.license_number]",
-                "session" => "required",
-                "year" => "required|integer|exact_length[4]",
-                "details" => "required"
-            ];
+            $userId = auth("tokens")->id();
+            $userData = AuthHelper::getAuthUser($userId);
+            if (!$userData->isAdmin()) {
+                $licenseNumber = $userData->profile_data['license_number'];
+                $year = date("Y");
+                $rules = [
+                    "session" => "required",
+                    "details" => "required"
+                ];
+            } else {
+                $licenseNumber = $this->request->getVar('license_number');
+                $year = $this->request->getVar('year');
+                $rules = [
+                    "license_number" => "required|is_not_unique[licenses.license_number]",
+                    "session" => "required",
+                    "year" => "required|integer|exact_length[4]",
+                    "details" => "required"
+                ];
+            }
+
+
 
             if (!$this->validate($rules)) {
                 $message = implode(" ", array_values($this->validator->getErrors()));
                 return $this->respond(['message' => $message], ResponseInterface::HTTP_BAD_REQUEST);
             }
-            $license = LicenseUtils::getLicenseDetails($this->request->getVar('license_number'));
+            $license = LicenseUtils::getLicenseDetails($licenseNumber);
             if (!$license) {
                 return $this->respond(['message' => "License not found"], ResponseInterface::HTTP_BAD_REQUEST);
             }
 
             $data = $this->request->getJSON(true);
+            $data['license_number'] = $licenseNumber;
             $data['category'] = $license['category'];
             $data['type'] = $license['practitioner_type'];
+            $data['year'] = $year;
             $model = new HousemanshipApplicationModel();
             $model->db->transException(true)->transStart();
             $applicationId = $model->insert($data);
@@ -1235,6 +1265,13 @@ class HousemanshipController extends ResourceController
         try {
             $model = new HousemanshipApplicationModel();
             $data = $model->where(["uuid" => $uuid])->first();
+            //make sure the user owns the application
+            $userId = auth("tokens")->id();
+            $userData = AuthHelper::getAuthUser($userId);
+
+            if (!$userData->isAdmin() && $data['license_number'] !== $userData->profile_data['license_number']) {
+                return $this->respond(['message' => "You are not authorized to delete this application"], ResponseInterface::HTTP_UNAUTHORIZED);
+            }
 
             if (!$model->where('uuid', $uuid)->delete()) {
                 return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
@@ -1321,6 +1358,12 @@ class HousemanshipController extends ResourceController
             $detailsModel = new HousemanshipApplicationDetailsModel();
 
             $filterArray = $model->createArrayFromAllowedFields((array) $this->request->getGet());
+            //if the user is not an admin, they can only view their own applications
+            $userId = auth("tokens")->id();
+            $userData = AuthHelper::getAuthUser($userId);
+            if (!$userData->isAdmin()) {
+                $filterArray['license_number'] = $userData->profile_data['license_number'];
+            }
             // Validate inputs here
             $tableName = $model->table;
             $builder = !empty($param) ? $model->search($param)->select("$tableName.*") : $model->builder()->select("$tableName.*");
@@ -1442,8 +1485,30 @@ class HousemanshipController extends ResourceController
                 throw new Exception("Session not found");
             }
             $numberOfRequiredFacilities = (int) $sessionSetting[$session]['number_of_facilities'];
-            $mainFields = $model->getFormFields();
-            $detailsFields = $detailsModel->getFormFields();
+            $userId = auth("tokens")->id();
+            $user = AuthHelper::getAuthUser($userId);
+            //if the user is not an admin, get the non-admin fields
+            $mainFields = $user->isAdmin() ? $model->getFormFields() : $model->getNonAdminFormFields();
+            $detailsFields = $user->isAdmin() ? $detailsModel->getFormFields() : $detailsModel->getNonAdminFormFields();
+            //add the tags
+            $tags = Utils::getHousemanshipSettingApplicationFormTags();
+            //check if the user matches the criteria for the tags
+            foreach ($tags as $tag) {
+                // if (!$user->isAdmin()) {
+                //   if(CriteriaType::matchesCriteria($user->profile_data, $tag->criteria)){
+                $mainFields[] = [
+                    "label" => $tag->name,
+                    "name" => "tags",
+                    "type" => "checkbox",
+                    "hint" => $tag->description,
+                    "options" => [],
+                    "value" => "",
+                    "required" => false
+                ];
+                //   }  
+                // }
+            }
+
             //add the details fields to the main fields the number of times required
             for ($i = 0; $i < $numberOfRequiredFacilities; $i++) {
                 $mainFields[] = [
@@ -1537,6 +1602,36 @@ class HousemanshipController extends ResourceController
         } catch (Exception $th) {
             log_message("error", $th);
             return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+    }
+
+    public function isPostingApplicationOpen(string $session)
+    {
+        //look in th app-settings for whether this person's criteria has a restriction
+        $model = new HousemanshipApplicationModel();
+        $detailsModel = new HousemanshipApplicationDetailsModel();
+        try {
+
+            return $this->respond([
+                'data' => true
+            ], ResponseInterface::HTTP_OK);
+        } catch (Exception $th) {
+            log_message("error", $th);
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
+        }
+    }
+
+    public function generateHousemanshipPostingLetter($uuid)
+    {
+
+        try {
+            $letter = $this->housemanshipService->generateHousemanshipLetter($uuid);
+            return $this->respond([
+                'data' => $letter
+            ], ResponseInterface::HTTP_OK);
+        } catch (Exception $th) {
+            log_message("error", $th);
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
         }
     }
 
