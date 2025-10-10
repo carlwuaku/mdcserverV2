@@ -12,6 +12,7 @@ use App\Services\ApplicationTemplateService;
 use App\Services\ExaminationService;
 use App\Services\PaymentsService;
 use App\Services\SettingsService;
+use App\Services\HousemanshipService;
 
 /**
  * Services Configuration file.
@@ -127,5 +128,13 @@ class Services extends BaseService
             return static::getSharedInstance('serviceService');
         }
         return new SettingsService();
+    }
+
+    public static function housemanshipService(bool $getShared = true): HousemanshipService
+    {
+        if ($getShared) {
+            return static::getSharedInstance('housemanshipService');
+        }
+        return new HousemanshipService();
     }
 }

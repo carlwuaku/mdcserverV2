@@ -25,6 +25,7 @@ use App\Helpers\Types\ApplicationFormTemplateType;
 use App\Models\SettingsModel;
 use App\Helpers\Types\DataResponseType;
 use App\Helpers\Types\AppSettingsLicenseType;
+use App\Helpers\Types\HousemanshipApplicationFormTagsType;
 class Utils
 {
 
@@ -666,9 +667,28 @@ class Utils
     {
         $result = self::getAppSettings("housemanship");
         if (!$result || !array_key_exists($setting->value, $result)) {
-            throw new \Exception("$setting->value not found in housemanship settings");
+            throw new Exception("$setting->value not found in housemanship settings");
         }
         return $result[$setting->value];
+    }
+
+
+    /**
+     * Get the housemanship application form tags as HousemanshipApplicationFormTagsType instances
+     * @return HousemanshipApplicationFormTagsType[]
+     * @throws Exception
+     */
+    public static function getHousemanshipSettingApplicationFormTags()
+    {
+        $result = self::getAppSettings("housemanship");
+        if (!$result || !array_key_exists(HousemanshipSetting::APPLICATION_FORM_TAGS->value, $result)) {
+            throw new Exception("applicationFormTags not found in housemanship settings");
+        }
+        $tags = [];
+        foreach ($result[HousemanshipSetting::APPLICATION_FORM_TAGS->value] as $tag) {
+            $tags[] = HousemanshipApplicationFormTagsType::fromArray($tag);
+        }
+        return $tags;
     }
 
 

@@ -173,7 +173,7 @@ class HousemanshipApplicationModel extends MyBaseModel implements TableDisplayIn
             [
                 "label" => "Direct entry",
                 "name" => "tags",
-                "type" => "text",
+                "type" => "checkbox",
                 "value" => "",
                 "required" => false,
                 "api_url" => "",
@@ -181,6 +181,15 @@ class HousemanshipApplicationModel extends MyBaseModel implements TableDisplayIn
                 "apiLabelProperty" => "",
                 "apiType" => ""
             ]
+        ];
+    }
+
+    public function getNonAdminFormFields(): array
+    {
+
+        return [
+
+            //the tags should be inserted here
         ];
     }
 

@@ -77,7 +77,8 @@ class HousemanshipPostingsModel extends MyBaseModel implements TableDisplayInter
             'category',
             'session',
             'year',
-            'letter_template'
+            'letter_template',
+            'created_at'
         ];
     }
 
@@ -88,7 +89,19 @@ class HousemanshipPostingsModel extends MyBaseModel implements TableDisplayInter
 
 
 
+    public function getSortColumns(): array
+    {
 
+        return [
+            'license_number',
+            'type',
+            'category',
+            'session',
+            'year',
+            'letter_template',
+            'created_at'
+        ];
+    }
 
 
 
