@@ -188,20 +188,32 @@ class CpdController extends ResourceController
             $sortOrder = $this->request->getVar('sortOrder') ?? "asc";
             $year = $this->request->getVar('year') ?? null;
             $providerUuid = $this->request->getVar('provider_uuid') ?? null;
-
+            $category = $this->request->getVar('category') ?? null;
+            $credits = $this->request->getVar('credits') ?? null;
+            $online = $this->request->getVar('online') ?? null;
             $model = new CpdModel();
 
 
             $builder = $param ? $model->search($param) : $model->builder();
             $builder = $model->addCustomFields($builder, $user->user_type);
+            $tableName = $model->table;
             if ($year) {
                 $builder->where("YEAR(date)", $year);
             }
             if ($providerUuid) {
                 $builder->where("provider_uuid", $providerUuid);
             }
+            if ($category) {
+                $builder->where("$tableName.category", $category);
+            }
+            if ($credits) {
+                $builder->where("$tableName.credits", $credits);
+            }
+            if ($online) {
+                $builder->where("online", $online);
+            }
 
-            $tableName = $model->table;
+
             $builder->orderBy("$tableName.$sortBy", $sortOrder);
 
             if ($withDeleted) {

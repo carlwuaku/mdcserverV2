@@ -100,6 +100,9 @@ class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, 
         'phone'
     ];
 
+    public $specialImplicitFields = [
+        'qualifications'
+    ];
 
 
     public function getDisplayColumns(): array
@@ -345,7 +348,7 @@ class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, 
             $licenseDef = Utils::getLicenseSetting($licenseType);
             $table = $licenseDef->renewalTable;
             $licenseFields = $licenseDef->renewalFields;
-            $implicitFields = $licenseDef->implicitRenewalFields;//these fields will be taken from the existing license data
+            $implicitFields = $licenseDef->implicitRenewalFields;//these fields will be taken from the existing license data if we're creating a new renewal
             $data = [];
             // $protectedFields = [];
             //make sure $formdata is an array
@@ -359,24 +362,25 @@ class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, 
                     $data[$name] = $formData[$name];
                 }
             }
-            foreach ($implicitFields as $field) {
-                $data[$field] = $formData[$field];
-            }
+
             $data['license_number'] = $formData['license_number'];
             $data['renewal_id'] = $renewalId;
-            // $this->setAllowedFields(allowedFields: $protectedFields);
-            // $this->setTable($table);
+
             $license = $this->builder($table)->where('renewal_id', $renewalId)->get()->getFirstRow('array');
             if ($license) {
                 //in this case we're using fields not listed in the allowed fields so we need to use set method
                 $this->builder($table)->where('renewal_id', $renewalId)->set($data)->update();
             } else {
+                foreach ($implicitFields as $field) {
+                    if (in_array($field, $this->specialImplicitFields)) {
+                        $data[$field] = $this->parseSpecialImplicitFields($field, $formData['license_number']);
+                    } else {
+                        $data[$field] = $formData[$field];
+                    }
+
+                }
                 $db = \Config\Database::connect();
                 $db->table($table)->set($data)->insert();
-                // log_message('info', 'no license found for' . $renewalId);
-                // $this->insert((object) $data);
-                // log_message('info', $this->builder()->getCompiledInsert(false));
-                // $this->builder()->insert();
             }
         } catch (\Throwable $th) {
             throw $th;
@@ -565,6 +569,34 @@ class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, 
             "default" => $defaultFields,
             "custom" => $fields
         ];
+    }
+
+    private function parseSpecialImplicitFields(string $field, string $licenseNumber)
+    {
+        try {
+            if ($field === 'qualifications') {
+                //add qualifications
+                $licenseModel = new LicensesModel();
+                $licenseDetails = $licenseModel->getLicenseDetailsFromSubTable($licenseNumber);
+                //add the person's default qualifications in addition to any additional qualifications
+                $defaultQualifications = [
+                    [
+                        "qualification" => $licenseDetails['qualification_at_registration'],
+                        "institution" => $licenseDetails['training_institution'],
+                        "start_date" => null,
+                        "end_date" => $licenseDetails['qualification_date']
+                    ]
+                ];
+                $model = new \App\Models\Practitioners\PractitionerAdditionalQualificationsModel();
+                $qualifications = array_merge($defaultQualifications, $model->where("registration_number", $licenseNumber)->findAll());
+
+                return json_encode($qualifications);
+            }
+        } catch (\Throwable $th) {
+            log_message("error", $th);
+            return null;
+        }
+
     }
 }
 

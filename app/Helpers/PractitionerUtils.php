@@ -117,7 +117,7 @@ class PractitionerUtils
 
 
         } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
+            log_message("error", $th);
             throw new Exception("Error inserting data." . $th->getMessage());
         }
 

@@ -465,7 +465,6 @@ class ExaminationsUtils extends Utils
         if (!array_key_exists($result, $examStateSettings)) {
             throw new \CodeIgniter\Exceptions\ConfigException("No state defined for result: $result");
         }
-        log_message('info', "exam type: $examType, result: $result, state: " . print_r($examStateSettings, true));
         $state = $examStateSettings[$result];
         if (!in_array($state, EXAM_CANDIDATES_VALID_STATES)) {
             throw new \CodeIgniter\Exceptions\ConfigException("Invalid state: $state");

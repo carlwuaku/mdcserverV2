@@ -10,6 +10,7 @@ use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 use App\Helpers\Types\PortalHomeConfigType;
 use App\Helpers\AuthHelper;
+use App\Helpers\Types\Alert;
 
 class PortalController extends ResourceController
 {
@@ -29,7 +30,7 @@ class PortalController extends ResourceController
             $userId = auth("tokens")->id();
             $user = AuthHelper::getAuthUser($userId);
 
-            $portalHomeMenuItems = Utils::getMultipleAppSettings(['portalHomeMenu', 'portalHomeSubTitleFields']);
+            $portalHomeMenuItems = Utils::getMultipleAppSettings(['portalHomeMenu', 'portalHomeSubTitleFields', 'portalAlerts']);
             /**
              * @var PortalHomeConfigType[]
              */
@@ -59,8 +60,14 @@ class PortalController extends ResourceController
             }
             //fill the configs with user data
             $subtitles = PortalHelper::fillPortalSubtitleForUser($user, $subtitleObjects);
+            $portalAlerts = array_map(function ($alert) {
+                return Alert::fromArray($alert);
+            }, $portalHomeMenuItems['portalAlerts']);
+            $alerts = PortalHelper::fillPortalAlertsForuser($user, $portalAlerts);
 
-            return $this->respond(["data" => ["dashboardMenu" => $dashboardMenu, "subtitles" => $subtitles]], ResponseInterface::HTTP_OK);
+
+
+            return $this->respond(["data" => ["dashboardMenu" => $dashboardMenu, "subtitles" => $subtitles, "alerts" => $alerts]], ResponseInterface::HTTP_OK);
 
         } catch (\Throwable $th) {
             log_message("error", $th);
@@ -117,6 +124,17 @@ class PortalController extends ResourceController
         try {
 
             $data = $this->portalService->getUserProfileFields();
+            return $this->respond(['data' => $data], ResponseInterface::HTTP_OK);
+        } catch (\Throwable $th) {
+            log_message('error', $th);
+            return $this->respond(['message' => 'Unable to get your profile. Please try again'], ResponseInterface::HTTP_NOT_FOUND);
+        }
+    }
+
+    public function getSystemSetting(string $name)
+    {
+        try {
+            $data = $this->portalService->getSystemSetting($name);
             return $this->respond(['data' => $data], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
             log_message('error', $th);

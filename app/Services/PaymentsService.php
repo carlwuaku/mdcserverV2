@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Helpers\Enums\InvoiceEvents;
 use App\Helpers\PaymentUtils;
 use App\Helpers\TemplateEngineHelper;
 use App\Helpers\Types\InvoicePaymentOptionType;
@@ -279,7 +280,8 @@ class PaymentsService
 
         $this->invoiceModel->db->transComplete();
         $this->activitiesModel->logActivity("created invoice $invoiceUuid for $unique_id", null, "Payments");
-        Events::trigger(EVENT_INVOICE_CREATED, $invoice, $items);
+        Events::trigger(INVOICE_EVENT, InvoiceEvents::INVOICE_CREATED, $invoiceUuid);
+
         // Return the exam ID
         return $invoiceId;
     }
@@ -393,6 +395,12 @@ class PaymentsService
         ];
     }
 
+    /**
+     * Retrieves an invoice by its uuid
+     * @param string $uuid The uuid of the invoice
+     * @return array{data: array, message: string} The invoice details
+     * @throws \InvalidArgumentException If the invoice is not found
+     */
     public function getInvoice($uuid): array
     {
         $result = $this->invoiceModel->where('uuid', $uuid)->first();
@@ -821,7 +829,8 @@ class PaymentsService
 
             $this->invoiceModel->db->transComplete();
             $this->activitiesModel->logActivity("submitted payment for invoice $uuid for $unique_id", null, "Payments");
-            Events::trigger(EVENT_INVOICE_PAYMENT_COMPLETED, $uuid);
+            Events::trigger(INVOICE_EVENT, InvoiceEvents::INVOICE_PAYMENT_COMPLETED, $uuid, );
+
             return true;
         } catch (\Throwable $th) {
             log_message("error", $th);
@@ -868,11 +877,12 @@ class PaymentsService
             }
         }
         // Insert into the database
-        $examData = $this->paymentFileUploadsModel->createArrayFromAllowedFields($data);
+        $paymentData = $this->paymentFileUploadsModel->createArrayFromAllowedFields($data);
 
-        $id = $this->paymentFileUploadsModel->insert($examData);
 
-        // Return the exam ID
+        $id = $this->paymentFileUploadsModel->insert($paymentData);
+        Events::trigger(INVOICE_EVENT, InvoiceEvents::INVOICE_PAYMENT_FILE_UPLOADED, $data['invoice_uuid']);
+        // Return the  ID
         return $id;
     }
 
@@ -943,7 +953,7 @@ class PaymentsService
 
         // Log activity
         $this->activitiesModel->logActivity("Deleted payment file upload for {$paymentFileUpload->unique_id} for payment {$paymentFileUpload->invoice_uuid} ");
-
+        Events::trigger(INVOICE_EVENT, InvoiceEvents::INVOICE_PAYMENT_FILE_DELETED, $paymentFileUpload->invoice_uuid);
         return true;
     }
 
@@ -993,6 +1003,11 @@ class PaymentsService
         ];
     }
 
+    public function countPaymentFileUploads()
+    {
+        return $this->paymentFileUploadsViewModel->countAllResults();
+    }
+
     /**
      * Generates a printout for the given invoices based on the given template.
      * @param array $uuids The uuids of the invoices to generate a printout for
@@ -1014,18 +1029,27 @@ class PaymentsService
         $printTemplateModel = new PrintTemplateModel();
 
         $template = $printTemplateModel->where(["template_name" => $templateName])->get()->getRow();
+
         if (!$template) {
-            //TODO: consider creating a default template
-            throw new \InvalidArgumentException("Print template not found");
-            //
+            //get the default template
+            $settings = service("settings");
+            $templateContent = $settings->get(SETTING_DEFAULT_INVOICE_PRINT_TEMPLATE);
+        } else {
+            $templateContent = $template->template_content;
+        }
+        if (!$templateContent) {
+            throw new \InvalidArgumentException("Template not found");
         }
         $results = [];
         foreach ($invoices as $invoice) {
             $invoice->items = array_filter($items, function ($item) use ($invoice) {
                 return $item->invoice_uuid === $invoice->uuid;
             });
+            $invoice->total_amount = array_sum(array_map(function ($item) {
+                return $item->line_total;
+            }, $invoice->items));
             $templateEngineHelper = new TemplateEngineHelper();
-            $invoiceTemplate = $templateEngineHelper->process($template->template_content, $invoice);
+            $invoiceTemplate = $templateEngineHelper->process($templateContent, $invoice);
             $results[] = '<div class="page-break"> ' . $invoiceTemplate . '</div>';
 
         }

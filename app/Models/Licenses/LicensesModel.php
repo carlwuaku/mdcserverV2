@@ -400,24 +400,7 @@ class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormIn
     public function getFormFields(): array
     {
         return [
-            [
-                "label" => "License Type",
-                "name" => "type",
-                "type" => "select",
-                "hint" => "",
-                "options" => [
-                    [
-                        "key" => "Facility",
-                        "value" => "facilities"
-                    ],
-                    [
-                        "key" => "Practitioner",
-                        "value" => "practitioners"
-                    ]
-                ],
-                "value" => "",
-                "required" => true
-            ],
+
             [
                 "label" => "Registration Date",
                 "name" => "registration_date",

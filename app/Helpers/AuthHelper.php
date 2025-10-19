@@ -28,6 +28,13 @@ class AuthHelper
                 if (in_array($user->user_type, USER_TYPES_LICENSED_USERS)) {
 
                     $user->profile_data = LicenseUtils::getLicenseDetails($user->profile_table_uuid);
+                    //if the require_revalidation is not yes, calculate from the settings
+                    if (isset($user->profile_data['require_revalidation']) && $user->profile_data['require_revalidation'] !== 'yes') {
+                        $licenseDef = Utils::getLicenseSetting($user->profile_data['type']);
+                        $revalidationPeriod = $licenseDef->revalidationPeriodInYears ?? 3;
+                        $revalidationCheck = LicenseUtils::licenseRequiresRevalidation($user->profile_data, $revalidationPeriod);
+                        $user->profile_data['require_revalidation'] = $revalidationCheck['result'] ? 'yes' : 'no';
+                    }
                 } else {
                     $db = \Config\Database::connect();
 

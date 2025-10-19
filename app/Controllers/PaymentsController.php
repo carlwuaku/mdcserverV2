@@ -411,6 +411,19 @@ class PaymentsController extends ResourceController
         }
     }
 
+    public function countPaymentFileUploads()
+    {
+        try {
+            $result = $this->paymentsService->countPaymentFileUploads();
+
+            return $this->respond(['data' => $result], ResponseInterface::HTTP_OK);
+
+        } catch (\Throwable $e) {
+            log_message("error", $e);
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     public function deletePaymentFileUpload($id)
     {
         try {
@@ -433,6 +446,7 @@ class PaymentsController extends ResourceController
             return $this->respond(['data' => null, 'message' => 'Payment submitted successfully'], ResponseInterface::HTTP_OK);
 
         } catch (\InvalidArgumentException $e) {
+            log_message("error", $e);
             return $this->respond(['message' => $e->getMessage()], ResponseInterface::HTTP_BAD_REQUEST);
         } catch (\Throwable $e) {
             log_message("error", $e);
@@ -451,6 +465,7 @@ class PaymentsController extends ResourceController
             return $this->respond(['data' => $results, 'message' => 'Invoices generated successfully'], ResponseInterface::HTTP_OK);
 
         } catch (\InvalidArgumentException $e) {
+            log_message("error", $e);
             return $this->respond(['message' => $e->getMessage()], ResponseInterface::HTTP_BAD_REQUEST);
         } catch (\Throwable $e) {
             log_message("error", $e);

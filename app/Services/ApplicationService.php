@@ -51,7 +51,7 @@ class ApplicationService
         if (!$template) {
             throw new \InvalidArgumentException("Form template not found");
         }
-        $data['template'] = $template->data;
+        $data['template'] = is_string($template->data) ? $template->data : json_encode($template->data);
         // Set initial status
         if (empty($template->initialStage)) {
             $data['status'] = "Pending approval";
@@ -138,8 +138,8 @@ class ApplicationService
         if (!$template) {
             throw new \RuntimeException("Application template not found");
         }
-
-        $stages = json_decode($template->stages, true);
+        // log_message('info', "Template: " . print_r($template, true));
+        $stages = is_string($template->stages) ? json_decode($template->stages, true) : $template->stages;
         if (empty($stages)) {
             throw new \RuntimeException("Application stages not found");
         }
@@ -535,14 +535,17 @@ class ApplicationService
 
     private function processStageActions(array $actions, array $application, ApplicationsModel $model): void
     {
-        $model->db->transException(true)->transStart();
+        $model->db->transException(transException: true)->transStart();
         try {
+            // log_message('info', "Processing application: " . print_r($application['form_data'], true));
+            $formData = json_decode($application['form_data'], true);
+            $applicationData = array_merge($application, $formData);
+
             foreach ($actions as $action) {
                 // Merge form_data with application data
-                $formData = json_decode($application['form_data'], true);
-                unset($application['form_data']);
-                $applicationData = array_merge($application, $formData);
 
+                // unset($application['form_data']);
+                $action = \App\Helpers\Types\ApplicationStageType::fromArray($action);
                 ApplicationFormActionHelper::runAction((object) $action, $applicationData);
             }
 
@@ -612,6 +615,13 @@ class ApplicationService
             $formData['created_on'] = $value->created_on;
             $formData['form_type'] = $value->form_type;
             $formData['application_code'] = $value->application_code;
+            //for these field if they're not in formData, use whatever value is in the $value
+            $defaultFields = ["first_name", "last_name", "middle_name", "email", "phone"];
+            foreach ($defaultFields as $field) {
+                if (!array_key_exists($field, $formData)) {
+                    $formData[$field] = $value->$field;
+                }
+            }
 
             // Collect unique form columns
             $formColumns = array_keys($formData);

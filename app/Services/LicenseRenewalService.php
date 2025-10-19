@@ -135,6 +135,9 @@ class LicenseRenewalService
         if ($requirePermission) {
             $permission = $stage->permission;
             $rpModel = new \App\Models\RolePermissionsModel();
+            //if an admin, check the permission. if not, check if the user is the owner of the renewal
+            log_message('info', print_r(\auth()->getUser(), true));
+
             if (!$rpModel->hasPermission(auth()->getUser()->role_name, $permission)) {
                 log_message("error", "User " . auth()->getUser()->username . " attempted to activate renewal stage {$stage->label} without the required permission: $permission");
                 throw new \CodeIgniter\Shield\Exceptions\PermissionException("You do not have permission to perform this action");
@@ -158,7 +161,6 @@ class LicenseRenewalService
             //run the actions for that stage
             if (isset($stage->actions)) {
                 foreach ($stage->actions as $action) {
-                    log_message('info', "Running action for renewal: " . json_encode($action) . json_encode($renewalDetails));
                     try {
                         ApplicationFormActionHelper::runAction($action, (array) $renewalDetails);
                     } catch (\Throwable $th) {
@@ -229,7 +231,7 @@ class LicenseRenewalService
      * @return array An array containing the results of the bulk renewal update.
      * @throws Exception If validation fails or if the renewal status is invalid.
      */
-    public function updateBulkRenewals(array $renewalsData, ?string $status = null): array
+    public function updateBulkRenewals(array $renewalsData, ?string $status = null, bool $requireStageValidationPermission = true): array
     {
         $results = [];
         $failed = 0;
@@ -283,7 +285,7 @@ class LicenseRenewalService
 
 
                     $renewalStage = $validStages[array_search($status, $validStageNames)];
-                    $this->validateRenewalStageActivation($renewal, $renewalStage, $licenseType);
+                    $this->validateRenewalStageActivation($renewal, $renewalStage, $licenseType, $requireStageValidationPermission);
                     $renewal['status'] = $status;
 
                 }
@@ -526,13 +528,20 @@ class LicenseRenewalService
     /**
      * Get the form fields for the license renewal form for the given license type, but for the portal.
      * @param string $licenseType the license type
+     * @param array $existingDetails the existing details
      * @return array the form fields
      */
-    public function getPortalLicenseRenewalFormFields(string $licenseType): array
+    public function getPortalLicenseRenewalFormFields(string $licenseType, array $existingDetails): array
     {
         $licenseDef = Utils::getLicenseSetting($licenseType);
-
-        return $licenseDef->renewalFields;
+        $fields = $licenseDef->portalRenewalFields;
+        //if a field has a value in the format --somefield-- then replace it with the existing value
+        foreach ($fields as $field) {
+            if (in_array($field->name, $licenseDef->portalRenewalFieldsPrePopulate)) {
+                $field->value = $existingDetails[$field->name] ?? $field->value;
+            }
+        }
+        return $licenseDef->portalRenewalFields;
     }
 
     /**
@@ -729,7 +738,7 @@ class LicenseRenewalService
                             "fill_form",
                             null,
                             "Please fill the application form to apply for renewal",
-                            $this->getPortalLicenseRenewalFormFields($userData->profile_data['type']),
+                            $this->getPortalLicenseRenewalFormFields($userData->profile_data['type'], $userData->profile_data),
                             false,
                             $lastRenewalId
                         );
@@ -753,7 +762,7 @@ class LicenseRenewalService
                 if ($eligible) {
                     //check if online applications are open
                     if ($onlineApplicationsOpen) {
-                        $response = new PractitionerPortalRenewalViewModelType("fill_form", null, "You are eligible for renewal", $this->getPortalLicenseRenewalFormFields($userData->profile_data['type']), false);
+                        $response = new PractitionerPortalRenewalViewModelType("fill_form", null, "You are eligible for renewal", $this->getPortalLicenseRenewalFormFields($userData->profile_data['type'], $userData->profile_data), false);
                     } else {
                         $response = new PractitionerPortalRenewalViewModelType("", null, "Online applications are closed", [], false, $lastRenewalId);
 
@@ -1049,7 +1058,7 @@ class LicenseRenewalService
         if (empty($renewal)) {
             throw new \InvalidArgumentException("Renewal not found");
         }
-
+        log_message("debug", print_r($renewal['qualifications'], true));
         if ($renewal['license_uuid'] != $licenseUuid) {
             throw new \InvalidArgumentException("You do not have permission to view this renewal");
         }

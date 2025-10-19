@@ -33,6 +33,16 @@ class AppSettingsLicenseType
     public array $renewalSearchFields;
     public array $gazetteTableColumns;
     public array $renewalJsonFields;
+    /**
+     * fields that the portal should show in the renewal form. this is different from the 'renewalFields' array, which is used for the renewal form in the admin side
+     * @var FormFieldType[]
+     */
+    public array $portalRenewalFields;
+    /**
+     * an array of fields that should be prepopulated using existing data. this can be used together with the 'readonly' type on a field that should be prepopulated but not editable
+     * @var string[]
+     */
+    public array $portalRenewalFieldsPrePopulate;
 
     public array $searchFields;
     /**
@@ -73,7 +83,9 @@ class AppSettingsLicenseType
         array $gazetteTableColumns = [],
         array $renewalJsonFields = [],
         array $userActions = [],
-        array $searchFields = []
+        array $searchFields = [],
+        array $portalRenewalFields = [],
+        array $portalRenewalFieldsPrePopulate = []
     ) {
         $this->table = $table;
         $this->uniqueKeyField = $uniqueKeyField;
@@ -107,6 +119,8 @@ class AppSettingsLicenseType
         $this->renewalJsonFields = $renewalJsonFields;
         $this->userActions = $userActions;
         $this->searchFields = $searchFields;
+        $this->portalRenewalFields = $portalRenewalFields;
+        $this->portalRenewalFieldsPrePopulate = $portalRenewalFieldsPrePopulate;
     }
 
     /**
@@ -114,6 +128,12 @@ class AppSettingsLicenseType
      */
     public static function fromArray(array $data): self
     {
+        $portalRenewalFields = [];
+        if (isset($data['portalRenewalFields']) && is_array($data['portalRenewalFields'])) {
+            foreach ($data['portalRenewalFields'] as $portalRenewalField) {
+                $portalRenewalFields[] = FormFieldType::fromArray($portalRenewalField);
+            }
+        }
         return new self(
             $data['table'] ?? '',
             $data['uniqueKeyField'] ?? '',
@@ -146,7 +166,9 @@ class AppSettingsLicenseType
             $data['gazetteTableColumns'] ?? [],
             $data['renewalJsonFields'] ?? [],
             $data['userActions'] ?? [],
-            $data['searchFields'] ?? []
+            $data['searchFields'] ?? [],
+            $portalRenewalFields ?? [],
+            $data['portalRenewalFieldsPrePopulate'] ?? []
         );
     }
 
@@ -201,7 +223,9 @@ class AppSettingsLicenseType
             'gazetteTableColumns' => $this->gazetteTableColumns,
             'renewalJsonFields' => $this->renewalJsonFields,
             'userActions' => $this->userActions,
-            'searchFields' => $this->searchFields
+            'searchFields' => $this->searchFields,
+            'portalRenewalFields' => $this->portalRenewalFields,
+            'portalRenewalFieldsPrePopulate' => $this->portalRenewalFieldsPrePopulate
         ];
     }
 

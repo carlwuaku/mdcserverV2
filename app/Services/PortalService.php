@@ -2,6 +2,7 @@
 
 namespace App\Services;
 use App\Helpers\AuthHelper;
+use App\Helpers\Types\CriteriaType;
 use App\Models\Licenses\LicensesModel;
 use App\Helpers\Utils;
 use App\Models\SettingsModel;
@@ -50,5 +51,32 @@ class PortalService
             //TODO: add fields for non-licensed users
             return [];
         }
+    }
+
+    /**
+     * Gets the value of the system setting with the given name.
+     *
+     * This will check the criteria of each value in the setting and return the value
+     * that matches the user data.
+     *
+     * @param string $name the name of the system setting
+     * @return mixed the value of the system setting
+     */
+    public function getSystemSetting(string $name)
+    {
+        $setting = Utils::getSystemSetting($name);
+        //check the criteria
+        $userId = auth("tokens")->id();
+        $user = AuthHelper::getAuthUser($userId);
+        $userData = array_merge((array) $user, (array) $user->profile_data);
+        $returnValue = null;
+        foreach ($setting->value as $value) {
+            if (CriteriaType::matchesCriteria((array) $userData, $value->criteria)) {
+                $returnValue = $value->value;
+                break;
+            }
+        }
+
+        return $returnValue;
     }
 }

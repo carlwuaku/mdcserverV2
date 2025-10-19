@@ -274,7 +274,12 @@ class PrintQueueController extends ResourceController
 
             // Check if user has access to this template
             $userRole = auth("tokens")->user()->role_name;
-            if (!$this->printTemplateRolesModel->hasAccess($template->uuid, $userRole)) {
+            //if user has the 'Create_Print_Templates' or 'Edit_Print_Templates' role, return all templates
+            $rpModel = new \App\Models\RolePermissionsModel();
+            if (
+                !$rpModel->hasPermission(auth()->getUser()->role_name, 'Create_Print_Templates') && !$rpModel->hasPermission(auth()->getUser()->role_name, 'Edit_Print_Templates')
+                && !$this->printTemplateRolesModel->hasAccess($template->uuid, $userRole)
+            ) {
                 return $this->respond(['message' => "Access denied"], ResponseInterface::HTTP_FORBIDDEN);
             }
 
@@ -427,7 +432,9 @@ class PrintQueueController extends ResourceController
 
             // Check if user has access to this template
             $userRole = auth("tokens")->user()->role_name;
-            if (!$this->printTemplateRolesModel->hasAccess($template->uuid, $userRole)) {
+            //if user has the 'Create_Print_Templates' or 'Edit_Print_Templates' role, return all templates
+            $rpModel = new \App\Models\RolePermissionsModel();
+            if (!$rpModel->hasPermission(auth()->getUser()->role_name, 'Create_Print_Templates') && !$rpModel->hasPermission(auth()->getUser()->role_name, 'Edit_Print_Templates') && !$this->printTemplateRolesModel->hasAccess($template->uuid, $userRole)) {
                 return $this->respond(['message' => "Access denied"], ResponseInterface::HTTP_FORBIDDEN);
             }
 
@@ -438,7 +445,7 @@ class PrintQueueController extends ResourceController
             );
 
             return $this->respond(['data' => $template, 'displayColumns' => $model->getDisplayColumns()], ResponseInterface::HTTP_OK);
-        } catch (\Exception $th) {
+        } catch (Exception $th) {
             log_message("error", $th->getMessage());
             return $this->respond(['message' => "An error occurred"], ResponseInterface::HTTP_BAD_REQUEST);
         }
@@ -521,8 +528,13 @@ class PrintQueueController extends ResourceController
             if (!$userRole) {
                 return $this->respond(['message' => 'User role not found'], ResponseInterface::HTTP_FORBIDDEN);
             }
-
-            $accessibleTemplateUuids = $this->printTemplateRolesModel->getAccessibleTemplateUuids($userRole);
+            //if user has the 'Create_Print_Templates' or 'Edit_Print_Templates' role, return all templates
+            $rpModel = new \App\Models\RolePermissionsModel();
+            if ($rpModel->hasPermission(auth()->getUser()->role_name, 'Create_Print_Templates') || $rpModel->hasPermission(auth()->getUser()->role_name, 'Edit_Print_Templates')) {
+                $accessibleTemplateUuids = [ALL];
+            } else {
+                $accessibleTemplateUuids = $this->printTemplateRolesModel->getAccessibleTemplateUuids($userRole);
+            }
 
             $builder = $param ? $model->search($param) : $model->builder();
 
@@ -536,8 +548,9 @@ class PrintQueueController extends ResourceController
                     'columnFilters' => $model->getDisplayColumnFilters()
                 ], ResponseInterface::HTTP_OK);
             }
-
-            $builder->whereIn('uuid', $accessibleTemplateUuids);
+            if (!in_array(ALL, $accessibleTemplateUuids)) {
+                $builder->whereIn('uuid', $accessibleTemplateUuids);
+            }
             $builder->orderBy("$sortBy", $sortOrder);
 
             if ($withDeleted) {

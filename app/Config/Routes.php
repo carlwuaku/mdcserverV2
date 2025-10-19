@@ -52,6 +52,7 @@ $routes->group("portal", ["namespace" => "App\Controllers"], function (RouteColl
     $routes->put("payment/invoice/payment_method/(:segment)", [PaymentsController::class, "updateInvoicePaymentMethod/$1"], ["filter" => ["apiauth"]], );
     $routes->post("payment/invoices/manual-payment", [PaymentsController::class, "createPaymentFileUpload"], ["filter" => ["apiauth"]]);
     $routes->delete("payment/invoices/manual-payment/(:segment)", [PaymentsController::class, "deletePaymentFileUpload/$1"], ["filter" => ["apiauth"]]);
+    $routes->post("payment/invoices/printout", [PaymentsController::class, "generateInvoicePrintouts"], ["filter" => ["apiauth"]]);
     $routes->get("cpd/details", [CpdController::class, "getCpds"], ["filter" => ["apiauth"]], );
     $routes->get("cpd/attendance", [CpdController::class, "getLicenseCpdAttendances"], ["filter" => ["apiauth"]]);
     $routes->get("work-history", [PractitionerController::class, "getPractitionerWorkHistories"], ["filter" => ["apiauth"]]);
@@ -70,6 +71,7 @@ $routes->group("portal", ["namespace" => "App\Controllers"], function (RouteColl
     $routes->get("housemanship/postings/letter/(:segment)", [HousemanshipController::class, "generateHousemanshipPostingLetter/$1"], ["filter" => ["apiauth"]]);
     $routes->post("housemanship/postings/applications", [HousemanshipController::class, "createHousemanshipPostingApplication"], ["filter" => ["apiauth"]]);
     $routes->delete("housemanship/postings/applications/(:segment)", [HousemanshipController::class, "deleteHousemanshipPostingApplication/$1"], ["filter" => ["apiauth"]]);
+    $routes->get("settings/(:segment)", [PortalController::class, "getSystemSetting/$1"], ["filter" => ["apiauth"]]);
 
 
 });
@@ -390,6 +392,7 @@ $routes->group("payment", ["namespace" => "App\Controllers", "filter" => "apiaut
 
     $routes->delete("payment-uploads/(:segment)", [PaymentsController::class, "deletePaymentFileUpload/$1"], ["filter" => ["hasPermission:Delete_Payment_Evidence_File"]]);
     $routes->get("payment-uploads", [PaymentsController::class, "getPaymentFileUploads"], ["filter" => ["hasPermission:View_Payment_Evidence_File"]]);
+    $routes->get("payment-uploads/count", [PaymentsController::class, "countPaymentFileUploads"], ["filter" => ["hasPermission:View_Payment_Evidence_File"]]);
 
     $routes->post("payment-uploads", [PaymentsController::class, "createPaymentFileUpload"], ["filter" => ["hasPermission:Upload_Payment_Evidence_File"]]);
     $routes->post("payment-uploads/(:num)/approve", [PaymentsController::class, "approvePaymentFileUpload/$1"], ["filter" => ["hasPermission:Approve_Payment_Evidence_File"]]);

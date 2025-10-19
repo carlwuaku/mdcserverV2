@@ -157,12 +157,14 @@ define("SETTING_USER_EXAM_CANDIDATE_ADDED_EMAIL_SUBJECT", "General.user_exam_can
 define("SETTING_EMAIL_HEADER_AND_FOOTER_TEMPLATE", "General.email_header_and_footer_template");
 define("SETTING_PASSWORD_RESET_TOKEN_TIMEOUT", "General.password_reset_token_timeout");
 define('SETTING_PORTAL_EDITABLE_FIELDS', 'portal_editable_fields');//for now we're not adding the class (General) to the key. we'll use the settings model directly for it
+define('SETTING_DEFAULT_INVOICE_PRINT_TEMPLATE', 'General.default_invoice_template');
 
 define("DEFAULT_APPLICATION_FORM_TEMPLATES", "defaultApplicationFormTemplates");
 define("DEFAULT_PRINT_TEMPLATES", "defaultPrintTemplates");
 
 define("EVENT_USER_ADDED", "user_added");
-define("EVENT_INVOICE_PAYMENT_COMPLETED", "invoice_payment_completed");
+
+define("INVOICE_EVENT", "invoice_event");
 define("EVENT_APPLICATION_FORM_ACTION_COMPLETED", "application_form_action_completed");
 
 define("PORTAL_EDIT_FORM_TYPE", "Portal Edit");
@@ -175,4 +177,5 @@ define("PERMANENT", "Permanent");
 define("APPROVED", "Approved");
 define("PAYMENT_METHOD_IN_PERSON", "In-Person");
 define("PAYMENT_METHOD_GHANA_GOV_PLATFORM", "Ghana.gov Platform");
+define("ALL", "ALL");
 

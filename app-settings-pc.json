@@ -488,7 +488,7 @@
                         "form_type": "Portal Edit",
                         "status": "Pending Approval"
                     },
-                    "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Portal Edit",
+                    "apiCountUrl": "applications/count?status=Pending Approval&form_type=Portal Edit",
                     "apiCountText": "",
                     "permissions": [
                         "View_Application_Forms"
@@ -503,7 +503,7 @@
                         "renewal_practitioner_type": "Pharmacist",
                         "status": "Pending Approval"
                     },
-                    "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Pending Approval&renewal_practitioner_type=Pharmacist",
+                    "apiCountUrl": "licenses/renewal-count?license_type=practitioners&status=Pending Approval&renewal_practitioner_type=Pharmacist",
                     "apiCountText": "",
                     "permissions": [
                         "View_License_Renewal"
@@ -518,7 +518,7 @@
                         "renewal_practitioner_type": "Pharmacist",
                         "status": "Pending Payment"
                     },
-                    "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Pending Payment&renewal_practitioner_type=Pharmacist",
+                    "apiCountUrl": "licenses/renewal-count?license_type=practitioners&status=Pending Payment&renewal_practitioner_type=Pharmacist",
                     "apiCountText": "",
                     "permissions": [
                         "View_License_Renewal"
@@ -526,7 +526,7 @@
                 }
             ],
             "description": "Manage submitted applications",
-            "apiCountUrl": "/applications/count?status=Pending Approval",
+            "apiCountUrl": "applications/count?status=Pending Approval",
             "apiCountText": "New Applications"
         },
         {
@@ -544,7 +544,7 @@
                     "urlParams": {
                         "form_type": "CPD Attendance"
                     },
-                    "apiCountUrl": "/applications/count?status=Pending Approval&form_type=CPD Attendance",
+                    "apiCountUrl": "applications/count?status=Pending Approval&form_type=CPD Attendance",
                     "apiCountText": "",
                     "permissions": [
                         "View_Application_Forms"
@@ -552,7 +552,7 @@
                 }
             ],
             "description": "",
-            "apiCountUrl": "/applications/count?status=Pending Approval&form_type=CPD Attendance",
+            "apiCountUrl": "applications/count?status=Pending Approval&form_type=CPD Attendance",
             "apiCountText": "Submissions pending approval"
         },
         {
@@ -570,7 +570,7 @@
                     "urlParams": {
                         "type": "Pharmacist"
                     },
-                    "apiCountUrl": "/housemanship/posting-application-count?type=Pharmacist&session=1",
+                    "apiCountUrl": "housemanship/posting-application-count?type=Pharmacist&session=1",
                     "apiCountText": "",
                     "permissions": [
                         "View_Housemanship_Posting_Applications"
@@ -584,7 +584,7 @@
                     "urlParams": {
                         "type": "PA"
                     },
-                    "apiCountUrl": "/housemanship/posting-application-count?type=PA&session=1",
+                    "apiCountUrl": "housemanship/posting-application-count?type=PA&session=1",
                     "apiCountText": "",
                     "permissions": [
                         "View_Housemanship_Posting_Applications"
@@ -598,7 +598,7 @@
                     "urlParams": {
                         "type": "Pharmacist"
                     },
-                    "apiCountUrl": "/housemanship/posting-application-count?type=Pharmacist&session=2",
+                    "apiCountUrl": "housemanship/posting-application-count?type=Pharmacist&session=2",
                     "apiCountText": "",
                     "permissions": [
                         "View_Housemanship_Posting_Applications"
@@ -612,7 +612,7 @@
                     "urlParams": {
                         "type": "PA"
                     },
-                    "apiCountUrl": "/housemanship/posting-application-count?type=PA&session=2",
+                    "apiCountUrl": "housemanship/posting-application-count?type=PA&session=2",
                     "apiCountText": "",
                     "permissions": [
                         "View_Housemanship_Posting_Applications"
@@ -650,7 +650,7 @@
                         "child_type": "Pharmacist",
                         "child_category": "Medical"
                     },
-                    "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Examination Candidates Registration Application&child_type=Pharmacist",
+                    "apiCountUrl": "applications/count?status=Pending Approval&form_type=Examination Candidates Registration Application&child_type=Pharmacist",
                     "apiCountText": "",
                     "permissions": [
                         "View_Application_Forms"
@@ -667,7 +667,7 @@
                         "child_type": "Pharmacy Technician",
                         "child_category": "Medical"
                     },
-                    "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Examination Candidates Registration Application&child_type=Pharmacy Technician",
+                    "apiCountUrl": "applications/count?status=Pending Approval&form_type=Examination Candidates Registration Application&child_type=Pharmacy Technician",
                     "apiCountText": "",
                     "permissions": [
                         "View_Application_Forms"
@@ -679,11 +679,32 @@
                     "icon": "",
                     "children": [],
                     "urlParams": {},
-                    "apiCountUrl": "/examinations/applications/count",
+                    "apiCountUrl": "examinations/applications/count",
                     "apiCountText": "",
                     "permissions": [
                         "Approve_Or_Deny_Examination_Applications"
                     ]
+                }
+            ],
+            "description": "",
+            "apiCountUrl": "",
+            "apiCountText": ""
+        },
+        {
+            "title": "Payment",
+            "active_children": false,
+            "url": "",
+            "icon": "payments",
+            "color": "black",
+            "children": [
+                {
+                    "title": "Payment uploads pending approval",
+                    "url": "/payment/payment-uploads",
+                    "icon": "",
+                    "children": [],
+                    "urlParams": {},
+                    "apiCountUrl": "payment/payment-uploads/count",
+                    "apiCountText": ""
                 }
             ],
             "description": "",
@@ -1256,7 +1277,75 @@
                     "apiType": "select"
                 }
             ],
-            "implicitRenewalFields": [],
+            "portalRenewalFields": [
+                {
+                    "label": "Place of Work",
+                    "name": "place_of_work",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": false,
+                    "api_url": "",
+                    "apiKeyProperty": "",
+                    "apiLabelProperty": ""
+                },
+                {
+                    "label": "Institution Type",
+                    "name": "institution_type",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": false,
+                    "api_url": "portal/settings/work_institution_types",
+                    "apiKeyProperty": "name",
+                    "apiLabelProperty": "name",
+                    "apiType": "datalist"
+                },
+                {
+                    "label": "Region",
+                    "name": "region",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "regions/regions",
+                    "apiKeyProperty": "name",
+                    "apiLabelProperty": "name",
+                    "apiType": "select"
+                },
+                {
+                    "label": "District",
+                    "name": "district",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "regions/districts",
+                    "apiKeyProperty": "district",
+                    "apiLabelProperty": "district",
+                    "apiType": "select"
+                }
+            ],
+            "portalRenewalFieldsPrePopulate": [
+                "specialty",
+                "subspecialty"
+            ],
+            "implicitRenewalFields": [
+                "first_name",
+                "middle_name",
+                "last_name",
+                "title",
+                "maiden_name",
+                "category",
+                "sex",
+                "practitioner_type",
+                "register_type",
+                "qualifications"
+            ],
             "renewalTable": "practitioners_renewal",
             "renewalStages": {
                 "Pending Payment": {
@@ -1279,7 +1368,7 @@
                     "icon": "list_alt",
                     "children": [],
                     "description": "View/Print approved applications",
-                    "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Pending Payment",
+                    "apiCountUrl": "licenses/renewal-count?license_type=practitioners&status=Pending Payment",
                     "apiCountText": "Renewals",
                     "actions": [
                         {
@@ -1392,7 +1481,7 @@
                     "icon": "list_alt",
                     "children": [],
                     "description": "View/Print approved applications",
-                    "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Approved",
+                    "apiCountUrl": "licenses/renewal-count?license_type=practitioners&status=Approved",
                     "apiCountText": "Renewals",
                     "actions": [
                         {
@@ -2201,6 +2290,76 @@
                     "required": true
                 }
             ],
+            "portalRenewalFields": [
+                {
+                    "label": "Superintendent Pharmacist",
+                    "name": "practitioner_in_charge",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": true,
+                    "api_url": "licenses/renewal-check-superintendent",
+                    "apiKeyProperty": "license_number",
+                    "apiLabelProperty": "name",
+                    "apiType": "search"
+                },
+                {
+                    "label": "Weekdays Start Time",
+                    "name": "weekdays_start_time",
+                    "hint": "",
+                    "options": [],
+                    "type": "time",
+                    "value": "",
+                    "required": true
+                },
+                {
+                    "label": "Weekdays End Time",
+                    "name": "weekdays_end_time",
+                    "hint": "",
+                    "options": [],
+                    "type": "time",
+                    "value": "",
+                    "required": false
+                },
+                {
+                    "label": "Weekend Start Time",
+                    "name": "weekend_start_time",
+                    "hint": "",
+                    "options": [],
+                    "type": "time",
+                    "value": "",
+                    "required": false
+                },
+                {
+                    "label": "Weekdays End Time",
+                    "name": "weekend_end_time",
+                    "hint": "",
+                    "options": [],
+                    "type": "time",
+                    "value": "",
+                    "required": false
+                },
+                {
+                    "label": "Superintendent Pharmacist start time",
+                    "name": "in_charge_start_time",
+                    "hint": "",
+                    "options": [],
+                    "type": "time",
+                    "value": "",
+                    "required": true
+                },
+                {
+                    "label": "Superintendent Pharmacist closing time",
+                    "name": "in_charge_end_time",
+                    "hint": "",
+                    "options": [],
+                    "type": "time",
+                    "value": "",
+                    "required": true
+                }
+            ],
+            "portalRenewalFieldsPrePopulate": [],
             "implicitRenewalFields": [
                 "business_type"
             ],
@@ -2226,7 +2385,7 @@
                     "icon": "list_alt",
                     "children": [],
                     "description": "View/Print approved applications",
-                    "apiCountUrl": "/licenses/renewal-count?license_type=facilities&status=Pending Payment",
+                    "apiCountUrl": "licenses/renewal-count?license_type=facilities&status=Pending Payment",
                     "apiCountText": "Renewals",
                     "actions": [
                         {
@@ -2266,7 +2425,7 @@
                     "icon": "list_alt",
                     "children": [],
                     "description": "Manage submitted applications",
-                    "apiCountUrl": "/licenses/renewal-count?license_type=facilities&status=Pending Regional Approval",
+                    "apiCountUrl": "licenses/renewal-count?license_type=facilities&status=Pending Regional Approval",
                     "apiCountText": "Renewals",
                     "actions": []
                 },
@@ -2290,7 +2449,7 @@
                     "icon": "list_alt",
                     "children": [],
                     "description": "Manage submitted applications",
-                    "apiCountUrl": "/licenses/renewal-count?license_type=facilities&status=Pending Authorization",
+                    "apiCountUrl": "licenses/renewal-count?license_type=facilities&status=Pending Authorization",
                     "apiCountText": "Renewals",
                     "actions": []
                 },
@@ -2361,7 +2520,7 @@
                     "icon": "list_alt",
                     "children": [],
                     "description": "View/Print approved applications",
-                    "apiCountUrl": "/licenses/renewal-count?license_type=facilities&status=Approved",
+                    "apiCountUrl": "licenses/renewal-count?license_type=facilities&status=Approved",
                     "apiCountText": "Renewals",
                     "actions": [
                         {
@@ -2846,6 +3005,8 @@
             },
             "onUpdateValidation": {},
             "renewalFields": [],
+            "portalRenewalFields": [],
+            "portalRenewalFieldsPrePopulate": [],
             "implicitRenewalFields": [],
             "renewalTable": "otcms_renewal",
             "renewalStages": {
@@ -2869,7 +3030,7 @@
                     "icon": "list_alt",
                     "children": [],
                     "description": "Renewals pending authorization",
-                    "apiCountUrl": "/licenses/renewal-count?license_type=otcms&status=Pending Authorization",
+                    "apiCountUrl": "licenses/renewal-count?license_type=otcms&status=Pending Authorization",
                     "apiCountText": "Renewals",
                     "actions": [
                         {
@@ -2956,7 +3117,7 @@
                     "icon": "list_alt",
                     "children": [],
                     "description": "View/Print approved renewal applications",
-                    "apiCountUrl": "/licenses/renewal-count?license_type=otcms&status=Approved",
+                    "apiCountUrl": "licenses/renewal-count?license_type=otcms&status=Approved",
                     "apiCountText": "Renewals",
                     "actions": [
                         {
@@ -4687,6 +4848,21 @@
             "template": ""
         }
     ],
+    "portalAlerts": [
+        {
+            "criteria": [
+                {
+                    "field": "require_revalidation",
+                    "operator": "equals",
+                    "value": [
+                        "yes"
+                    ]
+                }
+            ],
+            "message": "You require revalidation",
+            "type": "danger"
+        }
+    ],
     "commonApplicationTemplates": {
         "exam_candidates": {
             "label": "Examination Candidates Application",
@@ -4831,6 +5007,19 @@
                 "activityTypes": [
                     "renewal"
                 ],
+                "onPaymentFileUploadedActions": [
+                    {
+                        "type": "update_renewal_status",
+                        "config_type": "internal_api_call",
+                        "label": "Update renewal status",
+                        "config": {
+                            "body_mapping": {
+                                "status": "Pending Approval",
+                                "in_print_queue": "0"
+                            }
+                        }
+                    }
+                ],
                 "onPaymentCompletedActions": [
                     {
                         "type": "email",
@@ -4854,6 +5043,19 @@
                         "config": {
                             "body_mapping": {
                                 "status": "Pending Regional Approval"
+                            }
+                        }
+                    }
+                ],
+                "onPaymentFileDeletedActions": [
+                    {
+                        "type": "update_renewal_status",
+                        "config_type": "internal_api_call",
+                        "label": "Update renewal status",
+                        "config": {
+                            "body_mapping": {
+                                "status": "Pending Payment",
+                                "in_print_queue": "0"
                             }
                         }
                     }
@@ -4891,6 +5093,19 @@
                 "activityTypes": [
                     "renewal"
                 ],
+                "onPaymentFileUploadedActions": [
+                    {
+                        "type": "update_renewal_status",
+                        "config_type": "internal_api_call",
+                        "label": "Update renewal status",
+                        "config": {
+                            "body_mapping": {
+                                "status": "Pending Approval",
+                                "in_print_queue": "0"
+                            }
+                        }
+                    }
+                ],
                 "onPaymentCompletedActions": [
                     {
                         "type": "update_renewal_status",
@@ -4902,6 +5117,19 @@
                                 "in_print_queue": "0",
                                 "print_template": "Default Pharmacists/Technicians Renewal Certificate Template",
                                 "online_print_template": "Default Pharmacists/Technicians Renewal Certificate Template"
+                            }
+                        }
+                    }
+                ],
+                "onPaymentFileDeletedActions": [
+                    {
+                        "type": "update_renewal_status",
+                        "config_type": "internal_api_call",
+                        "label": "Update renewal status",
+                        "config": {
+                            "body_mapping": {
+                                "status": "Pending Payment",
+                                "in_print_queue": "0"
                             }
                         }
                     }
@@ -4939,6 +5167,19 @@
                 "activityTypes": [
                     "renewal"
                 ],
+                "onPaymentFileUploadedActions": [
+                    {
+                        "type": "update_renewal_status",
+                        "config_type": "internal_api_call",
+                        "label": "Update renewal status",
+                        "config": {
+                            "body_mapping": {
+                                "status": "Pending Approval",
+                                "in_print_queue": "0"
+                            }
+                        }
+                    }
+                ],
                 "onPaymentCompletedActions": [
                     {
                         "type": "update_renewal_status",
@@ -4950,6 +5191,19 @@
                                 "in_print_queue": "0",
                                 "print_template": "Default Pharmacists/Technicians Renewal Certificate Template",
                                 "online_print_template": "Default Pharmacists/Technicians Renewal Certificate Template"
+                            }
+                        }
+                    }
+                ],
+                "onPaymentFileDeletedActions": [
+                    {
+                        "type": "update_renewal_status",
+                        "config_type": "internal_api_call",
+                        "label": "Update renewal status",
+                        "config": {
+                            "body_mapping": {
+                                "status": "Pending Payment",
+                                "in_print_queue": "0"
                             }
                         }
                     }
@@ -4970,6 +5224,19 @@
                 "activityTypes": [
                     "renewal"
                 ],
+                "onPaymentFileUploadedActions": [
+                    {
+                        "type": "update_renewal_status",
+                        "config_type": "internal_api_call",
+                        "label": "Update renewal status",
+                        "config": {
+                            "body_mapping": {
+                                "status": "Pending Approval",
+                                "in_print_queue": "0"
+                            }
+                        }
+                    }
+                ],
                 "onPaymentCompletedActions": [
                     {
                         "type": "update_renewal_status",
@@ -4978,6 +5245,19 @@
                         "config": {
                             "body_mapping": {
                                 "status": "Approved"
+                            }
+                        }
+                    }
+                ],
+                "onPaymentFileDeletedActions": [
+                    {
+                        "type": "update_renewal_status",
+                        "config_type": "internal_api_call",
+                        "label": "Update renewal status",
+                        "config": {
+                            "body_mapping": {
+                                "status": "Pending Payment",
+                                "in_print_queue": "0"
                             }
                         }
                     }
@@ -5011,7 +5291,7 @@
             "label": "Registered Pharmacists, Pharmacy Technicians, OTCMS & Pharmacies"
         },
         {
-            "value": "exam_candidates",
+            "value": "license",
             "label": "Examination Candidates"
         },
         {
@@ -5807,5 +6087,21 @@
             "template_name": "Default Pharmacists/Technicians Renewal Certificate Template",
             "template_content": "<html><body><p>the application will be printed</p></body></html>"
         }
-    ]
+    ],
+    "systemSettings": {
+        "housemanship_applications_open": {
+            "key": "housemanship_applications_open",
+            "value": [
+                {
+                    "criteria": [],
+                    "value": "yes"
+                }
+            ],
+            "label": "Housemanship applications open",
+            "control_type": "yes-no",
+            "class": "General",
+            "type": "string",
+            "description": "Whether housemanship applications can be submitted from the portal or not"
+        }
+    }
 }

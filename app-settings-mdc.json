@@ -335,7 +335,7 @@
             "title": "Payment",
             "active_children": false,
             "url": "",
-            "icon": "assignment",
+            "icon": "payments",
             "color": "black",
             "children": [
                 {
@@ -1031,7 +1031,7 @@
                     "name": "qualifications",
                     "hint": "",
                     "options": [],
-                    "type": "hidden",
+                    "type": "json",
                     "value": "",
                     "required": false,
                     "api_url": "",
@@ -1040,7 +1040,103 @@
                     "apiType": ""
                 }
             ],
-            "implicitRenewalFields": [],
+            "portalRenewalFields": [
+                {
+                    "label": "Place of Work",
+                    "name": "place_of_work",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": false,
+                    "api_url": "",
+                    "apiKeyProperty": "",
+                    "apiLabelProperty": ""
+                },
+                {
+                    "label": "Institution Type",
+                    "name": "institution_type",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "portal/settings/work_institution_types",
+                    "apiKeyProperty": "name",
+                    "apiLabelProperty": "name",
+                    "apiType": "datalist"
+                },
+                {
+                    "label": "Region",
+                    "name": "region",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "regions/regions",
+                    "apiKeyProperty": "name",
+                    "apiLabelProperty": "name",
+                    "apiType": "select"
+                },
+                {
+                    "label": "District",
+                    "name": "district",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "regions/districts",
+                    "apiKeyProperty": "district",
+                    "apiLabelProperty": "district",
+                    "apiType": "select"
+                },
+                {
+                    "label": "Specialty",
+                    "name": "specialty",
+                    "hint": "",
+                    "options": [],
+                    "type": "readonly",
+                    "value": "",
+                    "required": false,
+                    "api_url": "",
+                    "apiKeyProperty": "",
+                    "apiLabelProperty": "",
+                    "apiType": "",
+                    "showOnly": true
+                },
+                {
+                    "label": "Subspecialty",
+                    "name": "subspecialty",
+                    "hint": "",
+                    "options": [],
+                    "type": "readonly",
+                    "value": "",
+                    "required": false,
+                    "api_url": "",
+                    "apiKeyProperty": "",
+                    "apiLabelProperty": "",
+                    "apiType": "",
+                    "showOnly": true
+                }
+            ],
+            "portalRenewalFieldsPrePopulate": [
+                "specialty",
+                "subspecialty"
+            ],
+            "implicitRenewalFields": [
+                "first_name",
+                "middle_name",
+                "last_name",
+                "title",
+                "maiden_name",
+                "category",
+                "sex",
+                "practitioner_type",
+                "register_type",
+                "qualifications"
+            ],
             "renewalTable": "practitioners_renewal",
             "renewalStages": {
                 "Pending Payment": {
@@ -1049,26 +1145,7 @@
                         "Pending Approval",
                         "Approved"
                     ],
-                    "fields": [
-                        {
-                            "label": "Renewal Date",
-                            "name": "renewal_date",
-                            "hint": "",
-                            "options": [],
-                            "type": "date",
-                            "value": "",
-                            "required": true
-                        },
-                        {
-                            "label": "Renewal Fee",
-                            "name": "renewal_fee",
-                            "hint": "",
-                            "options": [],
-                            "type": "text",
-                            "value": "",
-                            "required": true
-                        }
-                    ],
+                    "fields": [],
                     "permission": "Mark_Practitioners_Renewal_Pending_Payment",
                     "printable": false,
                     "onlineCertificatePrintable": false,
@@ -1076,23 +1153,22 @@
                     "userActions": "make_payment",
                     "title": "Pending Payment",
                     "active_children": false,
-                    "url": "/licenses/renewal",
+                    "url": "/licenses/renewal/practitioners",
                     "urlParams": {
-                        "license_type": "practitioners",
                         "status": "Pending Payment"
                     },
                     "icon": "list_alt",
                     "children": [],
                     "description": "View/Print approved applications",
-                    "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Pending Payment",
+                    "apiCountUrl": "licenses/renewal-count?license_type=practitioners&status=Pending Payment",
                     "apiCountText": "Renewals",
                     "actions": [
                         {
                             "type": "email",
                             "config_type": "email",
                             "config": {
-                                "template": "your renewal is pending payment",
-                                "subject": "Renewal is pending payment",
+                                "template": "your renewal is now pending payment",
+                                "subject": "Renewal Pending Payment",
                                 "admin_email": "",
                                 "endpoint": "",
                                 "method": "",
@@ -1100,7 +1176,60 @@
                                 "headers": [],
                                 "body_mapping": [],
                                 "query_params": []
-                            }
+                            },
+                            "criteria": []
+                        },
+                        {
+                            "type": "create_invoice",
+                            "config_type": "payment",
+                            "config": {
+                                "template": "",
+                                "subject": "",
+                                "admin_email": "",
+                                "endpoint": "",
+                                "method": "",
+                                "auth_token": "",
+                                "headers": [],
+                                "body_mapping": [],
+                                "query_params": [],
+                                "paymentPurpose": "Doctors Renewal",
+                                "paymentInvoiceItems": []
+                            },
+                            "criteria": [
+                                {
+                                    "field": "practitioner_type",
+                                    "operator": "equals",
+                                    "value": [
+                                        "Doctor"
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "type": "create_invoice",
+                            "config_type": "payment",
+                            "config": {
+                                "template": "",
+                                "subject": "",
+                                "admin_email": "",
+                                "endpoint": "",
+                                "method": "",
+                                "auth_token": "",
+                                "headers": [],
+                                "body_mapping": [],
+                                "query_params": [],
+                                "paymentPurpose": "Physician Assistant Renewal",
+                                "paymentInvoiceItems": []
+                            },
+                            "criteria": [
+                                {
+                                    "field": "practitioner_type",
+                                    "operator": "equals",
+                                    "value": [
+                                        "Physician Assistant"
+                                    ]
+                                }
+                            ]
                         }
                     ]
                 },
@@ -1109,42 +1238,22 @@
                     "allowedTransitions": [
                         "Approved"
                     ],
-                    "fields": [
-                        {
-                            "label": "Renewal Date",
-                            "name": "renewal_date",
-                            "hint": "",
-                            "options": [],
-                            "type": "date",
-                            "value": "",
-                            "required": true
-                        },
-                        {
-                            "label": "Renewal Fee",
-                            "name": "renewal_fee",
-                            "hint": "",
-                            "options": [],
-                            "type": "text",
-                            "value": "",
-                            "required": true
-                        }
-                    ],
+                    "fields": [],
                     "permission": "Mark_Practitioners_Renewal_Pending_Approval",
                     "printable": false,
                     "onlineCertificatePrintable": false,
                     "deletableByUser": false,
-                    "userActions": "",
+                    "userActions": "view_payment",
                     "title": "Pending Approval",
                     "active_children": false,
-                    "url": "/licenses/renewal",
+                    "url": "/licenses/renewal/practitioners",
                     "urlParams": {
-                        "license_type": "practitioners",
                         "status": "Pending Approval"
                     },
                     "icon": "list_alt",
                     "children": [],
                     "description": "Manage submitted applications",
-                    "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Pending Approval",
+                    "apiCountUrl": "licenses/renewal-count?license_type=practitioners&status=Pending Approval",
                     "apiCountText": "Renewals",
                     "actions": [
                         {
@@ -1224,15 +1333,14 @@
                     "userActions": "",
                     "title": "Approved",
                     "active_children": false,
-                    "url": "/licenses/renewal",
+                    "url": "/licenses/renewal/practitioners",
                     "urlParams": {
-                        "license_type": "practitioners",
                         "status": "Approved"
                     },
                     "icon": "list_alt",
                     "children": [],
                     "description": "View/Print approved applications",
-                    "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Approved",
+                    "apiCountUrl": "licenses/renewal-count?license_type=practitioners&status=Approved",
                     "apiCountText": "Renewals",
                     "actions": [
                         {
@@ -1287,7 +1395,7 @@
                 {}
             ],
             "shouldApplyForRenewalCriteria": [],
-            "mustBeInGoodStandingToRenew": true,
+            "mustBeInGoodStandingToRenew": false,
             "renewalCpdCategory1Cutoff": 0,
             "renewalCpdCategory2Cutoff": 0,
             "renewalCpdCategory3Cutoff": 0,
@@ -2206,7 +2314,7 @@
                 {}
             ],
             "shouldApplyForRenewalCriteria": [],
-            "mustBeInGoodStandingToRenew": true,
+            "mustBeInGoodStandingToRenew": false,
             "renewalCpdCategory1Cutoff": 0,
             "renewalCpdCategory2Cutoff": 0,
             "renewalCpdCategory3Cutoff": 0,
@@ -2546,7 +2654,7 @@
                         "status": "Pending Approval",
                         "child_type": "Doctor"
                     },
-                    "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Practitioners Provisional Registration Application&child_type=Doctor",
+                    "apiCountUrl": "applications/count?status=Pending Approval&form_type=Practitioners Provisional Registration Application&child_type=Doctor",
                     "apiCountText": "",
                     "permissions": [
                         "View_Application_Forms"
@@ -2562,7 +2670,7 @@
                         "status": "Pending Approval",
                         "child_type": "Doctor"
                     },
-                    "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Practitioners Permanent Registration Application&child_type=Doctor",
+                    "apiCountUrl": "applications/count?status=Pending Approval&form_type=Practitioners Permanent Registration Application&child_type=Doctor",
                     "apiCountText": "",
                     "permissions": [
                         "View_Application_Forms"
@@ -2578,7 +2686,7 @@
                         "status": "Pending Approval",
                         "child_type": "Doctor"
                     },
-                    "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Practitioners Temporary Registration Application&child_type=Doctor",
+                    "apiCountUrl": "applications/count?status=Pending Approval&form_type=Practitioners Temporary Registration Application&child_type=Doctor",
                     "apiCountText": "",
                     "permissions": [
                         "View_Application_Forms"
@@ -2593,7 +2701,7 @@
                         "form_type": "Portal Edit",
                         "status": "Pending Approval"
                     },
-                    "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Portal Edit",
+                    "apiCountUrl": "applications/count?status=Pending Approval&form_type=Portal Edit",
                     "apiCountText": "",
                     "permissions": [
                         "View_Application_Forms"
@@ -2601,15 +2709,14 @@
                 },
                 {
                     "title": "Renewals pending approval",
-                    "url": "/licenses/renewals-manage",
+                    "url": "/licenses/renewals-manage/practitioners",
                     "icon": "",
                     "children": [],
                     "urlParams": {
                         "renewal_practitioner_type": "Doctor",
-                        "license_type": "practitioners",
                         "status": "Pending Approval"
                     },
-                    "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Pending Approval&renewal_practitioner_type=Doctor",
+                    "apiCountUrl": "licenses/renewal-count?license_type=practitioners&status=Pending Approval&renewal_practitioner_type=Doctor",
                     "apiCountText": "",
                     "permissions": [
                         "View_License_Renewal"
@@ -2617,15 +2724,14 @@
                 },
                 {
                     "title": "Renewals pending payment",
-                    "url": "/licenses/renewals-manage",
+                    "url": "/licenses/renewals-manage/practitioners",
                     "icon": "",
                     "children": [],
                     "urlParams": {
                         "renewal_practitioner_type": "Doctor",
-                        "license_type": "practitioners",
                         "status": "Pending Payment"
                     },
-                    "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Pending Payment&renewal_practitioner_type=Doctor",
+                    "apiCountUrl": "licenses/renewal-count?license_type=practitioners&status=Pending Payment&renewal_practitioner_type=Doctor",
                     "apiCountText": "",
                     "permissions": [
                         "View_License_Renewal"
@@ -2640,7 +2746,7 @@
             "title": "Physician Assistants",
             "active_children": false,
             "url": "/applications/application-types",
-            "icon": "list_alt",
+            "icon": "person_outlined",
             "color": "green",
             "children": [
                 {
@@ -2653,7 +2759,7 @@
                         "status": "Pending Approval",
                         "child_type": "Physician Assistant"
                     },
-                    "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Practitioners Provisional Registration Application&child_type=Physician Assistant",
+                    "apiCountUrl": "applications/count?status=Pending Approval&form_type=Practitioners Provisional Registration Application&child_type=Physician Assistant",
                     "apiCountText": "",
                     "permissions": [
                         "View_Application_Forms"
@@ -2669,7 +2775,7 @@
                         "status": "Pending Approval",
                         "child_type": "Physician Assistant"
                     },
-                    "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Practitioners Permanent Registration Application&child_type=Physician Assistant",
+                    "apiCountUrl": "applications/count?status=Pending Approval&form_type=Practitioners Permanent Registration Application&child_type=Physician Assistant",
                     "apiCountText": "",
                     "permissions": [
                         "View_Application_Forms"
@@ -2685,7 +2791,7 @@
                         "status": "Pending Approval",
                         "child_type": "Physician Assistant"
                     },
-                    "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Practitioners Temporary Registration Application&child_type=Physician Assistant",
+                    "apiCountUrl": "applications/count?status=Pending Approval&form_type=Practitioners Temporary Registration Application&child_type=Physician Assistant",
                     "apiCountText": "",
                     "permissions": [
                         "View_Application_Forms"
@@ -2700,7 +2806,7 @@
                         "form_type": "Portal Edit",
                         "status": "Pending Approval"
                     },
-                    "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Portal Edit",
+                    "apiCountUrl": "applications/count?status=Pending Approval&form_type=Portal Edit",
                     "apiCountText": "",
                     "permissions": [
                         "View_Application_Forms"
@@ -2708,15 +2814,14 @@
                 },
                 {
                     "title": "Renewals pending approval",
-                    "url": "/licenses/renewals-manage",
+                    "url": "/licenses/renewals-manage/practitioners",
                     "icon": "",
                     "children": [],
                     "urlParams": {
-                        "child_practitioner_type": "Physician Assistant",
-                        "license_type": "practitioners",
+                        "renewal_practitioner_type": "Physician Assistant",
                         "status": "Pending Approval"
                     },
-                    "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Pending Approval&renewal_practitioner_type=Physician Assistant",
+                    "apiCountUrl": "licenses/renewal-count?license_type=practitioners&status=Pending Approval&renewal_practitioner_type=Physician Assistant",
                     "apiCountText": "",
                     "permissions": [
                         "View_License_Renewal"
@@ -2724,15 +2829,14 @@
                 },
                 {
                     "title": "Renewals pending payment",
-                    "url": "/licenses/renewals-manage",
+                    "url": "/licenses/renewals-manage/practitioners",
                     "icon": "",
                     "children": [],
                     "urlParams": {
-                        "child_practitioner_type": "Physician Assistant",
-                        "license_type": "practitioners",
+                        "renewal_practitioner_type": "Physician Assistant",
                         "status": "Pending Payment"
                     },
-                    "apiCountUrl": "/licenses/renewal-count?license_type=practitioners&status=Pending Payment&renewal_practitioner_type=Physician Assistant",
+                    "apiCountUrl": "licenses/renewal-count?license_type=practitioners&status=Pending Payment&renewal_practitioner_type=Physician Assistant",
                     "apiCountText": "",
                     "permissions": [
                         "View_License_Renewal"
@@ -2758,12 +2862,12 @@
                     "urlParams": {
                         "form_type": "CPD Attendance"
                     },
-                    "apiCountUrl": "/applications/count?status=Pending Approval&form_type=CPD Attendance",
+                    "apiCountUrl": "applications/count?status=Pending Approval&form_type=CPD Attendance",
                     "apiCountText": ""
                 }
             ],
             "description": "",
-            "apiCountUrl": "/applications/count?status=Pending Approval&form_type=CPD Attendance",
+            "apiCountUrl": "applications/count?status=Pending Approval&form_type=CPD Attendance",
             "apiCountText": "Submissions pending approval",
             "permissions": [
                 "View_Application_Forms"
@@ -2784,7 +2888,7 @@
                     "urlParams": {
                         "type": "Doctor"
                     },
-                    "apiCountUrl": "/housemanship/posting-application-count?type=Doctor&session=1",
+                    "apiCountUrl": "housemanship/posting-application-count?type=Doctor&session=1",
                     "apiCountText": "",
                     "permissions": [
                         "View_Housemanship_Posting_Applications"
@@ -2798,7 +2902,7 @@
                     "urlParams": {
                         "type": "PA"
                     },
-                    "apiCountUrl": "/housemanship/posting-application-count?type=PA&session=1",
+                    "apiCountUrl": "housemanship/posting-application-count?type=PA&session=1",
                     "apiCountText": "",
                     "permissions": [
                         "View_Housemanship_Posting_Applications"
@@ -2812,7 +2916,7 @@
                     "urlParams": {
                         "type": "Doctor"
                     },
-                    "apiCountUrl": "/housemanship/posting-application-count?type=Doctor&session=2",
+                    "apiCountUrl": "housemanship/posting-application-count?type=Doctor&session=2",
                     "apiCountText": "",
                     "permissions": [
                         "View_Housemanship_Posting_Applications"
@@ -2826,7 +2930,7 @@
                     "urlParams": {
                         "type": "PA"
                     },
-                    "apiCountUrl": "/housemanship/posting-application-count?type=PA&session=2",
+                    "apiCountUrl": "housemanship/posting-application-count?type=PA&session=2",
                     "apiCountText": "",
                     "permissions": [
                         "View_Housemanship_Posting_Applications"
@@ -2864,7 +2968,7 @@
                         "child_type": "Doctor",
                         "child_category": "Medical"
                     },
-                    "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Examination Candidates Registration Application&child_type=Doctor&child_category=Medical",
+                    "apiCountUrl": "applications/count?status=Pending Approval&form_type=Examination Candidates Registration Application&child_type=Doctor&child_category=Medical",
                     "apiCountText": "",
                     "permissions": [
                         "View_Application_Forms"
@@ -2881,7 +2985,7 @@
                         "child_type": "Doctor",
                         "child_category": "Dental"
                     },
-                    "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Examination Candidates Registration Application&child_type=Doctor&child_category=Dental",
+                    "apiCountUrl": "applications/count?status=Pending Approval&form_type=Examination Candidates Registration Application&child_type=Doctor&child_category=Dental",
                     "apiCountText": "",
                     "permissions": [
                         "View_Application_Forms"
@@ -2898,7 +3002,7 @@
                         "child_type": "Physician Assistant",
                         "child_category": "Medical"
                     },
-                    "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Examination Candidates Registration Application&child_type=Physician Assistant&child_category=Medical",
+                    "apiCountUrl": "applications/count?status=Pending Approval&form_type=Examination Candidates Registration Application&child_type=Physician Assistant&child_category=Medical",
                     "apiCountText": "",
                     "permissions": [
                         "View_Application_Forms"
@@ -2915,7 +3019,7 @@
                         "child_type": "Physician Assistant",
                         "child_category": "Dental"
                     },
-                    "apiCountUrl": "/applications/count?status=Pending Approval&form_type=Examination Candidates Registration Application&child_type=Physician Assistant&child_category=Dental",
+                    "apiCountUrl": "applications/count?status=Pending Approval&form_type=Examination Candidates Registration Application&child_type=Physician Assistant&child_category=Dental",
                     "apiCountText": "",
                     "permissions": [
                         "View_Application_Forms"
@@ -2927,11 +3031,32 @@
                     "icon": "",
                     "children": [],
                     "urlParams": {},
-                    "apiCountUrl": "/examinations/applications/count",
+                    "apiCountUrl": "examinations/applications/count",
                     "apiCountText": "",
                     "permissions": [
                         "Approve_Or_Deny_Examination_Applications"
                     ]
+                }
+            ],
+            "description": "",
+            "apiCountUrl": "",
+            "apiCountText": ""
+        },
+        {
+            "title": "Payment",
+            "active_children": false,
+            "url": "",
+            "icon": "payments",
+            "color": "black",
+            "children": [
+                {
+                    "title": "Payment uploads pending approval",
+                    "url": "/payment/payment-uploads",
+                    "icon": "",
+                    "children": [],
+                    "urlParams": {},
+                    "apiCountUrl": "payment/payment-uploads/count",
+                    "apiCountText": ""
                 }
             ],
             "description": "",
@@ -3597,28 +3722,7 @@
                     "criteria": []
                 }
             ],
-            "alerts": [
-                {
-                    "criteria": [
-                        {
-                            "field": "type",
-                            "operator": "equals",
-                            "value": [
-                                "practitioners"
-                            ]
-                        },
-                        {
-                            "field": "register_type",
-                            "operator": "equals",
-                            "value": [
-                                "Permanent"
-                            ]
-                        }
-                    ],
-                    "message": "You have a Provisional License. Please renew your license within 1 year to avoid suspension of your license.",
-                    "type": "warning"
-                }
-            ],
+            "alerts": [],
             "description": "View or edit your name, address, phone number, etc.",
             "criteria": [
                 {
@@ -3669,7 +3773,7 @@
             "criteria": []
         },
         {
-            "title": "Relicense Status",
+            "title": "Relicensure Status",
             "active_children": false,
             "url": "/renewal",
             "image": "assets/images/010-gold-medal.png",
@@ -3705,6 +3809,25 @@
                             "operator": "equals",
                             "value": [
                                 "Pending Payment"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "View status",
+                    "icon": "",
+                    "type": "link",
+                    "linkProp": "",
+                    "url": "/renewals/form",
+                    "urlParams": {},
+                    "criteria": [
+                        {
+                            "field": "in_good_standing",
+                            "operator": "not_equals",
+                            "value": [
+                                "Pending Payment",
+                                "In Good Standing",
+                                "Not In Good Standing"
                             ]
                         }
                     ]
@@ -3757,6 +3880,21 @@
                         }
                     ],
                     "message": "Your relicensure is pending payment. Please make payment",
+                    "type": "warning"
+                },
+                {
+                    "criteria": [
+                        {
+                            "field": "in_good_standing",
+                            "operator": "not_equals",
+                            "value": [
+                                "Pending Payment",
+                                "In Good Standing",
+                                "Not In Good Standing"
+                            ]
+                        }
+                    ],
+                    "message": "Your relicensure is in progress: [in_good_standing]",
                     "type": "warning"
                 }
             ],
@@ -3843,6 +3981,19 @@
                     "value": [
                         "practitioners"
                     ]
+                },
+                {
+                    "criteria": [
+                        {
+                            "field": "register_type",
+                            "operator": "equals",
+                            "value": [
+                                "Permanent"
+                            ]
+                        }
+                    ],
+                    "message": "Your relicensure is pending payment. Please make payment",
+                    "type": "warning"
                 }
             ]
         },
@@ -3912,6 +4063,13 @@
                     "operator": "equals",
                     "value": [
                         "practitioners"
+                    ]
+                },
+                {
+                    "field": "register_type",
+                    "operator": "equals",
+                    "value": [
+                        "Permanent"
                     ]
                 }
             ]
@@ -4033,6 +4191,34 @@
     ],
     "portalHomeSubTitleFields": [
         {
+            "field": "license_number",
+            "label": "License number",
+            "criteria": [
+                {
+                    "field": "type",
+                    "operator": "equals",
+                    "value": [
+                        "practitioners"
+                    ]
+                }
+            ],
+            "template": ""
+        },
+        {
+            "field": "license_number",
+            "label": "Intern Code",
+            "criteria": [
+                {
+                    "field": "type",
+                    "operator": "equals",
+                    "value": [
+                        "exam_candidates"
+                    ]
+                }
+            ],
+            "template": ""
+        },
+        {
             "field": "in_good_standing",
             "label": "Renewal Status",
             "criteria": [
@@ -4060,6 +4246,21 @@
                 }
             ],
             "template": ""
+        }
+    ],
+    "portalAlerts": [
+        {
+            "criteria": [
+                {
+                    "field": "require_revalidation",
+                    "operator": "equals",
+                    "value": [
+                        "yes"
+                    ]
+                }
+            ],
+            "message": "You require revalidation",
+            "type": "danger"
         }
     ],
     "portalContactUsTitle": "Reach Us",
@@ -4156,7 +4357,8 @@
         }
     },
     "allowedTestEmails": [
-        "wuakuc@gmail.com"
+        "wuakuc@gmail.com",
+        "wuakuc+pa_permanent@gmail.com"
     ],
     "payments": {
         "purposes": {
@@ -4165,7 +4367,17 @@
                     "In-Person",
                     "Ghana.gov Platform"
                 ],
-                "defaultInvoiceItems": [],
+                "defaultInvoiceItems": [
+                    {
+                        "criteria": [],
+                        "feeServiceCodes": [
+                            {
+                                "service_code": "D001",
+                                "quantity": 1
+                            }
+                        ]
+                    }
+                ],
                 "sourceTableName": "license_renewal",
                 "description": "Doctors relicensure for [license_number] - [start_date] to [expiry]",
                 "licenseTypes": [
@@ -4211,6 +4423,32 @@
                             }
                         }
                     }
+                ],
+                "onPaymentFileUploadedActions": [
+                    {
+                        "type": "update_renewal_status",
+                        "config_type": "internal_api_call",
+                        "label": "Update renewal status",
+                        "config": {
+                            "body_mapping": {
+                                "status": "Pending Approval",
+                                "in_print_queue": "0"
+                            }
+                        }
+                    }
+                ],
+                "onPaymentFileDeletedActions": [
+                    {
+                        "type": "update_renewal_status",
+                        "config_type": "internal_api_call",
+                        "label": "Update renewal status",
+                        "config": {
+                            "body_mapping": {
+                                "status": "Pending Payment",
+                                "in_print_queue": "0"
+                            }
+                        }
+                    }
                 ]
             },
             "Physician Assistant Renewal": {
@@ -4218,7 +4456,17 @@
                     "In-Person",
                     "Ghana.gov Platform"
                 ],
-                "defaultInvoiceItems": [],
+                "defaultInvoiceItems": [
+                    {
+                        "criteria": [],
+                        "feeServiceCodes": [
+                            {
+                                "service_code": "P022",
+                                "quantity": 1
+                            }
+                        ]
+                    }
+                ],
                 "sourceTableName": "license_renewal",
                 "description": "Physician assistant relicensure for [license_number] - [start_date] to [expiry]",
                 "licenseTypes": [
@@ -4264,6 +4512,32 @@
                             }
                         }
                     }
+                ],
+                "onPaymentFileUploadedActions": [
+                    {
+                        "type": "update_renewal_status",
+                        "config_type": "internal_api_call",
+                        "label": "Update renewal status",
+                        "config": {
+                            "body_mapping": {
+                                "status": "Pending Approval",
+                                "in_print_queue": "0"
+                            }
+                        }
+                    }
+                ],
+                "onPaymentFileDeletedActions": [
+                    {
+                        "type": "update_renewal_status",
+                        "config_type": "internal_api_call",
+                        "label": "Update renewal status",
+                        "config": {
+                            "body_mapping": {
+                                "status": "Pending Payment",
+                                "in_print_queue": "0"
+                            }
+                        }
+                    }
                 ]
             }
         },
@@ -4275,7 +4549,7 @@
                 "onStart": "offlinePayment",
                 "onComplete": "offlinePaymentComplete",
                 "description": "Pay this invoice in person at any bank branch, via mobile money, or via a bank up and upload evidence of payment",
-                "logo": "assets/images/offline_payment.png"
+                "logo": "assets/images/bank.png"
             },
             "Ghana.gov Platform": {
                 "label": "Ghana.gov Platform",
@@ -4284,7 +4558,7 @@
                 "onStart": "ghana_gov",
                 "onComplete": "ghana_gov",
                 "description": "Pay this invoice online via the Ghana.gov platform",
-                "logo": "assets/images/ghana_gov.png"
+                "logo": "assets/images/gov-logo.png"
             }
         }
     },
@@ -4294,7 +4568,7 @@
             "label": "Registered Doctors and Physician Assistants"
         },
         {
-            "value": "exam_candidates",
+            "value": "license",
             "label": "Examination Candidates"
         },
         {
@@ -4322,49 +4596,7 @@
             "guidelines": "<p></p>",
             "header": "<p>t</p>",
             "footer": "<p></p>",
-            "data": [
-                {
-                    "name": "first_name",
-                    "type": "text",
-                    "required": true,
-                    "hint": "Enter your first name",
-                    "label": "First Name",
-                    "options": [],
-                    "value": ""
-                },
-                {
-                    "name": "last_name",
-                    "type": "text",
-                    "required": true,
-                    "hint": "Enter your last name",
-                    "label": "Last Name",
-                    "options": [],
-                    "value": ""
-                },
-                {
-                    "name": "email",
-                    "type": "email",
-                    "required": true,
-                    "hint": "Enter your email",
-                    "label": "Email",
-                    "options": [],
-                    "value": ""
-                },
-                {
-                    "label": "File attachment",
-                    "name": "file_attachment",
-                    "hint": "",
-                    "options": [],
-                    "type": "file",
-                    "assetType": "applications",
-                    "value": "",
-                    "required": false,
-                    "api_url": "",
-                    "apiKeyProperty": "",
-                    "apiLabelProperty": "",
-                    "showOnly": false
-                }
-            ],
+            "data": [],
             "open_date": "2025-08-01",
             "close_date": "2100-12-31",
             "on_submit_email": null,
@@ -4379,7 +4611,7 @@
             "deny_url": null,
             "stages": [
                 {
-                    "name": "Pending",
+                    "name": "Pending Approval",
                     "description": "application is pending approval",
                     "allowedTransitions": [
                         "Approved"
@@ -4387,29 +4619,13 @@
                     "allowedUserRoles": [
                         "Developers"
                     ],
-                    "actions": [
-                        {
-                            "type": "email",
-                            "config_type": "email",
-                            "config": {
-                                "template": "the application will be printed",
-                                "subject": "Your application is being processed",
-                                "endpoint": "",
-                                "method": "GET",
-                                "admin_email": "",
-                                "auth_token": "",
-                                "headers": [],
-                                "body_mapping": [],
-                                "query_params": []
-                            }
-                        }
-                    ]
+                    "actions": []
                 },
                 {
                     "name": "Approved",
-                    "description": "your application has been approved successfully",
+                    "description": "Approve application to edit data",
                     "allowedTransitions": [
-                        "Pending"
+                        "Pending Approval"
                     ],
                     "allowedUserRoles": [
                         "Developers"
@@ -4419,10 +4635,10 @@
                             "type": "email",
                             "config_type": "email",
                             "config": {
-                                "template": "your letter has been sent to the address",
-                                "subject": "Your letter has been sent",
+                                "template": "Hello [name], <br> Your request to update your [field] has been approved. <br> Mr R. Appiah Agyei <br> Head of Registration ",
+                                "subject": "MDC Practitioners Portal Edit",
                                 "endpoint": "",
-                                "method": "GET",
+                                "method": "",
                                 "admin_email": "",
                                 "auth_token": "",
                                 "headers": [],
@@ -4431,43 +4647,24 @@
                             }
                         },
                         {
-                            "type": "api_call",
-                            "config_type": "api_call",
+                            "type": "edit_personal_details",
+                            "config_type": "portal_edit",
                             "config": {
                                 "template": "",
                                 "subject": "",
                                 "admin_email": "",
-                                "endpoint": "http://localhost:8080/licenses/renewal/details",
-                                "method": "PUT",
-                                "auth_token": "__self__",
+                                "endpoint": "",
+                                "method": "",
+                                "auth_token": "",
                                 "headers": [],
-                                "body_mapping": [
-                                    {
-                                        "api_field": "status",
-                                        "mapping_type": "static",
-                                        "source_field": "",
-                                        "static_value": "Paid",
-                                        "template": "",
-                                        "transform_type": "",
-                                        "default_value": ""
-                                    },
-                                    {
-                                        "api_field": "batch_number",
-                                        "mapping_type": "template",
-                                        "source_field": "",
-                                        "static_value": "00",
-                                        "template": "001-[year]",
-                                        "transform_type": "",
-                                        "default_value": ""
-                                    }
-                                ],
+                                "body_mapping": [],
                                 "query_params": []
                             }
                         }
                     ]
                 }
             ],
-            "initialStage": "Pending",
+            "initialStage": "Pending Approval",
             "finalStage": "Approved",
             "picture": null,
             "restrictions": null,
@@ -5096,18 +5293,38 @@
             "template_content": "<html><body><p>the application will be printed</p></body></html>"
         }
     ],
-    "settings": [
-        {
+    "systemSettings": {
+        "housemanship_applications_open": {
             "key": "housemanship_applications_open",
-            "value": {
-                "criteria": [],
-                "value": "yes"
-            },
+            "value": [
+                {
+                    "criteria": [],
+                    "value": true
+                }
+            ],
             "label": "Housemanship applications open",
             "control_type": "yes-no",
             "class": "General",
-            "type": "string",
+            "type": "boolean",
             "description": "Whether housemanship applications can be submitted from the portal or not"
+        },
+        "work_institution_types": {
+            "key": "renewal_institution_types",
+            "value": [
+                {
+                    "criteria": [],
+                    "value": [
+                        "Government",
+                        "CHAG",
+                        "Private"
+                    ]
+                }
+            ],
+            "label": "Work institution types",
+            "control_type": "list",
+            "class": "General",
+            "type": "array",
+            "description": "the types of work institutions"
         }
-    ]
+    }
 }

@@ -540,7 +540,8 @@ class AuthController extends ResourceController
             'display_name' => $userData->display_name,
             'email_address' => $userData->email_address,
             'user_type' => $userData->user_type,
-            'region' => $userData->region
+            'region' => $userData->region,
+            'role_name' => $userData->role_name
         ];
         if ($userData->profile_data) {
             $data['profile_data'] = array_diff_key((array) $userData->profile_data, array_flip($excludeProfileDataFields));
