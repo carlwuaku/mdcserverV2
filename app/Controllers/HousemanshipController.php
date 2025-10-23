@@ -1124,7 +1124,7 @@ class HousemanshipController extends ResourceController
             $detailsValidationRules = [
                 "first_choice" => "required|is_not_unique[housemanship_facilities.name]",
                 "second_choice" => "required|is_not_unique[housemanship_facilities.name]|differs[first_choice]",
-                "discipline" => "required|is_not_unique[housemanship_disciplines.name]"
+                "discipline" => "permit_empty|is_not_unique[housemanship_disciplines.name]"
             ];
             foreach ($details as $applicationDetail) {
                 $applicationDetail = (array) $applicationDetail;
@@ -1485,11 +1485,12 @@ class HousemanshipController extends ResourceController
                 throw new Exception("Session not found");
             }
             $numberOfRequiredFacilities = (int) $sessionSetting[$session]['number_of_facilities'];
+            $requireDiscipline = (bool) $sessionSetting[$session]['requireDisciplines'];
             $userId = auth("tokens")->id();
             $user = AuthHelper::getAuthUser($userId);
             //if the user is not an admin, get the non-admin fields
             $mainFields = $user->isAdmin() ? $model->getFormFields() : $model->getNonAdminFormFields();
-            $detailsFields = $user->isAdmin() ? $detailsModel->getFormFields() : $detailsModel->getNonAdminFormFields();
+            $detailsFields = $user->isAdmin() ? $detailsModel->getFormFields() : $detailsModel->getNonAdminFormFields($user->profile_data);
             //add the tags
             $tags = Utils::getHousemanshipSettingApplicationFormTags();
             //check if the user matches the criteria for the tags
@@ -1522,7 +1523,16 @@ class HousemanshipController extends ResourceController
                 ];
                 $detail = [];
                 foreach ($detailsFields as $detailsField) {
+                    //for disciplines include them if requiredDisciplines is true
+                    if ($detailsField['name'] === "discipline") {
+                        if (!$requireDiscipline) {
+                            continue;
+                        }
+                    }
+
                     $detailsField['name'] = "posting_application_detail-{$detailsField['name']}-$i";
+
+
                     $detail[] = $detailsField;
                 }
 

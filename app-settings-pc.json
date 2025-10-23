@@ -3942,11 +3942,27 @@
         "availabilityCategories": [
             {
                 "value": "available",
-                "key": "Available for selection by Pharmacists"
+                "key": "Available for selection by Pharmacists",
+                "criteria": [
+                    {
+                        "field": "practitioner_type",
+                        "value": [
+                            "Pharmacist"
+                        ]
+                    }
+                ]
             },
             {
                 "value": "available_pa_selection",
-                "key": "Available for selection by Pharmacy Technician"
+                "key": "Available for selection by Pharmacy Technician",
+                "criteria": [
+                    {
+                        "field": "practitioner_type",
+                        "value": [
+                            "Pharmacy Technician"
+                        ]
+                    }
+                ]
             }
         ],
         "sessions": {
@@ -3956,7 +3972,8 @@
                 "criteria": [
                     {}
                 ],
-                "allowRepeatRegion": true
+                "allowRepeatRegion": true,
+                "requireDisciplines": true
             },
             "2": {
                 "number_of_facilities": 2,
@@ -3964,7 +3981,8 @@
                 "criteria": [
                     {}
                 ],
-                "allowRepeatRegion": false
+                "allowRepeatRegion": false,
+                "requireDisciplines": true
             }
         },
         "applicationFormTags": [
@@ -6089,19 +6107,51 @@
         }
     ],
     "systemSettings": {
-        "housemanship_applications_open": {
-            "key": "housemanship_applications_open",
+        "housemanship_session_2_applications_open": {
+            "key": "housemanship_session_2_applications_open",
             "value": [
                 {
                     "criteria": [],
-                    "value": "yes"
+                    "value": true
                 }
             ],
             "label": "Housemanship applications open",
             "control_type": "yes-no",
             "class": "General",
-            "type": "string",
+            "type": "boolean",
             "description": "Whether housemanship applications can be submitted from the portal or not"
+        },
+        "housemanship_session_1_applications_open": {
+            "key": "housemanship_session_1_applications_open",
+            "value": [
+                {
+                    "criteria": [],
+                    "value": true
+                }
+            ],
+            "label": "Housemanship applications open",
+            "control_type": "yes-no",
+            "class": "General",
+            "type": "boolean",
+            "description": "Whether housemanship applications can be submitted from the portal or not"
+        },
+        "work_institution_types": {
+            "key": "renewal_institution_types",
+            "value": [
+                {
+                    "criteria": [],
+                    "value": [
+                        "Government",
+                        "CHAG",
+                        "Private"
+                    ]
+                }
+            ],
+            "label": "Work institution types",
+            "control_type": "list",
+            "class": "General",
+            "type": "array",
+            "description": "the types of work institutions"
         }
     }
 }

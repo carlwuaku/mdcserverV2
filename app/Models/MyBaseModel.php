@@ -215,6 +215,37 @@ class MyBaseModel extends Model
     }
 
     /**
+     * A function to get multiple values as key-value pairs.
+     * 
+     * This function takes in an array of columns to select, an array of key columns and a value column.
+     * It then selects the specified columns from the database and loops over the results.
+     * For each result, it constructs a key by joining the values of the key columns separated by a dash.
+     * It then constructs a key-value pair with the key and the value from the specified value column.
+     * The function returns an array of these key-value pairs.
+     * 
+     * @param array $columns An array of columns to select from the database.
+     * @param array $keyColumns An array of columns to use as keys. The values of these columns will be joined by a dash to form the key.
+     * @param string $valueColumn The column to use as the value in the key-value pairs.
+     * @return array An array of key-value pairs.
+     */
+    public function getMultipleValuesAsKeyValuePairs(array $keyColumns, string $valueColumn): array
+    {
+        $query = $this->builder();
+        $results = $query->get()->getResultArray();
+        $keyValuePairs = [];
+        foreach ($results as $value) {
+            //for the key, get the values from the keyColumns separated by a dash e.g. "key1 - key2 - key3"
+            $keyVals = [];
+            foreach ($keyColumns as $keyColumn) {
+                $keyVals[] = $value[$keyColumn];
+            }
+            $key = implode(" - ", $keyVals);
+            $keyValuePairs[] = ["key" => $key, "value" => $value[$valueColumn]];
+        }
+        return $keyValuePairs;
+    }
+
+    /**
      * A function to create an array based on the allowedFields property of the model.
      * it creates an array with the keys as the allowed fields and the values extracted for each key from the provided array 
      */

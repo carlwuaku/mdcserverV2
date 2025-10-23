@@ -167,19 +167,6 @@ class HousemanshipApplicationModel extends MyBaseModel implements TableDisplayIn
                 "apiKeyProperty" => "",
                 "apiLabelProperty" => "",
                 "apiType" => ""
-            ],
-
-
-            [
-                "label" => "Direct entry",
-                "name" => "tags",
-                "type" => "checkbox",
-                "value" => "",
-                "required" => false,
-                "api_url" => "",
-                "apiKeyProperty" => "",
-                "apiLabelProperty" => "",
-                "apiType" => ""
             ]
         ];
     }

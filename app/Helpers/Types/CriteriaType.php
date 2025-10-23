@@ -82,11 +82,7 @@ class CriteriaType
     private static function evaluateCriterion($actualValue, string $operator, array $expectedValues): bool
     {
         switch ($operator) {
-            case 'equals':
-            case '=':
-            case '==':
-            case 'in':
-                return in_array($actualValue, $expectedValues);
+
 
             case 'not_equals':
             case '!=':
@@ -123,9 +119,13 @@ class CriteriaType
 
             case 'regex':
                 return self::matchesRegex($actualValue, $expectedValues);
+            case 'equals':
+            case '=':
+            case '==':
+            case 'in':
 
             default:
-                throw new \InvalidArgumentException("Unsupported operator: {$operator}");
+                return in_array($actualValue, $expectedValues);
         }
     }
 

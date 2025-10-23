@@ -3136,31 +3136,117 @@
         "availabilityCategories": [
             {
                 "value": "available",
-                "key": "Available for selection by Doctors"
+                "key": "Available for selection by Doctors",
+                "criteria": [
+                    {
+                        "field": "practitioner_type",
+                        "value": [
+                            "Doctor"
+                        ]
+                    }
+                ]
             },
             {
                 "value": "medical",
-                "key": "Available for selection by Doctors (Medical)"
+                "key": "Available for selection by Doctors (Medical)",
+                "criteria": [
+                    {
+                        "field": "practitioner_type",
+                        "value": [
+                            "Doctor"
+                        ]
+                    },
+                    {
+                        "field": "category",
+                        "value": [
+                            "Medical"
+                        ]
+                    }
+                ]
             },
             {
                 "value": "dental",
-                "key": "Available for selection by Doctors (Dental)"
+                "key": "Available for selection by Doctors (Dental)",
+                "criteria": [
+                    {
+                        "field": "practitioner_type",
+                        "value": [
+                            "Doctor"
+                        ]
+                    },
+                    {
+                        "field": "category",
+                        "value": [
+                            "Dental"
+                        ]
+                    }
+                ]
             },
             {
                 "value": "available_pa_selection",
-                "key": "Available for selection by Physician Assistant"
+                "key": "Available for selection by Physician Assistant",
+                "criteria": [
+                    {
+                        "field": "practitioner_type",
+                        "value": [
+                            "Physician Assistant"
+                        ]
+                    }
+                ]
             },
             {
                 "value": "available_pa_dental_selection",
-                "key": "Available for selection by Physician Assistant (Dental)"
+                "key": "Available for selection by Physician Assistant (Dental)",
+                "criteria": [
+                    {
+                        "field": "practitioner_type",
+                        "value": [
+                            "Physician Assistant"
+                        ]
+                    },
+                    {
+                        "field": "category",
+                        "value": [
+                            "Dental"
+                        ]
+                    }
+                ]
             },
             {
                 "value": "available_pa_medical_selection",
-                "key": "Available for selection by Physician Assistant (Medical)"
+                "key": "Available for selection by Physician Assistant (Medical)",
+                "criteria": [
+                    {
+                        "field": "practitioner_type",
+                        "value": [
+                            "Physician Assistant"
+                        ]
+                    },
+                    {
+                        "field": "category",
+                        "value": [
+                            "Medical"
+                        ]
+                    }
+                ]
             },
             {
                 "value": "available_pa_cra_selection",
-                "key": "Available for selection by Physician Assistant (CRA)"
+                "key": "Available for selection by Physician Assistant (CRA)",
+                "criteria": [
+                    {
+                        "field": "practitioner_type",
+                        "value": [
+                            "Physician Assistant"
+                        ]
+                    },
+                    {
+                        "field": "category",
+                        "value": [
+                            "Certified Registered Anaesthetist"
+                        ]
+                    }
+                ]
             }
         ],
         "sessions": {
@@ -3176,7 +3262,8 @@
                         ]
                     }
                 ],
-                "allowRepeatRegion": true
+                "allowRepeatRegion": true,
+                "requireDisciplines": false
             },
             "2": {
                 "number_of_facilities": 2,
@@ -3189,7 +3276,8 @@
                         ]
                     }
                 ],
-                "allowRepeatRegion": false
+                "allowRepeatRegion": false,
+                "requireDisciplines": true
             }
         },
         "applicationFormTags": [
@@ -5294,8 +5382,22 @@
         }
     ],
     "systemSettings": {
-        "housemanship_applications_open": {
-            "key": "housemanship_applications_open",
+        "housemanship_session_2_applications_open": {
+            "key": "housemanship_session_2_applications_open",
+            "value": [
+                {
+                    "criteria": [],
+                    "value": true
+                }
+            ],
+            "label": "Housemanship applications open",
+            "control_type": "yes-no",
+            "class": "General",
+            "type": "boolean",
+            "description": "Whether housemanship applications can be submitted from the portal or not"
+        },
+        "housemanship_session_1_applications_open": {
+            "key": "housemanship_session_1_applications_open",
             "value": [
                 {
                     "criteria": [],
