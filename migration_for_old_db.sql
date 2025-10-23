@@ -3596,3 +3596,27 @@ FROM
 DROP TABLE temp_exam_registration_title_mapping;
 
 #END IMPORT EXAM APPLICATIONS##
+INSERT
+    IGNORE INTO ci4_mdc4.`fees` (
+        `payer_type`,
+        `name`,
+        `rate`,
+        `created_on`,
+        `category`,
+        `service_code`,
+        `chart_of_account`,
+        `supports_variable_amount`,
+        `currency`
+    )
+SELECT
+    `payer_type`,
+    `name`,
+    `rate`,
+    `created_on`,
+    `category`,
+    `service_code`,
+    `chart_of_account`,
+    `supports_variable_amount`,
+    `currency`
+FROM
+    mdc.`bf_fees`;

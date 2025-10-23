@@ -71,6 +71,7 @@ class ApplicationsModel extends MyBaseModel implements TableDisplayInterface
         'email',
         'phone',
         'application_code',
+        'applicant_unique_id'
     ];
 
     public function getDisplayColumns(): array
@@ -88,7 +89,7 @@ class ApplicationsModel extends MyBaseModel implements TableDisplayInterface
             'form_data',//this is a placeholder. if there are form fields they will be displayed here
             'created_on',
             'deleted_at',
-
+            'applicant_unique_id',
         ];
     }
 

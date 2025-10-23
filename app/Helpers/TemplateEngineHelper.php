@@ -98,7 +98,7 @@ class TemplateEngineHelper
     public function getCustomDateFormat(string $pattern): string
     {
         if (!isset($this->customDateFormats[$pattern])) {
-            return null;
+            return '';
         }
         return $this->customDateFormats[$pattern];
     }
@@ -131,7 +131,7 @@ class TemplateEngineHelper
     {
         // Skip empty values
         if (empty($value)) {
-            return '';
+            return $value;
         }
 
         try {
@@ -139,7 +139,8 @@ class TemplateEngineHelper
             if ($timestamp === false) {
                 return $value; // Return original value if not a valid date
             }
-            return date($format ?? $this->defaultDateFormat, $timestamp);
+            $formattedDate = date($format ?? $this->defaultDateFormat, $timestamp);
+            return $formattedDate;
         } catch (\Exception $e) {
             return $value; // Return original value if any error occurs
         }
@@ -174,7 +175,7 @@ class TemplateEngineHelper
         ]);
 
         $data->institution_name = $appSettings["institutionName"];
-        $data->institution_logo = $appSettings["institutionLogo"];
+        $data->institution_logo = base_url() . $appSettings["institutionLogo"];
         $data->institution_address = $appSettings["institutionAddress"];
         $data->institution_email = $appSettings["institutionEmail"];
         $data->institution_phone = $appSettings["institutionPhone"];
@@ -204,7 +205,22 @@ class TemplateEngineHelper
             '/\[#LOOP:([^\]]+)\](.*?)\[\/LOOP\]/s',
             function ($matches) use ($data) {
                 $arrayProperty = trim($matches[1]);
-                $loopTemplate = $matches[2];
+                $loopContent = $matches[2]; // Full content between LOOP tags
+    
+                if (empty($loopContent)) {
+                    return ''; // Return empty if loop content is empty
+                }
+
+                // Extract the template items (tr, li, etc.)
+                $extractedTemplates = $this->extractTemplateItems($loopContent);
+
+                // Determine what template to use for iteration
+                if (!empty($extractedTemplates)) {
+                    $loopTemplate = implode('', $extractedTemplates);
+                } else {
+                    $loopTemplate = $loopContent;
+                }
+
 
                 // Get the array data
                 if (!property_exists($data, $arrayProperty) || !is_array($data->$arrayProperty)) {
@@ -237,10 +253,50 @@ class TemplateEngineHelper
                     $result .= $itemResult;
                 }
 
+                // Replace the extracted template in the original content with the populated result
+                if (!empty($extractedTemplates)) {
+                    $templateToReplace = implode('', $extractedTemplates);
+                    return str_replace($templateToReplace, $result, $loopContent);
+                }
+
                 return $result;
             },
             $template
         );
+    }
+
+    /**
+     * Extracts template items from a given HTML string.
+     * Currently supports extracting items from <table> with or without <tbody>,
+     * and from <ul> or <ol> elements.
+     * Returns an array of extracted template items.
+     * @param string $html The HTML string to extract template items from.
+     * @return array
+     */
+    private function extractTemplateItems($html)
+    {
+        // Check for table with tbody
+        if (preg_match('/<tbody>(.*?)<\/tbody>/s', $html, $matches)) {
+            // Extract all <tr> elements from tbody
+            preg_match_all('/<tr>.*?<\/tr>/s', $matches[1], $trMatches);
+            return $trMatches[0];
+        }
+        // Check for table without tbody
+        elseif (preg_match('/<table/i', $html)) {
+            // Get all <tr> elements and return only the last one
+            preg_match_all('/<tr>.*?<\/tr>/s', $html, $trMatches);
+            if (!empty($trMatches[0])) {
+                return [end($trMatches[0])];
+            }
+        }
+        // Check for <ul> or <ol>
+        elseif (preg_match('/<[uo]l/i', $html)) {
+            // Extract all <li> elements
+            preg_match_all('/<li>.*?<\/li>/s', $html, $liMatches);
+            return $liMatches[0];
+        }
+
+        return [];
     }
 
     /**
@@ -262,12 +318,15 @@ class TemplateEngineHelper
             }
 
             // Handle date fields - either by pattern match or explicit transformation
-            $finalPropertyName = $this->getFinalPropertyName($varName);
-            if ($this->isDateField($finalPropertyName)) {
-                //check if a format was provided for that field
-                $format = $this->getCustomDateFormat($finalPropertyName);
-                $value = $this->formatDate($value, $format);
-            }
+            // $finalPropertyName = $this->getFinalPropertyName($varName);
+            // if ($this->isDateField($finalPropertyName)) {
+            //     //check if a format was provided for that field
+
+            //     $format = $this->getCustomDateFormat($finalPropertyName);
+            //     $value = $this->formatDate($value, $format);
+            //     log_message('info', "Formatting datevalue: " . $value);
+
+            // }
 
             // Apply additional transformation if specified
             if ($transformation) {

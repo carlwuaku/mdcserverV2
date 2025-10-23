@@ -60,7 +60,7 @@ class PortalHelper
                     //the dataPoint url may contain placeholders. look for anything in the form of [placeholder] and replace it with data from the user/preset data
                     $templateEngine->addCustomDateFormat("current_year", "Y");
                     $dataPoint->apiUrl = $templateEngine->process($dataPoint->apiUrl, $userData);
-                    log_message('info', 'Template data: ' . json_encode($dataPoint->apiUrl));
+                    // log_message('info', 'Template data: ' . json_encode($dataPoint->apiUrl));
 
                     unset($dataPoint->criteria);
                     $dataPoints[] = $dataPoint;
@@ -105,5 +105,30 @@ class PortalHelper
         } catch (\Throwable $th) {
             throw $th;
         }
+    }
+
+    /**
+     * Fills the portal home alerts for the given user, given the config.
+     * The alerts are filtered based on the criteria in the config.
+     * The message of each alert is processed by the template engine to replace any variables.
+     * @param UsersModel $user
+     * @param Alert[] $alerts
+     * @return Alert[]
+     */
+    public static function fillPortalAlertsForuser(UsersModel $user, array $alerts)
+    {
+        $results = [];
+        $templateEngine = new TemplateEngineHelper();
+        $userData = array_merge(["display_name" => $user->display_name, "email_address" => $user->email_address, "user_type" => $user->user_type], (array) $user->profile_data);
+        foreach ($alerts as $alert) {
+            if (CriteriaType::matchesCriteria($userData, $alert->criteria)) {
+                $results[] = new Alert(
+                    $templateEngine->process($alert->message, $userData),
+                    $alert->type
+                );
+            }
+        }
+
+        return $results;
     }
 }

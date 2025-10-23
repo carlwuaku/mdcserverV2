@@ -26,6 +26,7 @@ use App\Models\SettingsModel;
 use App\Helpers\Types\DataResponseType;
 use App\Helpers\Types\AppSettingsLicenseType;
 use App\Helpers\Types\HousemanshipApplicationFormTagsType;
+use App\Helpers\Types\SystemSettingsType;
 class Utils
 {
 
@@ -129,8 +130,8 @@ class Utils
 
             );
 
-            // Create generic logo
-            $logoPath = FCPATH . 'assets/images/logo.png';// PUBLICPATH . '/assets/images/logo.png';
+            $logoPath = FCPATH . self::getAppSettings('logo');
+
             $logo = new Logo(
                 path: $logoPath,
                 resizeToWidth: 50,
@@ -143,7 +144,7 @@ class Utils
                 textColor: new Color(255, 0, 0)
             );
 
-            $result = $writer->write($qrCode);
+            $result = $writer->write($qrCode, $logo);
 
             // Validate the result
             // $writer->validateResult($result, $qrText);
@@ -188,9 +189,9 @@ class Utils
     /**
      * get the value for a key in app settings
      * @param string $key
-     * @return array
+     * @return array|null|string
      */
-    public static function getAppSettings(string $key = null): ?array
+    public static function getAppSettings(string $key = null)
     {
         /**
          * @var array
@@ -780,7 +781,7 @@ class Utils
         } else {
             // Single value logic remains the same
             if (self::fieldIsDateField($columnName)) {
-                log_message('info', "Date range: " . $columnName);
+                // log_message('info', "Date range: " . $columnName);
 
                 $dateRange = Utils::getDateRange($value);
                 $builder->where($columnName . ' >=', $dateRange['start']);
@@ -1247,6 +1248,11 @@ class Utils
         if (!array_key_exists('name', $fullData) && array_key_exists('first_name', $fullData) && array_key_exists('last_name', $fullData)) {
             $fullData['name'] = $fullData['first_name'] . ' ' . $fullData['last_name'];
         }
+        //for practitioners, qualifications is a json array. convert it to an array
+        log_message('debug', print_r($fullData, true));
+        if (array_key_exists('qualifications', $fullData) && !empty($fullData['qualifications'])) {
+            $fullData['qualifications'] = json_decode($fullData['qualifications'], true);
+        }
         return array_merge($fullData, $data_snapshot);
     }
 
@@ -1413,6 +1419,18 @@ class Utils
         }
 
         return $templates;
+    }
+
+    public static function getSystemSetting(string $setting)
+    {
+        /**
+         * @var array
+         */
+        $settings = self::getAppSettings("systemSettings");
+        if (!$settings || !array_key_exists($setting, $settings)) {
+            throw new Exception("$setting not found in system settings");
+        }
+        return SystemSettingsType::fromArray($settings[$setting]);
     }
 
 }

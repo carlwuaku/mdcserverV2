@@ -33,6 +33,9 @@ class ApplicationFormActionHelper extends Utils
                 case 'payment':
                     $result = self::runPayment($action, $data);
                     break;
+                case 'portal_edit':
+                    $result = self::runPortalEdit($action, $data);
+                    break;
                 case 'api_call':
                     $result = self::callApi($action, $data);
                     break;
@@ -50,6 +53,16 @@ class ApplicationFormActionHelper extends Utils
             throw $th;
         }
 
+    }
+
+    public static function runPortalEdit(ApplicationStageType $action, array $data)
+    {
+        if ($action->type == 'edit_personal_details') {
+            return self::updateLicenseDetails($action, $data);
+
+        } else {
+            throw new \InvalidArgumentException('Unsupported portal edit action type: ' . $action->type);
+        }
     }
 
     /**
@@ -70,7 +83,9 @@ class ApplicationFormActionHelper extends Utils
             if (CriteriaType::matchesCriteria($data, $criteria)) {
                 return self::generateInvoice($action, $data);
             } else {
-                throw new \InvalidArgumentException('No matching criteria found for payment action: ' . $action->type);
+                // throw new \InvalidArgumentException('No matching criteria found for payment action: ' . $action->type);
+                log_message('info', 'No matching criteria found for payment action: ' . $action->type);
+                return [];
             }
 
         } else {
@@ -170,6 +185,33 @@ class ApplicationFormActionHelper extends Utils
             //this is by default a year from today
             $dueDate = date("Y-m-d", strtotime("+1 year"));
             return $paymentsService->generatePresetInvoiceForSingleUuid($purpose, $uuid, $dueDate, $additionalItems);
+        } catch (\Exception $e) {
+            log_message('error', 'Error generating invoice: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    private static function updateLicenseDetails(ApplicationStageType $action, array $data)
+    {
+        try {
+            if (!array_key_exists('field', $data)) {
+                throw new \InvalidArgumentException('field key not found in data');
+            }
+            $field = $data['field'];
+            if (!array_key_exists('value', $data)) {
+                throw new \InvalidArgumentException('value key not found in data');
+            }
+            $value = $data['value'];
+            if (!array_key_exists('registration_number', $data)) {
+                throw new \InvalidArgumentException('registration number key not found in data');
+            }
+            $registration_number = $data['registration_number'];
+            $licenseService = \Config\Services::licenseService();
+
+            $result = $licenseService->updateLicense($registration_number, [$field => $value]);
+            log_message('info', 'Updating details from portal edit for action: ' . print_r($action, true));
+
+            return $result;
         } catch (\Exception $e) {
             log_message('error', 'Error generating invoice: ' . $e->getMessage());
             throw $e;
@@ -358,7 +400,7 @@ class ApplicationFormActionHelper extends Utils
 
     private static function updateRenewalStatus(object $action, array $data)
     {
-
+        log_message('info', 'Updating renewal status with data' . print_r($data, true));
         try {
             $renewalService = \Config\Services::licenseRenewalService();
             //get the uuid from the data
@@ -389,7 +431,7 @@ class ApplicationFormActionHelper extends Utils
             }
             //the updateBulkRenewals function expects an array of renewal data objects. since the event callback passes in a single renewal object, we need to wrap it in an array
 
-            $result = $renewalService->updateBulkRenewals([$renewalData], $status);
+            $result = $renewalService->updateBulkRenewals([$renewalData], $status, false);
             return $result;
 
         } catch (\Throwable $e) {

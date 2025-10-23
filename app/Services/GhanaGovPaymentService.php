@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Helpers\Enums\InvoiceEvents;
 use App\Helpers\NetworkUtils;
 use App\Models\ActivitiesModel;
 use App\Models\Payments\FeesModel;
@@ -189,7 +190,7 @@ class GhanaGovPaymentService
 
                         $this->invoiceModel->builder()->where(['uuid' => $invoiceData['uuid']])->update($updateData);
                         //this event will process the invoice based on its purpose
-                        Events::trigger(EVENT_INVOICE_PAYMENT_COMPLETED, $invoiceData['uuid']);
+                        Events::trigger(INVOICE_EVENT, InvoiceEvents::INVOICE_PAYMENT_COMPLETED, $invoiceData['uuid']);
 
 
                         $message = "Payment for {$invoiceData['description']} - invoice number $invoiceNumber for {$invoiceData['unique_id']} has been updated to 

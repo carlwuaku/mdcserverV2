@@ -4,7 +4,10 @@ namespace App\Models\Housemanship;
 
 use App\Helpers\Interfaces\TableDisplayInterface;
 use App\Helpers\Interfaces\FormInterface;
+use App\Helpers\Types\CriteriaType;
 use App\Models\MyBaseModel;
+use App\Helpers\Utils;
+use App\Helpers\Enums\HousemanshipSetting;
 
 class HousemanshipApplicationDetailsModel extends MyBaseModel implements FormInterface
 {
@@ -109,13 +112,12 @@ class HousemanshipApplicationDetailsModel extends MyBaseModel implements FormInt
         ];
     }
 
-    public function getNonAdminFormFields(): array
+    public function getNonAdminFormFields(array $data): array
     {
-        $facilitiesModel = new HousemanshipFacilitiesModel();
-        $facilitiesList = $facilitiesModel->getDistinctValuesAsKeyValuePairs('name');
 
         $disciplinesModel = new HousemanshipDisciplinesModel();
         $disciplinesList = $disciplinesModel->getDistinctValuesAsKeyValuePairs('name');
+        $facilitiesList = $this->getFacilitiesList($data);
         return [
             [
                 "label" => "Discpline",
@@ -124,7 +126,7 @@ class HousemanshipApplicationDetailsModel extends MyBaseModel implements FormInt
                 "hint" => "",
                 "options" => $disciplinesList,
                 "value" => "",
-                "required" => true,
+                "required" => false,
                 "api_url" => "housemanship/disciplines",
                 "apiKeyProperty" => "name",
                 "apiLabelProperty" => "name",
@@ -158,5 +160,77 @@ class HousemanshipApplicationDetailsModel extends MyBaseModel implements FormInt
             ]
 
         ];
+    }
+
+    private function getFacilitiesList(array $applicantDetails = null): array
+    {
+        $facilitiesModel = new HousemanshipFacilitiesModel();
+        $allowedFacilities = null;
+        if ($applicantDetails != null) {
+            $allowedFacilities = [];
+            $categories = Utils::getHousemanshipSetting(HousemanshipSetting::AVAILABILITY_CATEGORIES);
+            //use the categories critera to determine which categories apply to the user
+            $userCategories = [];
+            foreach ($categories as $category) {
+                $criteria = array_map(fn($c) => CriteriaType::fromArray($c), $category['criteria']);
+                if (CriteriaType::matchesCriteria($applicantDetails, $criteria)) {
+                    $userCategories[] = $category['value'];
+                }
+            }
+            $userCategoriesList = implode(",", array_map(fn($c) => "'" . $c . "'", $userCategories));
+            log_message('info', 'facility categories for user: ' . print_r($applicantDetails, true) . ' are ' . print_r($userCategories, true));
+            //filter by whether the facility is available for selection by the user's category. get only the latest year for each 
+            //facility and category
+            $availabilityModel = new HousemanshipFacilityAvailabilityModel();
+            //categories are stored as 'available'| available_(category)_selection|  (category)| available_(practitioner_type)_(category) etc. each category has its corresponding criteria. 
+            //the facility must have each criteria to be available for it to be selectable
+            $latestAvailabilities = $availabilityModel
+                ->where("{$availabilityModel->getTableName()}.category IN ($userCategoriesList)")
+                ->where("{$availabilityModel->getTableName()}.available = 1")
+                ->join(
+                    "(SELECT facility_name, MAX(year) as max_year 
+         FROM {$availabilityModel->getTableName()} 
+         WHERE category IN ($userCategoriesList) 
+         GROUP BY facility_name) latest",
+                    "{$availabilityModel->getTableName()}.facility_name = latest.facility_name AND {$availabilityModel->getTableName()}.year = latest.max_year",
+                    'inner'
+                )
+                ->findAll();
+            //convert the $latestAvailabilities to an array of facility names => [categories]
+            $facilityDict = [];
+            foreach ($latestAvailabilities as $latestAvailability) {
+                //if the facility is not already in the dict, add it
+                if (!array_key_exists($latestAvailability['facility_name'], $facilityDict)) {
+                    $facilityDict[$latestAvailability['facility_name']] = [];
+                }
+                $facilityDict[$latestAvailability['facility_name']][] = $latestAvailability['category'];
+            }
+            log_message('info', 'facility availability for user: ' . print_r($applicantDetails, true) . ' are ' . print_r($facilityDict, true));
+            //filter the facilities based on userCategories. filter out the ones that don't have all the categories
+            $hasAllCategories = array_filter($facilityDict, fn($value) => count(array_intersect($value, $userCategories)) == count($userCategories));
+            $allowedFacilities = array_keys($hasAllCategories);
+            log_message('info', 'allowed facilities for user: ' . print_r($applicantDetails, true) . ' are ' . print_r($allowedFacilities, true));
+
+        }
+
+        $keyColumns = ['name', 'region'];
+        $valueColumn = 'name';
+
+        $results = $facilitiesModel->builder()->get()->getResultArray();
+        $keyValuePairs = [];
+        foreach ($results as $value) {
+            //filter out the ones that are not available for selection
+            if (!in_array($value['name'], $allowedFacilities)) {
+                continue;
+            }
+            //for the key, get the values from the keyColumns separated by a dash e.g. "key1 - key2 - key3"
+            $keyVals = [];
+            foreach ($keyColumns as $keyColumn) {
+                $keyVals[] = $value[$keyColumn];
+            }
+            $key = implode(" - ", $keyVals);
+            $keyValuePairs[] = ["key" => $key, "value" => $value[$valueColumn]];
+        }
+        return $keyValuePairs;
     }
 }

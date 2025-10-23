@@ -76,14 +76,14 @@ class LicenseService
     public function updateLicense(string $uuid, array $data): array
     {
         $model = new LicensesModel();
-        $oldData = $model->where(["uuid" => $uuid])->first();
+        $oldData = $model->where(["uuid" => $uuid])->orWhere('license_number', $uuid)->first();
 
         if (!$oldData) {
             throw new \RuntimeException("License not found");
         }
 
         $type = $oldData['type'];
-        $data['uuid'] = $uuid;
+        $data['uuid'] = $oldData['uuid'];
         $data['license_number'] = $oldData['license_number']; // Preserve license number
 
         // Get validation rules
@@ -106,7 +106,7 @@ class LicenseService
         $model->db->transException(true)->transStart();
 
         try {
-            $model->builder()->where(['uuid' => $uuid])->update($licenseUpdateData);
+            $model->builder()->where(['uuid' => $oldData['uuid']])->update($licenseUpdateData);
             $model->createOrUpdateLicenseDetails($type, $data);
 
             $model->db->transComplete();

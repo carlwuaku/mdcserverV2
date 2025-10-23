@@ -104,6 +104,7 @@ class InvoiceModel extends MyBaseModel implements TableDisplayInterface
             'email',
             'phone_number',
             'amount',
+            'created_at',
             'purpose',
             'due_date',
             'status',

@@ -17,7 +17,6 @@ use App\Helpers\Constants;
 class AssetController extends ResourceController
 {
 
-
     /**
      * upload a new file. the type specifies which subfolder it should be placed in
      *
@@ -80,16 +79,20 @@ class AssetController extends ResourceController
         $destination = $baseFolder;
         switch ($type) {
             case 'practitioners_images':
-                $destination = PRACTITIONERS_ASSETS_FOLDER . "/";
+                $destination = UPLOADS_FOLDER . "/" . PRACTITIONERS_ASSETS_FOLDER . "/";
                 break;
             case "documents":
-                $destination = "documents/";
+                $destination = UPLOADS_FOLDER . "/" . "documents/";
                 break;
             case "applications":
-                $destination = APPLICATIONS_ASSETS_FOLDER . "/";
+                $destination = UPLOADS_FOLDER . "/" . APPLICATIONS_ASSETS_FOLDER . "/";
                 break;
             case "payments":
-                $destination = PAYMENTS_ASSETS_FOLDER . "/";
+                $destination = UPLOADS_FOLDER . "/" . PAYMENTS_ASSETS_FOLDER . "/";
+                break;
+            case "qr_codes":
+                $destination = QRCODES_ASSETS_FOLDER . "/";
+                break;
             default:
 
                 break;
@@ -100,8 +103,9 @@ class AssetController extends ResourceController
     public function serveFile($type, $imageName)
     {
         $directory = $this->getImageDirectory($type);
-        $filePath = WRITEPATH . 'uploads/' . $directory . $imageName;
+        $filePath = WRITEPATH . $directory . $imageName;
         if (!file_exists($filePath)) {
+            log_message("error", "File not found: $filePath");
             return $this->respond(['message' => "Image not found"], ResponseInterface::HTTP_BAD_REQUEST);
         }
         try {

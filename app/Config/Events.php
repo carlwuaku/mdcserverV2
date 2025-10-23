@@ -2,6 +2,7 @@
 
 namespace Config;
 
+use App\Helpers\Enums\InvoiceEvents;
 use App\Helpers\PaymentUtils;
 use CodeIgniter\Events\Events;
 use App\Helpers\Utils;
@@ -57,11 +58,12 @@ use Codeigniter\Database\Query;
 //     }
 // });
 
-Events::on(EVENT_INVOICE_CREATED, static function ($invoice, $items) {
-    log_message("info", "event - Invoice created: " . $invoice['invoice_number']);
-});
 
-Events::on(EVENT_INVOICE_PAYMENT_COMPLETED, static function (string $uuid) {
+
+
+
+//Ran when a file is uploaded for an invoice but not approved yet
+Events::on(INVOICE_EVENT, static function (InvoiceEvents $event, string $uuid) {
     //get the invoice details
     $invoiceDetails = PaymentUtils::getInvoiceDetails($uuid);
     //check the purpose of the payment
@@ -76,10 +78,27 @@ Events::on(EVENT_INVOICE_PAYMENT_COMPLETED, static function (string $uuid) {
     if (!isset($purposes[$purpose])) {
         throw new \InvalidArgumentException("Invalid payment purpose: $purpose");
     }
-    //get the onPaymentCompletedActions for the purpose. these are identical to the actions for application forms. so we can use the ApplicationFormActionHelper methods to run them.
-    $onPaymentCompletedActions = $purposes[$purpose]["onPaymentCompletedActions"];
-    if (empty($onPaymentCompletedActions)) {
-        log_message("info", "No onPaymentCompletedActions found for purpose: $purpose");
+    //get the required for the purpose. these are identical to the actions for application forms. so we can use the ApplicationFormActionHelper methods to run them.
+    $actions = null;
+    switch ($event) {
+        case InvoiceEvents::INVOICE_CREATED:
+            break;
+        case InvoiceEvents::INVOICE_PAYMENT_FILE_UPLOADED:
+            $actions = $purposes[$purpose]["onPaymentFileUploadedActions"];
+            break;
+
+        case InvoiceEvents::INVOICE_PAYMENT_FILE_DELETED:
+            $actions = $purposes[$purpose]["onPaymentFileDeletedActions"];
+            break;
+        case InvoiceEvents::INVOICE_PAYMENT_COMPLETED:
+            $actions = $purposes[$purpose]["onPaymentCompletedActions"];
+            break;
+        default:
+
+            break;
+    }
+    if (empty($actions)) {
+        log_message("info", "No actions found for purpose: $purpose - event: " . $event->value);
         return;
     }
 
@@ -87,10 +106,10 @@ Events::on(EVENT_INVOICE_PAYMENT_COMPLETED, static function (string $uuid) {
     $model = new \App\Models\Payments\InvoiceModel();
     $model->db->transException(true)->transStart();
     try {
-        foreach ($onPaymentCompletedActions as $action) {
+        foreach ($actions as $action) {
             //the ApplicationFormActionHelper expects an ApplicationStageType object for the cofig, and some data to process.  
             $result = ApplicationFormActionHelper::runAction(ApplicationStageType::fromArray($action), $invoiceDetails);
-            log_message("info", "action ran for invoice payment" . json_encode($invoiceDetails) . " <br> Results: " . json_encode($result));
+            log_message("info", "action ran for invoice payment file upload" . json_encode($invoiceDetails) . " <br> Results: " . json_encode($result));
         }
 
         $model->db->transComplete();
@@ -99,6 +118,8 @@ Events::on(EVENT_INVOICE_PAYMENT_COMPLETED, static function (string $uuid) {
         throw $e;
     }
 });
+
+
 
 Events::on(EVENT_APPLICATION_FORM_ACTION_COMPLETED, static function (object $action, array $data, array $result) {
 

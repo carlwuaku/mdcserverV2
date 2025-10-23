@@ -97,13 +97,15 @@ class ApplicationStageType
     public const CONFIG_TYPE_API_CALL = 'api_call';
     public const CONFIG_TYPE_INTERNAL_API_CALL = 'internal_api_call';
     public const CONFIG_TYPE_PAYMENT = 'payment';
+    public const CONFIG_TYPE_PORTAL_EDIT = 'portal_edit';
 
     public const VALID_CONFIG_TYPES = [
         self::CONFIG_TYPE_EMAIL,
         self::CONFIG_TYPE_ADMIN_EMAIL,
         self::CONFIG_TYPE_API_CALL,
         self::CONFIG_TYPE_INTERNAL_API_CALL,
-        self::CONFIG_TYPE_PAYMENT
+        self::CONFIG_TYPE_PAYMENT,
+        self::CONFIG_TYPE_PORTAL_EDIT
     ];
 
     public string $type;

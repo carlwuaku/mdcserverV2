@@ -71,7 +71,10 @@ class LicenseUtils extends Utils
 
 
             $qrCode = Utils::generateQRCode($qrText, true);
-            $data['qr_code'] = $qrCode;
+            $fileNameParts = explode('/', $qrCode);
+            $qrFileName = array_pop($fileNameParts);
+            $qrCodePath = base_url("file-server/image-render/qr_codes/$qrFileName");
+            $data['qr_code'] = $qrCodePath;
             $data['qr_text'] = $qrText;
 
             $data['license_type'] = $licenseType;
@@ -111,8 +114,8 @@ class LicenseUtils extends Utils
             $activitiesModel->logActivity("added renewal record for $license_number ");
             return $id;
         } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
-            throw new Exception("Error inserting data." . $th->getMessage());
+            log_message("error", $th);
+            throw $th;
         }
 
     }
@@ -131,7 +134,7 @@ class LicenseUtils extends Utils
         try {
             $model = new LicenseRenewalModel();
             $renewal = $model->builder()->where('uuid', $renewal_uuid)->get()->getFirstRow('array');
-            $license = self::getLicenseDetails($renewal['license_number']);
+            // $license = self::getLicenseDetails($renewal['license_number']);
             $licenseType = $renewal['license_type'];
             $license_number = $renewal['license_number'];
             $data['license_type'] = $licenseType;
@@ -157,8 +160,11 @@ class LicenseUtils extends Utils
                 $data['qr_text'] = $qrText;
             }
             //unset the $license status as when no status is provided, the default status from the license is used
-            unset($license['status']);
-            $data = array_merge($license, $data);
+
+            // unset($license['status']);
+            // unset($data['uuid']);
+            // unse
+            // $data = array_merge($license, $data);
             $formData = $model->createArrayFromAllowedFields($data, false);
             //if the online_print_template is an empty string, set it to null
             if (array_key_exists('online_print_template', $data) && $data['online_print_template'] === "") {
@@ -188,25 +194,25 @@ class LicenseUtils extends Utils
             $model->where("uuid", $renewal_uuid)->set($formData)->update();
             $id = $renewal['id'];
 
-            $LicensesModel = new LicensesModel();
+            // $LicensesModel = new LicensesModel();
             $subModel = new LicenseRenewalModel();
             $subModel->createOrUpdateSubDetails($id, $licenseType, $data);
             // log_message('info', 'subRenewal created successfully');
             //a trigger in the database will update the license table with the renewal date, expiry and status
             //get the fields to update based on the renewal type
-            $licenseDef = Utils::getLicenseSetting($licenseType);
-            $fieldsToUpdate = $licenseDef->fieldsToUpdateOnRenewal;
+            // $licenseDef = Utils::getLicenseSetting($licenseType);
+            // $fieldsToUpdate = $licenseDef->fieldsToUpdateOnRenewal;
 
-            $licenseUpdate = [
-            ];
-            foreach ($fieldsToUpdate as $key => $value) {
-                $licenseUpdate[$value] = $data[$value];
-            }
-            if (!empty($licenseUpdate)) {
-                $LicensesModel->builder()->where(['uuid' => $renewal['license_uuid']])->set($licenseUpdate)->update();
-            }
+            // $licenseUpdate = [
+            // ];
+            // foreach ($fieldsToUpdate as $key => $value) {
+            //     $licenseUpdate[$value] = $data[$value];
+            // }
+            // if (!empty($licenseUpdate)) {
+            //     $LicensesModel->builder()->where(['uuid' => $renewal['license_uuid']])->set($licenseUpdate)->update();
+            // }
 
-            //send email to the user from here if the setting RENEWAL_EMAIL_TO is set to true
+
             /** @var ActivitiesModel $activitiesModel */
             $activitiesModel = new ActivitiesModel();
             $activitiesModel->logActivity("updated renewal record for $license_number with data " . json_encode(array_merge($data, $formData)));
@@ -215,8 +221,8 @@ class LicenseUtils extends Utils
 
 
         } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
-            throw new Exception("Error updating data." . $th->getMessage());
+            log_message("error", $th);
+            throw $th;
         }
 
     }

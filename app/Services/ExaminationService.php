@@ -866,14 +866,12 @@ class ExaminationService
         $examinationRegistrations = $this->examinationRegistrationsModel->select("{$this->examinationRegistrationsModel->table}.*, {$this->examinationsModel->table}.exam_type")->join($this->examinationsModel->table, "{$this->examinationsModel->table}.id = {$this->examinationRegistrationsModel->table}.exam_id")->whereIn("{$this->examinationRegistrationsModel->table}.uuid", $uuids)->findAll();
         $this->examinationRegistrationsModel->db->transException(true)->transStart();
         $numRows = $this->examinationRegistrationsModel->updateBatch($updateData, 'uuid', count($updateData));
-        log_message("info", print_r($examinationRegistrations, true));
         //get all the examination registrations for the uuids
         foreach ($examinationRegistrations as $examinationRegistration) {
             $candidateStateData = [
                 'intern_code' => $examinationRegistration['intern_code'],
                 'state' => ExaminationsUtils::getExamCandidateStateFromExamResult($examinationRegistration['exam_type'], $uuidResultsKey[$examinationRegistration['uuid']])
             ];
-            log_message("info", print_r($candidateStateData, true));
             $licenseModel = new LicensesModel('exam_candidates');
             $licenseModel->createOrUpdateLicenseDetails("exam_candidates", $candidateStateData);
         }

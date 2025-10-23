@@ -82,9 +82,67 @@ class CpdModel extends MyBaseModel implements TableDisplayInterface
         return [];
     }
 
+    /**
+     * Returns an array of filters to apply to the display columns
+     * of the model when rendering a table view of the model.
+     * 
+     * @return array
+     */
     public function getDisplayColumnFilters(): array
     {
-        return [];
+        return [
+            [
+                "label" => "Provider",
+                "name" => "provider_uuid",
+                "type" => "api",
+                "hint" => "",
+                "options" => [],
+                "value" => "",
+                "required" => false,
+                "api_url" => "cpd/providers",
+                "apiKeyProperty" => "uuid",
+                "apiLabelProperty" => "name",
+                "apiType" => "search"
+            ],
+            [
+                "label" => "Year",
+                "name" => "year",
+                "type" => "number",
+                "hint" => "",
+                "options" => [],
+                "value" => "",
+                "required" => false
+            ],
+            [
+                "label" => "Category",
+                "name" => "category",
+                "type" => "number",
+                "hint" => "",
+                "options" => [],
+                "value" => "",
+                "required" => false
+            ],
+            [
+                "label" => "Number of credits",
+                "name" => "credits",
+                "type" => "number",
+                "hint" => "",
+                "options" => [
+
+                ],
+                "value" => "",
+                "required" => false
+            ],
+            [
+                "label" => "Available online",
+                "name" => "online",
+                "type" => "select",
+                "hint" => "",
+                "options" => [["key" => "Yes", "value" => "1"], ["key" => "No", "value" => "0"]],
+                "value" => "",
+                "required" => false
+            ]
+        ];
     }
 
     public function addCustomFields(BaseBuilder $builder, string $userType = "admin"): BaseBuilder
