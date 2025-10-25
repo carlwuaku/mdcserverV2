@@ -4446,7 +4446,8 @@
     },
     "allowedTestEmails": [
         "wuakuc@gmail.com",
-        "wuakuc+pa_permanent@gmail.com"
+        "wuakuc+pa_permanent@gmail.com",
+        "wuakuc+mdcadmin@gmail.com"
     ],
     "payments": {
         "purposes": {

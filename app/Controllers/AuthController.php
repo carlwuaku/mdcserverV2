@@ -333,30 +333,37 @@ class AuthController extends ResourceController
 
     private function prep2FaSetupForUser(string $uuid)
     {
-        $userObject = new UsersModel();
+        try {
+            $userObject = new UsersModel();
 
-        $userData = $userObject->where(["uuid" => $uuid])->first();
+            $userData = $userObject->where(["uuid" => $uuid])->first();
 
-        // Create Google Authenticator object
-        $authenticator = new GoogleAuthenticator();
+            // Create Google Authenticator object
+            $authenticator = new GoogleAuthenticator();
 
-        // Generate a secret key
-        $secret = $authenticator->createSecret();
+            // Generate a secret key
+            $secret = $authenticator->createSecret();
 
-        // Create the QR code URL
-        $appName = getenv("GOOGLE_AUTHENTICATOR_APP_NAME");
-        $email = $userData->email;
-        $qrCodeUrl = $authenticator->getQRCodeUrl($email, $secret, $appName);
+            // Create the QR code URL
+            $appName = $userData->user_type === 'admin' ? getenv("GOOGLE_AUTHENTICATOR_APP_NAME") : getenv("GOOGLE_AUTHENTICATOR_APP_NAME") . " - Portal";
+            $portalUrl = $userData->user_type === 'admin' ? getenv("ADMIN_PORTAL_URL") : getenv("PORTAL_URL");
+            $email = $userData->email;
+            $qrCodeUrl = $authenticator->getQRCodeUrl($email, $secret, $appName);
 
-        // Save the secret key to the user's record in the database
-        $userObject->update($userData->id, [
-            'two_fa_setup_token' => $secret
-        ]);
-        $this->send2FaSetupEmail($email, $userData->display_name, $secret, $qrCodeUrl, $uuid);
-        return [
-            'secret' => $secret, // User can manually enter this if they can't scan QR
-            'qr_code_url' => $qrCodeUrl
-        ];
+            // Save the secret key to the user's record in the database
+            $userObject->update($userData->id, [
+                'two_fa_setup_token' => $secret
+            ]);
+            $this->send2FaSetupEmail($email, $userData->display_name, $secret, $qrCodeUrl, $uuid, $portalUrl);
+            return [
+                'secret' => $secret, // User can manually enter this if they can't scan QR
+                'qr_code_url' => $qrCodeUrl
+            ];
+        } catch (\Throwable $th) {
+            log_message('error', $th);
+            throw $th;
+        }
+
     }
 
     /**
@@ -369,7 +376,7 @@ class AuthController extends ResourceController
      * @return void
      * @throws \Exception If the email template or subject for 2FA not found
      */
-    private function send2FaSetupEmail($email, $displayName, $secret, $qrCodeUrl, $uuid): void
+    private function send2FaSetupEmail($email, $displayName, $secret, $qrCodeUrl, $uuid, $portalUrl): void
     {
         try {
             $settings = service("settings");
@@ -379,6 +386,7 @@ class AuthController extends ResourceController
                 throw new \Exception("Email template or subject for 2FA not found");
             }
             $templateEngine = new TemplateEngineHelper();
+            log_message('info', $secret);
 
             //save the qr code url as a file and generate a link for it. gmail does not accept inline images
             $qrPath = "";//TODO; provide a link to an empty image
@@ -389,17 +397,17 @@ class AuthController extends ResourceController
                 $messageTemplate = $settings->get(SETTING_2_FACTOR_AUTHENTICATION_SETUP_EMAIL_TEMPLATE_CODE_ONLY);
             }
 
-
+            log_message('info', $portalUrl . '/' . $uuid);
             $message = $templateEngine->process($messageTemplate, ['qr_code_url' => $qrPath, 'secret' => $secret, 'display_name' => $displayName]);
             //add the portal link to the message
-            $portalLink = getenv("PORTAL_URL");
-            $message .= "<p>Click here to continue the setup: <a href='" . $portalLink . '/' . $uuid . "'>" . $portalLink . "</a></p>";
+            $message .= "<p>Click here to continue the setup: <a href='" . $portalUrl . '/' . $uuid . "'>" . $portalUrl . "</a></p>";
 
             $emailConfig = new EmailConfig($message, $subject, $email);
 
 
             EmailHelper::sendEmail(emailConfig: $emailConfig);
         } catch (\Throwable $th) {
+            log_message('error', $th);
             throw $th;
         }
 
@@ -409,7 +417,7 @@ class AuthController extends ResourceController
     public function verifyAndEnableGoogleAuth()
     {
         $rules = [
-            'code' => 'required|min_length[6]|max_length[6]|numeric',
+            'token' => 'required|min_length[6]|max_length[6]|numeric',
             'uuid' => 'required|is_not_unique[users.uuid]',
         ];
         if (!$this->validate($rules)) {
@@ -438,14 +446,14 @@ class AuthController extends ResourceController
 
         // Verify the code
         $authenticator = new GoogleAuthenticator();
-        $code = $this->request->getVar('code');
+        $token = $this->request->getVar('token');
 
-        if (!$authenticator->verifyCode($secret, $code, 2)) {
+        if (!$authenticator->verifyCode($secret, $token, 2)) {
             return $this->respond([
-                'message' => 'Invalid verification code'
+                'message' => 'Invalid verification token'
             ], ResponseInterface::HTTP_BAD_REQUEST);
         }
-        // Code is valid, save the secret to the user's record
+        // token is valid, save the secret to the user's record
 
         $userObject->update($userData->id, [
             'two_fa_setup_token' => null,
@@ -649,159 +657,175 @@ class AuthController extends ResourceController
 
     public function mobileLogin()
     {
-        // Check if 2FA code is required for this request
-        $is2faVerification = $this->request->getVar('verification_mode') === '2fa';
+        try {
+            // Check if 2FA code is required for this request
+            $is2faVerification = $this->request->getVar('verification_mode') === '2fa';
 
-        // Validate credentials
-        $rules = setting('Validation.login') ?? [
-            'username' => [
-                'label' => 'Auth.username',
-                'rules' => 'required|string|min_length[3]|max_length[50]',
-            ],
-            'password' => [
-                'label' => 'Auth.password',
-                'rules' => 'required',
-            ],
-            'device_name' => [
-                'label' => 'Device Name',
-                'rules' => "required|string|in_list[admin portal,practitioners portal]",
-                'errors' => [
-                    'in_list' => 'Invalid request',
+            // Validate credentials
+            $rules = setting('Validation.login') ?? [
+                'username' => [
+                    'label' => 'Auth.username',
+                    'rules' => 'required|string|min_length[3]|max_length[50]',
                 ],
-            ],
-            'user_type' => [
-                'label' => 'User Type',
-                'rules' => 'required|string',
-            ],
-        ];
-
-        if ($is2faVerification) {
-            // When verifying 2FA, we need the code and token
-            $rules = [
-                'token' => 'required',
-                'code' => 'required|min_length[6]|max_length[6]|numeric',
+                'password' => [
+                    'label' => 'Auth.password',
+                    'rules' => 'required',
+                ],
                 'device_name' => [
                     'label' => 'Device Name',
                     'rules' => "required|string|in_list[admin portal,practitioners portal]",
                     'errors' => [
-                        'in_list' => 'Invalid request'
+                        'in_list' => 'Invalid request',
                     ],
                 ],
-            ];
-        }
-        if (!$this->validateData($this->request->getPost(), $rules, [], config('Auth')->DBGroup)) {
-            log_message('error', print_r($this->validator->getErrors(), true));
-            return $this->response
-                ->setJSON(['errors' => $this->validator->getErrors()])
-                ->setStatusCode(401);
-        }
-
-        // Make sure the user_type is a valid one
-        $userType = $this->request->getVar('user_type');
-        $deviceName = $this->request->getVar('device_name');
-        if (!in_array($userType, USER_TYPES)) {
-            return $this->respond(['message' => 'Invalid user type'], ResponseInterface::HTTP_BAD_REQUEST);
-        }
-
-        if ($is2faVerification) {
-            // 2FA VERIFICATION FLOW
-            $token = $this->request->getVar('token');
-            $code = $this->request->getVar('code');
-
-            $userObject = new UsersModel();
-            $userData = $userObject->where(["two_fa_verification_token" => $token])->first();
-
-            if (!$userData) {
-                return $this->respond(["message" => "User not found"], ResponseInterface::HTTP_NOT_FOUND);
-            }
-
-            // Verify Google Authenticator code
-            $authenticator = new GoogleAuthenticator();
-            $secret = $userData->google_auth_secret;
-
-            if (!$secret) {
-                return $this->respond(["message" => "2FA not set up for this account"], ResponseInterface::HTTP_BAD_REQUEST);
-            }
-
-            if (!$authenticator->verifyCode($secret, $code, 2)) {
-                return $this->respond(["message" => "Invalid verification code"], ResponseInterface::HTTP_BAD_REQUEST);
-            }
-
-            // 2FA succeeded, log the user in
-            auth()->login($userData);
-            $userObject->update($userData->id, [
-                'two_fa_verification_token' => null
-            ]);
-        } else {
-            // Get the credentials for login - now using username instead of email
-            $credentials = [
-                'username' => $this->request->getPost('username'),
-                'password' => $this->request->getPost('password')
+                'user_type' => [
+                    'label' => 'User Type',
+                    'rules' => 'required|string',
+                ],
             ];
 
-            // Attempt to login
-            $result = auth()->attempt($credentials);
-            if (!$result->isOK()) {
+            if ($is2faVerification) {
+                // When verifying 2FA, we need the code and token
+                $rules = [
+                    'token' => 'required',
+                    'code' => 'required|min_length[6]|max_length[6]|numeric',
+                    'device_name' => [
+                        'label' => 'Device Name',
+                        'rules' => "required|string|in_list[admin portal,practitioners portal]",
+                        'errors' => [
+                            'in_list' => 'Invalid request'
+                        ],
+                    ],
+                ];
+            }
+            if (!$this->validateData($this->request->getPost(), $rules, [], config('Auth')->DBGroup)) {
+                log_message('error', print_r($this->validator->getErrors(), true));
                 return $this->response
-                    ->setJSON(['message' => $result->reason()])
+                    ->setJSON(['errors' => $this->validator->getErrors()])
                     ->setStatusCode(401);
             }
 
-            // Check if the user is the correct type
-            $userObject = new UsersModel();
-            $userData = $userObject->findById(auth()->id());
-            if ($userData->user_type !== $userType) {
+            // Make sure the user_type is a valid one
+            $userType = $this->request->getVar('user_type');
+            $deviceName = $this->request->getVar('device_name');
+            if (!in_array($userType, USER_TYPES)) {
                 return $this->respond(['message' => 'Invalid user type'], ResponseInterface::HTTP_BAD_REQUEST);
             }
 
-            // If the device name is admin portal, check if the user is an admin
-            if ($deviceName === 'admin portal' && $userData->user_type !== 'admin') {
-                return $this->respond(['message' => 'Invalid user type'], ResponseInterface::HTTP_BAD_REQUEST);
-            }
+            if ($is2faVerification) {
+                // 2FA VERIFICATION FLOW
+                $token = $this->request->getVar('token');
+                $code = $this->request->getVar('code');
 
-            // If the device name is practitioners portal, make sure the user is not an admin
-            if ($deviceName === 'practitioners portal' && $userData->user_type === 'admin') {
-                return $this->respond(['message' => 'Invalid user type'], ResponseInterface::HTTP_BAD_REQUEST);
-            }
+                $userObject = new UsersModel();
+                $userData = $userObject->where(["two_fa_verification_token" => $token])->first();
 
-            // Check if the user's two_fa_deadline is set and if it is in the past and has not set up 2FA
-            if ($userData->two_fa_deadline && $userData->two_fa_deadline < date('Y-m-d') && empty($userData->google_auth_secret)) {
-                // Set up 2FA. send the email to the user
-                $message = 'The deadline to enable 2 factor authentication has passed. The instructions to enable it have been sent to your email. Please check your email.';
-                try {
-                    $this->prep2FaSetupForUser($userData->uuid);
-                } catch (\Throwable $th) {
-
-                    log_message('error', "Error sending 2FA setup email: " . $th);
-                    $message = 'The deadline to enable 2 factor authentication has passed. We are unable to send the instructions to enable it to your email at this moment. Please try again in a few minutes or contact support if the problem persists.';
+                if (!$userData) {
+                    return $this->respond(["message" => "User not found"], ResponseInterface::HTTP_NOT_FOUND);
                 }
 
-                return $this->respond(['message' => $message], ResponseInterface::HTTP_BAD_REQUEST);
+                // Verify Google Authenticator code
+                $authenticator = new GoogleAuthenticator();
+                $secret = $userData->google_auth_secret;
+
+                if (!$secret) {
+                    return $this->respond(["message" => "2FA not set up for this account"], ResponseInterface::HTTP_BAD_REQUEST);
+                }
+
+                if (!$authenticator->verifyCode($secret, $code, 2)) {
+                    return $this->respond(["message" => "Invalid verification code"], ResponseInterface::HTTP_BAD_REQUEST);
+                }
+
+                // 2FA succeeded, log the user in
+                auth()->login($userData);
+                $userObject->update($userData->id, [
+                    'two_fa_verification_token' => null
+                ]);
+            } else {
+                // Get the credentials for login - now using username instead of email
+                $credentials = [
+                    'username' => $this->request->getPost('username'),
+                    'password' => $this->request->getPost('password')
+                ];
+
+                // Get email and password
+                $username = $credentials['username'];
+                // Check if the user is the correct type
+                $userObject = new UsersModel();
+                $user = $userObject->findByCredentials(['username' => $username]);
+
+                if (!$user || !auth()->check($credentials)) {
+                    return $this->respond(['message' => 'Wrong combination. Try again'], ResponseInterface::HTTP_NOT_FOUND);
+
+                }
+
+                // Attempt to login
+                $result = auth()->attempt($credentials);
+                if (!$result->isOK()) {
+                    return $this->response
+                        ->setJSON(['message' => 'Wrong combination. Try again'])
+                        ->setStatusCode(401);
+                }
+
+
+                $userData = $userObject->findById(auth()->id());
+                if ($userData->user_type !== $userType) {
+                    return $this->respond(['message' => 'Invalid user type'], ResponseInterface::HTTP_BAD_REQUEST);
+                }
+
+                // If the device name is admin portal, check if the user is an admin
+                if ($deviceName === 'admin portal' && $userData->user_type !== 'admin') {
+                    return $this->respond(['message' => 'Invalid user type'], ResponseInterface::HTTP_BAD_REQUEST);
+                }
+
+                // If the device name is practitioners portal, make sure the user is not an admin
+                if ($deviceName === 'practitioners portal' && $userData->user_type === 'admin') {
+                    return $this->respond(['message' => 'Invalid user type'], ResponseInterface::HTTP_BAD_REQUEST);
+                }
+
+                // Check if the user's two_fa_deadline is set and if it is in the past and has not set up 2FA
+                if ($userData->two_fa_deadline && $userData->two_fa_deadline < date('Y-m-d') && empty($userData->google_auth_secret)) {
+                    // Set up 2FA. send the email to the user
+                    $message = 'The deadline to enable 2 factor authentication has passed. The instructions to enable it have been sent to your email. Please check your email.';
+                    try {
+                        $this->prep2FaSetupForUser($userData->uuid);
+                    } catch (\Throwable $th) {
+
+                        log_message('error', "Error sending 2FA setup email: " . $th);
+                        $message = 'The deadline to enable 2 factor authentication has passed. We are unable to send the instructions to enable it to your email at this moment. Please try again in a few minutes or contact support if the problem persists.';
+                    }
+
+                    return $this->respond(['message' => $message], ResponseInterface::HTTP_BAD_REQUEST);
+                }
+
+                // Check if 2FA is enabled for this user
+                if (!empty($userData->google_auth_secret)) {
+                    // Don't actually log them in yet - require 2FA verification
+                    auth()->logout();
+                    // Generate a new random token
+                    $token = bin2hex(random_bytes(16));
+                    // Store the token in the session or database for later verification
+                    $userObject->update($userData->id, [
+                        'two_fa_verification_token' => $token
+                    ]);
+                    return $this->respond([
+                        "message" => "2FA verification required",
+                        "requires_2fa" => true,
+                        "token" => $token,
+                    ], ResponseInterface::HTTP_OK);
+                }
             }
 
-            // Check if 2FA is enabled for this user
-            if (!empty($userData->google_auth_secret)) {
-                // Don't actually log them in yet - require 2FA verification
-                auth()->logout();
-                // Generate a new random token
-                $token = bin2hex(random_bytes(16));
-                // Store the token in the session or database for later verification
-                $userObject->update($userData->id, [
-                    'two_fa_verification_token' => $token
-                ]);
-                return $this->respond([
-                    "message" => "2FA verification required",
-                    "requires_2fa" => true,
-                    "token" => $token,
-                ], ResponseInterface::HTTP_OK);
-            }
+            // Generate token and return to client
+            $token = auth()->user()->generateAccessToken(service('request')->getVar('device_name'));
+
+            return $this->response
+                ->setJSON(['token' => $token->raw_token]);
+        } catch (\Throwable $th) {
+            log_message('error', "Error logging in: " . $th);
+            return $this->respond(['message' => 'Error logging in'], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
 
-        // Generate token and return to client
-        $token = auth()->user()->generateAccessToken(service('request')->getVar('device_name'));
-
-        return $this->response
-            ->setJSON(['token' => $token->raw_token]);
     }
 
     public function sendResetToken()

@@ -178,7 +178,6 @@ class HousemanshipApplicationDetailsModel extends MyBaseModel implements FormInt
                 }
             }
             $userCategoriesList = implode(",", array_map(fn($c) => "'" . $c . "'", $userCategories));
-            log_message('info', 'facility categories for user: ' . print_r($applicantDetails, true) . ' are ' . print_r($userCategories, true));
             //filter by whether the facility is available for selection by the user's category. get only the latest year for each 
             //facility and category
             $availabilityModel = new HousemanshipFacilityAvailabilityModel();
@@ -205,11 +204,9 @@ class HousemanshipApplicationDetailsModel extends MyBaseModel implements FormInt
                 }
                 $facilityDict[$latestAvailability['facility_name']][] = $latestAvailability['category'];
             }
-            log_message('info', 'facility availability for user: ' . print_r($applicantDetails, true) . ' are ' . print_r($facilityDict, true));
             //filter the facilities based on userCategories. filter out the ones that don't have all the categories
             $hasAllCategories = array_filter($facilityDict, fn($value) => count(array_intersect($value, $userCategories)) == count($userCategories));
             $allowedFacilities = array_keys($hasAllCategories);
-            log_message('info', 'allowed facilities for user: ' . print_r($applicantDetails, true) . ' are ' . print_r($allowedFacilities, true));
 
         }
 
