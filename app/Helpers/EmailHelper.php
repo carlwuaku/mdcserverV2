@@ -165,6 +165,7 @@ class EmailHelper extends Utils
          */
         $allowedEmails = self::getAppSettings('allowedTestEmails') ?? [];
         if (!in_array($emailConfig->to, $allowedEmails) && getenv('CI_ENVIRONMENT') !== 'production') {
+            log_message('info', 'Email not sent in non-production environment: ' . $emailConfig->to . ' ' . $emailConfig->message);
             $message = "Email not sent in non-production environment";
             if ($emailId) {
                 $emailQueueModel->updateStatus($emailId, 'sent', $message);
