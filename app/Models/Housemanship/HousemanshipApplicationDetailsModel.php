@@ -112,12 +112,36 @@ class HousemanshipApplicationDetailsModel extends MyBaseModel implements FormInt
         ];
     }
 
-    public function getNonAdminFormFields(array $data): array
+
+    /**
+     * Returns form fields that can be used by non-admin users.
+     * It excludes the facility regions provided in the $excludedfacilityRegions parameter.
+     * The form fields are in the format: [
+     *     [
+     *         "label" => "Discipline",
+     *         "name" => "discipline",
+     *         "type" => "select",
+     *         "hint" => "",
+     *         "options" => [],
+     *         "value" => "",
+     *         "required" => false,
+     *         "api_url" => "housemanship/disciplines",
+     *         "apiKeyProperty" => "name",
+     *         "apiLabelProperty" => "name",
+     *         "apiType" => "select"
+     *     ]
+     * ]
+     *
+     * @param array $data
+     * @param string[] $excludedfacilityRegions
+     * @return array
+     */
+    public function getNonAdminFormFields(array $data, array $excludedfacilityRegions = []): array
     {
 
         $disciplinesModel = new HousemanshipDisciplinesModel();
         $disciplinesList = $disciplinesModel->getDistinctValuesAsKeyValuePairs('name');
-        $facilitiesList = $this->getFacilitiesList($data);
+        $facilitiesList = $this->getFacilitiesList($data, $excludedfacilityRegions);
         return [
             [
                 "label" => "Discpline",
@@ -162,7 +186,63 @@ class HousemanshipApplicationDetailsModel extends MyBaseModel implements FormInt
         ];
     }
 
-    private function getFacilitiesList(array $applicantDetails = null): array
+    public function getCloseSessionFormFields(): array
+    {
+        $disciplinesModel = new HousemanshipDisciplinesModel();
+        $disciplinesList = $disciplinesModel->getDistinctValuesAsKeyValuePairs('name');
+        return [
+            [
+                "label" => "Discpline",
+                "name" => "discipline",
+                "type" => "select",
+                "hint" => "",
+                "options" => $disciplinesList,
+                "value" => "",
+                "required" => false,
+                "api_url" => "",
+                "apiKeyProperty" => "",
+                "apiLabelProperty" => "",
+                "apiType" => ""
+            ],
+            [
+                "label" => "Start Date",
+                "name" => "start_date",
+                "type" => "date",
+                "hint" => "",
+                "options" => [],
+                "value" => "",
+                "required" => true,
+                "api_url" => "",
+                "apiKeyProperty" => "",
+                "apiLabelProperty" => "",
+                "apiType" => ""
+            ],
+            [
+                "label" => "End Date",
+                "name" => "end_date",
+                "type" => "date",
+                "hint" => "",
+                "options" => [],
+                "value" => "",
+                "required" => true,
+                "api_url" => "",
+                "apiKeyProperty" => "",
+                "apiLabelProperty" => "",
+                "apiType" => ""
+            ]
+
+        ];
+    }
+
+    /**
+     * Returns an array of facilities and their corresponding categories that are available for selection by the user
+     * 
+     * @param array $applicantDetails The data of the user to be used to determine which categories apply to them.
+     * @param string[] $excludedfacilityRegions The regions to be excluded from the results.
+     * 
+     * @return array An array of facility names and their corresponding categories in the format of 'facility_name' => ['category1', 'category2']
+     */
+    private function getFacilitiesList(array $applicantDetails = null, array $excludedfacilityRegions = []): array
     {
         $facilitiesModel = new HousemanshipFacilitiesModel();
         $allowedFacilities = null;
@@ -212,14 +292,18 @@ class HousemanshipApplicationDetailsModel extends MyBaseModel implements FormInt
 
         $keyColumns = ['name', 'region'];
         $valueColumn = 'name';
-
-        $results = $facilitiesModel->builder()->get()->getResultArray();
+        //convert the afcilityfilters to 
+        $results = $builder = $facilitiesModel->builder()->whereIn('name', $allowedFacilities);
+        if (count($excludedfacilityRegions) > 0) {
+            $builder->whereNotIn('region', $excludedfacilityRegions);
+        }
+        $results = $builder->get()->getResultArray();
         $keyValuePairs = [];
         foreach ($results as $value) {
             //filter out the ones that are not available for selection
-            if (!in_array($value['name'], $allowedFacilities)) {
-                continue;
-            }
+            // if (!in_array($value['name'], $allowedFacilities)) {
+            //     continue;
+            // }
             //for the key, get the values from the keyColumns separated by a dash e.g. "key1 - key2 - key3"
             $keyVals = [];
             foreach ($keyColumns as $keyColumn) {

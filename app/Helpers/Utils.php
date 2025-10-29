@@ -2,6 +2,7 @@
 
 namespace App\Helpers;
 
+use App\Helpers\Types\CriteriaType;
 use CodeIgniter\Database\BaseBuilder;
 use Endroid\QrCode\Color\Color;
 use Endroid\QrCode\Encoding\Encoding;
@@ -674,12 +675,18 @@ class Utils
     }
 
 
+
     /**
-     * Get the housemanship application form tags as HousemanshipApplicationFormTagsType instances
+     * Get the housemanship application form tags based on the given license data.
+     *
+     * If licenseData is not null, it will filter the tags based on the criteria.
+     * If licenseData is null, it will return all the tags.
+     *
+     * @param array|null $licenseData
      * @return HousemanshipApplicationFormTagsType[]
      * @throws Exception
      */
-    public static function getHousemanshipSettingApplicationFormTags()
+    public static function getHousemanshipSettingApplicationFormTags(?array $licenseData)
     {
         $result = self::getAppSettings("housemanship");
         if (!$result || !array_key_exists(HousemanshipSetting::APPLICATION_FORM_TAGS->value, $result)) {
@@ -687,7 +694,15 @@ class Utils
         }
         $tags = [];
         foreach ($result[HousemanshipSetting::APPLICATION_FORM_TAGS->value] as $tag) {
-            $tags[] = HousemanshipApplicationFormTagsType::fromArray($tag);
+            $tag = HousemanshipApplicationFormTagsType::fromArray($tag);
+            //if licenseData is not null, check if the tag matches the criteria
+            if (!empty($licenseData)) {
+                if (CriteriaType::matchesCriteria($licenseData, $tag->criteria)) {
+                    $tags[] = $tag;
+                }
+            } else {
+                $tags[] = $tag;
+            }
         }
         return $tags;
     }
@@ -914,12 +929,13 @@ class Utils
      * @param string $content
      * @return string
      */
-    public static function addLetterStyling(string $content)
+    public static function addLetterStyling(string $content, string $title)
     {
         /** the letterContainer is an array with an html key that contains the template with some styling and a placeholder [##content##] that will be replaced with the letter content
          * @var string
          */
         $template = self::getTemplateFileContent("letter-container.html");
+        $template = str_replace("[##title##]", $title, $template);
         return str_replace("[##content##]", $content, $template);
     }
 

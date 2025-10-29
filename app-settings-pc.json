@@ -3968,6 +3968,7 @@
         "sessions": {
             "1": {
                 "number_of_facilities": 1,
+                "number_of_disciplines": 2,
                 "application_form_fields": [],
                 "criteria": [
                     {}
@@ -3977,6 +3978,7 @@
             },
             "2": {
                 "number_of_facilities": 2,
+                "number_of_disciplines": 2,
                 "application_form_fields": [],
                 "criteria": [
                     {}

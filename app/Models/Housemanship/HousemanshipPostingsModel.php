@@ -82,9 +82,40 @@ class HousemanshipPostingsModel extends MyBaseModel implements TableDisplayInter
         ];
     }
 
-    public function getDisplayColumnLabels(): array
+    public function getNonAdminDisplayColumns($session = 1): array
     {
-        return [];
+        if ($session == 1) {
+            return [
+                'facility_name_1',
+                'facility_region_1'
+            ];
+        }
+        return [
+            'discipline_1',
+            'facility_name_1',
+            'facility_region_1',
+            'discipline_2',
+            'facility_name_2',
+            'facility_region_2'
+        ];
+    }
+
+    public function getDisplayColumnLabels(int $session = 1): array
+    {
+        if ($session == 1) {
+            return [
+                'facility_name_1' => 'Facility Name',
+                'facility_region_1' => 'Region'
+            ];
+        }
+        return [
+            'facility_name_1' => 'Facility 1 Name',
+            'facility_region_1' => 'Facility 1 Region',
+            'facility_name_2' => 'Facility 2 Name',
+            'facility_region_2' => 'Facility 2 Region',
+            'discipline_1' => 'Discipline 1',
+            'discipline_2' => 'Discipline 2'
+        ];
     }
 
 

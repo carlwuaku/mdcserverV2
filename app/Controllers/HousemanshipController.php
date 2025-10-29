@@ -14,11 +14,13 @@ use App\Models\Housemanship\HousemanshipFacilityAvailabilityModel;
 use App\Models\Housemanship\HousemanshipFacilityCapacitiesModel;
 use App\Models\Housemanship\HousemanshipPostingDetailsModel;
 use App\Models\Housemanship\HousemanshipPostingsModel;
+use App\Models\UsersModel;
 use App\Services\HousemanshipService;
 use ArrayObject;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 use App\Models\ActivitiesModel;
+use CodeIgniter\Validation\Exceptions\ValidationException;
 use \Exception;
 use App\Helpers\Utils;
 use App\Helpers\Enums\HousemanshipSetting;
@@ -941,6 +943,7 @@ class HousemanshipController extends ResourceController
             $sortBy = $this->request->getVar('sortBy') ?? "id";
             $sortOrder = $this->request->getVar('sortOrder') ?? "desc";
             $facilityName = $this->request->getVar('facility_name');
+            $session = $this->request->getVar('session') ?? 1;
             $model = new HousemanshipPostingsModel();
             $detailsModel = new HousemanshipPostingDetailsModel();
 
@@ -948,7 +951,8 @@ class HousemanshipController extends ResourceController
             //if the user is not an admin, they can only view their own postings
             $userId = auth("tokens")->id();
             $userData = AuthHelper::getAuthUser($userId);
-            if (!$userData->isAdmin()) {
+            $userIsAdmin = $userData->isAdmin();
+            if (!$userIsAdmin) {
                 $filterArray['license_number'] = $userData->profile_data['license_number'];
             }
             // Validate inputs here
@@ -1013,13 +1017,13 @@ class HousemanshipController extends ResourceController
                     }
                 }
             }
-
             return $this->respond([
                 'data' => $parentRecords,
                 'total' => $total,
-                'displayColumns' => $displayColumns,
-                'columnFilters' => $model->getDisplayColumnFilters(),
-                'sortColumns' => $model->getSortColumns(),
+                'displayColumns' => $userIsAdmin ? $model->getDisplayColumns() : $model->getNonAdminDisplayColumns($session),
+                'columnFilters' => $userIsAdmin ? $model->getDisplayColumnFilters() : [],
+                'sortColumns' => $userIsAdmin ? $model->getSortColumns() : [],
+                'columnLabels' => $model->getDisplayColumnLabels($session)
             ], ResponseInterface::HTTP_OK);
         } catch (Exception $th) {
             log_message("error", $th);
@@ -1070,6 +1074,65 @@ class HousemanshipController extends ResourceController
         }
     }
 
+
+    private function closeHousemanshipPosting(array $closingDetails, string $licenseNumber, string|int $session)
+    {
+        $rules = [
+            "discipline" => "required|is_not_unique[housemanship_disciplines.name]",
+            "start_date" => "required|valid_date",
+            "end_date" => "required|valid_date"
+        ];
+        $validation = \Config\Services::validation();
+        //for each detail the discipline, start and end dates should be required
+        $postingDetailsModel = new HousemanshipPostingDetailsModel();
+        $postingModel = new HousemanshipPostingsModel();
+        //for session 1, only one detail is created at first. therefore to update the disciplines we'll need to duplicate the detail.
+        //check if the number of postings match the number of incoming details. increase the postings if needed
+        $firstPosting = $postingModel->where(['session' => $session, 'license_number' => $licenseNumber])->first();
+        if (!$firstPosting) {
+            throw new Exception("Posting not found for session $session and license number $licenseNumber");
+        }
+        $firstPostings = $postingDetailsModel->where(['posting_uuid' => $firstPosting['uuid']])->findAll();
+        $postingDetailsModel->db->transException(true)->transStart();
+        //delete the existing posting details
+        $postingDetailsModel->builder()->where(['posting_uuid' => $firstPosting['uuid']])->delete();
+        for ($i = 0; $i < count($closingDetails); $i++) {
+            $detail = (array) $closingDetails[$i];
+            if (!$validation->setRules($rules)->run($detail)) {
+                $message = implode(" ", array_values($validation->getErrors()));
+                log_message("error", $message);
+                throw new ValidationException($message);
+            }
+            //update the details with the discipline, start and end dates. look up the discipline in the retrieved postings
+            $discipline = $detail['discipline'];
+            $matchingPosting = null;
+            foreach ($firstPostings as $posting) {
+                if ($posting['discipline'] == $discipline) {
+                    $matchingPosting = $posting;
+                    break;
+                }
+            }
+
+            if (!$matchingPosting) {
+                //create it as a new one with the details of the first item in $firstPostings
+                unset($firstPostings[0]['uuid']);
+                unset($firstPostings[0]['id']);
+                $newPostingDetail = array_merge($firstPostings[0], $detail);
+            } else {
+                $newPostingDetail = array_merge($matchingPosting, $detail);
+
+            }
+            try {
+                $postingDetailsModel->insert($newPostingDetail);
+            } catch (Exception $th) {
+                log_message("error", $th);
+                throw $th;
+            }
+        }
+        $postingModel->db->transComplete();
+        return true;
+    }
+
     public function createHousemanshipPostingApplication()
     {
         try {
@@ -1092,6 +1155,26 @@ class HousemanshipController extends ResourceController
                     "details" => "required"
                 ];
             }
+            $session = $this->request->getVar('session');
+            //all housemanship are 2 sessions max. for now we only close the first one to allow the 2nd one to be opened. if this changes in the future, this will need to be changed
+            $closingSession = 1;
+            $validation = \Config\Services::validation();
+            //if closing a session, process that and return
+            if ($closingDetails = $this->request->getVar('closing_details')) {
+                try {
+                    $this->closeHousemanshipPosting($closingDetails, $licenseNumber, $closingSession);
+                    return $this->respond(['message' => "Housemanship posting updated successfully", 'data' => ""], ResponseInterface::HTTP_OK);
+
+                } catch (ValidationException $th) {
+                    return $this->respond(['message' => "Data invalid. Please check the form and try again", 'data' => ""], ResponseInterface::HTTP_BAD_REQUEST);
+
+                } catch (Exception $th) {
+                    log_message("error", $th);
+                    return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+                }
+
+            }
+
 
 
 
@@ -1126,10 +1209,15 @@ class HousemanshipController extends ResourceController
                 "second_choice" => "required|is_not_unique[housemanship_facilities.name]|differs[first_choice]",
                 "discipline" => "permit_empty|is_not_unique[housemanship_disciplines.name]"
             ];
+            //check previous postings. the region must not be the same as any of the incoming postings
+            $previousPostingRegions = [];
+            if ($session > 1) {
+                $previousPostingRegions = $this->housemanshipService->getPractitionerPreviousPostingRegions($licenseNumber);
+            }
             foreach ($details as $applicationDetail) {
                 $applicationDetail = (array) $applicationDetail;
                 $applicationDetail['application_uuid'] = $applicationUuid;
-                $validation = \Config\Services::validation();
+
 
                 if (!$validation->setRules($detailsValidationRules)->run($applicationDetail)) {
                     $message = implode(" ", array_values($validation->getErrors()));
@@ -1152,6 +1240,11 @@ class HousemanshipController extends ResourceController
                 }
                 $applicationDetail['first_choice_region'] = $firstChoice['region'];
                 $applicationDetail['second_choice_region'] = $secondChoice['region'];
+                if (in_array($firstChoice['region'], $previousPostingRegions) || in_array($secondChoice['region'], $previousPostingRegions)) {
+                    $model->db->transRollback();
+                    $message = "Facility region must not be the same as any of the previous postings";
+                    return $this->respond(['message' => $message], ResponseInterface::HTTP_BAD_REQUEST);
+                }
                 $applicationDetailsModel = new HousemanshipApplicationDetailsModel();
                 $applicationDetailsModel->insert($applicationDetail);
             }
@@ -1484,15 +1577,113 @@ class HousemanshipController extends ResourceController
             if (!array_key_exists($session, $sessionSetting)) {
                 throw new Exception("Session not found");
             }
-            $numberOfRequiredFacilities = (int) $sessionSetting[$session]['number_of_facilities'];
-            $requireDiscipline = (bool) $sessionSetting[$session]['requireDisciplines'];
             $userId = auth("tokens")->id();
             $user = AuthHelper::getAuthUser($userId);
+            //if it's the second session, check if the first one is completed. there should be a discipline, start and end date for the 1st session
+            if ($session == 2) {
+                try {
+                    $firstPosting = $this->housemanshipService->getPosting(["session" => 1, "license_number" => $user->profile_data['license_number']]);
+                } catch (Exception $th) {
+                    return $this->respond([
+                        'data' => [
+                            [
+                                "label" => "You need to complete the first session first before you can apply for the second session ",
+                                "name" => "",
+                                "type" => "label",
+                                "hint" => "",
+                                "options" => [],
+                                "value" => "",
+                                "required" => false
+                            ]
+                        ]
+                    ], ResponseInterface::HTTP_OK);
+                }
+                //make sure the person is in good standing
+                if ($user->profile_data['in_good_standing'] !== IN_GOOD_STANDING) {
+                    return $this->respond([
+                        'data' => [
+                            [
+                                "label" => "You need to be in good standing before you can apply for the second session ",
+                                "name" => "",
+                                "type" => "label",
+                                "hint" => "",
+                                "options" => [],
+                                "value" => "",
+                                "required" => false
+                            ]
+                        ]
+                    ], ResponseInterface::HTTP_OK);
+                }
+                $sessionSetting = Utils::getHousemanshipSetting(HousemanshipSetting::SESSIONS);
+                $numberOfRequiredDisciplines = 1;
+                try {
+                    $numberOfRequiredDisciplines = (int) $sessionSetting[$session]['number_of_disciplines'];
+                } catch (\Throwable $th) {
+                    log_message("error", $th);
+                }
+                $postingDetailsModel = new HousemanshipPostingDetailsModel();
+                $firstPostingDetails = $postingDetailsModel->where(['posting_uuid' => $firstPosting['uuid']])->findAll();
+                //if any of the firstpostingdetails have an empty start date, end date or discipline
+                $hasEmptyDetails = false;
+                foreach ($firstPostingDetails as $detail) {
+                    if (empty($detail['start_date']) || empty($detail['end_date']) || empty($detail['discipline'])) {
+                        $hasEmptyDetails = true;
+                        break;
+                    }
+                }
+                if ($hasEmptyDetails) {
+                    $closeSessionFields = $detailsModel->getCloseSessionFormFields();
+                    $fields = [
+                        [
+                            "label" => "Please provide the following details of your first rotation",
+                            "name" => "",
+                            "type" => "label",
+                            "hint" => "",
+                            "options" => [],
+                            "value" => "",
+                            "required" => false
+                        ]
+                    ];
+                    for ($i = 0; $i < $numberOfRequiredDisciplines; $i++) {
+                        $fields[] = [
+                            "label" => "Discipline " . ($i + 1),
+                            "name" => "",
+                            "type" => "label",
+                            "hint" => "",
+                            "options" => [],
+                            "value" => "",
+                            "required" => false
+                        ];
+                        $detail = [];
+                        foreach ($closeSessionFields as $sessionField) {
+
+
+                            $sessionField['name'] = "posting_session_close_detail-{$sessionField['name']}-$i";
+
+
+                            $detail[] = $sessionField;
+                        }
+
+                        $fields[] = $detail;
+                    }
+                    return $this->respond([
+                        'data' => $fields
+                    ], ResponseInterface::HTTP_OK);
+                }
+
+            }
+            $numberOfRequiredFacilities = (int) $sessionSetting[$session]['number_of_facilities'];
+            $requireDiscipline = (bool) $sessionSetting[$session]['requireDisciplines'];
+
             //if the user is not an admin, get the non-admin fields
             $mainFields = $user->isAdmin() ? $model->getFormFields() : $model->getNonAdminFormFields();
-            $detailsFields = $user->isAdmin() ? $detailsModel->getFormFields() : $detailsModel->getNonAdminFormFields($user->profile_data);
+            //get the regions from previous postings to ensure they are not repeated
+            $previousPostingRegions = $user->isAdmin() ? [] : $this->housemanshipService->getPractitionerPreviousPostingRegions($user->profile_data['license_number']);
+
+
+            $detailsFields = $user->isAdmin() ? $detailsModel->getFormFields() : $detailsModel->getNonAdminFormFields($user->profile_data, $previousPostingRegions);
             //add the tags
-            $tags = Utils::getHousemanshipSettingApplicationFormTags();
+            $tags = $user->isAdmin() ? Utils::getHousemanshipSettingApplicationFormTags(null) : Utils::getHousemanshipSettingApplicationFormTags($user->profile_data);
             //check if the user matches the criteria for the tags
             foreach ($tags as $tag) {
                 // if (!$user->isAdmin()) {
