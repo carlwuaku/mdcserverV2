@@ -136,11 +136,10 @@ class HousemanshipApplicationDetailsModel extends MyBaseModel implements FormInt
      * @param string[] $excludedfacilityRegions
      * @return array
      */
-    public function getNonAdminFormFields(array $data, array $excludedfacilityRegions = []): array
+    public function getNonAdminFormFields(array $data, array $excludedfacilityRegions = [], array $excludedDisciplines = []): array
     {
-
-        $disciplinesModel = new HousemanshipDisciplinesModel();
-        $disciplinesList = $disciplinesModel->getDistinctValuesAsKeyValuePairs('name');
+        log_message("info", print_r($excludedDisciplines, true));
+        $disciplinesList = $this->getDisciplinesList($data, $excludedDisciplines);
         $facilitiesList = $this->getFacilitiesList($data, $excludedfacilityRegions);
         return [
             [
@@ -242,7 +241,7 @@ class HousemanshipApplicationDetailsModel extends MyBaseModel implements FormInt
      * 
      * @return array An array of facility names and their corresponding categories in the format of 'facility_name' => ['category1', 'category2']
      */
-    private function getFacilitiesList(array $applicantDetails = null, array $excludedfacilityRegions = []): array
+    private function getFacilitiesList(?array $applicantDetails = null, array $excludedfacilityRegions = []): array
     {
         $facilitiesModel = new HousemanshipFacilitiesModel();
         $allowedFacilities = null;
@@ -313,5 +312,32 @@ class HousemanshipApplicationDetailsModel extends MyBaseModel implements FormInt
             $keyValuePairs[] = ["key" => $key, "value" => $value[$valueColumn]];
         }
         return $keyValuePairs;
+    }
+
+    /**
+     * Returns an array of disciplines and their corresponding names that are available for selection by the user
+     * 
+     * @param array $applicantDetails The data of the user to be used to determine which disciplines apply to them.
+     * @param string[] $excludedDisciplines The disciplines to be excluded from the results.
+     * 
+     * @return array An array of discipline names and their corresponding names in the format of 'discipline_name' => 'discipline_name'
+     */
+    private function getDisciplinesList(?array $applicantDetails = null, array $excludedDisciplines = []): array
+    {
+        $disciplinesModel = new HousemanshipDisciplinesModel();
+        $builder = $disciplinesModel->builder();
+        if (count($excludedDisciplines) > 0) {
+            $builder->whereNotIn('name', $excludedDisciplines);
+        }
+
+        //TODO: add this to the app settings
+        if ($applicantDetails != null && $applicantDetails['category'] == "Dental") {
+            //for Dentists, only return Dentistry
+            $builder->like('name', "Dentist", "both");
+        }
+        $allowedDisciplines = $builder->get()->getResultArray();
+        //make it key-value pairs
+        $result = array_map(fn($discipline) => ["key" => $discipline['name'], "value" => $discipline['name']], $allowedDisciplines);
+        return $result;
     }
 }

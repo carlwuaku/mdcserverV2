@@ -1212,8 +1212,10 @@ class HousemanshipController extends ResourceController
             //check previous postings. the region must not be the same as any of the incoming postings
             $previousPostingRegions = [];
             if ($session > 1) {
-                $previousPostingRegions = $this->housemanshipService->getPractitionerPreviousPostingRegions($licenseNumber);
+                $previousPostings = $this->housemanshipService->getPractitionerPreviousPostingRegionsAndDisciplines($licenseNumber);
+                $previousPostingRegions = $previousPostings->regions;
             }
+            $previousDisciplines = [];//make sure they don't select the same discipline as any of the previous postings or twice in the same session
             foreach ($details as $applicationDetail) {
                 $applicationDetail = (array) $applicationDetail;
                 $applicationDetail['application_uuid'] = $applicationUuid;
@@ -1223,6 +1225,11 @@ class HousemanshipController extends ResourceController
                     $message = implode(" ", array_values($validation->getErrors()));
                     return $this->respond(['message' => $message], ResponseInterface::HTTP_BAD_REQUEST);
                 }
+                if (in_array($applicationDetail['discipline'], $previousDisciplines)) {
+                    $message = "You cannot select the same discipline twice in the same session";
+                    return $this->respond(['message' => $message], ResponseInterface::HTTP_BAD_REQUEST);
+                }
+                $previousDisciplines[] = $applicationDetail['discipline'];
                 //get the facility details
                 $facilityModel = new HousemanshipFacilitiesModel();
                 $firstChoice = $facilityModel->where(['name' => $applicationDetail['first_choice']])->first();
@@ -1678,10 +1685,10 @@ class HousemanshipController extends ResourceController
             //if the user is not an admin, get the non-admin fields
             $mainFields = $user->isAdmin() ? $model->getFormFields() : $model->getNonAdminFormFields();
             //get the regions from previous postings to ensure they are not repeated
-            $previousPostingRegions = $user->isAdmin() ? [] : $this->housemanshipService->getPractitionerPreviousPostingRegions($user->profile_data['license_number']);
-
-
-            $detailsFields = $user->isAdmin() ? $detailsModel->getFormFields() : $detailsModel->getNonAdminFormFields($user->profile_data, $previousPostingRegions);
+            $previousPostings = $user->isAdmin() ? [] : $this->housemanshipService->getPractitionerPreviousPostingRegionsAndDisciplines($user->profile_data['license_number']);
+            $previousPostingRegions = $previousPostings->regions;
+            $previousDisciplines = $previousPostings->disciplines;
+            $detailsFields = $user->isAdmin() ? $detailsModel->getFormFields() : $detailsModel->getNonAdminFormFields($user->profile_data, $previousPostingRegions, $previousDisciplines);
             //add the tags
             $tags = $user->isAdmin() ? Utils::getHousemanshipSettingApplicationFormTags(null) : Utils::getHousemanshipSettingApplicationFormTags($user->profile_data);
             //check if the user matches the criteria for the tags

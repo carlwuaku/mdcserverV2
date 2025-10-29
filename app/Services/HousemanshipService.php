@@ -19,6 +19,7 @@ use App\Models\ActivitiesModel;
 use App\Models\PrintTemplateModel;
 use App\Models\UsersModel;
 use Exception;
+use stdClass;
 
 
 class HousemanshipService
@@ -1137,22 +1138,34 @@ class HousemanshipService
         return ['data' => $model->getFormFields()];
     }
 
-    public function getPractitionerPreviousPostingRegions(string $licenseNumber)
+    /**
+     * Returns previous posting regions and disciplines for a given practitioner.
+     *
+     * @param string $licenseNumber
+     * @return stdClass{regions:array,disciplines:array}
+     */
+    public function getPractitionerPreviousPostingRegionsAndDisciplines(string $licenseNumber)
     {
-        $previousPostingRegions = [];
 
+
+        $result = new stdClass();
+        $result->regions = $previousPostingRegions = [];
+        $result->disciplines = $previousPostingDisciplines = [];
         $postingDetailsModel = new HousemanshipPostingDetailsModel();
         $postingModel = new HousemanshipPostingsModel();
         $firstPosting = $postingModel->where(['session' => 1, 'license_number' => $licenseNumber])->first();
         if (!$firstPosting) {
-            return [];
+            return $result;
         }
-        $firstPostingRegions = $postingDetailsModel->select('facility_region')->where(['posting_uuid' => $firstPosting['uuid']])->findAll();
+        $firstPostingRegions = $postingDetailsModel->select('facility_region, discipline')->where(['posting_uuid' => $firstPosting['uuid']])->findAll();
         foreach ($firstPostingRegions as $region) {
             $previousPostingRegions[] = $region['facility_region'];
+            $previousPostingDisciplines[] = $region['discipline'];
         }
+        $result->regions = $previousPostingRegions;
+        $result->disciplines = $previousPostingDisciplines;
 
-        return $previousPostingRegions;
+        return $result;
     }
 
 }

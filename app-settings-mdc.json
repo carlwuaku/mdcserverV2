@@ -745,6 +745,28 @@
                     "required": true
                 },
                 {
+                    "label": "Category",
+                    "name": "category",
+                    "hint": "",
+                    "options": [
+                        {
+                            "key": "Medical",
+                            "value": "Medical"
+                        },
+                        {
+                            "key": "Dental",
+                            "value": "Dental"
+                        },
+                        {
+                            "key": "Certified Registered Anaesthetist",
+                            "value": "Certified Registered Anaesthetist"
+                        }
+                    ],
+                    "type": "select",
+                    "value": "",
+                    "required": true
+                },
+                {
                     "label": "Date of birth",
                     "name": "date_of_birth",
                     "hint": "",
