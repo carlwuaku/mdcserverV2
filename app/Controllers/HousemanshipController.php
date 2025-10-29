@@ -1020,7 +1020,7 @@ class HousemanshipController extends ResourceController
             return $this->respond([
                 'data' => $parentRecords,
                 'total' => $total,
-                'displayColumns' => $userIsAdmin ? $model->getDisplayColumns() : $model->getNonAdminDisplayColumns($session),
+                'displayColumns' => $userIsAdmin ? $displayColumns : $model->getNonAdminDisplayColumns($session),
                 'columnFilters' => $userIsAdmin ? $model->getDisplayColumnFilters() : [],
                 'sortColumns' => $userIsAdmin ? $model->getSortColumns() : [],
                 'columnLabels' => $model->getDisplayColumnLabels($session)
@@ -1453,7 +1453,7 @@ class HousemanshipController extends ResourceController
             $param = $this->request->getVar('param') ?? null;
             $sortBy = $this->request->getVar('sortBy') ?? "id";
             $sortOrder = $this->request->getVar('sortOrder') ?? "asc";
-
+            $session = $this->request->getVar('session') ?? 1;
             $model = new HousemanshipApplicationModel();
             $detailsModel = new HousemanshipApplicationDetailsModel();
 
@@ -1461,7 +1461,8 @@ class HousemanshipController extends ResourceController
             //if the user is not an admin, they can only view their own applications
             $userId = auth("tokens")->id();
             $userData = AuthHelper::getAuthUser($userId);
-            if (!$userData->isAdmin()) {
+            $userIsAdmin = $userData->isAdmin();
+            if (!$userIsAdmin) {
                 $filterArray['license_number'] = $userData->profile_data['license_number'];
             }
             // Validate inputs here
@@ -1527,8 +1528,10 @@ class HousemanshipController extends ResourceController
             return $this->respond([
                 'data' => $parentRecords,
                 'total' => $total,
-                'displayColumns' => $displayColumns,
-                'columnFilters' => $model->getDisplayColumnFilters()
+                'displayColumns' => $userIsAdmin ? $displayColumns : $model->getNonAdminDisplayColumns($session),
+                'columnFilters' => $userIsAdmin ? $model->getDisplayColumnFilters() : [],
+                'sortColumns' => $userIsAdmin ? $model->getSortColumns() : [],
+                'columnLabels' => $model->getDisplayColumnLabels($session)
             ], ResponseInterface::HTTP_OK);
         } catch (Exception $th) {
             log_message("error", $th);
