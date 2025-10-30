@@ -745,6 +745,28 @@
                     "required": true
                 },
                 {
+                    "label": "Category",
+                    "name": "category",
+                    "hint": "",
+                    "options": [
+                        {
+                            "key": "Medical",
+                            "value": "Medical"
+                        },
+                        {
+                            "key": "Dental",
+                            "value": "Dental"
+                        },
+                        {
+                            "key": "Certified Registered Anaesthetist",
+                            "value": "Certified Registered Anaesthetist"
+                        }
+                    ],
+                    "type": "select",
+                    "value": "",
+                    "required": true
+                },
+                {
                     "label": "Date of birth",
                     "name": "date_of_birth",
                     "hint": "",
@@ -3252,6 +3274,7 @@
         "sessions": {
             "1": {
                 "number_of_facilities": 1,
+                "number_of_disciplines": 2,
                 "application_form_fields": [],
                 "criteria": [
                     {
@@ -3267,6 +3290,7 @@
             },
             "2": {
                 "number_of_facilities": 2,
+                "number_of_disciplines": 2,
                 "application_form_fields": [],
                 "criteria": [
                     {
@@ -3285,15 +3309,15 @@
                 "name": "Direct Entry",
                 "value": "Direct Entry",
                 "implicit": false,
-                "criteria": [],
+                "criteria": [
+                    {
+                        "field": "practitioner_type",
+                        "value": [
+                            "Physician Assistant"
+                        ]
+                    }
+                ],
                 "description": ""
-            },
-            {
-                "name": "Priority",
-                "value": "Priority",
-                "implicit": false,
-                "criteria": [],
-                "description": "select if you're rich"
             }
         ]
     },
@@ -4347,7 +4371,7 @@
                     ]
                 }
             ],
-            "message": "You require revalidation",
+            "message": "<p>Dear practitioner, you are required to revalidate your data with the Council. Kindly submit a new passport size picture with <strong>white background</strong>, update your country of practice and next of kin data via the portal so we can validate your records with the Council. The passport picture should be<strong> official,</strong> no T&#39;shirt or polo shirt.</p><p>Please note that you will not be able to renew your license till you have done the revalidation.</p><p>For more information, please contact the Registration Unit of the Medical and Dental Counci.</p><p>Thank you</p>",
             "type": "danger"
         }
     ],

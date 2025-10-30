@@ -47,7 +47,7 @@ class HousemanshipUtils
             $details = $data->details;
             $detailsValidationRules = [
                 "facility_name" => "required|is_not_unique[housemanship_facilities.name]",
-                "discipline" => "required|is_not_unique[housemanship_disciplines.name]",
+                "discipline" => "permit_empty|is_not_unique[housemanship_disciplines.name]",
                 "start_date" => "permit_empty|valid_date",
                 "end_date" => "permit_empty|valid_date",
             ];
@@ -56,7 +56,8 @@ class HousemanshipUtils
                 $validation = \Config\Services::validation();
 
                 if (!$validation->setRules($detailsValidationRules)->run((array) $postingDetail)) {
-                    throw new Exception($validation->getErrors());
+                    $message = implode(" ", array_values($validation->getErrors()));
+                    throw new Exception($message);
                 }
                 //get the facility details
                 $facilityModel = new HousemanshipFacilitiesModel();

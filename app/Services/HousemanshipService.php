@@ -17,7 +17,9 @@ use App\Models\Housemanship\HousemanshipPostingDetailsModel;
 use App\Models\Housemanship\HousemanshipPostingsModel;
 use App\Models\ActivitiesModel;
 use App\Models\PrintTemplateModel;
+use App\Models\UsersModel;
 use Exception;
+use stdClass;
 
 
 class HousemanshipService
@@ -532,20 +534,20 @@ class HousemanshipService
      * Get a single housemanship posting with its details flattened.
      * This will mostly be used for filling the form to edit the posting.
      *
-     * @param string $uuid
+     * @param array $filter
      * @throws \Exception
      * @return array
      */
-    public function getPosting(string $uuid): array
+    public function getPosting(array $filter): array
     {
         $model = new HousemanshipPostingsModel();
         $detailsModel = new HousemanshipPostingDetailsModel();
-        $data = $model->where(["uuid" => $uuid])->first();
+        $data = $model->where($filter)->first();
 
         if (!$data) {
             throw new Exception("Housemanship posting not found");
         }
-
+        $uuid = $data['uuid'];
         $details = $detailsModel->where(["posting_uuid" => $uuid])->findAll();
 
         for ($i = 0; $i < count($details); $i++) {
@@ -559,7 +561,7 @@ class HousemanshipService
         return $data;
     }
 
-    public function getPostings(array $params, ?array $userData = null): array
+    public function getPostings(array $params, UsersModel $userData): array
     {
         $per_page = $params['limit'] ?? 100;
         $page = $params['page'] ?? 0;
@@ -574,8 +576,8 @@ class HousemanshipService
 
         $filterArray = $model->createArrayFromAllowedFields($params);
 
-        if ($userData && !$userData['isAdmin']) {
-            $filterArray['license_number'] = $userData['license_number'];
+        if (!$userData->isAdmin()) {
+            $filterArray['license_number'] = $userData->profile_data['license_number'];
         }
 
         $tableName = $model->table;
@@ -987,7 +989,7 @@ class HousemanshipService
     public function generateHousemanshipLetter(string $uuid): string
     {
         try {
-            $posting = $this->getPosting($uuid);
+            $posting = $this->getPosting(["uuid" => $uuid]);
             $templateEngine = new TemplateEngineHelper();
             $templateModel = new PrintTemplateModel();
             $template = $templateModel->where('template_name', $posting['letter_template'])->first();
@@ -1000,18 +1002,18 @@ class HousemanshipService
             );
 
 
-            return Utils::addLetterStyling($content);
+            return Utils::addLetterStyling($content, "Housemanship Posting");
         } catch (\Throwable $th) {
             throw $th;
         }
     }
 
     // Helper Methods
-    private function insertPostingDetails(string $postingUuid, array $details): void
+    public function insertPostingDetails(string $postingUuid, array $details): void
     {
         $detailsValidationRules = [
             "facility_name" => "required|is_not_unique[housemanship_facilities.name]",
-            "discipline" => "required|is_not_unique[housemanship_disciplines.name]",
+            "discipline" => "permit_empty|is_not_unique[housemanship_disciplines.name]",
             "start_date" => "permit_empty|valid_date",
             "end_date" => "permit_empty|valid_date",
         ];
@@ -1037,6 +1039,31 @@ class HousemanshipService
 
             $postingDetailsModel = new HousemanshipPostingDetailsModel();
             $postingDetailsModel->insert($postingDetail);
+        }
+    }
+
+    public function updatePostingDetail(string $uuid, array $data): bool
+    {
+        try {
+            $model = new HousemanshipPostingDetailsModel();
+            $oldData = $model->where(["uuid" => $uuid])->first();
+
+            if (!$oldData) {
+                throw new Exception("Housemanship posting not found");
+            }
+
+            $changes = implode(", ", Utils::compareObjects($oldData, $data));
+
+            if (!$model->builder()->where(['uuid' => $uuid])->update($data)) {
+                throw new Exception(json_encode($model->errors()));
+            }
+
+            $this->logActivity("Updated housemanship posting {$oldData['name']}. Changes: $changes", null, "housemanship");
+
+            return true;
+        } catch (\Throwable $th) {
+            log_message("error", $th);
+            throw $th;
         }
     }
 
@@ -1109,6 +1136,36 @@ class HousemanshipService
     {
         $model = new HousemanshipDisciplinesModel();
         return ['data' => $model->getFormFields()];
+    }
+
+    /**
+     * Returns previous posting regions and disciplines for a given practitioner.
+     *
+     * @param string $licenseNumber
+     * @return stdClass{regions:array,disciplines:array}
+     */
+    public function getPractitionerPreviousPostingRegionsAndDisciplines(string $licenseNumber)
+    {
+
+
+        $result = new stdClass();
+        $result->regions = $previousPostingRegions = [];
+        $result->disciplines = $previousPostingDisciplines = [];
+        $postingDetailsModel = new HousemanshipPostingDetailsModel();
+        $postingModel = new HousemanshipPostingsModel();
+        $firstPosting = $postingModel->where(['session' => 1, 'license_number' => $licenseNumber])->first();
+        if (!$firstPosting) {
+            return $result;
+        }
+        $firstPostingRegions = $postingDetailsModel->select('facility_region, discipline')->where(['posting_uuid' => $firstPosting['uuid']])->findAll();
+        foreach ($firstPostingRegions as $region) {
+            $previousPostingRegions[] = $region['facility_region'];
+            $previousPostingDisciplines[] = $region['discipline'];
+        }
+        $result->regions = $previousPostingRegions;
+        $result->disciplines = $previousPostingDisciplines;
+
+        return $result;
     }
 
 }

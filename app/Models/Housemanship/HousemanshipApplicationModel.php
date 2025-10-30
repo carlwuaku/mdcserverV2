@@ -87,10 +87,7 @@ class HousemanshipApplicationModel extends MyBaseModel implements TableDisplayIn
         ];
     }
 
-    public function getDisplayColumnLabels(): array
-    {
-        return [];
-    }
+
 
 
 
@@ -210,6 +207,136 @@ class HousemanshipApplicationModel extends MyBaseModel implements TableDisplayIn
         }
 
         return $builder;
+    }
+
+    public function getNonAdminDisplayColumns($session = 1): array
+    {
+        if ($session == 1) {
+            return [
+                'discipline_1',
+                'first_choice_1',
+                'first_choice_region_1',
+                'second_choice_1',
+
+                'second_choice_region_1'
+            ];
+        }
+        /**category
+: 
+"Medical"
+created_at
+: 
+"2025-10-29 07:56:15"
+date
+: 
+"0000-00-00"
+deleted_at
+: 
+null
+discipline_1
+: 
+"Surgery"
+discipline_2
+: 
+"General medicine"
+email
+: 
+"wuakuc2@gmail.com"
+first_choice_1
+: 
+"ADIDOME GOV'T HOSPITAL"
+first_choice_2
+: 
+"AFARI COMMUNITY HOSPITAL"
+first_choice_region_1
+: 
+"Volta Region"
+first_choice_region_2
+: 
+"Ashanti Region"
+first_name
+: 
+"Carl"
+id
+: 
+"89"
+last_name
+: 
+"Wuaku"
+license_number
+: 
+"MDC/PN/123456CARL"
+middle_name
+: 
+""
+phone
+: 
+"+233207085244"
+second_choice_1
+: 
+"AFARI COMMUNITY HOSPITAL"
+second_choice_2
+: 
+"ATUA GOVERNMENT HOSPITAL"
+second_choice_region_1
+: 
+"Ashanti Region"
+second_choice_region_2
+: 
+"Eastern Region"
+session
+: 
+"2"
+status
+: 
+"Pending"
+tags
+: 
+""
+type
+: 
+"Doctor"
+updated_at
+: 
+"2025-10-29 07:56:15"
+uuid
+: 
+"bee9756c-b49c-11f0-b40d-0e559479cb96"
+year
+: 
+"2025" */
+        return [
+            'discipline_1',
+            'first_choice_1',
+            'first_choice_region_1',
+            'second_choice_1',
+
+            'second_choice_region_1',
+            'discipline_2',
+            'first_choice_2',
+            'first_choice_region_2',
+            'second_choice_2',
+
+            'second_choice_region_2'
+        ];
+    }
+
+    public function getDisplayColumnLabels(int $session = 1): array
+    {
+        if ($session == 1) {
+            return [
+                'facility_name_1' => 'Facility Name',
+                'facility_region_1' => 'Region'
+            ];
+        }
+        return [
+            'facility_name_1' => 'Facility 1 Name',
+            'facility_region_1' => 'Facility 1 Region',
+            'facility_name_2' => 'Facility 2 Name',
+            'facility_region_2' => 'Facility 2 Region',
+            'discipline_1' => 'Discipline 1',
+            'discipline_2' => 'Discipline 2'
+        ];
     }
 
 }

@@ -11,7 +11,7 @@ class HousemanshipApplicationFormTagsType
     public string $description;
 
     /**
-     * a list of criteria which must all be met for the alert to be shown
+     * a list of criteria which must all be met for the tag to apply
      * @var CriteriaType[]
      */
     public array $criteria;

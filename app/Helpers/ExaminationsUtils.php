@@ -342,7 +342,7 @@ class ExaminationsUtils extends Utils
         );
 
 
-        return self::addLetterStyling($content);
+        return self::addLetterStyling($content, "$letterType Letter");
     }
 
     public static function getExaminationLettersWithCriteria($examId, $letterType = "registration")
