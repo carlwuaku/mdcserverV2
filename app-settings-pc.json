@@ -9,7 +9,7 @@
     "defaultEmailSenderEmail": "info@pcghana.org",
     "defaultEmailSenderName": "Pharmacy Council Ghana",
     "institutionName": "Pharmacy Council Ghana",
-    "institutionLogo": "https://testmanagement.pcghana.org/assets/images/pc-logo.png",
+    "institutionLogo": "assets/images/pc-logo.png",
     "institutionAddress": "P.O. Box 115, Accra, Ghana",
     "institutionEmail": "info@pcghana.org",
     "institutionPhone": "+233 302 302 302",
@@ -4782,7 +4782,16 @@
                 }
             ],
             "alerts": [],
-            "description": "Apply for examinations and view your examination history"
+            "description": "Apply for examinations and view your examination history",
+            "criteria": [
+                {
+                    "field": "type",
+                    "operator": "equals",
+                    "value": [
+                        "exam_candidates"
+                    ]
+                }
+            ]
         },
         {
             "title": "Housemanship",
@@ -4937,7 +4946,8 @@
         }
     ],
     "allowedTestEmails": [
-        "wuakuc@gmail.com"
+        "wuakuc@gmail.com",
+        "wuakuc+admin@gmail.com"
     ],
     "payments": {
         "purposes": {

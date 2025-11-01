@@ -61,7 +61,7 @@ class AssetController extends ResourceController
         $destination = $this->getImageDirectory($type);
 
         if (!$img->hasMoved()) {
-            $filepath = $destination . $img->store($destination);
+            $filepath = $img->store($destination);
             $filepathParts = explode("/", $filepath);
             $fileName = array_pop($filepathParts);
             $data = [
@@ -79,16 +79,16 @@ class AssetController extends ResourceController
         $destination = $baseFolder;
         switch ($type) {
             case 'practitioners_images':
-                $destination = UPLOADS_FOLDER . "/" . PRACTITIONERS_ASSETS_FOLDER . "/";
+                $destination = PRACTITIONERS_ASSETS_FOLDER . "/";
                 break;
             case "documents":
-                $destination = UPLOADS_FOLDER . "/" . "documents/";
+                $destination = "documents/";
                 break;
             case "applications":
-                $destination = UPLOADS_FOLDER . "/" . APPLICATIONS_ASSETS_FOLDER . "/";
+                $destination = APPLICATIONS_ASSETS_FOLDER . "/";
                 break;
             case "payments":
-                $destination = UPLOADS_FOLDER . "/" . PAYMENTS_ASSETS_FOLDER . "/";
+                $destination = PAYMENTS_ASSETS_FOLDER . "/";
                 break;
             case "qr_codes":
                 $destination = QRCODES_ASSETS_FOLDER . "/";
@@ -103,6 +103,10 @@ class AssetController extends ResourceController
     public function serveFile($type, $imageName)
     {
         $directory = $this->getImageDirectory($type);
+        //qr_codes folder is not in uploads folder
+        if ($type !== "qr_codes") {
+            $directory = UPLOADS_FOLDER . "/" . $directory;
+        }
         $filePath = WRITEPATH . $directory . $imageName;
         if (!file_exists($filePath)) {
             log_message("error", "File not found: $filePath");

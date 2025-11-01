@@ -125,7 +125,10 @@ class CriteriaType
             case 'in':
 
             default:
-                return in_array($actualValue, $expectedValues);
+                return in_array(
+                    is_string($actualValue) ? strtolower($actualValue) : $actualValue,
+                    array_map(fn($v) => is_string($v) ? strtolower($v) : $v, $expectedValues)
+                );
         }
     }
 

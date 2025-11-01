@@ -380,8 +380,10 @@ class ApplicationsController extends ResourceController
     public function getApplicationTemplates()
     {
         try {
+            $userId = auth("tokens")->id();
+            $userData = AuthHelper::getAuthUser($userId);
             $filters = $this->extractRequestFilters();
-            $result = $this->templateService->getApplicationTemplates($filters);
+            $result = $this->templateService->getApplicationTemplates($userData, $filters);
 
             return $this->respond($result, ResponseInterface::HTTP_OK);
 

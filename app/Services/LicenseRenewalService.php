@@ -303,7 +303,10 @@ class LicenseRenewalService
                     'successful' => true,
                     'message' => 'Renewal updated successfully'
                 ];
-                $this->runRenewalActions($renewalDetails, $renewalStage);
+                if ($renewalStage) {
+                    $this->runRenewalActions($renewalDetails, $renewalStage);
+                }
+
 
 
             } catch (\Throwable $e) {
