@@ -319,15 +319,6 @@
                         "form_type": "Examination Candidates Registration Application",
                         "status": "Pending approval"
                     }
-                },
-                {
-                    "title": "Applications to sit for exams",
-                    "url": "/applications",
-                    "icon": "",
-                    "children": [],
-                    "urlParams": {
-                        "form_type": ""
-                    }
                 }
             ]
         },

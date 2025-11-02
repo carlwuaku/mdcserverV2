@@ -307,6 +307,13 @@ class LicensesController extends ResourceController
     {
         try {
             $filters = $this->extractRequestFilters();
+            $userId = auth("tokens")->id();
+            $user = AuthHelper::getAuthUser($userId);
+            $filters['user_id'] = $user->id;
+            //if the user has a region set, only return renewals for that region
+            if ($user->region) {
+                $filters['region'] = $user->region;
+            }
             $cacheKey = Utils::generateHashedCacheKey(CACHE_KEY_PREFIX_RENEWALS, $filters);
             return CacheHelper::remember($cacheKey, function () use ($license_uuid, $filters) {
 
@@ -358,9 +365,22 @@ class LicensesController extends ResourceController
     {
         try {
             $filters = $this->extractRequestFilters();
-            $total = $this->renewalService->countRenewals($filters);
+            $userId = auth("tokens")->id();
+            $user = AuthHelper::getAuthUser($userId);
+            $filters['user_id'] = $user->id;
+            //if the user has a region set, only return renewals for that region
+            if ($user->region) {
+                $filters['region'] = $user->region;
+            }
 
-            return $this->respond(['data' => $total], ResponseInterface::HTTP_OK);
+            $cacheKey = Utils::generateHashedCacheKey(CACHE_KEY_PREFIX_RENEWALS_COUNT, $filters);
+            return CacheHelper::remember($cacheKey, function () use ($filters) {
+
+                $total = $this->renewalService->countRenewals($filters);
+
+                return $this->respond(['data' => $total], ResponseInterface::HTTP_OK);
+            }, 900);
+
 
         } catch (\Throwable $e) {
             log_message("error", $e);
@@ -372,6 +392,20 @@ class LicensesController extends ResourceController
     {
         try {
             $fields = $this->renewalService->getLicenseRenewalFormFields($licenseType);
+            return $this->respond(['data' => $fields], ResponseInterface::HTTP_OK);
+
+        } catch (\Throwable $e) {
+            log_message("error", $e);
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function getLicenseRenewalFilters($licenseType)
+    {
+        try {
+            $userId = auth("tokens")->id();
+            $user = AuthHelper::getAuthUser($userId);
+            $fields = $this->renewalService->getRenewalFilters($user, $licenseType);
             return $this->respond(['data' => $fields], ResponseInterface::HTTP_OK);
 
         } catch (\Throwable $e) {

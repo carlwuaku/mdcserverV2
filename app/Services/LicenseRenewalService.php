@@ -494,6 +494,12 @@ class LicenseRenewalService
 
     }
 
+    public function getRenewalFilters(UsersModel $userModel, $licenseType): array
+    {
+        $model = new LicenseRenewalModel($licenseType);
+        return $model->getDisplayColumnFilters();
+    }
+
     /**
      * Count renewals with filters
      */
@@ -912,6 +918,10 @@ class LicenseRenewalService
         $childParams = $this->extractChildParams($filters);
         $renewalChildParams = $this->extractRenewalChildParams($filters);
 
+        $model = new LicenseRenewalModel();
+        $renewalTable = $model->getTableName();
+        $mainRenewalFilters = $model->mainRenewalFilters();
+
         // Apply license child parameters
         if (!empty($childParams)) {
             $licenseDef = Utils::getLicenseSetting($licenseType);
@@ -921,9 +931,17 @@ class LicenseRenewalService
                 if ($key === "child_param") {
                     continue;
                 }
+                $fieldName = str_replace('child_', '', $key);
+                //if the field has a value in the main renewal filters, use that value
+                if (in_array($fieldName, $mainRenewalFilters)) {
+                    $columnName = $renewalTable . "." . $fieldName;
+                } else {
+                    //THIS IS NOT BEING USED ANYMORE AS ALL DETAILS OF THE LICENSE ARE NOW STORED IN THE LICENSE_RENEWAL TABLE
+                    $columnName = $licenseTypeTable . "." . $fieldName;
+                }
 
                 $value = Utils::parseParam($value);
-                $columnName = $licenseTypeTable . "." . str_replace('child_', '', $key);
+
                 $builder = Utils::parseWhereClause($builder, $columnName, $value);
             }
         }
@@ -935,7 +953,13 @@ class LicenseRenewalService
 
             foreach ($renewalChildParams as $key => $value) {
                 $value = Utils::parseParam($value);
-                $columnName = $renewalSubTable . "." . str_replace('renewal_', '', $key);
+                $fieldName = str_replace('renewal_', '', $key);
+                //if the field has a value in the main renewal filters, use that value
+                if (in_array($fieldName, $mainRenewalFilters)) {
+                    $columnName = $renewalTable . "." . $fieldName;
+                } else {
+                    $columnName = $renewalSubTable . "." . $fieldName;
+                }
                 $builder = Utils::parseWhereClause($builder, $columnName, $value);
             }
         }

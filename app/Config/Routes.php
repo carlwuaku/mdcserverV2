@@ -172,7 +172,11 @@ $routes->group("specialties", ["namespace" => "App\Controllers", "filter" => "ap
 
 $routes->group("file-server", ["namespace" => "App\Controllers"], function (RouteCollection $routes) {
     $routes->post("new/(:segment)", [AssetController::class, "upload/$1"], ["filter" => ["hasPermission:Create_Or_Edit_Assets"]]);
-    $routes->get('image-render/(:segment)/(:segment)', [AssetController::class, "serveFile/$1/$2"]);
+    $routes->get('image-render/(:segment)/(:segment)', [AssetController::class, "serveFile/$1/$2"], ["filter" => ["apiauth"]]);
+
+    // Signed URL endpoints (no auth required if signature is valid)
+    $routes->get('sign-url/(:segment)/(:segment)', [AssetController::class, "generateSignedUrl/$1/$2"], ["filter" => ["apiauth"]]);
+    $routes->get('secure/(:segment)/(:segment)', [AssetController::class, "serveSecureFile/$1/$2"]);
 });
 
 $routes->group("email", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
@@ -235,6 +239,7 @@ $routes->group("licenses", ["namespace" => "App\Controllers", "filter" => "apiau
     $routes->get("renewal-check-superintendent", [LicensesController::class, "getPharmacySuperintendent"], ["filter" => ["hasPermission:Create_License_Renewal"]], );
     $routes->get("renewal-count", [LicensesController::class, "countRenewals"], ["filter" => ["hasPermission:View_License_Renewal"]], );
     $routes->post("renewal-count", [LicensesController::class, "countRenewals"], ["filter" => ["hasPermission:View_License_Renewal"]], );
+    $routes->get("renewal-filters/(:segment)", [LicensesController::class, "getLicenseRenewalFilters/$1"], ["filter" => ["hasPermission:View_License_Renewal"]], );
 
     $routes->get("renewal/license/(:segment)", [LicensesController::class, "getRenewals/$1"], ["filter" => ["hasPermission:View_License_Renewal"]], );
     $routes->get("renewal/(:segment)", [LicensesController::class, "getRenewal/$1"], ["filter" => ["hasPermission:View_License_Renewal"]], );

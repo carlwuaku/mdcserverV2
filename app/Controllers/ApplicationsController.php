@@ -365,7 +365,7 @@ class ApplicationsController extends ResourceController
 
     // Application Template Operations
 
-    public function getApplicationConfig(string $formName, string $type = null)
+    public function getApplicationConfig(string $formName, ?string $type = null)
     {
         try {
             $formConfig = $this->templateService->getApplicationConfig($formName, $type);

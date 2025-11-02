@@ -335,7 +335,9 @@ class AuthController extends ResourceController
     {
         try {
             $userObject = new UsersModel();
-
+            /**
+             * @var UsersModel
+             */
             $userData = $userObject->where(["uuid" => $uuid])->first();
 
             // Create Google Authenticator object
@@ -347,7 +349,7 @@ class AuthController extends ResourceController
             // Create the QR code URL
             $appName = $userData->user_type === 'admin' ? getenv("GOOGLE_AUTHENTICATOR_APP_NAME") : getenv("GOOGLE_AUTHENTICATOR_APP_NAME") . " - Portal";
             $portalUrl = $userData->user_type === 'admin' ? getenv("ADMIN_PORTAL_URL") : getenv("PORTAL_URL");
-            $email = $userData->email;
+            $email = $userData->email_address;
             $qrCodeUrl = $authenticator->getQRCodeUrl($email, $secret, $appName);
 
             // Save the secret key to the user's record in the database
