@@ -411,7 +411,7 @@ class LicenseRenewalService
         try {
             $per_page = $filters['limit'] ?? 100;
             $page = $filters['page'] ?? 0;
-            $param = $filters['param'] ?? $filters['child_param'] ?? null;
+            $param = $filters['param'] ?? $filters['child_param'] ?? $filters['renewal_param'] ?? null;
             $sortBy = $filters['sortBy'] ?? "id";
             $sortOrder = $filters['sortOrder'] ?? "desc";
             $isGazette = $filters['isGazette'] ?? null;
@@ -443,6 +443,11 @@ class LicenseRenewalService
             $model->joinSearchFields = $searchFields;
 
             $builder = $param ? $model->search($param) : $model->builder();
+            //remove the param from the filters
+            unset($filters['param']);
+            unset($filters['child_param']);
+            unset($filters['renewal_param']);
+
             $addSelectClause = true;
 
             // Handle gazette mode
@@ -505,13 +510,16 @@ class LicenseRenewalService
      */
     public function countRenewals(array $filters = []): int
     {
-        $param = $filters['param'] ?? $filters['child_param'] ?? null;
+        $param = $filters['param'] ?? $filters['child_param'] ?? $filters['renewal_param'] ?? null;
         $licenseType = $filters['license_type'] ?? null;
 
         $model = new LicenseRenewalModel();
         $renewalTable = $model->getTableName();
         $builder = $param ? $model->search($param) : $model->builder();
-
+        //remove the param from the filters
+        unset($filters['param']);
+        unset($filters['child_param']);
+        unset($filters['renewal_param']);
         // Apply filters
         $builder = $this->applyRenewalFilters($builder, $filters, $renewalTable, null, $licenseType);
 
@@ -928,10 +936,11 @@ class LicenseRenewalService
             $licenseTypeTable = $licenseDef->table;
 
             foreach ($childParams as $key => $value) {
-                if ($key === "child_param") {
+                $fieldName = str_replace('child_', '', $key);
+                if ($key === "param") {
                     continue;
                 }
-                $fieldName = str_replace('child_', '', $key);
+
                 //if the field has a value in the main renewal filters, use that value
                 if (in_array($fieldName, $mainRenewalFilters)) {
                     $columnName = $renewalTable . "." . $fieldName;
@@ -952,8 +961,11 @@ class LicenseRenewalService
             $renewalSubTable = $licenseDef->renewalTable;
 
             foreach ($renewalChildParams as $key => $value) {
-                $value = Utils::parseParam($value);
                 $fieldName = str_replace('renewal_', '', $key);
+                $value = Utils::parseParam($value);
+                if ($key === "param") {
+                    continue;
+                }
                 //if the field has a value in the main renewal filters, use that value
                 if (in_array($fieldName, $mainRenewalFilters)) {
                     $columnName = $renewalTable . "." . $fieldName;

@@ -358,6 +358,12 @@
                     "children": []
                 },
                 {
+                    "title": "Generate new invoice",
+                    "url": "/payment/create-invoice",
+                    "icon": "",
+                    "children": []
+                },
+                {
                     "title": "View invoices/payments",
                     "url": "/payment/invoices",
                     "icon": "",
