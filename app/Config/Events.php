@@ -2,6 +2,7 @@
 
 namespace Config;
 
+use App\Exceptions\PaymentPurposeNotFoundException;
 use App\Helpers\Enums\InvoiceEvents;
 use App\Helpers\PaymentUtils;
 use CodeIgniter\Events\Events;
@@ -76,7 +77,7 @@ Events::on(INVOICE_EVENT, static function (InvoiceEvents $event, string $uuid) {
      */
     $purposes = Utils::getPaymentSettings()["purposes"];
     if (!isset($purposes[$purpose])) {
-        throw new \InvalidArgumentException("Invalid payment purpose: $purpose");
+        throw new PaymentPurposeNotFoundException("Invalid payment purpose: $purpose");
     }
     //get the required for the purpose. these are identical to the actions for application forms. so we can use the ApplicationFormActionHelper methods to run them.
     $actions = null;

@@ -113,6 +113,7 @@ class PaymentsController extends ResourceController
              * @var array
              */
             $items = $this->request->getVar("items");
+            $unique_id = $this->request->getVar("unique_id");
             $paymentOptions = $this->request->getVar("paymentOptions");
             if (!is_array($items) || count($items) == 0) {
                 throw new \InvalidArgumentException("Invalid items data provided");
@@ -127,6 +128,19 @@ class PaymentsController extends ResourceController
                 $paymentOptionObj = new \App\Helpers\Types\InvoicePaymentOptionType(0, '');
                 return $paymentOptionObj->createFromRequest($paymentOption);
             }, $paymentOptions) : [];
+            //get the details of the license from the database
+            try {
+                $payerDetails = \App\Helpers\LicenseUtils::getLicenseDetails($unique_id);
+                $data->first_name = array_key_exists("first_name", $payerDetails) ? $payerDetails['first_name'] : $payerDetails['name'];
+                $data->email = $payerDetails['email'];
+                $data->phone_number = $payerDetails['phone'];
+                $data->last_name = array_key_exists("last_name", $payerDetails) ? $payerDetails['last_name'] : $unique_id;
+            } catch (\Exception $e) {
+                //if it's not a valid license. for now we don't want to allow payments for non-licensed users
+                //if in future we want to allow that, handle the logic for that here. perhaps this can
+                //come before the validation so that we add rules for names and emails if the license is not valid
+                throw new \InvalidArgumentException("Invalid license number");
+            }
 
             //create the letters objects
             $result = $this->paymentsService->createInvoice((array) $data, $itemsArray, $paymentOptionsArray);

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\PaymentPurposeNotFoundException;
 use App\Helpers\Enums\InvoiceEvents;
 use App\Helpers\PaymentUtils;
 use App\Helpers\TemplateEngineHelper;
@@ -228,7 +229,7 @@ class PaymentsService
             "due_date" => "required|valid_date",
             "last_name" => "required",
             "email" => "required|valid_email",
-            "phone_number" => "required|numeric"
+            "phone_number" => "required"
         ];
 
         $validator = \Config\Services::validation();
@@ -239,17 +240,7 @@ class PaymentsService
         }
         //get the name and details of the payer
         $unique_id = $data['unique_id'];
-        // try {
-        //     $payerDetails = LicenseUtils::getLicenseDetails($unique_id);
-        //     $data['name'] = $payerDetails['name'];
-        //     $data['email'] = $payerDetails['email'];
-        //     $data['phone_number'] = $payerDetails['phone'];
-        // } catch (Exception $e) {
-        //     //if it's not a valid license. for now we don't want to allow payments for non-licensed users
-        //     //if in future we want to allow that, handle the logic for that here. perhaps this can
-        //     //come before the validation so that we add rules for names and emails if the license is not valid
-        //     throw new \InvalidArgumentException("Invalid license number");
-        // }
+
         $applicationId = $this->invoiceModel->generateInvoiceApplicationId($unique_id);//this is our internal invoice number. if it's an online payment, the payment provider will provide us with their invoice number. this will become the invoice number field value
         $data['application_id'] = $applicationId;
         $data['amount'] = 0;//this will be updated with the database triggers on the invoice_line_items table
@@ -277,10 +268,18 @@ class PaymentsService
         foreach ($paymentOptions as $option) {
             $this->createInvoicePaymentOption($invoiceUuid, $option);
         }
+        try {
+            Events::trigger(INVOICE_EVENT, InvoiceEvents::INVOICE_CREATED, $invoiceUuid);
 
+        } catch (PaymentPurposeNotFoundException $e) {
+            //do nothing
+        } catch (\Throwable $th) {
+            $this->invoiceModel->db->transRollback();
+            throw $th;
+        }
         $this->invoiceModel->db->transComplete();
         $this->activitiesModel->logActivity("created invoice $invoiceUuid for $unique_id", null, "Payments");
-        Events::trigger(INVOICE_EVENT, InvoiceEvents::INVOICE_CREATED, $invoiceUuid);
+
 
         // Return the exam ID
         return $invoiceId;

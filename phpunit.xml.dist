@@ -45,13 +45,21 @@
         <!-- Directory containing the front controller (index.php) -->
         <const name="PUBLICPATH" value="./public/"/>
         <!-- Database configuration -->
-        <!-- Uncomment to provide your own database for testing
+        <!-- Configure your test database connection here -->
         <env name="database.tests.hostname" value="localhost"/>
-        <env name="database.tests.database" value="tests"/>
-        <env name="database.tests.username" value="tests_user"/>
+        <env name="database.tests.database" value="mdc_test"/>
+        <env name="database.tests.username" value="root"/>
         <env name="database.tests.password" value=""/>
         <env name="database.tests.DBDriver" value="MySQLi"/>
-        <env name="database.tests.DBPrefix" value="tests_"/>
-        -->
+        <env name="database.tests.DBPrefix" value="test_"/>
+        <env name="database.tests.DBDebug" value="true"/>
+
+        <!-- Environment settings for testing -->
+        <env name="CI_ENVIRONMENT" value="testing"/>
+        <env name="APP_SETTINGS_FILE" value="app-settings-mdc.json"/>
+
+        <!-- Disable recaptcha for testing -->
+        <env name="RECAPTCHA_PUBLIC_KEY" value="test_key"/>
+        <env name="RECAPTCHA_SECRET_KEY" value="test_secret"/>
     </php>
 </phpunit>

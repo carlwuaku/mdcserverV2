@@ -1072,7 +1072,7 @@ class Utils
      * @return array The license data if found, 
      * @throws Exception If license is not found
      */
-    public static function getLicenseDetails(string $uuid, string $field = null, string $type = null): array
+    public static function getLicenseDetails(string $uuid, ?string $field = null, ?string $type = null): array
     {
         $model = new LicensesModel();
         $builder = $model->builder();
