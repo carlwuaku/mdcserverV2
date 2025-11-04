@@ -46,13 +46,15 @@
         <const name="PUBLICPATH" value="./public/"/>
         <!-- Database configuration -->
         <!-- Configure your test database connection here -->
-        <env name="database.tests.hostname" value="localhost"/>
-        <env name="database.tests.database" value="mdc_test"/>
+        <!-- Use 127.0.0.1 instead of localhost to use TCP instead of socket -->
+        <env name="database.tests.hostname" value="127.0.0.1"/>
+        <env name="database.tests.database" value="ci4_test"/>
         <env name="database.tests.username" value="root"/>
         <env name="database.tests.password" value=""/>
         <env name="database.tests.DBDriver" value="MySQLi"/>
-        <env name="database.tests.DBPrefix" value="test_"/>
+        <env name="database.tests.DBPrefix" value=""/>
         <env name="database.tests.DBDebug" value="true"/>
+        <env name="database.tests.port" value="3306"/>
 
         <!-- Environment settings for testing -->
         <env name="CI_ENVIRONMENT" value="testing"/>

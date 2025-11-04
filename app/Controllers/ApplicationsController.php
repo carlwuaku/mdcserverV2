@@ -2,24 +2,9 @@
 
 namespace App\Controllers;
 
-use App\Controllers\BaseController;
 use App\Helpers\AuthHelper;
-use App\Helpers\BaseBuilderJSONQueryUtil;
-use App\Helpers\PractitionerUtils;
-use App\Models\Applications\ApplicationsModel;
-use App\Models\Applications\ApplicationTemplateModel;
-use App\Models\Practitioners\PractitionerModel;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
-use App\Models\ActivitiesModel;
-use App\Helpers\Utils;
-use \Exception;
-use App\Helpers\EmailHelper;
-use App\Helpers\EmailConfig;
-use App\Models\Practitioners\PractitionerRenewalModel;
-use App\Helpers\ApplicationFormActionHelper;
-use App\Models\Applications\ApplicationTemplateStage;
-use App\Helpers\CacheHelper;
 use App\Traits\CacheInvalidatorTrait;
 use App\Services\ApplicationService;
 use App\Services\ApplicationTemplateService;
