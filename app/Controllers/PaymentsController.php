@@ -231,6 +231,59 @@ class PaymentsController extends ResourceController
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+    public function getLicenseInvoices()
+    {
+        try {
+            $userId = auth("tokens")->id();
+            $userData = AuthHelper::getAuthUser($userId);
+            $filters = ["unique_id" => $userData->profile_data['license_number']];
+            $result = $this->paymentsService->getInvoices($filters);
+            //remove these fields from each item in data
+
+            $removeFields = ["application_id", "id", "year", "redirect_url", "purpose_table_uuid", "purpose_table", "post_url", "payment_method", "payment_file", "payment_file_date", "mda_branch_code", "online_payment_status", "online_payment_response"];
+            $result['data'] = array_map(function ($item) use ($removeFields) {
+                foreach ($removeFields as $field) {
+                    unset($item->$field);
+                }
+                return $item;
+            }, $result['data']);
+            //remove them from the display_columns string[] as well
+            $result['displayColumns'] = array_values(array_diff($result['displayColumns'], $removeFields));
+            return $this->respond($result, ResponseInterface::HTTP_OK);
+
+        } catch (\Throwable $e) {
+            log_message("error", $e);
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function countLicenseInvoices($status)
+    {
+        try {
+            $userId = auth("tokens")->id();
+            $userData = AuthHelper::getAuthUser($userId);
+            $filters = ["unique_id" => $userData->profile_data['license_number'], "status" => $status];
+            $result = $this->paymentsService->getInvoices($filters);
+
+            return $this->respond(['data' => $result['total']], ResponseInterface::HTTP_OK);
+
+        } catch (\Throwable $e) {
+            log_message("error", $e);
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function getLicenseInvoiceDetails($uuid)
+    {
+        try {
+            $result = $this->paymentsService->getInvoice($uuid);
+            return $this->respond($result, ResponseInterface::HTTP_OK);
+
+        } catch (\Throwable $e) {
+            log_message("error", $e);
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 
     public function getInvoice($uuid)
     {
@@ -358,6 +411,18 @@ class PaymentsController extends ResourceController
     //     }
     // }
 
+    public function createGhanaGovInvoice()
+    {
+        try {
+            $invoiceUuid = $this->request->getPost("invoice_uuid");
+            $mdaBranch = $this->request->getPost("mda_branch_code");
+            $this->ghanaGovPaymentService->createCheckoutSession($invoiceUuid, $mdaBranch);
+        } catch (\Exception $e) {
+            log_message("error", $e);
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     public function paymentDone()
     {
         try {
@@ -484,6 +549,19 @@ class PaymentsController extends ResourceController
         } catch (\Throwable $e) {
             log_message("error", $e);
             return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function getPaymentMethodBranches($paymentMethod)
+    {
+        try {
+            $result = $this->paymentsService->getPaymentMethodBranches($paymentMethod);
+
+            return $this->respond(['data' => $result], ResponseInterface::HTTP_OK);
+
+        } catch (\Throwable $e) {
+            log_message("error", $e);
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 

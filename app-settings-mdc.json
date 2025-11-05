@@ -3882,6 +3882,36 @@
             "criteria": []
         },
         {
+            "title": "Payment",
+            "active_children": false,
+            "url": "/payment",
+            "image": "assets/images/invoice.png",
+            "icon": "auto_stories_outlined",
+            "dataPoints": [
+                {
+                    "criteria": [],
+                    "dataSource": "api",
+                    "apiUrl": "portal/payment/invoices/Pending/count",
+                    "apiProperty": "total",
+                    "message": "Invoices pending payment",
+                    "type": "warning"
+                }
+            ],
+            "actions": [
+                {
+                    "label": "View/Pay Your Invoices",
+                    "icon": "",
+                    "type": "link",
+                    "linkProp": "",
+                    "url": "/payment/invoices",
+                    "urlParams": {},
+                    "criteria": []
+                }
+            ],
+            "description": "View or fill application forms",
+            "criteria": []
+        },
+        {
             "title": "Relicensure Status",
             "active_children": false,
             "url": "/renewal",
@@ -4668,7 +4698,53 @@
                 "onStart": "ghana_gov",
                 "onComplete": "ghana_gov",
                 "description": "Pay this invoice online via the Ghana.gov platform",
-                "logo": "assets/images/gov-logo.png"
+                "logo": "assets/images/gov-logo.png",
+                "paymentBranches": [
+                    {
+                        "name": "Ashanti",
+                        "mda_code": "PC_Kumasi_Branch"
+                    },
+                    {
+                        "name": "Brong Ahafo",
+                        "mda_code": "PC_Bono Ahafo_Branch"
+                    },
+                    {
+                        "name": "Central",
+                        "mda_code": "PC_Cape  Coast_Branch"
+                    },
+                    {
+                        "name": "Eastern ",
+                        "mda_code": "PC_Koforidua_Branch"
+                    },
+                    {
+                        "name": "Greater Accra",
+                        "mda_code": "PC_Accra_Branch"
+                    },
+                    {
+                        "name": "Northern",
+                        "mda_code": "PC_Tamale_Branch"
+                    },
+                    {
+                        "name": "Upper East",
+                        "mda_code": "PC_Bolgatanga__Branch"
+                    },
+                    {
+                        "name": "Upper West",
+                        "mda_code": "PC_Wa_Branch"
+                    },
+                    {
+                        "name": "Volta",
+                        "mda_code": "PC_Ho_Branch"
+                    },
+                    {
+                        "name": "Western",
+                        "mda_code": "PC_Takoradi_Branch"
+                    },
+                    {
+                        "name": "Savannah",
+                        "mda_code": "PC_Savannah_Branch"
+                    }
+                ]
             }
         }
     },

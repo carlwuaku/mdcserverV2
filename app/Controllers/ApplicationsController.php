@@ -179,11 +179,18 @@ class ApplicationsController extends ResourceController
             $applicationIds = $this->request->getVar('applicationIds');
             $userId = auth("tokens")->id();
 
+            // Capture any additional submitted data for timeline
+            $submittedData = $this->request->getVar('statusData');
+
+            // Remove null values
+            $submittedData = array_filter($submittedData, fn($val) => $val !== null);
+
             $result = $this->applicationService->updateApplicationStatus(
                 $applicationType,
                 $status,
                 $applicationIds,
-                $userId
+                $userId,
+                $submittedData
             );
 
             return $this->respond($result, ResponseInterface::HTTP_OK);
@@ -1889,4 +1896,77 @@ class ApplicationsController extends ResourceController
     //         return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
     //     }
     // }
+
+    /**
+     * Get application timeline
+     *
+     * Retrieves the complete history of status changes and actions for a specific application
+     *
+     * @param string $uuid Application UUID
+     * @return \CodeIgniter\HTTP\Response
+     */
+    public function getApplicationTimeline(string $uuid)
+    {
+        try {
+            $timelineModel = new \App\Models\Applications\ApplicationTimelineModel();
+
+            // Get query parameters for pagination and sorting
+            $limit = $this->request->getGet('limit') ?? 50;
+            $offset = $this->request->getGet('offset') ?? 0;
+            $orderDir = $this->request->getGet('orderDir') ?? 'DESC';
+
+            // Validate limit and offset
+            $limit = min(max((int) $limit, 1), 200); // Between 1 and 200
+            $offset = max((int) $offset, 0);
+
+            $timeline = $timelineModel->getApplicationTimeline($uuid, [
+                'limit' => $limit,
+                'offset' => $offset,
+                'orderDir' => $orderDir,
+            ]);
+
+            $total = $timelineModel->getTimelineCount($uuid);
+
+            return $this->respond([
+                'success' => true,
+                'data' => $timeline,
+                'total' => $total,
+                'limit' => $limit,
+                'offset' => $offset,
+            ], ResponseInterface::HTTP_OK);
+
+        } catch (\Throwable $e) {
+            log_message('error', 'Timeline fetch error: ' . $e->getMessage());
+            return $this->respond([
+                'success' => false,
+                'message' => 'Failed to fetch application timeline'
+            ], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Get simplified status history for an application
+     *
+     * @param string $uuid Application UUID
+     * @return \CodeIgniter\HTTP\Response
+     */
+    public function getApplicationStatusHistory(string $uuid)
+    {
+        try {
+            $timelineModel = new \App\Models\Applications\ApplicationTimelineModel();
+            $statusHistory = $timelineModel->getStatusHistory($uuid);
+
+            return $this->respond([
+                'success' => true,
+                'data' => $statusHistory,
+            ], ResponseInterface::HTTP_OK);
+
+        } catch (\Throwable $e) {
+            log_message('error', 'Status history fetch error: ' . $e->getMessage());
+            return $this->respond([
+                'success' => false,
+                'message' => 'Failed to fetch status history'
+            ], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 }

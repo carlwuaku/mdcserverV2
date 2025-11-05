@@ -17,6 +17,7 @@ use App\Models\Payments\InvoicePaymentOptionModel;
 use App\Models\Payments\PaymentFileUploadsModel;
 use App\Models\Payments\PaymentFileUploadsViewModel;
 use App\Models\PrintTemplateModel;
+use App\Models\UsersModel;
 use Exception;
 use CodeIgniter\Events\Events;
 use App\Helpers\Types\PaymentMethodType;
@@ -93,7 +94,7 @@ class PaymentsService
     }
 
 
-    public function updateFee(string $id, array $data, array $letters = null): bool
+    public function updateFee(string $id, array $data, ?array $letters = null): bool
     {
         // Validate and process the data
         $rules = [
@@ -361,6 +362,16 @@ class PaymentsService
         }
     }
 
+    /**
+     * Retrieves a list of invoices with pagination and filtering
+     *
+     * @param array $filters An associative array of filters and values
+     * @return array{data: array, total: int, displayColumns: array, columnFilters: array} An associative array with the following keys:
+     *  - data: The paginated invoices data
+     *  - total: The total number of records
+     *  - displayColumns: An array of column display names
+     *  - columnFilters: An array of column filters
+     */
     public function getInvoices(array $filters = []): array
     {
         $per_page = $filters['limit'] ?? 100;
@@ -408,6 +419,10 @@ class PaymentsService
             throw new \InvalidArgumentException("Invoice not found");
         }
         $result['items'] = $this->invoiceLineItemModel->where('invoice_uuid', $uuid)->get()->getResult();
+        $result['pendingUploads'] = $this->paymentFileUploadsModel->where('invoice_uuid', $uuid)->where('status', 'Pending')->get()->getResult();
+
+        // Add payment methods based on purpose configuration
+        $result = $this->addPaymentMethodsToInvoice($result);
 
         return [
             'data' => $result,
@@ -430,36 +445,52 @@ class PaymentsService
         }
         $result['items'] = $this->invoiceLineItemModel->where('invoice_uuid', $result['uuid'])->get()->getResult();
         $result['pendingUploads'] = $this->paymentFileUploadsModel->where('invoice_uuid', $result['uuid'])->where('status', 'Pending')->get()->getResult();
-        //look in the payment settings in app-settings for the purpose of payment. if specified get the values. else, all payment methods
-        $paymentSettings = Utils::getPaymentSettings();
-        $paymentMethods = [];
-        // log_message("debug", print_r($paymentSettings['purposes'][$result['purpose']]['paymentMethods'], true));
-        if (isset($paymentSettings['purposes'][$result['purpose']])) {
-            $paymentMethods = $paymentSettings['purposes'][$result['purpose']]['paymentMethods'];
-        }
 
-        $allPaymentMethods = $paymentSettings['paymentMethods'];
-        $result['payment_methods'] = [];
-
-        if (count($paymentMethods) === 0) {
-            $result['payment_methods'] = array_map(function ($value) {
-                return PaymentMethodType::fromArray($value);
-            }, array_values($allPaymentMethods));
-        } else {
-            foreach ($paymentMethods as $methodName) {
-                if (in_array($methodName, array_keys($allPaymentMethods))) {
-
-                    $result['payment_methods'][] = PaymentMethodType::fromArray($allPaymentMethods[$methodName]);
-                }
-            }
-        }
-
-
+        // Add payment methods based on purpose configuration
+        $result = $this->addPaymentMethodsToInvoice($result);
 
         return [
             'data' => $result,
             'message' => "Invoice found",
         ];
+    }
+
+    /**
+     * Adds available payment methods to an invoice result based on purpose configuration.
+     *
+     * Looks up payment methods in app-settings for the invoice purpose. If specific methods
+     * are configured for the purpose, only those are returned. Otherwise, all available
+     * payment methods are returned.
+     *
+     * @param array $invoice The invoice array to add payment methods to
+     * @return array The invoice array with payment_methods added
+     */
+    private function addPaymentMethodsToInvoice(array $invoice): array
+    {
+        $paymentSettings = Utils::getPaymentSettings();
+        $purposePaymentMethods = [];
+
+        // Check if there are specific payment methods for this purpose
+        if (isset($paymentSettings['purposes'][$invoice['purpose']])) {
+            $purposePaymentMethods = $paymentSettings['purposes'][$invoice['purpose']]['paymentMethods'];
+        }
+
+        $allPaymentMethods = $paymentSettings['paymentMethods'];
+        $invoice['payment_methods'] = [];
+
+        // If no specific methods configured, return all available methods
+        if (count($purposePaymentMethods) === 0) {
+            $invoice['payment_methods'] = array_map(fn($value) => PaymentMethodType::fromArray($value), array_values($allPaymentMethods));
+        } else {
+            // Return only the configured payment methods for this purpose
+            foreach ($purposePaymentMethods as $methodName) {
+                if (array_key_exists($methodName, $allPaymentMethods)) {
+                    $invoice['payment_methods'][] = PaymentMethodType::fromArray($allPaymentMethods[$methodName]);
+                }
+            }
+        }
+
+        return $invoice;
     }
 
     private function parsePaymentMethod($paymentMethod)
@@ -1056,4 +1087,23 @@ class PaymentsService
         return $results;
 
     }
+
+    /**
+     * Returns the payment branches associated with the given payment method.
+     * @param string $paymentMethod The payment method to get the payment branches for.
+     * @return array The payment branches associated with the given payment method.
+     * @throws \Throwable If an error occurs.
+     */
+    public function getPaymentMethodBranches($paymentMethod)
+    {
+        //read from utils
+        try {
+            return Utils::getPaymentMethodSettings($paymentMethod)['paymentBranches'];
+        } catch (\Throwable $th) {
+            log_message("error", $th);
+            throw $th;
+        }
+
+    }
+
 }

@@ -48,7 +48,21 @@ class GhanaGovPaymentService
         $this->queryInvoiceUrl = getenv("GHANA_GOV_QUERY_INVOICE_URL");
     }
 
-    public function createCheckoutSession(string $uuid)
+    /**
+     * Creates a checkout session for a given invoice and mda branch code
+     *
+     * The function gets the invoice data and items from the database, encodes the data into a json object
+     * and makes a POST request to the ghana.gov API to create the invoice. If the response is successful,
+     * it updates the invoice table with the invoice number and online payment status, and logs an activity
+     * in the activities table. If the response is not successful, it logs an activity in the activities table and
+     * throws an exception with the message returned from the ghana.gov API.
+     *
+     * @param string $uuid The UUID of the invoice
+     * @param string $mdaBranchCode The MDA branch code
+     * @return string The message returned after creating the invoice
+     * @throws \Exception If there is an error creating the invoice
+     */
+    public function createCheckoutSession(string $uuid, string $mdaBranchCode)
     {
         try {
 
@@ -60,7 +74,19 @@ class GhanaGovPaymentService
                 throw new InvalidArgumentException("Invoice not found");
             }
             $invoiceItems = $this->invoiceLineItemModel->where(['invoice_uuid' => $uuid])->findAll();
-            $mdaBranchCode = $invoiceData['mda_branch_code'];
+
+            if (!$invoiceItems) {
+                throw new InvalidArgumentException("Invoice items not found");
+            }
+            $invoiceItemsList = array_map(function ($item) {
+                return [
+                    "service_code" => $item['service_code'],
+                    "amount" => $item['line_total'],
+                    "currency" => "GHS",
+                    "memo" => $item['description'],
+                    "account_number" => "Not applicable"
+                ];
+            }, $invoiceItems);
 
             $apiData = json_encode([
                 "request" => "create",
@@ -71,7 +97,7 @@ class GhanaGovPaymentService
                 "phonenumber" => $invoiceData['phone_number'],
                 "email" => $invoiceData['email'],
                 "application_id" => $invoiceData['application_id'],
-                "invoice_items" => $invoiceItems,
+                "invoice_items" => $invoiceItemsList,
                 "redirect_url" => site_url("payment/payment_redirect/" . $invoiceData['application_id']),
                 "post_url" => site_url("payment/paymentDone")
             ]);
@@ -85,21 +111,21 @@ class GhanaGovPaymentService
             );
             // echo $get_data;
             log_message(
-                "error",
+                "info",
                 "create ghana.gov invoice called. data : $networkResponse by {$invoiceData['last_name']} for {$invoiceData['purpose']}",
             );
             $apiResponse = json_decode($networkResponse, true);
-            // print_r($json_data);
             if ($apiResponse['status'] == '0') {
                 // update the invoice table with the response
                 $updateData = [
                     'invoice_number' => $apiResponse['invoice_number'],
                     'online_payment_status' => $apiResponse['status'],
-                    'online_payment_response' => $networkResponse
+                    'online_payment_response' => $networkResponse,
+                    'mda_branch_code' => $mdaBranchCode
                 ];
 
 
-                $this->invoiceModel->where(['uuid' => $uuid])->update($updateData);
+                $this->invoiceModel->builder()->where(['uuid' => $uuid])->update($updateData);
                 //update the appropriate table with the payment invoice_id
                 //TODO: EMIT EVENT HERE TO SIGNAL THAT INVOICE WAS CREATED
 
@@ -110,7 +136,7 @@ class GhanaGovPaymentService
                     "Payments"
                 );
                 $message = "Your invoice has been registered. Please make payment using 
-                any of the payment methods available before {$networkResponse['invoice_expires']}";
+                any of the payment methods available before {$apiResponse['invoice_expires']}";
 
                 return $message;
             } else {

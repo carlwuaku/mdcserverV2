@@ -4528,6 +4528,36 @@
             "description": "View or fill application forms"
         },
         {
+            "title": "Payment",
+            "active_children": false,
+            "url": "/payment",
+            "image": "assets/images/invoice.png",
+            "icon": "auto_stories_outlined",
+            "dataPoints": [
+                {
+                    "criteria": [],
+                    "dataSource": "api",
+                    "apiUrl": "portal/payment/invoices/Pending/count",
+                    "apiProperty": "",
+                    "message": "Invoices pending payment",
+                    "type": "warning"
+                }
+            ],
+            "actions": [
+                {
+                    "label": "View/Pay Your Invoices",
+                    "icon": "",
+                    "type": "link",
+                    "linkProp": "",
+                    "url": "/payment/invoices",
+                    "urlParams": {},
+                    "criteria": []
+                }
+            ],
+            "description": "View or fill application forms",
+            "criteria": []
+        },
+        {
             "title": "Relicense Status",
             "active_children": false,
             "url": "/renewal",
@@ -5299,7 +5329,8 @@
                 "onStart": "offlinePayment",
                 "onComplete": "offlinePaymentComplete",
                 "description": "Pay this invoice in person at any bank branch, via mobile money, or via a bank up and upload evidence of payment",
-                "logo": "assets/images/bank.png"
+                "logo": "assets/images/bank.png",
+                "paymentBranches": []
             },
             "Ghana.gov Platform": {
                 "label": "Ghana.gov Platform",
@@ -5308,7 +5339,57 @@
                 "onStart": "ghana_gov",
                 "onComplete": "ghana_gov",
                 "description": "Pay this invoice online via the Ghana.gov platform",
-                "logo": "assets/images/gov-logo.png"
+                "logo": "assets/images/gov-logo.png",
+                "paymentBranches": [
+                    {
+                        "name": "Ashanti",
+                        "mda_code": "PC01ASH"
+                    },
+                    {
+                        "name": "Brong Ahafo",
+                        "mda_code": "PC02BAR"
+                    },
+                    {
+                        "name": "Central",
+                        "mda_code": "PC03CEN"
+                    },
+                    {
+                        "name": "Eastern ",
+                        "mda_code": "PC04ESR"
+                    },
+                    {
+                        "name": "Greater Accra",
+                        "mda_code": "PC05GAR"
+                    },
+                    {
+                        "name": "Northern",
+                        "mda_code": "PC06NAR"
+                    },
+                    {
+                        "name": "Upper East",
+                        "mda_code": "PC08UER"
+                    },
+                    {
+                        "name": "Upper West",
+                        "mda_code": "PC09UWR"
+                    },
+                    {
+                        "name": "Volta",
+                        "mda_code": "PC10VAR"
+                    },
+                    {
+                        "name": "Western",
+                        "mda_code": "PC11WAR"
+                    },
+                    {
+                        "name": "WNR",
+                        "mda_code": "PC12WNR"
+                    },
+                    {
+                        "name": "Tema Regional",
+                        "mda_code": "PC07TMA"
+                    }
+                ]
             }
         }
     },
@@ -5340,56 +5421,15 @@
     ],
     "defaultApplicationFormTemplates": [
         {
+            "uuid": "portal-edit",
             "form_name": "Portal Edit",
             "description": null,
             "guidelines": "<p></p>",
             "header": "<p>t</p>",
             "footer": "<p></p>",
-            "data": [
-                {
-                    "name": "first_name",
-                    "type": "text",
-                    "required": true,
-                    "hint": "Enter your first name",
-                    "label": "First Name",
-                    "options": [],
-                    "value": ""
-                },
-                {
-                    "name": "last_name",
-                    "type": "text",
-                    "required": true,
-                    "hint": "Enter your last name",
-                    "label": "Last Name",
-                    "options": [],
-                    "value": ""
-                },
-                {
-                    "name": "email",
-                    "type": "email",
-                    "required": true,
-                    "hint": "Enter your email",
-                    "label": "Email",
-                    "options": [],
-                    "value": ""
-                },
-                {
-                    "label": "File attachment",
-                    "name": "file_attachment",
-                    "hint": "",
-                    "options": [],
-                    "type": "file",
-                    "assetType": "applications",
-                    "value": "",
-                    "required": false,
-                    "api_url": "",
-                    "apiKeyProperty": "",
-                    "apiLabelProperty": "",
-                    "showOnly": false
-                }
-            ],
+            "data": [],
             "open_date": "2025-08-01",
-            "close_date": "2025-08-31",
+            "close_date": "2100-12-31",
             "on_submit_email": null,
             "on_submit_message": "<p>thank you for your application</p>",
             "deleted_at": null,
@@ -5402,6 +5442,17 @@
             "deny_url": null,
             "stages": [
                 {
+                    "name": "Pending Approval",
+                    "description": "application is pending approval",
+                    "allowedTransitions": [
+                        "Approved"
+                    ],
+                    "allowedUserRoles": [
+                        "Developers"
+                    ],
+                    "actions": []
+                },
+                {
                     "name": "Pending",
                     "description": "application is pending approval",
                     "allowedTransitions": [
@@ -5410,29 +5461,24 @@
                     "allowedUserRoles": [
                         "Developers"
                     ],
-                    "actions": [
-                        {
-                            "type": "email",
-                            "config_type": "email",
-                            "config": {
-                                "template": "the application will be printed",
-                                "subject": "Your application is being processed",
-                                "endpoint": "",
-                                "method": "GET",
-                                "admin_email": "",
-                                "auth_token": "",
-                                "headers": [],
-                                "body_mapping": [],
-                                "query_params": []
-                            }
-                        }
-                    ]
+                    "actions": []
+                },
+                {
+                    "name": "Received",
+                    "description": "application is pending approval",
+                    "allowedTransitions": [
+                        "Approved"
+                    ],
+                    "allowedUserRoles": [
+                        "Developers"
+                    ],
+                    "actions": []
                 },
                 {
                     "name": "Approved",
-                    "description": "your application has been approved successfully",
+                    "description": "Approve application to edit data",
                     "allowedTransitions": [
-                        "Pending"
+                        "Pending Approval"
                     ],
                     "allowedUserRoles": [
                         "Developers"
@@ -5442,10 +5488,10 @@
                             "type": "email",
                             "config_type": "email",
                             "config": {
-                                "template": "your letter has been sent to the address",
-                                "subject": "Your letter has been sent",
+                                "template": "Hello [name], <br> Your request to update your [field] has been approved. <br> Mr R. Appiah Agyei <br> Head of Registration ",
+                                "subject": "MDC Practitioners Portal Edit",
                                 "endpoint": "",
-                                "method": "GET",
+                                "method": "",
                                 "admin_email": "",
                                 "auth_token": "",
                                 "headers": [],
@@ -5454,47 +5500,28 @@
                             }
                         },
                         {
-                            "type": "api_call",
-                            "config_type": "api_call",
+                            "type": "edit_personal_details",
+                            "config_type": "portal_edit",
                             "config": {
                                 "template": "",
                                 "subject": "",
                                 "admin_email": "",
-                                "endpoint": "http://localhost:8080/licenses/renewal/details",
-                                "method": "PUT",
-                                "auth_token": "__self__",
+                                "endpoint": "",
+                                "method": "",
+                                "auth_token": "",
                                 "headers": [],
-                                "body_mapping": [
-                                    {
-                                        "api_field": "status",
-                                        "mapping_type": "static",
-                                        "source_field": "",
-                                        "static_value": "Paid",
-                                        "template": "",
-                                        "transform_type": "",
-                                        "default_value": ""
-                                    },
-                                    {
-                                        "api_field": "batch_number",
-                                        "mapping_type": "template",
-                                        "source_field": "",
-                                        "static_value": "00",
-                                        "template": "001-[year]",
-                                        "transform_type": "",
-                                        "default_value": ""
-                                    }
-                                ],
+                                "body_mapping": [],
                                 "query_params": []
                             }
                         }
                     ]
                 }
             ],
-            "initialStage": "Pending",
+            "initialStage": "Pending Approval",
             "finalStage": "Approved",
             "picture": null,
             "restrictions": null,
-            "available_externally": "1"
+            "available_externally": "0"
         },
         {
             "form_name": "Practitioners Provisional Registration Application",

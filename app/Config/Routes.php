@@ -39,6 +39,8 @@ $routes->group("portal", ["namespace" => "App\Controllers"], function (RouteColl
     $routes->post("auth/verify-google-auth", [AuthController::class, "verifyAndEnableGoogleAuth"]);
     $routes->put("applications/details/(:segment)", [ApplicationsController::class, "updateApplication/$1"], ["filter" => ["apiauth"]]);
     $routes->delete("applications/details/(:segment)", [ApplicationsController::class, "deleteApplication/$1"], ["filter" => ["apiauth"]]);
+    $routes->get("applications/details/(:segment)/timeline", [ApplicationsController::class, "getApplicationTimeline/$1"], ["filter" => ["apiauth"]]);
+    $routes->get("applications/details/(:segment)/status-history", [ApplicationsController::class, "getApplicationStatusHistory/$1"], ["filter" => ["apiauth"]]);
     $routes->get("applications/details/(:segment)", [ApplicationsController::class, "getApplication/$1"], ["filter" => ["apiauth"]]);
     $routes->post("applications/details/(:segment)", [ApplicationsController::class, "createApplication"], ["filter" => ["apiauth"]]);
     $routes->get("applications/templates/(:segment)", [ApplicationsController::class, "getApplicationTemplateForFilling/$1"], ["filter" => ["apiauth"]]);
@@ -49,8 +51,13 @@ $routes->group("portal", ["namespace" => "App\Controllers"], function (RouteColl
     $routes->post("renewals", [LicensesController::class, "createRenewalByLicense"], ["filter" => ["apiauth"]]);
     $routes->delete("renewals/(:segment)", [LicensesController::class, "deleteRenewalByLicense/$1"], ["filter" => ["apiauth"]]);
     $routes->get("payment/external-invoice/(:segment)", [PaymentsController::class, "getInvoiceByExternal/$1"], ["filter" => ["apiauth"]], );
+    $routes->get("payment/invoices", [PaymentsController::class, "getLicenseInvoices"], ["filter" => ["apiauth"]], );
+    $routes->get("payment/invoices/(:segment)/count", [PaymentsController::class, "countLicenseInvoices/$1"], ["filter" => ["apiauth"]], );
+    $routes->get("payment/invoices/(:segment)", [PaymentsController::class, "getLicenseInvoiceDetails/$1"], ["filter" => ["apiauth"]], );
+    $routes->get("payment/payment-methods/branches/(:segment)", [PaymentsController::class, "getPaymentMethodBranches/$1"], ["filter" => ["apiauth"]], );
     $routes->put("payment/invoice/payment_method/(:segment)", [PaymentsController::class, "updateInvoicePaymentMethod/$1"], ["filter" => ["apiauth"]], );
     $routes->post("payment/invoices/manual-payment", [PaymentsController::class, "createPaymentFileUpload"], ["filter" => ["apiauth"]]);
+    $routes->post("payment/invoices/online-payment/Ghana.gov Platform", [PaymentsController::class, "createGhanaGovInvoice"], ["filter" => ["apiauth"]]);
     $routes->delete("payment/invoices/manual-payment/(:segment)", [PaymentsController::class, "deletePaymentFileUpload/$1"], ["filter" => ["apiauth"]]);
     $routes->post("payment/invoices/printout", [PaymentsController::class, "generateInvoicePrintouts"], ["filter" => ["apiauth"]]);
     $routes->get("cpd/details", [CpdController::class, "getCpds"], ["filter" => ["apiauth"]], );
@@ -196,6 +203,10 @@ $routes->group("applications", ["namespace" => "App\Controllers", "filter" => "a
     $routes->put("details/(:segment)/restore", [ApplicationsController::class, "restoreApplication/$1"], ["filter" => ["hasPermission:Restore_Application_Forms"]]);
     $routes->get("count", [ApplicationsController::class, "countApplications"], ["filter" => ["hasPermission:View_Application_Forms"]], );
     $routes->get("statusCounts/(:segment)", [ApplicationsController::class, "getApplicationStatuses"], ["filter" => ["hasPermission:View_Application_Forms"]], );
+
+    // Timeline routes
+    $routes->get("details/(:segment)/timeline", [ApplicationsController::class, "getApplicationTimeline/$1"], ["filter" => ["hasPermission:View_Application_Forms"]]);
+    $routes->get("details/(:segment)/status-history", [ApplicationsController::class, "getApplicationStatusHistory/$1"], ["filter" => ["hasPermission:View_Application_Forms"]]);
 
     $routes->get("types/(:segment)", [ApplicationsController::class, "getApplicationFormTypes"], ["filter" => ["hasPermission:View_Application_Forms"]]);
 

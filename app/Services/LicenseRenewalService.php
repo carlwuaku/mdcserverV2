@@ -335,7 +335,7 @@ class LicenseRenewalService
      * @return array A response with a success message
      * @throws \RuntimeException If the renewal does not exist or the delete fails
      */
-    public function deleteRenewal(string $uuid, string $userUuid = null): array
+    public function deleteRenewal(string $uuid, ?string $userUuid = null): array
     {
         $model = new LicenseRenewalModel();
         $data = $model->where(["uuid" => $uuid])->first();

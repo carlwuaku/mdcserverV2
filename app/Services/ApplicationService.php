@@ -13,6 +13,7 @@ use App\Models\ActivitiesModel;
 use App\Models\Applications\ApplicationsModel;
 use App\Models\Applications\ApplicationTemplateModel;
 use App\Models\Applications\ApplicationTemplateStage;
+use App\Models\Applications\ApplicationTimelineModel;
 use App\Models\Practitioners\PractitionerModel;
 use App\Models\Practitioners\PractitionerRenewalModel;
 use CodeIgniter\Database\BaseBuilder;
@@ -24,11 +25,13 @@ use Exception;
 class ApplicationService
 {
     private ActivitiesModel $activitiesModel;
+    private ApplicationTimelineModel $timelineModel;
     private array $primaryColumns = ['first_name', 'picture', 'last_name', 'middle_name', 'email', 'phone'];
 
     public function __construct()
     {
         $this->activitiesModel = new ActivitiesModel();
+        $this->timelineModel = new ApplicationTimelineModel();
     }
 
     /**
@@ -127,7 +130,7 @@ class ApplicationService
     /**
      * Update application status with bulk operations
      */
-    public function updateApplicationStatus(string $applicationType, string $status, array $applicationIds, int $userId): array
+    public function updateApplicationStatus(string $applicationType, string $status, array $applicationIds, int $userId, array $submittedData = []): array
     {
         if (!$applicationType || !$status || !$applicationIds) {
             throw new \InvalidArgumentException("Application type, status, and application IDs are required");
@@ -152,28 +155,71 @@ class ApplicationService
         // Validate user permissions
         $this->validateUserPermissions($userId, $stage);
 
+        // Get request metadata for timeline
+        $request = \Config\Services::request();
+        $ipAddress = $request->getIPAddress();
+        $userAgent = $request->getUserAgent()->getAgentString();
+
         // Process applications
         $model = new ApplicationsModel();
         $applications = $model->builder()->whereIn('uuid', $applicationIds)->get()->getResult('array');
 
         $applicationIdsToUpdate = [];
         $applicationCodesArray = [];
+        $timelineEntries = [];
 
         foreach ($applications as $application) {
             $applicationCodesArray[] = $application['application_code'];
+            $actionsResults = [];
 
             if (!empty($stage['actions'])) {
                 try {
-                    $this->processStageActions($stage['actions'], $application, $model);
+                    $actionsResults = $this->processStageActionsWithResults($stage['actions'], $application, $model);
                     $applicationIdsToUpdate[] = $application['uuid'];
                 } catch (\Throwable $e) {
                     log_message('error', 'Stage action failed: ' . $e);
-                    // Continue with next application
+
+                    // Log failed timeline entry
+                    $this->timelineModel->createTimelineEntry(
+                        $application['uuid'],
+                        $status,
+                        [
+                            'fromStatus' => $application['status'],
+                            'userId' => $userId,
+                            'stageData' => $stage,
+                            'actionsExecuted' => $stage['actions'],
+                            'actionsResults' => [
+                                'success' => false,
+                                'error' => $e->getMessage(),
+                                'timestamp' => date('Y-m-d H:i:s'),
+                            ],
+                            'submittedData' => $submittedData,
+                            'notes' => 'Status update failed: ' . $e->getMessage(),
+                            'ipAddress' => $ipAddress,
+                            'userAgent' => $userAgent,
+                        ]
+                    );
+
                     throw new \RuntimeException("Failed to process application {$application['application_code']}: " . $e->getMessage());
                 }
             } else {
                 $applicationIdsToUpdate[] = $application['uuid'];
+                $actionsResults = ['success' => true, 'message' => 'No actions to execute'];
             }
+
+            // Prepare timeline entry
+            $timelineEntries[] = [
+                'application_uuid' => $application['uuid'],
+                'from_status' => $application['status'],
+                'to_status' => $status,
+                'stage_data' => $stage,
+                'actions_executed' => $stage['actions'] ?? null,
+                'actions_results' => $actionsResults,
+                'submitted_data' => $submittedData,
+                'user_id' => $userId,
+                'ip_address' => $ipAddress,
+                'user_agent' => $userAgent,
+            ];
         }
 
         if (empty($applicationIdsToUpdate)) {
@@ -182,6 +228,25 @@ class ApplicationService
 
         // Update status for successful applications
         $model->builder()->whereIn('uuid', $applicationIdsToUpdate)->update(['status' => $status]);
+
+        // Insert timeline entries for successful updates
+        foreach ($timelineEntries as $entry) {
+            $this->timelineModel->createTimelineEntry(
+                $entry['application_uuid'],
+                $entry['to_status'],
+                [
+                    'fromStatus' => $entry['from_status'],
+                    'userId' => $entry['user_id'],
+                    'stageData' => $entry['stage_data'],
+                    'actionsExecuted' => $entry['actions_executed'],
+                    'actionsResults' => $entry['actions_results'],
+                    'submittedData' => $entry['submitted_data'],
+                    'notes' => 'Status updated successfully',
+                    'ipAddress' => $entry['ip_address'],
+                    'userAgent' => $entry['user_agent'],
+                ]
+            );
+        }
 
         $applicationCodes = implode(", ", $applicationCodesArray);
         $this->activitiesModel->logActivity("Updated applications {$applicationCodes} status to $status. See the logs for more details");
@@ -553,6 +618,63 @@ class ApplicationService
         } catch (\Throwable $e) {
             $model->db->transRollback();
             throw $e;
+        }
+    }
+
+    /**
+     * Process stage actions and capture results for timeline
+     */
+    private function processStageActionsWithResults(array $actions, array $application, ApplicationsModel $model): array
+    {
+        $results = [];
+
+        $model->db->transException(true)->transStart();
+
+        try {
+            $formData = json_decode($application['form_data'], true);
+            $applicationData = array_merge($application, $formData);
+
+            foreach ($actions as $index => $action) {
+                $action = \App\Helpers\Types\ApplicationStageType::fromArray($action);
+
+                try {
+                    // Run the action
+                    $actionResult = ApplicationFormActionHelper::runAction((object) $action, $applicationData);
+
+                    // Capture result
+                    $results[] = [
+                        'action_type' => $action->type ?? 'unknown',
+                        'action_config' => $action->config ?? null,
+                        'success' => true,
+                        'result' => $actionResult,
+                        'timestamp' => date('Y-m-d H:i:s'),
+                    ];
+                } catch (\Throwable $e) {
+                    $results[] = [
+                        'action_type' => $action->type ?? 'unknown',
+                        'action_config' => $action->config ?? null,
+                        'success' => false,
+                        'error' => $e->getMessage(),
+                        'timestamp' => date('Y-m-d H:i:s'),
+                    ];
+                    throw $e; // Re-throw to trigger rollback
+                }
+            }
+
+            $model->db->transComplete();
+
+            return [
+                'success' => true,
+                'actions' => $results,
+            ];
+        } catch (\Throwable $e) {
+            $model->db->transRollback();
+
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+                'actions' => $results,
+            ];
         }
     }
 
