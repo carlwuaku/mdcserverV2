@@ -3,6 +3,7 @@
 namespace App\Models\Applications;
 
 use App\Models\MyBaseModel;
+use App\Models\UsersModel;
 
 class ApplicationTimelineModel extends MyBaseModel
 {
@@ -105,7 +106,7 @@ class ApplicationTimelineModel extends MyBaseModel
      * @param array $options Optional parameters (limit, offset, orderBy, orderDir)
      * @return array
      */
-    public function getApplicationTimeline(string $applicationUuid, array $options = []): array
+    public function getApplicationTimeline(string $applicationUuid, array $options = [], UsersModel $userData): array
     {
         $limit = $options['limit'] ?? 100;
         $offset = $options['offset'] ?? 0;
@@ -120,13 +121,22 @@ class ApplicationTimelineModel extends MyBaseModel
             ->limit($limit, $offset);
 
         $results = $builder->get()->getResultArray();
-
+        $isAdmin = $userData->isAdmin();
+        $adminOnlyFields = ['stage_data', 'actions_executed', 'actions_results', 'submitted_data', 'ip_address', 'user_agent', 'username', 'user_email'];
         // Decode JSON fields manually since afterFind callback doesn't work with builder
         foreach ($results as &$result) {
             $jsonFields = ['stage_data', 'actions_executed', 'actions_results', 'submitted_data'];
             foreach ($jsonFields as $field) {
                 if (isset($result[$field]) && is_string($result[$field])) {
                     $result[$field] = json_decode($result[$field], true);
+                }
+            }
+
+            if (!$isAdmin) {
+                foreach ($adminOnlyFields as $field) {
+                    if (isset($result[$field])) {
+                        unset($result[$field]);
+                    }
                 }
             }
         }

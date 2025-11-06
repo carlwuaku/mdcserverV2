@@ -1918,12 +1918,13 @@ class ApplicationsController extends ResourceController
             // Validate limit and offset
             $limit = min(max((int) $limit, 1), 200); // Between 1 and 200
             $offset = max((int) $offset, 0);
-
+            $userId = auth("tokens")->id();
+            $userData = AuthHelper::getAuthUser($userId);
             $timeline = $timelineModel->getApplicationTimeline($uuid, [
                 'limit' => $limit,
                 'offset' => $offset,
                 'orderDir' => $orderDir,
-            ]);
+            ], $userData);
 
             $total = $timelineModel->getTimelineCount($uuid);
 
