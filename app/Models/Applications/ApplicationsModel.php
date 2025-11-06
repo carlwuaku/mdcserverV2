@@ -172,4 +172,52 @@ class ApplicationsModel extends MyBaseModel implements TableDisplayInterface
         ;
         return $builder;
     }
+
+    /**
+     * Get basic statistics fields configuration from app settings
+     *
+     * @return array Array of field configurations for statistics reports
+     */
+    public function getBasicStatisticsFields(): array
+    {
+        $settings = \App\Helpers\Utils::getAppSettings('applicationForms');
+
+        if (!$settings || !isset($settings['basicStatisticsFields'])) {
+            // Return default fields if configuration is not found
+            return [
+                [
+                    'label' => 'Form Type',
+                    'name' => 'form_type',
+                    'type' => 'bar',
+                    'xAxisLabel' => 'Form Type',
+                    'yAxisLabel' => 'Number of Applications'
+                ],
+                [
+                    'label' => 'Status',
+                    'name' => 'status',
+                    'type' => 'bar',
+                    'xAxisLabel' => 'Status',
+                    'yAxisLabel' => 'Number of Applications'
+                ]
+            ];
+        }
+
+        return $settings['basicStatisticsFields'];
+    }
+
+    /**
+     * Get basic statistics filter fields configuration from app settings
+     *
+     * @return array Array of filter field configurations
+     */
+    public function getBasicStatisticsFilterFields(): array
+    {
+        $settings = \App\Helpers\Utils::getAppSettings('applicationForms');
+
+        if (!$settings || !isset($settings['basicStatisticsFilterFields'])) {
+            return [];
+        }
+
+        return $settings['basicStatisticsFilterFields'];
+    }
 }

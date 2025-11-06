@@ -4,6 +4,7 @@ namespace App\Models\Applications;
 
 use App\Models\MyBaseModel;
 use App\Models\UsersModel;
+use App\Models\Applications\ApplicationsModel;
 
 class ApplicationTimelineModel extends MyBaseModel
 {
@@ -103,11 +104,15 @@ class ApplicationTimelineModel extends MyBaseModel
      * Get timeline for a specific application
      *
      * @param string $applicationUuid
+     * @param UsersModel $userData
      * @param array $options Optional parameters (limit, offset, orderBy, orderDir)
      * @return array
      */
-    public function getApplicationTimeline(string $applicationUuid, array $options = [], UsersModel $userData): array
+    public function getApplicationTimeline(string $applicationUuid, UsersModel $userData, array $options = []): array
     {
+        // Ensure creation event exists for existing applications
+        $this->ensureCreationEventExists($applicationUuid);
+
         $limit = $options['limit'] ?? 100;
         $offset = $options['offset'] ?? 0;
         $orderBy = $options['orderBy'] ?? 'created_at';
@@ -142,6 +147,52 @@ class ApplicationTimelineModel extends MyBaseModel
         }
 
         return $results;
+    }
+
+    /**
+     * Ensure a creation event exists for the application
+     * Creates one if it doesn't exist (for backward compatibility with existing applications)
+     *
+     * @param string $applicationUuid
+     * @return void
+     */
+    private function ensureCreationEventExists(string $applicationUuid): void
+    {
+        // Check if a creation event exists (from_status is null)
+        $creationEventExists = $this->where('application_uuid', $applicationUuid)
+            ->where('from_status', null)
+            ->countAllResults() > 0;
+
+        if (!$creationEventExists) {
+            // Get the application details
+            $applicationsModel = new ApplicationsModel();
+            $application = $applicationsModel->where('uuid', $applicationUuid)->first();
+
+            if ($application) {
+                // Create a backdated creation event
+                $creationData = [
+                    'application_uuid' => $applicationUuid,
+                    'to_status' => 'Created',
+                    'from_status' => null,
+                    'user_id' => null, // Unknown for existing applications
+                    'notes' => 'Application created (auto-generated for existing application)',
+                    'submitted_data' => null,
+                    'stage_data' => null,
+                    'actions_executed' => null,
+                    'actions_results' => null,
+                    'ip_address' => null,
+                    'user_agent' => null,
+                ];
+
+                // Insert with the original created_at timestamp
+                $db = $this->db;
+                $builder = $db->table($this->table);
+                $builder->insert(array_merge($creationData, [
+                    'created_at' => $application['created_on'],
+                    'updated_at' => $application['created_on'],
+                ]));
+            }
+        }
     }
 
     /**

@@ -202,11 +202,16 @@ $routes->group("applications", ["namespace" => "App\Controllers", "filter" => "a
     $routes->post("details/(:segment)", [ApplicationsController::class, "createApplication"], ["filter" => ["hasPermission:Create_Application_Forms"]]);
     $routes->put("details/(:segment)/restore", [ApplicationsController::class, "restoreApplication/$1"], ["filter" => ["hasPermission:Restore_Application_Forms"]]);
     $routes->get("count", [ApplicationsController::class, "countApplications"], ["filter" => ["hasPermission:View_Application_Forms"]], );
+    $routes->post("count", [ApplicationsController::class, "countApplications"], ["filter" => ["hasPermission:View_Application_Forms"]], );
     $routes->get("statusCounts/(:segment)", [ApplicationsController::class, "getApplicationStatuses"], ["filter" => ["hasPermission:View_Application_Forms"]], );
 
     // Timeline routes
     $routes->get("details/(:segment)/timeline", [ApplicationsController::class, "getApplicationTimeline/$1"], ["filter" => ["hasPermission:View_Application_Forms"]]);
     $routes->get("details/(:segment)/status-history", [ApplicationsController::class, "getApplicationStatusHistory/$1"], ["filter" => ["hasPermission:View_Application_Forms"]]);
+
+    // Report routes
+    $routes->post("reports/basic-statistics", [ApplicationsController::class, "getBasicStatistics"], ["filter" => ["hasPermission:View_Application_Forms"]]);
+    $routes->get("reports/fields", [ApplicationsController::class, "getReportFields"], ["filter" => ["hasPermission:View_Application_Forms"]]);
 
     $routes->get("types/(:segment)", [ApplicationsController::class, "getApplicationFormTypes"], ["filter" => ["hasPermission:View_Application_Forms"]]);
 

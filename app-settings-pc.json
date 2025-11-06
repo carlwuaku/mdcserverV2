@@ -91,6 +91,12 @@
                     "url": "/application-templates/form",
                     "icon": "",
                     "children": []
+                },
+                {
+                    "title": "Reports",
+                    "url": "/applications/reports",
+                    "icon": "",
+                    "children": []
                 }
             ]
         },
@@ -3910,6 +3916,72 @@
             "renewalBasicStatisticsFilterFields": [],
             "gazetteTableColumns": {}
         }
+    },
+    "applicationForms": {
+        "basicStatisticsFields": [
+            {
+                "label": "Form Type",
+                "name": "form_type",
+                "type": "bar",
+                "xAxisLabel": "Form Type",
+                "yAxisLabel": "Number of Applications"
+            },
+            {
+                "label": "Status",
+                "name": "status",
+                "type": "bar",
+                "xAxisLabel": "Status",
+                "yAxisLabel": "Number of Applications"
+            },
+            {
+                "label": "Submission Year",
+                "name": "YEAR(created_on) as year",
+                "type": "bar",
+                "xAxisLabel": "Year",
+                "yAxisLabel": "Number of Applications"
+            },
+            {
+                "label": "Submission Month",
+                "name": "DATE_FORMAT(created_on, '%Y-%m') as month",
+                "type": "bar",
+                "xAxisLabel": "Month",
+                "yAxisLabel": "Number of Applications"
+            }
+        ],
+        "basicStatisticsFilterFields": [
+            {
+                "name": "form_type",
+                "label": "Form Type",
+                "options": [],
+                "type": "api",
+                "value": "",
+                "required": false,
+                "api_url": "admin/distinct-values/application_forms/form_type",
+                "apiKeyProperty": "form_type",
+                "apiLabelProperty": "form_type",
+                "apiType": "select"
+            },
+            {
+                "name": "status",
+                "label": "Status",
+                "type": "text"
+            },
+            {
+                "name": "start_date",
+                "label": "Start Date",
+                "type": "date"
+            },
+            {
+                "name": "end_date",
+                "label": "End Date",
+                "type": "date"
+            },
+            {
+                "name": "applicant_unique_id",
+                "label": "Applicant ID",
+                "type": "text"
+            }
+        ]
     },
     "cpdFilterFields": [
         {

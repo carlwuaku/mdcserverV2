@@ -117,40 +117,41 @@ class ApplicationsController extends ResourceController
      */
     private function extractRequestFilters(): array
     {
-        $filters = [];
+        // $filters = [];
 
-        // Get common parameters
-        $commonParams = [
-            'limit',
-            'page',
-            'withDeleted',
-            'param',
-            'sortBy',
-            'sortOrder',
-            'application_code',
-            'status',
-            'start_date',
-            'end_date',
-            'practitioner_type',
-            'form_type'
-        ];
+        // // Get common parameters
+        // $commonParams = [
+        //     'limit',
+        //     'page',
+        //     'withDeleted',
+        //     'param',
+        //     'sortBy',
+        //     'sortOrder',
+        //     'application_code',
+        //     'status',
+        //     'start_date',
+        //     'end_date',
+        //     'practitioner_type',
+        //     'form_type'
+        // ];
 
-        foreach ($commonParams as $param) {
-            $value = $this->request->getVar($param);
-            if ($value !== null) {
-                $filters[$param] = $value;
-            }
-        }
+        // foreach ($commonParams as $param) {
+        //     $value = $this->request->getVar($param);
+        //     if ($value !== null) {
+        //         $filters[$param] = $value;
+        //     }
+        // }
 
-        // Get all child_ parameters for JSON field filtering
-        $allParams = $this->request->getGet();
-        if (is_array($allParams)) {
-            foreach ($allParams as $key => $value) {
-                if (strpos($key, 'child_') === 0) {
-                    $filters[$key] = $value;
-                }
-            }
-        }
+        // // Get all child_ parameters for JSON field filtering
+        // $allParams = $this->request->getGet();
+        // if (is_array($allParams)) {
+        //     foreach ($allParams as $key => $value) {
+        //         if (strpos($key, 'child_') === 0) {
+        //             $filters[$key] = $value;
+        //         }
+        //     }
+        // }
+        $filters = array_merge($this->request->getGet(), (array) $this->request->getVar());
 
         return $filters;
     }
@@ -1920,11 +1921,11 @@ class ApplicationsController extends ResourceController
             $offset = max((int) $offset, 0);
             $userId = auth("tokens")->id();
             $userData = AuthHelper::getAuthUser($userId);
-            $timeline = $timelineModel->getApplicationTimeline($uuid, [
+            $timeline = $timelineModel->getApplicationTimeline($uuid, $userData, [
                 'limit' => $limit,
                 'offset' => $offset,
                 'orderDir' => $orderDir,
-            ], $userData);
+            ]);
 
             $total = $timelineModel->getTimelineCount($uuid);
 
@@ -1967,6 +1968,63 @@ class ApplicationsController extends ResourceController
             return $this->respond([
                 'success' => false,
                 'message' => 'Failed to fetch status history'
+            ], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Get basic statistics for application forms
+     * POST /api/applications/reports/basic-statistics
+     *
+     * @return \CodeIgniter\HTTP\Response
+     */
+    public function getBasicStatistics()
+    {
+        try {
+            $filters = $this->request->getJSON(true) ?? [];
+            $service = new ApplicationService();
+            $results = $service->getBasicStatistics($filters);
+
+            return $this->respond([
+                'success' => true,
+                'data' => $results,
+            ], ResponseInterface::HTTP_OK);
+
+        } catch (\Throwable $e) {
+            log_message('error', 'Basic statistics error: ' . $e->getMessage());
+            return $this->respond([
+                'success' => false,
+                'message' => 'Failed to fetch basic statistics: ' . $e->getMessage()
+            ], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Get available report fields
+     * GET /api/applications/reports/fields
+     *
+     * @return \CodeIgniter\HTTP\Response
+     */
+    public function getReportFields()
+    {
+        try {
+            $model = new \App\Models\Applications\ApplicationsModel();
+            $fields = $model->getBasicStatisticsFields();
+            $filterFields = $model->getBasicStatisticsFilterFields();
+
+            return $this->respond([
+                'success' => true,
+                'data' => [
+                    'reportFields' => $fields,
+                    'filterFields' => $filterFields,
+                ],
+            ], ResponseInterface::HTTP_OK);
+
+        } catch (\Throwable $e) {
+            log_message('error', 'Report fields error: ' . $e->getMessage());
+            return $this->respond([
+                'success' => false,
+                'message' => 'Failed to fetch report fields'
             ], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

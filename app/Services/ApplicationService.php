@@ -67,7 +67,23 @@ class ApplicationService
 
         // Save application
         $model = new ApplicationsModel();
-        $model->insert((object) $data);
+        $insertId = $model->insert((object) $data);
+
+        // Get the created application to retrieve its UUID
+        $createdApplication = $model->find($insertId);
+        $applicationUuid = is_array($createdApplication) ? $createdApplication['uuid'] : $createdApplication->uuid;
+
+        // Create initial timeline entry for application creation
+        $this->timelineModel->createTimelineEntry(
+            $applicationUuid,
+            $data['status'],
+            [
+                'fromStatus' => null,
+                'notes' => 'Application created',
+                'submittedData' => $payload,
+                'userId' => auth("tokens")->id() ?? null,
+            ]
+        );
 
         // Log activity
         $this->activitiesModel->logActivity("Created application {$data['form_type']} with code $applicationCode");
@@ -332,7 +348,7 @@ class ApplicationService
         $withDeleted = ($filters['withDeleted'] ?? '') === "yes";
         $param = $filters['param'] ?? null;
         $sortBy = $filters['sortBy'] ?? "id";
-        $sortOrder = $filters['sortOrder'] ?? "asc";
+        $sortOrder = $filters['sortOrder'] ?? "desc";
 
         $model = new ApplicationsModel();
         $builder = $param ? $model->search($param) : $model->builder();
@@ -899,5 +915,107 @@ class ApplicationService
         return "deleted work history: {$details->position} at ({$details->institution}) from profile of $registrationNumber in response to web request";
     }
 
+    /**
+     * Get basic statistics for application forms
+     *
+     * @param array $filters Array of filter parameters
+     * @return array Array of statistics results
+     */
+    public function getBasicStatistics(array $filters = []): array
+    {
+        $model = new ApplicationsModel();
+        $selectedFields = $filters['fields'] ?? [];
+
+        $fields = $model->getBasicStatisticsFields();
+
+        // Filter fields based on selection
+        $filteredFields = array_filter($fields, function ($field) use ($selectedFields) {
+            return in_array($field['name'], $selectedFields);
+        });
+
+        $parentParams = $model->createArrayFromAllowedFields($filters);
+        $results = [];
+
+        foreach ($filteredFields as $field) {
+            $builder = $this->buildStatisticsQuery($model, $field, $parentParams, $filters);
+            $result = $builder->get()->getResult();
+
+            $results[$field['name']] = $this->formatStatisticsResult($field, $result);
+        }
+
+        return $results;
+    }
+
+    /**
+     * Build query for statistics data
+     *
+     * @param ApplicationsModel $model The application model
+     * @param array $field Field configuration
+     * @param array $parentParams Filter parameters
+     * @param array $filters All filters including date ranges
+     * @return \CodeIgniter\Database\BaseBuilder
+     */
+    private function buildStatisticsQuery(ApplicationsModel $model, array $field, array $parentParams, array $filters = []): \CodeIgniter\Database\BaseBuilder
+    {
+        $builder = $model->builder();
+        $tableName = $model->getTableName();
+
+        // Apply filter parameters
+        foreach ($parentParams as $key => $value) {
+            $value = Utils::parseParam($value);
+            $builder = Utils::parseWhereClause($builder, $tableName . "." . $key, $value);
+        }
+
+        // Handle date range filters if provided
+        if (isset($filters['start_date'])) {
+            $builder->where("$tableName.created_on >=", $filters['start_date']);
+        }
+        if (isset($filters['end_date'])) {
+            $builder->where("$tableName.created_on <=", $filters['end_date']);
+        }
+
+        $builder->select([$field['name'], "COUNT(*) as count"]);
+
+        // Handle field aliases (e.g., "YEAR(created_on) as year")
+        $fieldName = $field['name'];
+        if (strpos($fieldName, " as ") !== false) {
+            $fieldName = explode(" as ", $fieldName)[1];
+        }
+
+        $builder->groupBy($fieldName);
+        return $builder;
+    }
+
+    /**
+     * Format statistics result for frontend consumption
+     *
+     * @param array $field Field configuration
+     * @param array $result Query result
+     * @return array Formatted result
+     */
+    private function formatStatisticsResult(array $field, array $result): array
+    {
+        $fieldName = $field['name'];
+        if (strpos($fieldName, " as ") !== false) {
+            $fieldName = explode(" as ", $fieldName)[1];
+        }
+
+        // Replace null values with 'Null'
+        $result = array_map(function ($item) use ($fieldName) {
+            $item->$fieldName = empty($item->$fieldName) ? 'Null' : $item->$fieldName;
+            return $item;
+        }, $result);
+
+        return [
+            "label" => $field['label'],
+            "type" => $field['type'],
+            "data" => $result,
+            "labelProperty" => $fieldName,
+            "valueProperty" => "count",
+            "name" => $fieldName,
+            "xAxisLabel" => $field['xAxisLabel'],
+            "yAxisLabel" => $field['yAxisLabel'],
+        ];
+    }
 
 }

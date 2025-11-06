@@ -237,6 +237,10 @@ class PaymentsController extends ResourceController
             $userId = auth("tokens")->id();
             $userData = AuthHelper::getAuthUser($userId);
             $filters = ["unique_id" => $userData->profile_data['license_number']];
+            $param = $this->request->getVar("param") ?? null;
+            if (!empty($param)) {
+                $filters['param'] = $param;
+            }
             $result = $this->paymentsService->getInvoices($filters);
             //remove these fields from each item in data
 
@@ -248,7 +252,8 @@ class PaymentsController extends ResourceController
                 return $item;
             }, $result['data']);
             //remove them from the display_columns string[] as well
-            $result['displayColumns'] = array_values(array_diff($result['displayColumns'], $removeFields));
+            $result['displayColumns'] = ["purpose", "amount", "status", "invoice_number", "created_at", "selected_payment_method", "due_date", "notes", "payment_date"];// array_values(array_diff($result['displayColumns'], $removeFields));
+
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
         } catch (\Throwable $e) {
