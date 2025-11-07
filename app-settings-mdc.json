@@ -4773,48 +4773,24 @@
                 "logo": "assets/images/gov-logo.png",
                 "paymentBranches": [
                     {
-                        "name": "Ashanti",
-                        "mda_code": "PC_Kumasi_Branch"
+                        "name": "Head Office",
+                        "mda_code": "MDC_HQ"
                     },
                     {
-                        "name": "Brong Ahafo",
-                        "mda_code": "PC_Bono Ahafo_Branch"
+                        "name": "Ashanti Office",
+                        "mda_code": "MDC_Adum"
                     },
                     {
-                        "name": "Central",
-                        "mda_code": "PC_Cape  Coast_Branch"
+                        "name": "Western Office",
+                        "mda_code": "MDC_Sekondi-Fijai"
                     },
                     {
-                        "name": "Eastern ",
-                        "mda_code": "PC_Koforidua_Branch"
+                        "name": "Northern Office",
+                        "mda_code": "MDC_Tamale"
                     },
                     {
-                        "name": "Greater Accra",
-                        "mda_code": "PC_Accra_Branch"
-                    },
-                    {
-                        "name": "Northern",
-                        "mda_code": "PC_Tamale_Branch"
-                    },
-                    {
-                        "name": "Upper East",
-                        "mda_code": "PC_Bolgatanga__Branch"
-                    },
-                    {
-                        "name": "Upper West",
-                        "mda_code": "PC_Wa_Branch"
-                    },
-                    {
-                        "name": "Volta",
-                        "mda_code": "PC_Ho_Branch"
-                    },
-                    {
-                        "name": "Western",
-                        "mda_code": "PC_Takoradi_Branch"
-                    },
-                    {
-                        "name": "Savannah",
-                        "mda_code": "PC_Savannah_Branch"
+                        "name": "Eastern Office",
+                        "mda_code": "MDC_Koforidua"
                     }
                 ]
             }

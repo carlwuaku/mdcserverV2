@@ -145,6 +145,12 @@
                     "urlParams": {
                         "licenseType": "practitioners"
                     }
+                },
+                {
+                    "title": "Renewal Reports",
+                    "url": "/licenses/renewal-reports/practitioners",
+                    "icon": "",
+                    "children": []
                 }
             ]
         },
@@ -193,6 +199,12 @@
                     "urlParams": {
                         "licenseType": "facilities"
                     }
+                },
+                {
+                    "title": "Renewal Reports",
+                    "url": "/licenses/renewal-reports/facilities",
+                    "icon": "",
+                    "children": []
                 }
             ]
         },
@@ -241,6 +253,12 @@
                     "urlParams": {
                         "licenseType": "otcms"
                     }
+                },
+                {
+                    "title": "Renewal Reports",
+                    "url": "/licenses/renewal-reports/otcms",
+                    "icon": "",
+                    "children": []
                 }
             ]
         },

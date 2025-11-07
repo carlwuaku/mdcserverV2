@@ -138,6 +138,23 @@ class ApplicationTimelineModel extends MyBaseModel
             }
 
             if (!$isAdmin) {
+                ///the comments field of submitted_data is meant to be shown to the applicant
+
+                if (isset($result['submitted_data']) && is_array($result['submitted_data'])) {
+                    //find the item with the key name set to comments
+                    $commentItem = null;
+                    foreach ($result['submitted_data'] as $item) {
+                        if (isset($item['name']) && $item['name'] === 'comments') {
+                            $commentItem = $item;
+                            break;
+                        }
+                    }
+                    if (!empty($commentItem)) {
+                        //replace the system-generated notes with the applicant's comments in that case
+                        $result['notes'] = isset($commentItem['value']) ? $commentItem['value'] : 'N/A';
+                    }
+
+                }
                 foreach ($adminOnlyFields as $field) {
                     if (isset($result[$field])) {
                         unset($result[$field]);
