@@ -104,13 +104,16 @@ class LicensesController extends ResourceController
     public function getLicense($uuid)
     {
         try {
-            $result = $this->licenseService->getLicenseDetails($uuid);
+            $cacheKey = Utils::generateHashedCacheKey('app_licenses_', ['uuid' => $uuid]);
+            return CacheHelper::remember($cacheKey, function () use ($uuid) {
+                $result = $this->licenseService->getLicenseDetails($uuid);
 
-            if (!$result) {
-                return $this->respond(['message' => "Practitioner not found"], ResponseInterface::HTTP_NOT_FOUND);
-            }
+                if (!$result) {
+                    return $this->respond(['message' => "Practitioner not found"], ResponseInterface::HTTP_NOT_FOUND);
+                }
 
-            return $this->respond($result, ResponseInterface::HTTP_OK);
+                return $this->respond($result, ResponseInterface::HTTP_OK);
+            });
 
         } catch (\Throwable $e) {
             log_message("error", $e);
@@ -122,9 +125,12 @@ class LicensesController extends ResourceController
     {
         try {
             $filters = $this->extractRequestFilters();
-            $result = $this->licenseService->getLicenses($filters);
+            $cacheKey = Utils::generateHashedCacheKey('app_licenses_', $filters);
+            return CacheHelper::remember($cacheKey, function () use ($filters) {
+                $result = $this->licenseService->getLicenses($filters);
 
-            return $this->respond($result, ResponseInterface::HTTP_OK);
+                return $this->respond($result, ResponseInterface::HTTP_OK);
+            });
 
         } catch (\Throwable $e) {
             log_message("error", $e);
@@ -136,9 +142,12 @@ class LicensesController extends ResourceController
     {
         try {
             $filters = $this->extractRequestFilters();
-            $total = $this->licenseService->countLicenses($filters);
+            $cacheKey = Utils::generateHashedCacheKey('app_licenses_count_', $filters);
+            return CacheHelper::remember($cacheKey, function () use ($filters) {
+                $total = $this->licenseService->countLicenses($filters);
 
-            return $this->respond(['data' => $total], ResponseInterface::HTTP_OK);
+                return $this->respond(['data' => $total], ResponseInterface::HTTP_OK);
+            });
 
         } catch (\Throwable $e) {
             log_message("error", $e);
@@ -149,8 +158,11 @@ class LicensesController extends ResourceController
     public function getLicenseFormFields($licenseType)
     {
         try {
-            $fields = $this->licenseService->getLicenseFormFields($licenseType);
-            return $this->respond(['data' => $fields], ResponseInterface::HTTP_OK);
+            $cacheKey = Utils::generateHashedCacheKey('app_licenses_form_fields_', ['licenseType' => $licenseType]);
+            return CacheHelper::remember($cacheKey, function () use ($licenseType) {
+                $fields = $this->licenseService->getLicenseFormFields($licenseType);
+                return $this->respond(['data' => $fields], ResponseInterface::HTTP_OK);
+            }, 3600); // Cache for 1 hour since form fields rarely change
 
         } catch (\Throwable $e) {
             log_message("error", $e);
@@ -162,10 +174,13 @@ class LicensesController extends ResourceController
     {
         try {
             $filters = (array) $this->request->getVar();
-            ;
-            $results = $this->licenseService->getBasicStatistics($licenseType, $filters);
+            $filters['licenseType'] = $licenseType;
+            $cacheKey = Utils::generateHashedCacheKey('app_licenses_stats_', $filters);
+            return CacheHelper::remember($cacheKey, function () use ($licenseType, $filters) {
+                $results = $this->licenseService->getBasicStatistics($licenseType, $filters);
 
-            return $this->respond(['data' => $results], ResponseInterface::HTTP_OK);
+                return $this->respond(['data' => $results], ResponseInterface::HTTP_OK);
+            }, 600); // Cache for 10 minutes
 
         } catch (\Throwable $e) {
             log_message("error", $e);
@@ -181,6 +196,8 @@ class LicensesController extends ResourceController
             $data = $this->request->getPost();
             $result = $this->renewalService->createRenewal($data);
             $this->invalidateCache(CACHE_KEY_PREFIX_RENEWALS);
+            $this->invalidateCache('app_licenses_'); // Renewals affect license data
+            $this->invalidateCache('app_licenses_count_');
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
         } catch (\InvalidArgumentException $e) {
@@ -205,6 +222,8 @@ class LicensesController extends ResourceController
             //TODO:check if applications open
             $result = $this->renewalService->createRenewal($data);
             $this->invalidateCache(CACHE_KEY_PREFIX_RENEWALS);
+            $this->invalidateCache('app_licenses_'); // Renewals affect license data
+            $this->invalidateCache('app_licenses_count_');
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
         } catch (\InvalidArgumentException $e) {
@@ -223,6 +242,8 @@ class LicensesController extends ResourceController
             $data = (array) $this->request->getVar();
             $result = $this->renewalService->updateRenewal($uuid, $data);
             $this->invalidateCache(CACHE_KEY_PREFIX_RENEWALS);
+            $this->invalidateCache('app_licenses_'); // Renewals affect license data
+            $this->invalidateCache('app_licenses_count_');
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
         } catch (\InvalidArgumentException $e) {
@@ -241,6 +262,8 @@ class LicensesController extends ResourceController
 
             $result = $this->renewalService->updateBulkRenewals($data, $status);
             $this->invalidateCache(CACHE_KEY_PREFIX_RENEWALS);
+            $this->invalidateCache('app_licenses_'); // Renewals affect license data
+            $this->invalidateCache('app_licenses_count_');
 
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
@@ -257,6 +280,8 @@ class LicensesController extends ResourceController
         try {
             $result = $this->renewalService->deleteRenewal($uuid);
             $this->invalidateCache(CACHE_KEY_PREFIX_RENEWALS);
+            $this->invalidateCache('app_licenses_'); // Renewals affect license data
+            $this->invalidateCache('app_licenses_count_');
 
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
@@ -276,6 +301,8 @@ class LicensesController extends ResourceController
             //make sure the uuid belongs to the user
             $result = $this->renewalService->deleteRenewal($uuid, $user->profile_data['uuid']);
             $this->invalidateCache(CACHE_KEY_PREFIX_RENEWALS);
+            $this->invalidateCache('app_licenses_'); // Renewals affect license data
+            $this->invalidateCache('app_licenses_count_');
 
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
@@ -289,13 +316,16 @@ class LicensesController extends ResourceController
     public function getRenewal($uuid)
     {
         try {
-            $result = $this->renewalService->getRenewalDetails($uuid);
+            $cacheKey = Utils::generateHashedCacheKey(CACHE_KEY_PREFIX_RENEWALS, ['uuid' => $uuid]);
+            return CacheHelper::remember($cacheKey, function () use ($uuid) {
+                $result = $this->renewalService->getRenewalDetails($uuid);
 
-            if (!$result) {
-                return $this->respond(['message' => "License renewal not found"], ResponseInterface::HTTP_NOT_FOUND);
-            }
+                if (!$result) {
+                    return $this->respond(['message' => "License renewal not found"], ResponseInterface::HTTP_NOT_FOUND);
+                }
 
-            return $this->respond($result, ResponseInterface::HTTP_OK);
+                return $this->respond($result, ResponseInterface::HTTP_OK);
+            }, 900);
 
         } catch (\Throwable $e) {
             log_message("error", $e);
@@ -337,21 +367,25 @@ class LicensesController extends ResourceController
             $userId = auth("tokens")->id();
             $user = AuthHelper::getAuthUser($userId);
             $filters = $this->extractRequestFilters();
-            $result = $this->renewalService->getRenewals($user->profile_table_uuid, $filters);
-            //remove unnecessary data fields and add the printable and deletable fields
-            $allowedFields = ['first_name', 'last_name', 'middle_name', 'license_number', 'start_date', 'expiry', 'status', 'printable', 'deletable', 'uuid'];
-            foreach ($result['data'] as $renewal) {
-                $renewal->deletable = LicenseUtils::isRenewalStageDeletable($renewal->license_type, $renewal->status);
-                $renewal->printable = LicenseUtils::isRenewalStagePrintable($renewal->license_type, $renewal->status);
-            }
-            foreach ($result['data'] as $key => $renewal) {
-                $result['data'][$key] = array_intersect_key((array) $renewal, array_flip($allowedFields));
-                //status is  a printable one
+            $filters['user_uuid'] = $user->profile_table_uuid;
+            $cacheKey = Utils::generateHashedCacheKey(CACHE_KEY_PREFIX_RENEWALS, $filters);
+            return CacheHelper::remember($cacheKey, function () use ($user, $filters) {
+                $result = $this->renewalService->getRenewals($user->profile_table_uuid, $filters);
+                //remove unnecessary data fields and add the printable and deletable fields
+                $allowedFields = ['first_name', 'last_name', 'middle_name', 'license_number', 'start_date', 'expiry', 'status', 'printable', 'deletable', 'uuid'];
+                foreach ($result['data'] as $renewal) {
+                    $renewal->deletable = LicenseUtils::isRenewalStageDeletable($renewal->license_type, $renewal->status);
+                    $renewal->printable = LicenseUtils::isRenewalStagePrintable($renewal->license_type, $renewal->status);
+                }
+                foreach ($result['data'] as $key => $renewal) {
+                    $result['data'][$key] = array_intersect_key((array) $renewal, array_flip($allowedFields));
+                    //status is  a printable one
 
-            }
-            //set the display fields
-            $result['displayColumns'] = ['license_number', 'start_date', 'expiry', 'status'];
-            return $this->respond($result, ResponseInterface::HTTP_OK);
+                }
+                //set the display fields
+                $result['displayColumns'] = ['license_number', 'start_date', 'expiry', 'status'];
+                return $this->respond($result, ResponseInterface::HTTP_OK);
+            }, 900);
 
         } catch (\InvalidArgumentException $e) {
             return $this->respond(['message' => $e->getMessage()], ResponseInterface::HTTP_BAD_REQUEST);
@@ -391,8 +425,11 @@ class LicensesController extends ResourceController
     public function getLicenseRenewalFormFields($licenseType)
     {
         try {
-            $fields = $this->renewalService->getLicenseRenewalFormFields($licenseType);
-            return $this->respond(['data' => $fields], ResponseInterface::HTTP_OK);
+            $cacheKey = Utils::generateHashedCacheKey(CACHE_KEY_PREFIX_RENEWALS . '_form_fields_', ['licenseType' => $licenseType]);
+            return CacheHelper::remember($cacheKey, function () use ($licenseType) {
+                $fields = $this->renewalService->getLicenseRenewalFormFields($licenseType);
+                return $this->respond(['data' => $fields], ResponseInterface::HTTP_OK);
+            }, 3600); // Cache for 1 hour
 
         } catch (\Throwable $e) {
             log_message("error", $e);
@@ -405,8 +442,11 @@ class LicensesController extends ResourceController
         try {
             $userId = auth("tokens")->id();
             $user = AuthHelper::getAuthUser($userId);
-            $fields = $this->renewalService->getRenewalFilters($user, $licenseType);
-            return $this->respond(['data' => $fields], ResponseInterface::HTTP_OK);
+            $cacheKey = Utils::generateHashedCacheKey(CACHE_KEY_PREFIX_RENEWALS . '_filters_', ['licenseType' => $licenseType, 'user_id' => $user->id]);
+            return CacheHelper::remember($cacheKey, function () use ($user, $licenseType) {
+                $fields = $this->renewalService->getRenewalFilters($user, $licenseType);
+                return $this->respond(['data' => $fields], ResponseInterface::HTTP_OK);
+            }, 3600); // Cache for 1 hour
 
         } catch (\Throwable $e) {
             log_message("error", $e);
@@ -418,9 +458,12 @@ class LicensesController extends ResourceController
     {
         try {
             $userId = auth("tokens")->id();
-            $state = $this->renewalService->getPractitionerPortalRenewal($userId);
+            $cacheKey = Utils::generateHashedCacheKey(CACHE_KEY_PREFIX_RENEWALS . '_practitioner_form_', ['user_id' => $userId]);
+            return CacheHelper::remember($cacheKey, function () use ($userId) {
+                $state = $this->renewalService->getPractitionerPortalRenewal($userId);
 
-            return $this->respond(["data" => $state], ResponseInterface::HTTP_OK);
+                return $this->respond(["data" => $state], ResponseInterface::HTTP_OK);
+            }, 1800); // Cache for 30 minutes
 
         } catch (\Throwable $e) {
             log_message("error", $e);
@@ -431,8 +474,11 @@ class LicensesController extends ResourceController
     public function getPrintableRenewalStatuses($licenseType)
     {
         try {
-            $data = $this->renewalService->getPrintableRenewalStatuses($licenseType);
-            return $this->respond(['data' => $data], ResponseInterface::HTTP_OK);
+            $cacheKey = Utils::generateHashedCacheKey(CACHE_KEY_PREFIX_RENEWALS . '_printable_', ['licenseType' => $licenseType]);
+            return CacheHelper::remember($cacheKey, function () use ($licenseType) {
+                $data = $this->renewalService->getPrintableRenewalStatuses($licenseType);
+                return $this->respond(['data' => $data], ResponseInterface::HTTP_OK);
+            }, 3600); // Cache for 1 hour
 
         } catch (\Throwable $e) {
             log_message("error", $e);
@@ -444,9 +490,13 @@ class LicensesController extends ResourceController
     {
         try {
             $filters = (array) $this->request->getVar();
-            $results = $this->renewalService->getRenewalBasicStatistics($licenseType, $filters);
+            $filters['licenseType'] = $licenseType;
+            $cacheKey = Utils::generateHashedCacheKey(CACHE_KEY_PREFIX_RENEWALS . '_stats_', $filters);
+            return CacheHelper::remember($cacheKey, function () use ($licenseType, $filters) {
+                $results = $this->renewalService->getRenewalBasicStatistics($licenseType, $filters);
 
-            return $this->respond(['data' => $results], ResponseInterface::HTTP_OK);
+                return $this->respond(['data' => $results], ResponseInterface::HTTP_OK);
+            }, 600); // Cache for 10 minutes
 
         } catch (\Throwable $e) {
             log_message("error", $e);
@@ -458,13 +508,16 @@ class LicensesController extends ResourceController
     {
         try {
             $licenseNumber = $this->request->getVar('param');
-            $result = $this->renewalService->isEligiblePharmacySuperintendent($licenseNumber);
+            $cacheKey = Utils::generateHashedCacheKey(CACHE_KEY_PREFIX_RENEWALS . '_superintendent_', ['licenseNumber' => $licenseNumber]);
+            return CacheHelper::remember($cacheKey, function () use ($licenseNumber) {
+                $result = $this->renewalService->isEligiblePharmacySuperintendent($licenseNumber);
 
-            if (!$result) {
-                return $this->respond(['message' => "License renewal not found"], ResponseInterface::HTTP_NOT_FOUND);
-            }
+                if (!$result) {
+                    return $this->respond(['message' => "License renewal not found"], ResponseInterface::HTTP_NOT_FOUND);
+                }
 
-            return $this->respond(["data" => [$result], "message" => "Practitioner is eligible"], ResponseInterface::HTTP_OK);
+                return $this->respond(["data" => [$result], "message" => "Practitioner is eligible"], ResponseInterface::HTTP_OK);
+            }, 1800); // Cache for 30 minutes
 
         } catch (\InvalidArgumentException $e) {
             return $this->respond(['message' => $e->getMessage()], ResponseInterface::HTTP_NOT_FOUND);
@@ -479,9 +532,12 @@ class LicensesController extends ResourceController
         try {
             $userId = auth("tokens")->id();
             $user = AuthHelper::getAuthUser($userId);
-            $result = $this->renewalService->getRenewalOnlinePrintTemplateForLicense($renewalUuid, $user->profile_data['uuid']);
+            $cacheKey = Utils::generateHashedCacheKey(CACHE_KEY_PREFIX_RENEWALS . '_print_', ['renewalUuid' => $renewalUuid, 'licenseUuid' => $user->profile_data['uuid']]);
+            return CacheHelper::remember($cacheKey, function () use ($renewalUuid, $user) {
+                $result = $this->renewalService->getRenewalOnlinePrintTemplateForLicense($renewalUuid, $user->profile_data['uuid']);
 
-            return $this->respond(['data' => $result, 'message' => 'Success'], ResponseInterface::HTTP_OK);
+                return $this->respond(['data' => $result, 'message' => 'Success'], ResponseInterface::HTTP_OK);
+            }, 1800); // Cache for 30 minutes
 
         } catch (\Throwable $th) {
             log_message('error', $th->getMessage());

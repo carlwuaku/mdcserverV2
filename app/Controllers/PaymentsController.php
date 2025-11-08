@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Exceptions\DuplicateOnlinePaymentInvoiceException;
 use App\Services\GhanaGovPaymentService;
 use App\Services\PaymentsService;
 use CodeIgniter\HTTP\ResponseInterface;
@@ -252,7 +253,7 @@ class PaymentsController extends ResourceController
                 return $item;
             }, $result['data']);
             //remove them from the display_columns string[] as well
-            $result['displayColumns'] = ["purpose", "amount", "status", "invoice_number", "created_at", "selected_payment_method", "due_date", "notes", "payment_date"];// array_values(array_diff($result['displayColumns'], $removeFields));
+            $result['displayColumns'] = ["description", "amount", "status", "invoice_number", "created_at", "selected_payment_method", "due_date", "notes", "payment_date"];// array_values(array_diff($result['displayColumns'], $removeFields));
 
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
@@ -421,7 +422,11 @@ class PaymentsController extends ResourceController
         try {
             $invoiceUuid = $this->request->getPost("invoice_uuid");
             $mdaBranch = $this->request->getPost("mda_branch_code");
-            $this->ghanaGovPaymentService->createCheckoutSession($invoiceUuid, $mdaBranch);
+            $response = $this->ghanaGovPaymentService->createCheckoutSession($invoiceUuid, $mdaBranch);
+
+            return $this->respond(['data' => $response, 'message' => $response], ResponseInterface::HTTP_OK);
+        } catch (DuplicateOnlinePaymentInvoiceException $e) {
+            return $this->respond(['message' => $e->getMessage()], ResponseInterface::HTTP_CONFLICT);
         } catch (\Exception $e) {
             log_message("error", $e);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);

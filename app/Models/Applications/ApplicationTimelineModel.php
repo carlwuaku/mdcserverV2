@@ -119,7 +119,7 @@ class ApplicationTimelineModel extends MyBaseModel
         $orderDir = $options['orderDir'] ?? 'DESC';
 
         $builder = $this->builder();
-        $builder->select('application_timeline.*, users.username, users.email as user_email')
+        $builder->select('application_timeline.*, users.username, users.email_address as user_email')
             ->join('users', 'users.id = application_timeline.user_id', 'left')
             ->where('application_timeline.application_uuid', $applicationUuid)
             ->orderBy($orderBy, $orderDir)

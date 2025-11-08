@@ -21,6 +21,7 @@ use App\Models\Auth\PasswordResetAttemptModel;
 use App\Helpers\EmailConfig;
 use App\Helpers\EmailHelper;
 use App\Helpers\TemplateEngineHelper;
+use App\Traits\CacheInvalidatorTrait;
 
 
 /**
@@ -35,6 +36,8 @@ use App\Helpers\TemplateEngineHelper;
  */
 class AuthController extends ResourceController
 {
+    use CacheInvalidatorTrait;
+
     protected $passwordResetTokenModel;
     protected $passwordResetAttemptModel;
 
@@ -1225,6 +1228,7 @@ class AuthController extends ResourceController
             return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
         }
         $id = $model->getInsertID();
+        $this->invalidateCache('get_roles');
         return $this->respond(['message' => 'Role created successfully', 'data' => $id], ResponseInterface::HTTP_OK);
     }
 
@@ -1246,6 +1250,7 @@ class AuthController extends ResourceController
         if (!$model->update($role_id, $data)) {
             return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
         }
+        $this->invalidateCache('get_roles');
         return $this->respond(['message' => 'Role updated successfully'], ResponseInterface::HTTP_OK);
     }
 
@@ -1255,6 +1260,7 @@ class AuthController extends ResourceController
         if (!$model->delete($role_id)) {
             return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
         }
+        $this->invalidateCache('get_roles');
         return $this->respond(['message' => 'Role deleted successfully'], ResponseInterface::HTTP_OK);
     }
 
@@ -1264,6 +1270,7 @@ class AuthController extends ResourceController
         if (!$model->update($role_id, (object) ['deleted_at' => null])) {
             return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
         }
+        $this->invalidateCache('get_roles');
         return $this->respond(['message' => 'Role restored successfully'], ResponseInterface::HTTP_OK);
     }
 
@@ -1364,6 +1371,7 @@ class AuthController extends ResourceController
         if (!$model->insert($data)) {
             return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
         }
+        $this->invalidateCache('get_roles');
         return $this->respond(['message' => 'Permission added to role successfully'], ResponseInterface::HTTP_OK);
     }
 
@@ -1384,6 +1392,7 @@ class AuthController extends ResourceController
         if (!$model->where("role", $role)->where("permission", $permission)->delete(null, true)) {
             return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
         }
+        $this->invalidateCache('get_roles');
         return $this->respond(['message' => 'Permission deleted from role successfully'], ResponseInterface::HTTP_OK);
     }
 

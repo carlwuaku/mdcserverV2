@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\DuplicateOnlinePaymentInvoiceException;
 use App\Helpers\Enums\InvoiceEvents;
 use App\Helpers\NetworkUtils;
 use App\Models\ActivitiesModel;
@@ -77,6 +78,10 @@ class GhanaGovPaymentService
 
             if (!$invoiceItems) {
                 throw new InvalidArgumentException("Invoice items not found");
+            }
+            //check if an invoice number has been generated
+            if ($invoiceData['invoice_number']) {
+                throw new DuplicateOnlinePaymentInvoiceException("Invoice already created");
             }
             $invoiceItemsList = array_map(function ($item) {
                 return [
