@@ -21,6 +21,7 @@ use App\Models\Auth\PasswordResetAttemptModel;
 use App\Helpers\EmailConfig;
 use App\Helpers\EmailHelper;
 use App\Helpers\TemplateEngineHelper;
+use App\Traits\CacheInvalidatorTrait;
 
 
 /**
@@ -35,6 +36,8 @@ use App\Helpers\TemplateEngineHelper;
  */
 class AuthController extends ResourceController
 {
+    use CacheInvalidatorTrait;
+
     protected $passwordResetTokenModel;
     protected $passwordResetAttemptModel;
 
@@ -335,7 +338,9 @@ class AuthController extends ResourceController
     {
         try {
             $userObject = new UsersModel();
-
+            /**
+             * @var UsersModel
+             */
             $userData = $userObject->where(["uuid" => $uuid])->first();
 
             // Create Google Authenticator object
@@ -347,7 +352,7 @@ class AuthController extends ResourceController
             // Create the QR code URL
             $appName = $userData->user_type === 'admin' ? getenv("GOOGLE_AUTHENTICATOR_APP_NAME") : getenv("GOOGLE_AUTHENTICATOR_APP_NAME") . " - Portal";
             $portalUrl = $userData->user_type === 'admin' ? getenv("ADMIN_PORTAL_URL") : getenv("PORTAL_URL");
-            $email = $userData->email;
+            $email = $userData->email_address;
             $qrCodeUrl = $authenticator->getQRCodeUrl($email, $secret, $appName);
 
             // Save the secret key to the user's record in the database
@@ -1223,6 +1228,7 @@ class AuthController extends ResourceController
             return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
         }
         $id = $model->getInsertID();
+        $this->invalidateCache('get_roles');
         return $this->respond(['message' => 'Role created successfully', 'data' => $id], ResponseInterface::HTTP_OK);
     }
 
@@ -1244,6 +1250,7 @@ class AuthController extends ResourceController
         if (!$model->update($role_id, $data)) {
             return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
         }
+        $this->invalidateCache('get_roles');
         return $this->respond(['message' => 'Role updated successfully'], ResponseInterface::HTTP_OK);
     }
 
@@ -1253,6 +1260,7 @@ class AuthController extends ResourceController
         if (!$model->delete($role_id)) {
             return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
         }
+        $this->invalidateCache('get_roles');
         return $this->respond(['message' => 'Role deleted successfully'], ResponseInterface::HTTP_OK);
     }
 
@@ -1262,6 +1270,7 @@ class AuthController extends ResourceController
         if (!$model->update($role_id, (object) ['deleted_at' => null])) {
             return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
         }
+        $this->invalidateCache('get_roles');
         return $this->respond(['message' => 'Role restored successfully'], ResponseInterface::HTTP_OK);
     }
 
@@ -1362,6 +1371,7 @@ class AuthController extends ResourceController
         if (!$model->insert($data)) {
             return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
         }
+        $this->invalidateCache('get_roles');
         return $this->respond(['message' => 'Permission added to role successfully'], ResponseInterface::HTTP_OK);
     }
 
@@ -1382,6 +1392,7 @@ class AuthController extends ResourceController
         if (!$model->where("role", $role)->where("permission", $permission)->delete(null, true)) {
             return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
         }
+        $this->invalidateCache('get_roles');
         return $this->respond(['message' => 'Permission deleted from role successfully'], ResponseInterface::HTTP_OK);
     }
 

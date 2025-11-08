@@ -13,6 +13,7 @@ use App\Models\ActivitiesModel;
 use App\Models\Applications\ApplicationsModel;
 use App\Models\Applications\ApplicationTemplateModel;
 use App\Models\Applications\ApplicationTemplateStage;
+use App\Models\Applications\ApplicationTimelineModel;
 use App\Models\Practitioners\PractitionerModel;
 use App\Models\Practitioners\PractitionerRenewalModel;
 use CodeIgniter\Database\BaseBuilder;
@@ -24,11 +25,13 @@ use Exception;
 class ApplicationService
 {
     private ActivitiesModel $activitiesModel;
+    private ApplicationTimelineModel $timelineModel;
     private array $primaryColumns = ['first_name', 'picture', 'last_name', 'middle_name', 'email', 'phone'];
 
     public function __construct()
     {
         $this->activitiesModel = new ActivitiesModel();
+        $this->timelineModel = new ApplicationTimelineModel();
     }
 
     /**
@@ -64,7 +67,23 @@ class ApplicationService
 
         // Save application
         $model = new ApplicationsModel();
-        $model->insert((object) $data);
+        $insertId = $model->insert((object) $data);
+
+        // Get the created application to retrieve its UUID
+        $createdApplication = $model->find($insertId);
+        $applicationUuid = is_array($createdApplication) ? $createdApplication['uuid'] : $createdApplication->uuid;
+
+        // Create initial timeline entry for application creation
+        $this->timelineModel->createTimelineEntry(
+            $applicationUuid,
+            $data['status'],
+            [
+                'fromStatus' => null,
+                'notes' => 'Application created',
+                'submittedData' => $payload,
+                'userId' => auth("tokens")->id() ?? null,
+            ]
+        );
 
         // Log activity
         $this->activitiesModel->logActivity("Created application {$data['form_type']} with code $applicationCode");
@@ -127,7 +146,7 @@ class ApplicationService
     /**
      * Update application status with bulk operations
      */
-    public function updateApplicationStatus(string $applicationType, string $status, array $applicationIds, int $userId): array
+    public function updateApplicationStatus(string $applicationType, string $status, array $applicationIds, int $userId, array $submittedData = []): array
     {
         if (!$applicationType || !$status || !$applicationIds) {
             throw new \InvalidArgumentException("Application type, status, and application IDs are required");
@@ -152,28 +171,71 @@ class ApplicationService
         // Validate user permissions
         $this->validateUserPermissions($userId, $stage);
 
+        // Get request metadata for timeline
+        $request = \Config\Services::request();
+        $ipAddress = $request->getIPAddress();
+        $userAgent = $request->getUserAgent()->getAgentString();
+
         // Process applications
         $model = new ApplicationsModel();
         $applications = $model->builder()->whereIn('uuid', $applicationIds)->get()->getResult('array');
 
         $applicationIdsToUpdate = [];
         $applicationCodesArray = [];
+        $timelineEntries = [];
 
         foreach ($applications as $application) {
             $applicationCodesArray[] = $application['application_code'];
+            $actionsResults = [];
 
             if (!empty($stage['actions'])) {
                 try {
-                    $this->processStageActions($stage['actions'], $application, $model);
+                    $actionsResults = $this->processStageActionsWithResults($stage['actions'], $application, $model);
                     $applicationIdsToUpdate[] = $application['uuid'];
                 } catch (\Throwable $e) {
                     log_message('error', 'Stage action failed: ' . $e);
-                    // Continue with next application
+
+                    // Log failed timeline entry
+                    $this->timelineModel->createTimelineEntry(
+                        $application['uuid'],
+                        $status,
+                        [
+                            'fromStatus' => $application['status'],
+                            'userId' => $userId,
+                            'stageData' => $stage,
+                            'actionsExecuted' => $stage['actions'],
+                            'actionsResults' => [
+                                'success' => false,
+                                'error' => $e->getMessage(),
+                                'timestamp' => date('Y-m-d H:i:s'),
+                            ],
+                            'submittedData' => $submittedData,
+                            'notes' => 'Status update failed: ' . $e->getMessage(),
+                            'ipAddress' => $ipAddress,
+                            'userAgent' => $userAgent,
+                        ]
+                    );
+
                     throw new \RuntimeException("Failed to process application {$application['application_code']}: " . $e->getMessage());
                 }
             } else {
                 $applicationIdsToUpdate[] = $application['uuid'];
+                $actionsResults = ['success' => true, 'message' => 'No actions to execute'];
             }
+
+            // Prepare timeline entry
+            $timelineEntries[] = [
+                'application_uuid' => $application['uuid'],
+                'from_status' => $application['status'],
+                'to_status' => $status,
+                'stage_data' => $stage,
+                'actions_executed' => $stage['actions'] ?? null,
+                'actions_results' => $actionsResults,
+                'submitted_data' => $submittedData,
+                'user_id' => $userId,
+                'ip_address' => $ipAddress,
+                'user_agent' => $userAgent,
+            ];
         }
 
         if (empty($applicationIdsToUpdate)) {
@@ -182,6 +244,25 @@ class ApplicationService
 
         // Update status for successful applications
         $model->builder()->whereIn('uuid', $applicationIdsToUpdate)->update(['status' => $status]);
+
+        // Insert timeline entries for successful updates
+        foreach ($timelineEntries as $entry) {
+            $this->timelineModel->createTimelineEntry(
+                $entry['application_uuid'],
+                $entry['to_status'],
+                [
+                    'fromStatus' => $entry['from_status'],
+                    'userId' => $entry['user_id'],
+                    'stageData' => $entry['stage_data'],
+                    'actionsExecuted' => $entry['actions_executed'],
+                    'actionsResults' => $entry['actions_results'],
+                    'submittedData' => $entry['submitted_data'],
+                    'notes' => 'Status updated successfully',
+                    'ipAddress' => $entry['ip_address'],
+                    'userAgent' => $entry['user_agent'],
+                ]
+            );
+        }
 
         $applicationCodes = implode(", ", $applicationCodesArray);
         $this->activitiesModel->logActivity("Updated applications {$applicationCodes} status to $status. See the logs for more details");
@@ -267,7 +348,7 @@ class ApplicationService
         $withDeleted = ($filters['withDeleted'] ?? '') === "yes";
         $param = $filters['param'] ?? null;
         $sortBy = $filters['sortBy'] ?? "id";
-        $sortOrder = $filters['sortOrder'] ?? "asc";
+        $sortOrder = $filters['sortOrder'] ?? "desc";
 
         $model = new ApplicationsModel();
         $builder = $param ? $model->search($param) : $model->builder();
@@ -556,6 +637,63 @@ class ApplicationService
         }
     }
 
+    /**
+     * Process stage actions and capture results for timeline
+     */
+    private function processStageActionsWithResults(array $actions, array $application, ApplicationsModel $model): array
+    {
+        $results = [];
+
+        $model->db->transException(true)->transStart();
+
+        try {
+            $formData = json_decode($application['form_data'], true);
+            $applicationData = array_merge($application, $formData);
+
+            foreach ($actions as $index => $action) {
+                $action = \App\Helpers\Types\ApplicationStageType::fromArray($action);
+
+                try {
+                    // Run the action
+                    $actionResult = ApplicationFormActionHelper::runAction((object) $action, $applicationData);
+
+                    // Capture result
+                    $results[] = [
+                        'action_type' => $action->type ?? 'unknown',
+                        'action_config' => $action->config ?? null,
+                        'success' => true,
+                        'result' => $actionResult,
+                        'timestamp' => date('Y-m-d H:i:s'),
+                    ];
+                } catch (\Throwable $e) {
+                    $results[] = [
+                        'action_type' => $action->type ?? 'unknown',
+                        'action_config' => $action->config ?? null,
+                        'success' => false,
+                        'error' => $e->getMessage(),
+                        'timestamp' => date('Y-m-d H:i:s'),
+                    ];
+                    throw $e; // Re-throw to trigger rollback
+                }
+            }
+
+            $model->db->transComplete();
+
+            return [
+                'success' => true,
+                'actions' => $results,
+            ];
+        } catch (\Throwable $e) {
+            $model->db->transRollback();
+
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+                'actions' => $results,
+            ];
+        }
+    }
+
     private function applyApplicationFilters(BaseBuilder $builder, array $filters, array $exclusionFilters = []): void
     {
         $filterMappings = [
@@ -777,5 +915,107 @@ class ApplicationService
         return "deleted work history: {$details->position} at ({$details->institution}) from profile of $registrationNumber in response to web request";
     }
 
+    /**
+     * Get basic statistics for application forms
+     *
+     * @param array $filters Array of filter parameters
+     * @return array Array of statistics results
+     */
+    public function getBasicStatistics(array $filters = []): array
+    {
+        $model = new ApplicationsModel();
+        $selectedFields = $filters['fields'] ?? [];
+
+        $fields = $model->getBasicStatisticsFields();
+
+        // Filter fields based on selection
+        $filteredFields = array_filter($fields, function ($field) use ($selectedFields) {
+            return in_array($field['name'], $selectedFields);
+        });
+
+        $parentParams = $model->createArrayFromAllowedFields($filters);
+        $results = [];
+
+        foreach ($filteredFields as $field) {
+            $builder = $this->buildStatisticsQuery($model, $field, $parentParams, $filters);
+            $result = $builder->get()->getResult();
+
+            $results[$field['name']] = $this->formatStatisticsResult($field, $result);
+        }
+
+        return $results;
+    }
+
+    /**
+     * Build query for statistics data
+     *
+     * @param ApplicationsModel $model The application model
+     * @param array $field Field configuration
+     * @param array $parentParams Filter parameters
+     * @param array $filters All filters including date ranges
+     * @return \CodeIgniter\Database\BaseBuilder
+     */
+    private function buildStatisticsQuery(ApplicationsModel $model, array $field, array $parentParams, array $filters = []): \CodeIgniter\Database\BaseBuilder
+    {
+        $builder = $model->builder();
+        $tableName = $model->getTableName();
+
+        // Apply filter parameters
+        foreach ($parentParams as $key => $value) {
+            $value = Utils::parseParam($value);
+            $builder = Utils::parseWhereClause($builder, $tableName . "." . $key, $value);
+        }
+
+        // Handle date range filters if provided
+        if (isset($filters['start_date'])) {
+            $builder->where("$tableName.created_on >=", $filters['start_date']);
+        }
+        if (isset($filters['end_date'])) {
+            $builder->where("$tableName.created_on <=", $filters['end_date']);
+        }
+
+        $builder->select([$field['name'], "COUNT(*) as count"]);
+
+        // Handle field aliases (e.g., "YEAR(created_on) as year")
+        $fieldName = $field['name'];
+        if (strpos($fieldName, " as ") !== false) {
+            $fieldName = explode(" as ", $fieldName)[1];
+        }
+
+        $builder->groupBy($fieldName);
+        return $builder;
+    }
+
+    /**
+     * Format statistics result for frontend consumption
+     *
+     * @param array $field Field configuration
+     * @param array $result Query result
+     * @return array Formatted result
+     */
+    private function formatStatisticsResult(array $field, array $result): array
+    {
+        $fieldName = $field['name'];
+        if (strpos($fieldName, " as ") !== false) {
+            $fieldName = explode(" as ", $fieldName)[1];
+        }
+
+        // Replace null values with 'Null'
+        $result = array_map(function ($item) use ($fieldName) {
+            $item->$fieldName = empty($item->$fieldName) ? 'Null' : $item->$fieldName;
+            return $item;
+        }, $result);
+
+        return [
+            "label" => $field['label'],
+            "type" => $field['type'],
+            "data" => $result,
+            "labelProperty" => $fieldName,
+            "valueProperty" => "count",
+            "name" => $fieldName,
+            "xAxisLabel" => $field['xAxisLabel'],
+            "yAxisLabel" => $field['yAxisLabel'],
+        ];
+    }
 
 }

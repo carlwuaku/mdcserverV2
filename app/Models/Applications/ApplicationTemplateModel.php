@@ -39,6 +39,7 @@ class ApplicationTemplateModel extends MyBaseModel implements TableDisplayInterf
         'created_on',
         'updated_at',
         'deleted_at',
+        'criteria'
 
     ];
 
@@ -90,6 +91,7 @@ class ApplicationTemplateModel extends MyBaseModel implements TableDisplayInterf
             'created_on',
             'updated_at',
             'deleted_at',
+            'criteria'
 
         ];
     }

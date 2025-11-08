@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Exceptions\DuplicateOnlinePaymentInvoiceException;
 use App\Services\GhanaGovPaymentService;
 use App\Services\PaymentsService;
 use CodeIgniter\HTTP\ResponseInterface;
@@ -113,6 +114,7 @@ class PaymentsController extends ResourceController
              * @var array
              */
             $items = $this->request->getVar("items");
+            $unique_id = $this->request->getVar("unique_id");
             $paymentOptions = $this->request->getVar("paymentOptions");
             if (!is_array($items) || count($items) == 0) {
                 throw new \InvalidArgumentException("Invalid items data provided");
@@ -127,6 +129,19 @@ class PaymentsController extends ResourceController
                 $paymentOptionObj = new \App\Helpers\Types\InvoicePaymentOptionType(0, '');
                 return $paymentOptionObj->createFromRequest($paymentOption);
             }, $paymentOptions) : [];
+            //get the details of the license from the database
+            try {
+                $payerDetails = \App\Helpers\LicenseUtils::getLicenseDetails($unique_id);
+                $data->first_name = array_key_exists("first_name", $payerDetails) ? $payerDetails['first_name'] : $payerDetails['name'];
+                $data->email = $payerDetails['email'];
+                $data->phone_number = $payerDetails['phone'];
+                $data->last_name = array_key_exists("last_name", $payerDetails) ? $payerDetails['last_name'] : $unique_id;
+            } catch (\Exception $e) {
+                //if it's not a valid license. for now we don't want to allow payments for non-licensed users
+                //if in future we want to allow that, handle the logic for that here. perhaps this can
+                //come before the validation so that we add rules for names and emails if the license is not valid
+                throw new \InvalidArgumentException("Invalid license number");
+            }
 
             //create the letters objects
             $result = $this->paymentsService->createInvoice((array) $data, $itemsArray, $paymentOptionsArray);
@@ -210,6 +225,64 @@ class PaymentsController extends ResourceController
             $filters = $this->extractRequestFilters();
             $result = $this->paymentsService->getInvoices($filters);
 
+            return $this->respond($result, ResponseInterface::HTTP_OK);
+
+        } catch (\Throwable $e) {
+            log_message("error", $e);
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    public function getLicenseInvoices()
+    {
+        try {
+            $userId = auth("tokens")->id();
+            $userData = AuthHelper::getAuthUser($userId);
+            $filters = ["unique_id" => $userData->profile_data['license_number']];
+            $param = $this->request->getVar("param") ?? null;
+            if (!empty($param)) {
+                $filters['param'] = $param;
+            }
+            $result = $this->paymentsService->getInvoices($filters);
+            //remove these fields from each item in data
+
+            $removeFields = ["application_id", "id", "year", "redirect_url", "purpose_table_uuid", "purpose_table", "post_url", "payment_method", "payment_file", "payment_file_date", "mda_branch_code", "online_payment_status", "online_payment_response"];
+            $result['data'] = array_map(function ($item) use ($removeFields) {
+                foreach ($removeFields as $field) {
+                    unset($item->$field);
+                }
+                return $item;
+            }, $result['data']);
+            //remove them from the display_columns string[] as well
+            $result['displayColumns'] = ["description", "amount", "status", "invoice_number", "created_at", "selected_payment_method", "due_date", "notes", "payment_date"];// array_values(array_diff($result['displayColumns'], $removeFields));
+
+            return $this->respond($result, ResponseInterface::HTTP_OK);
+
+        } catch (\Throwable $e) {
+            log_message("error", $e);
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function countLicenseInvoices($status)
+    {
+        try {
+            $userId = auth("tokens")->id();
+            $userData = AuthHelper::getAuthUser($userId);
+            $filters = ["unique_id" => $userData->profile_data['license_number'], "status" => $status];
+            $result = $this->paymentsService->getInvoices($filters);
+
+            return $this->respond(['data' => $result['total']], ResponseInterface::HTTP_OK);
+
+        } catch (\Throwable $e) {
+            log_message("error", $e);
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function getLicenseInvoiceDetails($uuid)
+    {
+        try {
+            $result = $this->paymentsService->getInvoice($uuid);
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
         } catch (\Throwable $e) {
@@ -344,6 +417,22 @@ class PaymentsController extends ResourceController
     //     }
     // }
 
+    public function createGhanaGovInvoice()
+    {
+        try {
+            $invoiceUuid = $this->request->getPost("invoice_uuid");
+            $mdaBranch = $this->request->getPost("mda_branch_code");
+            $response = $this->ghanaGovPaymentService->createCheckoutSession($invoiceUuid, $mdaBranch);
+
+            return $this->respond(['data' => $response, 'message' => $response], ResponseInterface::HTTP_OK);
+        } catch (DuplicateOnlinePaymentInvoiceException $e) {
+            return $this->respond(['message' => $e->getMessage()], ResponseInterface::HTTP_CONFLICT);
+        } catch (\Exception $e) {
+            log_message("error", $e);
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     public function paymentDone()
     {
         try {
@@ -470,6 +559,19 @@ class PaymentsController extends ResourceController
         } catch (\Throwable $e) {
             log_message("error", $e);
             return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function getPaymentMethodBranches($paymentMethod)
+    {
+        try {
+            $result = $this->paymentsService->getPaymentMethodBranches($paymentMethod);
+
+            return $this->respond(['data' => $result], ResponseInterface::HTTP_OK);
+
+        } catch (\Throwable $e) {
+            log_message("error", $e);
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 

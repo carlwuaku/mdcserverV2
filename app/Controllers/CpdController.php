@@ -12,6 +12,8 @@ use App\Models\Cpd\CpdAttendanceModel;
 use App\Models\ActivitiesModel;
 use \Exception;
 use App\Helpers\Utils;
+use App\Helpers\CacheHelper;
+use App\Traits\CacheInvalidatorTrait;
 
 /**
  * @OA\Info(title="API Name", version="1.0")
@@ -23,6 +25,7 @@ use App\Helpers\Utils;
  */
 class CpdController extends ResourceController
 {
+    use CacheInvalidatorTrait;
 
     public function createCpd()
     {
@@ -49,6 +52,8 @@ class CpdController extends ResourceController
             /** @var ActivitiesModel $activitiesModel */
             $activitiesModel = new ActivitiesModel();
             $activitiesModel->logActivity("Created cpd {$data['topic']}.", null, "cpd");
+
+            $this->invalidateCache('get_cpd');
 
             return $this->respond(['message' => 'Cpd topic created successfully', 'data' => $id], ResponseInterface::HTTP_OK);
         } catch (Exception $th) {
@@ -88,6 +93,8 @@ class CpdController extends ResourceController
             $activitiesModel = new ActivitiesModel();
             $activitiesModel->logActivity("Updated cpd {$oldData['topic']}. Changes: $changes", null, "cpd");
 
+            $this->invalidateCache('get_cpd');
+
             return $this->respond(['message' => 'CPD updated successfully'], ResponseInterface::HTTP_OK);
         } catch (Exception $th) {
             log_message("error", $th);
@@ -107,6 +114,8 @@ class CpdController extends ResourceController
             /** @var ActivitiesModel $activitiesModel */
             $activitiesModel = new ActivitiesModel();
             $activitiesModel->logActivity("Deleted cpd {$data['topic']}.", null, "cpd");
+
+            $this->invalidateCache('get_cpd');
 
             return $this->respond(['message' => 'CPD deleted successfully'], ResponseInterface::HTTP_OK);
         } catch (Exception $th) {
@@ -152,6 +161,8 @@ class CpdController extends ResourceController
             $activitiesModel = new ActivitiesModel();
             $activitiesModel->logActivity("Restored cpd {$data['topic']} from recycle bin");
 
+            $this->invalidateCache('get_cpd');
+
             return $this->respond(['message' => 'Cpd restored successfully'], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
             log_message("error", $th);
@@ -163,72 +174,77 @@ class CpdController extends ResourceController
 
     public function getCpd($uuid)
     {
-        $model = new CpdModel();
-        $providerModel = new CpdProviderModel();
-        $builder = $model->builder();
-        $builder = $model->addCustomFields($builder);
-        $data = $builder->where(["cpd_topics.uuid" => $uuid])->get()->getRow();
-        if (!$data) {
-            return $this->respond("CPD not found", ResponseInterface::HTTP_BAD_REQUEST);
-        }
+        $cacheKey = Utils::generateHashedCacheKey("get_cpd", ['uuid' => $uuid]);
+        return CacheHelper::remember($cacheKey, function () use ($uuid) {
+            $model = new CpdModel();
+            $builder = $model->builder();
+            $builder = $model->addCustomFields($builder);
+            $data = $builder->where(["cpd_topics.uuid" => $uuid])->get()->getRow();
+            if (!$data) {
+                return $this->respond("CPD not found", ResponseInterface::HTTP_BAD_REQUEST);
+            }
 
-        return $this->respond(['data' => $data, 'displayColumns' => $model->getDisplayColumns()], ResponseInterface::HTTP_OK);
+            return $this->respond(['data' => $data, 'displayColumns' => $model->getDisplayColumns()], ResponseInterface::HTTP_OK);
+        });
     }
 
     public function getCpds()
     {
         try {
-            $userId = auth("tokens")->id();
-            $user = AuthHelper::getAuthUser($userId);
-            $per_page = $this->request->getVar('limit') ? (int) $this->request->getVar('limit') : 100;
-            $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
-            $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted') === "yes";
-            $param = $this->request->getVar('param');
-            $sortBy = $this->request->getVar('sortBy') ?? "id";
-            $sortOrder = $this->request->getVar('sortOrder') ?? "asc";
-            $year = $this->request->getVar('year') ?? null;
-            $providerUuid = $this->request->getVar('provider_uuid') ?? null;
-            $category = $this->request->getVar('category') ?? null;
-            $credits = $this->request->getVar('credits') ?? null;
-            $online = $this->request->getVar('online') ?? null;
-            $model = new CpdModel();
+            $cacheKey = Utils::generateHashedCacheKey("get_cpd", (array) $this->request->getVar());
+            return CacheHelper::remember($cacheKey, function () {
+                $userId = auth("tokens")->id();
+                $user = AuthHelper::getAuthUser($userId);
+                $per_page = $this->request->getVar('limit') ? (int) $this->request->getVar('limit') : 100;
+                $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
+                $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted') === "yes";
+                $param = $this->request->getVar('param');
+                $sortBy = $this->request->getVar('sortBy') ?? "id";
+                $sortOrder = $this->request->getVar('sortOrder') ?? "desc";
+                $year = $this->request->getVar('year') ?? null;
+                $providerUuid = $this->request->getVar('provider_uuid') ?? null;
+                $category = $this->request->getVar('category') ?? null;
+                $credits = $this->request->getVar('credits') ?? null;
+                $online = $this->request->getVar('online') ?? null;
+                $model = new CpdModel();
 
 
-            $builder = $param ? $model->search($param) : $model->builder();
-            $builder = $model->addCustomFields($builder, $user->user_type);
-            $tableName = $model->table;
-            if ($year) {
-                $builder->where("YEAR(date)", $year);
-            }
-            if ($providerUuid) {
-                $builder->where("provider_uuid", $providerUuid);
-            }
-            if ($category) {
-                $builder->where("$tableName.category", $category);
-            }
-            if ($credits) {
-                $builder->where("$tableName.credits", $credits);
-            }
-            if ($online) {
-                $builder->where("online", $online);
-            }
+                $builder = $param ? $model->search($param) : $model->builder();
+                $builder = $model->addCustomFields($builder, $user->user_type);
+                $tableName = $model->table;
+                if ($year) {
+                    $builder->where("YEAR(date)", $year);
+                }
+                if ($providerUuid) {
+                    $builder->where("provider_uuid", $providerUuid);
+                }
+                if ($category) {
+                    $builder->where("$tableName.category", $category);
+                }
+                if ($credits) {
+                    $builder->where("$tableName.credits", $credits);
+                }
+                if ($online) {
+                    $builder->where("online", $online);
+                }
 
 
-            $builder->orderBy("$tableName.$sortBy", $sortOrder);
+                $builder->orderBy("$tableName.$sortBy", $sortOrder);
 
-            if ($withDeleted) {
-                $model->withDeleted();
-            }
-            $totalBuilder = clone $builder;
-            $total = $totalBuilder->countAllResults();
-            $result = $builder->get($per_page, $page)->getResult();
-            $displayColumns = $user->user_type === "admin" ? $model->getDisplayColumns() : ['topic', 'category', 'credits', 'provider_name', 'provider_email', 'provider_phone'];
-            return $this->respond([
-                'data' => $result,
-                'total' => $total,
-                'displayColumns' => $displayColumns,
-                'columnFilters' => $model->getDisplayColumnFilters()
-            ], ResponseInterface::HTTP_OK);
+                if ($withDeleted) {
+                    $model->withDeleted();
+                }
+                $totalBuilder = clone $builder;
+                $total = $totalBuilder->countAllResults();
+                $result = $builder->get($per_page, $page)->getResult();
+                $displayColumns = $user->user_type === "admin" ? $model->getDisplayColumns() : ['topic', 'category', 'credits', 'provider_name', 'provider_email', 'provider_phone'];
+                return $this->respond([
+                    'data' => $result,
+                    'total' => $total,
+                    'displayColumns' => $displayColumns,
+                    'columnFilters' => $model->getDisplayColumnFilters()
+                ], ResponseInterface::HTTP_OK);
+            });
         } catch (\Throwable $th) {
             log_message("error", $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
@@ -258,6 +274,9 @@ class CpdController extends ResourceController
             /** @var ActivitiesModel $activitiesModel */
             $activitiesModel = new ActivitiesModel();
             $activitiesModel->logActivity("Created cpd provider {$data['name']}.", null, "cpd");
+
+            $this->invalidateCache('get_cpd_provider');
+            $this->invalidateCache('get_cpd'); // Provider changes may affect CPD list
 
             return $this->respond(['message' => 'Cpd provider created successfully', 'data' => $id], ResponseInterface::HTTP_OK);
         } catch (Exception $th) {
@@ -296,6 +315,9 @@ class CpdController extends ResourceController
             $activitiesModel = new ActivitiesModel();
             $activitiesModel->logActivity("Updated cpd provider {$oldData['name']}. Changes: $changes", null, "cpd");
 
+            $this->invalidateCache('get_cpd_provider');
+            $this->invalidateCache('get_cpd'); // Provider changes may affect CPD list
+
             return $this->respond(['message' => 'CPD updated successfully'], ResponseInterface::HTTP_OK);
         } catch (Exception $th) {
             log_message("error", $th);
@@ -318,6 +340,9 @@ class CpdController extends ResourceController
             /** @var ActivitiesModel $activitiesModel */
             $activitiesModel = new ActivitiesModel();
             $activitiesModel->logActivity("Deleted cpd provider {$data['name']}.", null, "cpd");
+
+            $this->invalidateCache('get_cpd_provider');
+            $this->invalidateCache('get_cpd'); // Provider changes may affect CPD list
 
             return $this->respond(['message' => 'CPD provider deleted successfully'], ResponseInterface::HTTP_OK);
         } catch (Exception $th) {
@@ -363,6 +388,9 @@ class CpdController extends ResourceController
             $activitiesModel = new ActivitiesModel();
             $activitiesModel->logActivity("Restored cpd provider {$data['topic']} from recycle bin");
 
+            $this->invalidateCache('get_cpd_provider');
+            $this->invalidateCache('get_cpd'); // Provider changes may affect CPD list
+
             return $this->respond(['message' => 'Cpd provider restored successfully'], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
             log_message("error", $th);
@@ -374,46 +402,52 @@ class CpdController extends ResourceController
 
     public function getCpdProvider($uuid)
     {
-        $model = new CpdProviderModel();
-        $data = $model->where(["uuid" => $uuid])->first();
-        if (!$data) {
-            return $this->respond("CPD not found", ResponseInterface::HTTP_BAD_REQUEST);
-        }
+        $cacheKey = Utils::generateHashedCacheKey("get_cpd_provider", ['uuid' => $uuid]);
+        return CacheHelper::remember($cacheKey, function () use ($uuid) {
+            $model = new CpdProviderModel();
+            $data = $model->where(["uuid" => $uuid])->first();
+            if (!$data) {
+                return $this->respond("CPD not found", ResponseInterface::HTTP_BAD_REQUEST);
+            }
 
-        return $this->respond(['data' => $data, 'displayColumns' => $model->getDisplayColumns()], ResponseInterface::HTTP_OK);
+            return $this->respond(['data' => $data, 'displayColumns' => $model->getDisplayColumns()], ResponseInterface::HTTP_OK);
+        });
     }
 
     public function getCpdProviders()
     {
         try {
-            $per_page = $this->request->getVar('limit') ? (int) $this->request->getVar('limit') : 100;
-            $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
-            $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted') === "yes";
-            $param = $this->request->getVar('param');
-            $sortBy = $this->request->getVar('sortBy') ?? "id";
-            $sortOrder = $this->request->getVar('sortOrder') ?? "asc";
+            $cacheKey = Utils::generateHashedCacheKey("get_cpd_provider", (array) $this->request->getVar());
+            return CacheHelper::remember($cacheKey, function () {
+                $per_page = $this->request->getVar('limit') ? (int) $this->request->getVar('limit') : 100;
+                $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
+                $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted') === "yes";
+                $param = $this->request->getVar('param');
+                $sortBy = $this->request->getVar('sortBy') ?? "id";
+                $sortOrder = $this->request->getVar('sortOrder') ?? "desc";
 
-            $model = new CpdProviderModel();
+                $model = new CpdProviderModel();
 
 
-            $builder = $param ? $model->search($param) : $model->builder();
-            $builder = $model->addCustomFields($builder);
+                $builder = $param ? $model->search($param) : $model->builder();
+                $builder = $model->addCustomFields($builder);
 
-            $tableName = $model->table;
-            $builder->orderBy("$tableName.$sortBy", $sortOrder);
+                $tableName = $model->table;
+                $builder->orderBy("$tableName.$sortBy", $sortOrder);
 
-            if ($withDeleted) {
-                $model->withDeleted();
-            }
-            $totalBuilder = clone $builder;
-            $total = $totalBuilder->countAllResults();
-            $result = $builder->get($per_page, $page)->getResult();
-            return $this->respond([
-                'data' => $result,
-                'total' => $total,
-                'displayColumns' => $model->getDisplayColumns(),
-                'columnFilters' => $model->getDisplayColumnFilters()
-            ], ResponseInterface::HTTP_OK);
+                if ($withDeleted) {
+                    $model->withDeleted();
+                }
+                $totalBuilder = clone $builder;
+                $total = $totalBuilder->countAllResults();
+                $result = $builder->get($per_page, $page)->getResult();
+                return $this->respond([
+                    'data' => $result,
+                    'total' => $total,
+                    'displayColumns' => $model->getDisplayColumns(),
+                    'columnFilters' => $model->getDisplayColumnFilters()
+                ], ResponseInterface::HTTP_OK);
+            });
         } catch (\Throwable $th) {
             log_message("error", $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
@@ -468,6 +502,8 @@ class CpdController extends ResourceController
             $failedList = implode(", ", $failed);
             $message = count($failed) > 0 ? count($failed) . " records for ($failedList) failed to save. Please try those ones again" : "Cpd attendance created successfully";
 
+            $this->invalidateCache('get_cpd_attendance');
+
             return $this->respond(['message' => $message, 'data' => $id], ResponseInterface::HTTP_OK);
         } catch (Exception $th) {
             log_message("error", $th);
@@ -508,6 +544,8 @@ class CpdController extends ResourceController
             $activitiesModel = new ActivitiesModel();
             $activitiesModel->logActivity("Updated cpd attendance for {$oldData['license_number']} {$cpd->topic}. Changes: $changes", null, "cpd");
 
+            $this->invalidateCache('get_cpd_attendance');
+
             return $this->respond(['message' => 'CPD attendance updated successfully'], ResponseInterface::HTTP_OK);
         } catch (Exception $th) {
             log_message("error", $th);
@@ -527,6 +565,8 @@ class CpdController extends ResourceController
             /** @var ActivitiesModel $activitiesModel */
             $activitiesModel = new ActivitiesModel();
             $activitiesModel->logActivity("Deleted cpd attendance for {$data['license_number']}.", null, "cpd");
+
+            $this->invalidateCache('get_cpd_attendance');
 
             return $this->respond(['message' => 'CPD attendance deleted successfully'], ResponseInterface::HTTP_OK);
         } catch (Exception $th) {
@@ -572,6 +612,8 @@ class CpdController extends ResourceController
             $activitiesModel = new ActivitiesModel();
             $activitiesModel->logActivity("Restored cpd attendance for {$data['license_number']} from recycle bin");
 
+            $this->invalidateCache('get_cpd_attendance');
+
             return $this->respond(['message' => 'Cpd attendance restored successfully'], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
             log_message("error", $th);
@@ -583,59 +625,65 @@ class CpdController extends ResourceController
 
     public function getCpdAttendance($uuid)
     {
-        $model = new CpdAttendanceModel();
-        $builder = $model->builder();
-        $builder = $model->addCustomFields($builder);
-        $data = $builder->where(["cpd_attendance.uuid" => $uuid])->get()->getRow();
-        if (!$data) {
-            return $this->respond("CPD attendance not found", ResponseInterface::HTTP_BAD_REQUEST);
-        }
+        $cacheKey = Utils::generateHashedCacheKey("get_cpd_attendance", ['uuid' => $uuid]);
+        return CacheHelper::remember($cacheKey, function () use ($uuid) {
+            $model = new CpdAttendanceModel();
+            $builder = $model->builder();
+            $builder = $model->addCustomFields($builder);
+            $data = $builder->where(["cpd_attendance.uuid" => $uuid])->get()->getRow();
+            if (!$data) {
+                return $this->respond("CPD attendance not found", ResponseInterface::HTTP_BAD_REQUEST);
+            }
 
-        return $this->respond(['data' => $data, 'displayColumns' => $model->getDisplayColumns()], ResponseInterface::HTTP_OK);
+            return $this->respond(['data' => $data, 'displayColumns' => $model->getDisplayColumns()], ResponseInterface::HTTP_OK);
+        });
     }
 
     public function getCpdAttendances()
     {
         try {
+            $cacheKey = Utils::generateHashedCacheKey("get_cpd_attendance", (array) $this->request->getVar());
+            return CacheHelper::remember($cacheKey, function () {
 
 
-            $per_page = $this->request->getVar('limit') ? (int) $this->request->getVar('limit') : 100;
-            $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
-            $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted') === "yes";
-            $param = $this->request->getVar('param');
-            $sortBy = $this->request->getVar('sortBy') ?? "id";
-            $sortOrder = $this->request->getVar('sortOrder') ?? "asc";
-            $cpdId = $this->request->getVar('cpdUuid') ?? null;
-            $licenseNumber = $this->request->getVar('license_number') ?? null;
+                $per_page = $this->request->getVar('limit') ? (int) $this->request->getVar('limit') : 100;
+                $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
+                $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted') === "yes";
+                $param = $this->request->getVar('param');
+                $sortBy = $this->request->getVar('sortBy') ?? "id";
+                $sortOrder = $this->request->getVar('sortOrder') ?? "desc";
+                $cpdId = $this->request->getVar('cpdUuid') ?? null;
+                $licenseNumber = $this->request->getVar('license_number') ?? null;
 
 
-            $model = new CpdAttendanceModel();
+                $model = new CpdAttendanceModel();
 
 
-            $builder = $param ? $model->search($param) : $model->builder();
-            $builder = $model->addCustomFields($builder);
-            if ($cpdId) {
-                $builder->where("cpd_uuid", $cpdId);
-            }
-            if ($licenseNumber) {
-                $builder->where("{$model->table}.license_number", $licenseNumber);
-            }
+                $builder = $param ? $model->search($param) : $model->builder();
+                $builder = $model->addCustomFields($builder);
+                if ($cpdId) {
+                    $builder->where("cpd_uuid", $cpdId);
+                }
+                if ($licenseNumber) {
+                    $builder->where("{$model->table}.license_number", $licenseNumber);
+                }
 
-            $tableName = $model->table;
-            $builder->orderBy("$tableName.$sortBy", $sortOrder);
+                $tableName = $model->table;
+                $builder->orderBy("$tableName.$sortBy", $sortOrder);
 
-            if ($withDeleted) {
-                $model->withDeleted();
-            }
-            $totalBuilder = clone $builder;
-            $total = $totalBuilder->countAllResults();
-            $result = $builder->get($per_page, $page)->getResult();
-            return $this->respond([
-                'data' => $result,
-                'total' => $total,
-                'displayColumns' => $model->getDisplayColumns(),
-                'columnFilters' => $model->getDisplayColumnFilters()
-            ], ResponseInterface::HTTP_OK);
+                if ($withDeleted) {
+                    $model->withDeleted();
+                }
+                $totalBuilder = clone $builder;
+                $total = $totalBuilder->countAllResults();
+                $result = $builder->get($per_page, $page)->getResult();
+                return $this->respond([
+                    'data' => $result,
+                    'total' => $total,
+                    'displayColumns' => $model->getDisplayColumns(),
+                    'columnFilters' => $model->getDisplayColumnFilters()
+                ], ResponseInterface::HTTP_OK);
+            });
         } catch (\Throwable $th) {
             log_message("error", $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
@@ -645,30 +693,33 @@ class CpdController extends ResourceController
     public function getLicenseCpdAttendances()
     {
         try {
-            $userId = auth("tokens")->id();
-            $user = AuthHelper::getAuthUser($userId);
-            $model = new CpdAttendanceModel();
-            $licenseNumber = $this->request->getVar('license_number');
-            //if the user is not admin, they can only see their own data
-            if ($user->user_type !== "admin") {
-                $licenseNumber = $user->profile_data['license_number'];
-            }
+            $cacheKey = Utils::generateHashedCacheKey("get_cpd_attendance", (array) $this->request->getVar());
+            return CacheHelper::remember($cacheKey, function () {
+                $userId = auth("tokens")->id();
+                $user = AuthHelper::getAuthUser($userId);
+                $model = new CpdAttendanceModel();
+                $licenseNumber = $this->request->getVar('license_number');
+                //if the user is not admin, they can only see their own data
+                if ($user->user_type !== "admin") {
+                    $licenseNumber = $user->profile_data['license_number'];
+                }
 
-            if (empty($licenseNumber)) {
-                return $this->respond(['message' => "License number is required"], ResponseInterface::HTTP_BAD_REQUEST);
-            }
-            $year = $this->request->getVar('year');
-            if (empty($year)) {
-                return $this->respond(['message' => "Year is required"], ResponseInterface::HTTP_BAD_REQUEST);
-            }
+                if (empty($licenseNumber)) {
+                    return $this->respond(['message' => "License number is required"], ResponseInterface::HTTP_BAD_REQUEST);
+                }
+                $year = $this->request->getVar('year');
+                if (empty($year)) {
+                    return $this->respond(['message' => "Year is required"], ResponseInterface::HTTP_BAD_REQUEST);
+                }
 
-            $result = CpdUtils::getCPDAttendanceAndScores($licenseNumber, $year);
-            return $this->respond([
-                'data' => $result,
-                'total' => count($result['attendance']),
-                'displayColumns' => $model->getDisplayColumns(),
-                'columnFilters' => $model->getDisplayColumnFilters()
-            ], ResponseInterface::HTTP_OK);
+                $result = CpdUtils::getCPDAttendanceAndScores($licenseNumber, $year);
+                return $this->respond([
+                    'data' => $result,
+                    'total' => count($result['attendance']),
+                    'displayColumns' => $model->getDisplayColumns(),
+                    'columnFilters' => $model->getDisplayColumnFilters()
+                ], ResponseInterface::HTTP_OK);
+            });
         } catch (\Throwable $th) {
             log_message("error", $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);

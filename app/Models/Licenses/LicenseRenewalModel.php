@@ -154,7 +154,10 @@ class LicenseRenewalModel extends MyBaseModel implements TableDisplayInterface, 
         return [];
     }
 
-
+    public function mainRenewalFilters()
+    {
+        return $this->allowedFields;
+    }
 
 
 

@@ -192,7 +192,7 @@ class Utils
      * @param string $key
      * @return array|null|string
      */
-    public static function getAppSettings(string $key = null)
+    public static function getAppSettings(?string $key = null)
     {
         /**
          * @var array
@@ -1072,7 +1072,7 @@ class Utils
      * @return array The license data if found, 
      * @throws Exception If license is not found
      */
-    public static function getLicenseDetails(string $uuid, string $field = null, string $type = null): array
+    public static function getLicenseDetails(string $uuid, ?string $field = null, ?string $type = null): array
     {
         $model = new LicensesModel();
         $builder = $model->builder();
@@ -1168,6 +1168,16 @@ class Utils
     public static function getPaymentSettings()
     {
         return self::getAppSettings("payments");
+    }
+
+    /**
+     * Gets the payment method settings for a given method name
+     * @param string $method The payment method name
+     * @return array{label: string, type: string, isActive: bool, onStart: string, onComplete: string, description: string, logo: string, paymentBranches: array} The payment method settings
+     */
+    public static function getPaymentMethodSettings($method)
+    {
+        return self::getPaymentSettings()["paymentMethods"][$method];
     }
 
     /**

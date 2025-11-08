@@ -119,8 +119,7 @@ class MyBaseModel extends Model
 
             return $builder;
         } catch (\Throwable $th) {
-            log_message("error", $th->getMessage());
-            log_message("error", $th->getTraceAsString());
+            log_message("error", $th);
             throw $th;
         }
     }

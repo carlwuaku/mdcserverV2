@@ -2,24 +2,9 @@
 
 namespace App\Controllers;
 
-use App\Controllers\BaseController;
 use App\Helpers\AuthHelper;
-use App\Helpers\BaseBuilderJSONQueryUtil;
-use App\Helpers\PractitionerUtils;
-use App\Models\Applications\ApplicationsModel;
-use App\Models\Applications\ApplicationTemplateModel;
-use App\Models\Practitioners\PractitionerModel;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
-use App\Models\ActivitiesModel;
-use App\Helpers\Utils;
-use \Exception;
-use App\Helpers\EmailHelper;
-use App\Helpers\EmailConfig;
-use App\Models\Practitioners\PractitionerRenewalModel;
-use App\Helpers\ApplicationFormActionHelper;
-use App\Models\Applications\ApplicationTemplateStage;
-use App\Helpers\CacheHelper;
 use App\Traits\CacheInvalidatorTrait;
 use App\Services\ApplicationService;
 use App\Services\ApplicationTemplateService;
@@ -132,40 +117,41 @@ class ApplicationsController extends ResourceController
      */
     private function extractRequestFilters(): array
     {
-        $filters = [];
+        // $filters = [];
 
-        // Get common parameters
-        $commonParams = [
-            'limit',
-            'page',
-            'withDeleted',
-            'param',
-            'sortBy',
-            'sortOrder',
-            'application_code',
-            'status',
-            'start_date',
-            'end_date',
-            'practitioner_type',
-            'form_type'
-        ];
+        // // Get common parameters
+        // $commonParams = [
+        //     'limit',
+        //     'page',
+        //     'withDeleted',
+        //     'param',
+        //     'sortBy',
+        //     'sortOrder',
+        //     'application_code',
+        //     'status',
+        //     'start_date',
+        //     'end_date',
+        //     'practitioner_type',
+        //     'form_type'
+        // ];
 
-        foreach ($commonParams as $param) {
-            $value = $this->request->getVar($param);
-            if ($value !== null) {
-                $filters[$param] = $value;
-            }
-        }
+        // foreach ($commonParams as $param) {
+        //     $value = $this->request->getVar($param);
+        //     if ($value !== null) {
+        //         $filters[$param] = $value;
+        //     }
+        // }
 
-        // Get all child_ parameters for JSON field filtering
-        $allParams = $this->request->getGet();
-        if (is_array($allParams)) {
-            foreach ($allParams as $key => $value) {
-                if (strpos($key, 'child_') === 0) {
-                    $filters[$key] = $value;
-                }
-            }
-        }
+        // // Get all child_ parameters for JSON field filtering
+        // $allParams = $this->request->getGet();
+        // if (is_array($allParams)) {
+        //     foreach ($allParams as $key => $value) {
+        //         if (strpos($key, 'child_') === 0) {
+        //             $filters[$key] = $value;
+        //         }
+        //     }
+        // }
+        $filters = array_merge($this->request->getGet(), (array) $this->request->getVar());
 
         return $filters;
     }
@@ -194,11 +180,18 @@ class ApplicationsController extends ResourceController
             $applicationIds = $this->request->getVar('applicationIds');
             $userId = auth("tokens")->id();
 
+            // Capture any additional submitted data for timeline
+            $submittedData = $this->request->getVar('statusData');
+
+            // Remove null values
+            $submittedData = array_filter($submittedData, fn($val) => $val !== null);
+
             $result = $this->applicationService->updateApplicationStatus(
                 $applicationType,
                 $status,
                 $applicationIds,
-                $userId
+                $userId,
+                $submittedData
             );
 
             return $this->respond($result, ResponseInterface::HTTP_OK);
@@ -365,7 +358,7 @@ class ApplicationsController extends ResourceController
 
     // Application Template Operations
 
-    public function getApplicationConfig(string $formName, string $type = null)
+    public function getApplicationConfig(string $formName, ?string $type = null)
     {
         try {
             $formConfig = $this->templateService->getApplicationConfig($formName, $type);
@@ -380,8 +373,10 @@ class ApplicationsController extends ResourceController
     public function getApplicationTemplates()
     {
         try {
+            $userId = auth("tokens")->id();
+            $userData = AuthHelper::getAuthUser($userId);
             $filters = $this->extractRequestFilters();
-            $result = $this->templateService->getApplicationTemplates($filters);
+            $result = $this->templateService->getApplicationTemplates($userData, $filters);
 
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
@@ -1902,4 +1897,135 @@ class ApplicationsController extends ResourceController
     //         return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
     //     }
     // }
+
+    /**
+     * Get application timeline
+     *
+     * Retrieves the complete history of status changes and actions for a specific application
+     *
+     * @param string $uuid Application UUID
+     * @return \CodeIgniter\HTTP\Response
+     */
+    public function getApplicationTimeline(string $uuid)
+    {
+        try {
+            $timelineModel = new \App\Models\Applications\ApplicationTimelineModel();
+
+            // Get query parameters for pagination and sorting
+            $limit = $this->request->getGet('limit') ?? 50;
+            $offset = $this->request->getGet('offset') ?? 0;
+            $orderDir = $this->request->getGet('orderDir') ?? 'DESC';
+
+            // Validate limit and offset
+            $limit = min(max((int) $limit, 1), 200); // Between 1 and 200
+            $offset = max((int) $offset, 0);
+            $userId = auth("tokens")->id();
+            $userData = AuthHelper::getAuthUser($userId);
+            $timeline = $timelineModel->getApplicationTimeline($uuid, $userData, [
+                'limit' => $limit,
+                'offset' => $offset,
+                'orderDir' => $orderDir,
+            ]);
+
+            $total = $timelineModel->getTimelineCount($uuid);
+
+            return $this->respond([
+                'success' => true,
+                'data' => $timeline,
+                'total' => $total,
+                'limit' => $limit,
+                'offset' => $offset,
+            ], ResponseInterface::HTTP_OK);
+
+        } catch (\Throwable $e) {
+            log_message('error', 'Timeline fetch error: ' . $e->getMessage());
+            return $this->respond([
+                'success' => false,
+                'message' => 'Failed to fetch application timeline'
+            ], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Get simplified status history for an application
+     *
+     * @param string $uuid Application UUID
+     * @return \CodeIgniter\HTTP\Response
+     */
+    public function getApplicationStatusHistory(string $uuid)
+    {
+        try {
+            $timelineModel = new \App\Models\Applications\ApplicationTimelineModel();
+            $statusHistory = $timelineModel->getStatusHistory($uuid);
+
+            return $this->respond([
+                'success' => true,
+                'data' => $statusHistory,
+            ], ResponseInterface::HTTP_OK);
+
+        } catch (\Throwable $e) {
+            log_message('error', 'Status history fetch error: ' . $e->getMessage());
+            return $this->respond([
+                'success' => false,
+                'message' => 'Failed to fetch status history'
+            ], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Get basic statistics for application forms
+     * POST /api/applications/reports/basic-statistics
+     *
+     * @return \CodeIgniter\HTTP\Response
+     */
+    public function getBasicStatistics()
+    {
+        try {
+            $filters = $this->request->getJSON(true) ?? [];
+            $service = new ApplicationService();
+            $results = $service->getBasicStatistics($filters);
+
+            return $this->respond([
+                'success' => true,
+                'data' => $results,
+            ], ResponseInterface::HTTP_OK);
+
+        } catch (\Throwable $e) {
+            log_message('error', 'Basic statistics error: ' . $e->getMessage());
+            return $this->respond([
+                'success' => false,
+                'message' => 'Failed to fetch basic statistics: ' . $e->getMessage()
+            ], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Get available report fields
+     * GET /api/applications/reports/fields
+     *
+     * @return \CodeIgniter\HTTP\Response
+     */
+    public function getReportFields()
+    {
+        try {
+            $model = new \App\Models\Applications\ApplicationsModel();
+            $fields = $model->getBasicStatisticsFields();
+            $filterFields = $model->getBasicStatisticsFilterFields();
+
+            return $this->respond([
+                'success' => true,
+                'data' => [
+                    'reportFields' => $fields,
+                    'filterFields' => $filterFields,
+                ],
+            ], ResponseInterface::HTTP_OK);
+
+        } catch (\Throwable $e) {
+            log_message('error', 'Report fields error: ' . $e->getMessage());
+            return $this->respond([
+                'success' => false,
+                'message' => 'Failed to fetch report fields'
+            ], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 }

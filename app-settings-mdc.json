@@ -90,6 +90,12 @@
                     "url": "/application-templates/form",
                     "icon": "",
                     "children": []
+                },
+                {
+                    "title": "Reports",
+                    "url": "/applications/reports",
+                    "icon": "",
+                    "children": []
                 }
             ]
         },
@@ -319,15 +325,6 @@
                         "form_type": "Examination Candidates Registration Application",
                         "status": "Pending approval"
                     }
-                },
-                {
-                    "title": "Applications to sit for exams",
-                    "url": "/applications",
-                    "icon": "",
-                    "children": [],
-                    "urlParams": {
-                        "form_type": ""
-                    }
                 }
             ]
         },
@@ -347,6 +344,12 @@
                 {
                     "title": "View fees",
                     "url": "/payment/fees",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Generate new invoice",
+                    "url": "/payment/create-invoice",
                     "icon": "",
                     "children": []
                 },
@@ -2658,6 +2661,72 @@
             "gazetteTableColumns": {}
         }
     },
+    "applicationForms": {
+        "basicStatisticsFields": [
+            {
+                "label": "Form Type",
+                "name": "form_type",
+                "type": "bar",
+                "xAxisLabel": "Form Type",
+                "yAxisLabel": "Number of Applications"
+            },
+            {
+                "label": "Status",
+                "name": "status",
+                "type": "bar",
+                "xAxisLabel": "Status",
+                "yAxisLabel": "Number of Applications"
+            },
+            {
+                "label": "Submission Year",
+                "name": "YEAR(created_on) as year",
+                "type": "bar",
+                "xAxisLabel": "Year",
+                "yAxisLabel": "Number of Applications"
+            },
+            {
+                "label": "Submission Month",
+                "name": "DATE_FORMAT(created_on, '%Y-%m') as month",
+                "type": "bar",
+                "xAxisLabel": "Month",
+                "yAxisLabel": "Number of Applications"
+            }
+        ],
+        "basicStatisticsFilterFields": [
+            {
+                "name": "form_type",
+                "label": "Form Type",
+                "options": [],
+                "type": "api",
+                "value": "",
+                "required": false,
+                "api_url": "admin/distinct-values/application_forms/form_type",
+                "apiKeyProperty": "form_type",
+                "apiLabelProperty": "form_type",
+                "apiType": "select"
+            },
+            {
+                "name": "status",
+                "label": "Status",
+                "type": "text"
+            },
+            {
+                "name": "start_date",
+                "label": "Start Date",
+                "type": "date"
+            },
+            {
+                "name": "end_date",
+                "label": "End Date",
+                "type": "date"
+            },
+            {
+                "name": "applicant_unique_id",
+                "label": "Applicant ID",
+                "type": "text"
+            }
+        ]
+    },
     "dashboardMenu": [
         {
             "title": "Doctors",
@@ -3820,7 +3889,7 @@
     "portalHomeMenu": [
         {
             "title": "Personal Details",
-            "image": "[picture]",
+            "image": "assets/images/medical-bg.jpg",
             "icon": "person_outlined",
             "dataPoints": [],
             "actions": [
@@ -3858,7 +3927,7 @@
             "title": "View/Fill Application Forms",
             "active_children": false,
             "url": "/applications",
-            "image": "assets/images/application.png",
+            "image": "assets/images/medical-bg.jpg",
             "icon": "auto_stories_outlined",
             "dataPoints": [],
             "actions": [
@@ -3885,10 +3954,40 @@
             "criteria": []
         },
         {
+            "title": "Payment",
+            "active_children": false,
+            "url": "/payment",
+            "image": "assets/images/medical-bg.jpg",
+            "icon": "auto_stories_outlined",
+            "dataPoints": [
+                {
+                    "criteria": [],
+                    "dataSource": "api",
+                    "apiUrl": "portal/payment/invoices/Pending/count",
+                    "apiProperty": "",
+                    "message": "Invoices pending payment",
+                    "type": "warning"
+                }
+            ],
+            "actions": [
+                {
+                    "label": "View/Pay Your Invoices",
+                    "icon": "",
+                    "type": "link",
+                    "linkProp": "",
+                    "url": "/payment/invoices",
+                    "urlParams": {},
+                    "criteria": []
+                }
+            ],
+            "description": "View or fill application forms",
+            "criteria": []
+        },
+        {
             "title": "Relicensure Status",
             "active_children": false,
             "url": "/renewal",
-            "image": "assets/images/010-gold-medal.png",
+            "image": "assets/images/medical-bg.jpg",
             "dataPoints": [],
             "actions": [
                 {
@@ -4030,7 +4129,7 @@
         },
         {
             "title": "Continuous Professional Development (CPD)",
-            "image": "assets/images/011-work.png",
+            "image": "assets/images/medical-bg.jpg",
             "icon": "",
             "dataPoints": [
                 {
@@ -4095,23 +4194,17 @@
                     ]
                 },
                 {
-                    "criteria": [
-                        {
-                            "field": "register_type",
-                            "operator": "equals",
-                            "value": [
-                                "Permanent"
-                            ]
-                        }
-                    ],
-                    "message": "Your relicensure is pending payment. Please make payment",
-                    "type": "warning"
+                    "field": "register_type",
+                    "operator": "equals",
+                    "value": [
+                        "Permanent"
+                    ]
                 }
             ]
         },
         {
             "title": "Qualifications",
-            "image": "assets/images/graduated.png",
+            "image": "assets/images/medical-bg.jpg",
             "icon": "",
             "dataPoints": [],
             "actions": [
@@ -4146,7 +4239,7 @@
         },
         {
             "title": "Work History",
-            "image": "assets/images/recruitment.png",
+            "image": "assets/images/medical-bg.jpg",
             "icon": "",
             "dataPoints": [],
             "actions": [
@@ -4188,7 +4281,7 @@
         },
         {
             "title": "Examinations",
-            "image": "assets/images/school.png",
+            "image": "assets/images/medical-bg.jpg",
             "icon": "",
             "dataPoints": [],
             "actions": [
@@ -4267,7 +4360,7 @@
         },
         {
             "title": "Housemanship",
-            "image": "assets/images/007-mansion.png",
+            "image": "assets/images/medical-bg.jpg",
             "icon": "",
             "dataPoints": [],
             "actions": [
@@ -4671,7 +4764,29 @@
                 "onStart": "ghana_gov",
                 "onComplete": "ghana_gov",
                 "description": "Pay this invoice online via the Ghana.gov platform",
-                "logo": "assets/images/gov-logo.png"
+                "logo": "assets/images/gov-logo.png",
+                "paymentBranches": [
+                    {
+                        "name": "Head Office",
+                        "mda_code": "MDC_HQ"
+                    },
+                    {
+                        "name": "Ashanti Office",
+                        "mda_code": "MDC_Adum"
+                    },
+                    {
+                        "name": "Western Office",
+                        "mda_code": "MDC_Sekondi-Fijai"
+                    },
+                    {
+                        "name": "Northern Office",
+                        "mda_code": "MDC_Tamale"
+                    },
+                    {
+                        "name": "Eastern Office",
+                        "mda_code": "MDC_Koforidua"
+                    }
+                ]
             }
         }
     },

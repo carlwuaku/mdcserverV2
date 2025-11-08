@@ -80,6 +80,7 @@ class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormIn
     }
 
     public $searchFields = [
+        'name',
         'license_number',
         'email',
         'phone',

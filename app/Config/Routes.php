@@ -39,6 +39,8 @@ $routes->group("portal", ["namespace" => "App\Controllers"], function (RouteColl
     $routes->post("auth/verify-google-auth", [AuthController::class, "verifyAndEnableGoogleAuth"]);
     $routes->put("applications/details/(:segment)", [ApplicationsController::class, "updateApplication/$1"], ["filter" => ["apiauth"]]);
     $routes->delete("applications/details/(:segment)", [ApplicationsController::class, "deleteApplication/$1"], ["filter" => ["apiauth"]]);
+    $routes->get("applications/details/(:segment)/timeline", [ApplicationsController::class, "getApplicationTimeline/$1"], ["filter" => ["apiauth"]]);
+    $routes->get("applications/details/(:segment)/status-history", [ApplicationsController::class, "getApplicationStatusHistory/$1"], ["filter" => ["apiauth"]]);
     $routes->get("applications/details/(:segment)", [ApplicationsController::class, "getApplication/$1"], ["filter" => ["apiauth"]]);
     $routes->post("applications/details/(:segment)", [ApplicationsController::class, "createApplication"], ["filter" => ["apiauth"]]);
     $routes->get("applications/templates/(:segment)", [ApplicationsController::class, "getApplicationTemplateForFilling/$1"], ["filter" => ["apiauth"]]);
@@ -49,8 +51,13 @@ $routes->group("portal", ["namespace" => "App\Controllers"], function (RouteColl
     $routes->post("renewals", [LicensesController::class, "createRenewalByLicense"], ["filter" => ["apiauth"]]);
     $routes->delete("renewals/(:segment)", [LicensesController::class, "deleteRenewalByLicense/$1"], ["filter" => ["apiauth"]]);
     $routes->get("payment/external-invoice/(:segment)", [PaymentsController::class, "getInvoiceByExternal/$1"], ["filter" => ["apiauth"]], );
+    $routes->get("payment/invoices", [PaymentsController::class, "getLicenseInvoices"], ["filter" => ["apiauth"]], );
+    $routes->get("payment/invoices/(:segment)/count", [PaymentsController::class, "countLicenseInvoices/$1"], ["filter" => ["apiauth"]], );
+    $routes->get("payment/invoices/(:segment)", [PaymentsController::class, "getLicenseInvoiceDetails/$1"], ["filter" => ["apiauth"]], );
+    $routes->get("payment/payment-methods/branches/(:segment)", [PaymentsController::class, "getPaymentMethodBranches/$1"], ["filter" => ["apiauth"]], );
     $routes->put("payment/invoice/payment_method/(:segment)", [PaymentsController::class, "updateInvoicePaymentMethod/$1"], ["filter" => ["apiauth"]], );
     $routes->post("payment/invoices/manual-payment", [PaymentsController::class, "createPaymentFileUpload"], ["filter" => ["apiauth"]]);
+    $routes->post("payment/invoices/online-payment/Ghana.gov Platform", [PaymentsController::class, "createGhanaGovInvoice"], ["filter" => ["apiauth"]]);
     $routes->delete("payment/invoices/manual-payment/(:segment)", [PaymentsController::class, "deletePaymentFileUpload/$1"], ["filter" => ["apiauth"]]);
     $routes->post("payment/invoices/printout", [PaymentsController::class, "generateInvoicePrintouts"], ["filter" => ["apiauth"]]);
     $routes->get("cpd/details", [CpdController::class, "getCpds"], ["filter" => ["apiauth"]], );
@@ -172,7 +179,11 @@ $routes->group("specialties", ["namespace" => "App\Controllers", "filter" => "ap
 
 $routes->group("file-server", ["namespace" => "App\Controllers"], function (RouteCollection $routes) {
     $routes->post("new/(:segment)", [AssetController::class, "upload/$1"], ["filter" => ["hasPermission:Create_Or_Edit_Assets"]]);
-    $routes->get('image-render/(:segment)/(:segment)', [AssetController::class, "serveFile/$1/$2"]);
+    $routes->get('image-render/(:segment)/(:segment)', [AssetController::class, "serveFile/$1/$2"], ["filter" => ["apiauth"]]);
+
+    // Signed URL endpoints (no auth required if signature is valid)
+    $routes->get('sign-url/(:segment)/(:segment)', [AssetController::class, "generateSignedUrl/$1/$2"], ["filter" => ["apiauth"]]);
+    $routes->get('secure/(:segment)/(:segment)', [AssetController::class, "serveSecureFile/$1/$2"]);
 });
 
 $routes->group("email", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
@@ -191,7 +202,16 @@ $routes->group("applications", ["namespace" => "App\Controllers", "filter" => "a
     $routes->post("details/(:segment)", [ApplicationsController::class, "createApplication"], ["filter" => ["hasPermission:Create_Application_Forms"]]);
     $routes->put("details/(:segment)/restore", [ApplicationsController::class, "restoreApplication/$1"], ["filter" => ["hasPermission:Restore_Application_Forms"]]);
     $routes->get("count", [ApplicationsController::class, "countApplications"], ["filter" => ["hasPermission:View_Application_Forms"]], );
+    $routes->post("count", [ApplicationsController::class, "countApplications"], ["filter" => ["hasPermission:View_Application_Forms"]], );
     $routes->get("statusCounts/(:segment)", [ApplicationsController::class, "getApplicationStatuses"], ["filter" => ["hasPermission:View_Application_Forms"]], );
+
+    // Timeline routes
+    $routes->get("details/(:segment)/timeline", [ApplicationsController::class, "getApplicationTimeline/$1"], ["filter" => ["hasPermission:View_Application_Forms"]]);
+    $routes->get("details/(:segment)/status-history", [ApplicationsController::class, "getApplicationStatusHistory/$1"], ["filter" => ["hasPermission:View_Application_Forms"]]);
+
+    // Report routes
+    $routes->post("reports/basic-statistics", [ApplicationsController::class, "getBasicStatistics"], ["filter" => ["hasPermission:View_Application_Forms"]]);
+    $routes->get("reports/fields", [ApplicationsController::class, "getReportFields"], ["filter" => ["hasPermission:View_Application_Forms"]]);
 
     $routes->get("types/(:segment)", [ApplicationsController::class, "getApplicationFormTypes"], ["filter" => ["hasPermission:View_Application_Forms"]]);
 
@@ -235,6 +255,7 @@ $routes->group("licenses", ["namespace" => "App\Controllers", "filter" => "apiau
     $routes->get("renewal-check-superintendent", [LicensesController::class, "getPharmacySuperintendent"], ["filter" => ["hasPermission:Create_License_Renewal"]], );
     $routes->get("renewal-count", [LicensesController::class, "countRenewals"], ["filter" => ["hasPermission:View_License_Renewal"]], );
     $routes->post("renewal-count", [LicensesController::class, "countRenewals"], ["filter" => ["hasPermission:View_License_Renewal"]], );
+    $routes->get("renewal-filters/(:segment)", [LicensesController::class, "getLicenseRenewalFilters/$1"], ["filter" => ["hasPermission:View_License_Renewal"]], );
 
     $routes->get("renewal/license/(:segment)", [LicensesController::class, "getRenewals/$1"], ["filter" => ["hasPermission:View_License_Renewal"]], );
     $routes->get("renewal/(:segment)", [LicensesController::class, "getRenewal/$1"], ["filter" => ["hasPermission:View_License_Renewal"]], );

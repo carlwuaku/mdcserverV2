@@ -335,6 +335,7 @@ class NetworkUtils
                         CURLOPT_POSTFIELDS,
                         $data
                     );
+                log_message('info', 'url: ' . $url . ' POST data: ' . print_r($data, true));
                 break;
             case "PUT":
                 curl_setopt($curl, CURLOPT_CUSTOMREQUEST, "PUT");

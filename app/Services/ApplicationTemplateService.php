@@ -3,8 +3,10 @@ namespace App\Services;
 
 use App\Helpers\ApplicationFormActionHelper;
 use App\Helpers\CacheHelper;
+use App\Helpers\Types\CriteriaType;
 use App\Helpers\Utils;
 use App\Models\Applications\ApplicationTemplateModel;
+use App\Models\UsersModel;
 use App\Traits\CacheInvalidatorTrait;
 use Exception;
 
@@ -18,7 +20,7 @@ class ApplicationTemplateService
     /**
      * Get application templates with filtering and pagination
      */
-    public function getApplicationTemplates(array $filters = []): array
+    public function getApplicationTemplates(UsersModel $user, array $filters = []): array
     {
         $per_page = $filters['limit'] ?? 100;
         $page = $filters['page'] ?? 0;
@@ -51,11 +53,18 @@ class ApplicationTemplateService
         $totalBuilder = clone $builder;
         $total = $totalBuilder->countAllResults() + count($defaultTemplates);
         $result = $builder->get($per_page, $page)->getResult();
-        log_message('debug', print_r($result, true));
         $result = array_merge($result, $defaultTemplates);
         //filter out by available_external 
         $filtered_result = [];
+        //if the user is not an admin, only show templates that match their criteria
+        $isAdmin = $user->isAdmin();
+        $userData = array_merge(["user_type" => $user->user_type, "region" => $user->region], (array) $user->profile_data);
         foreach ($result as $application) {
+
+            $applicationCriteria = property_exists($application, 'criteria') && $application->criteria ? array_map(fn($c) => CriteriaType::fromArray($c), json_decode($application->criteria, true)) : [];
+            if (!$isAdmin && !CriteriaType::matchesCriteria($userData, $applicationCriteria)) {
+                continue;
+            }
             if ($application->available_externally == 1) {
                 $filtered_result[] = $application;
             }
@@ -104,7 +113,6 @@ class ApplicationTemplateService
             "form_name" => "required|is_unique[application_form_templates.form_name]",
             "data" => "required"
         ];
-
         $validation = \Config\Services::validation();
         if (!$validation->setRules($rules)->run($data)) {
             throw new \InvalidArgumentException('Validation failed: ' . json_encode($validation->getErrors()));
