@@ -263,6 +263,102 @@
             ]
         },
         {
+            "title": "MCA",
+            "active_children": false,
+            "url": "",
+            "icon": "person_outlined",
+            "color": "green",
+            "children": [
+                {
+                    "title": "View/Search MCA",
+                    "url": "/licenses/list/mca",
+                    "icon": "",
+                    "children": [],
+                    "urlParams": {
+                        "licenseType": "mca"
+                    }
+                },
+                {
+                    "title": "Add New MCA",
+                    "url": "/licenses/form/create/mca",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Basic Reports",
+                    "url": "/licenses/reports/mca",
+                    "icon": "",
+                    "children": [],
+                    "urlParams": {
+                        "licenseType": "mca"
+                    }
+                },
+                {
+                    "title": "Advanced Reports",
+                    "url": "/licenses/advanced-reports/mca",
+                    "icon": "",
+                    "children": [],
+                    "urlParams": {
+                        "licenseType": "mca"
+                    }
+                },
+                {
+                    "title": "Renewal Reports",
+                    "url": "/licenses/renewal-reports/mca",
+                    "icon": "",
+                    "children": []
+                }
+            ]
+        },
+        {
+            "title": "Student indexes",
+            "active_children": false,
+            "url": "",
+            "icon": "person_outlined",
+            "color": "green",
+            "children": [
+                {
+                    "title": "View/Search Students",
+                    "url": "/licenses/list/indexed_students",
+                    "icon": "",
+                    "children": [],
+                    "urlParams": {
+                        "licenseType": "indexed_students"
+                    }
+                },
+                {
+                    "title": "Add New MCA",
+                    "url": "/licenses/form/create/indexed_students",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Basic Reports",
+                    "url": "/licenses/reports/indexed_students",
+                    "icon": "",
+                    "children": [],
+                    "urlParams": {
+                        "licenseType": "indexed_students"
+                    }
+                },
+                {
+                    "title": "Advanced Reports",
+                    "url": "/licenses/advanced-reports/indexed_students",
+                    "icon": "",
+                    "children": [],
+                    "urlParams": {
+                        "licenseType": "indexed_students"
+                    }
+                },
+                {
+                    "title": "Renewal Reports",
+                    "url": "/licenses/renewal-reports/indexed_students",
+                    "icon": "",
+                    "children": []
+                }
+            ]
+        },
+        {
             "title": "Housemanship",
             "active_children": false,
             "url": "",
@@ -769,6 +865,20 @@
             "icon": "person_outlined",
             "children": [],
             "urlParams": {}
+        },
+        {
+            "title": "Search MCAs",
+            "active_children": false,
+            "url": "/licenses/list/mca",
+            "icon": "person_outlined",
+            "children": []
+        },
+        {
+            "title": "Search Student Indexes",
+            "active_children": false,
+            "url": "/licenses/indexed_students",
+            "icon": "person_outlined",
+            "children": []
         },
         {
             "title": "Search Examination Candidates",
@@ -3928,6 +4038,761 @@
                     "apiKeyProperty": "practitioner_type",
                     "apiLabelProperty": "practitioner_type",
                     "apiType": "select"
+                }
+            ],
+            "renewalBasicStatisticsFields": [],
+            "renewalBasicStatisticsFilterFields": [],
+            "gazetteTableColumns": {}
+        },
+        "mca": {
+            "table": "mca",
+            "uniqueKeyField": "index_number",
+            "selectionFields": [
+                "index_number",
+                "first_name",
+                "middle_name",
+                "last_name",
+                "date_of_birth",
+                "sex",
+                "id_type",
+                "id_number",
+                "qualification",
+                "nationality",
+                "workplace_address",
+                "training_institution",
+                "location"
+            ],
+            "displayColumns": [
+                "picture",
+                "index_number",
+                "first_name",
+                "middle_name",
+                "last_name",
+                "training_institution",
+                "registration_date",
+                "sex",
+                "email",
+                "phone",
+                "id_type",
+                "id_number",
+                "status",
+                "workplace_address",
+                "postal_address",
+                "created_on",
+                "date_of_birth",
+                "nationality",
+                "location",
+                "deleted_at"
+            ],
+            "fields": [
+                {
+                    "label": "Index Number",
+                    "name": "index_number",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": true
+                },
+                {
+                    "label": "First name",
+                    "name": "first_name",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": true
+                },
+                {
+                    "label": "Middle name",
+                    "name": "middle_name",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": false
+                },
+                {
+                    "label": "Last name",
+                    "name": "last_name",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": true
+                },
+                {
+                    "label": "Date of birth",
+                    "name": "date_of_birth",
+                    "hint": "",
+                    "options": [],
+                    "type": "date",
+                    "value": "",
+                    "required": true
+                },
+                {
+                    "label": "Sex",
+                    "name": "sex",
+                    "hint": "",
+                    "options": [
+                        {
+                            "key": "Male",
+                            "value": "Male"
+                        },
+                        {
+                            "key": "Female",
+                            "value": "Female"
+                        }
+                    ],
+                    "type": "select",
+                    "value": "",
+                    "required": true
+                },
+                {
+                    "label": "Natonality",
+                    "name": "nationality",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": false
+                },
+                {
+                    "label": "Qualification",
+                    "name": "qualification",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": false
+                },
+                {
+                    "label": "Training institution",
+                    "name": "training_institution",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": true,
+                    "api_url": "admin/distinct-values/training_institutions/name",
+                    "apiKeyProperty": "name",
+                    "apiLabelProperty": "name",
+                    "apiType": "select"
+                },
+                {
+                    "label": "Workplace address",
+                    "name": "workplace_address",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": false
+                },
+                {
+                    "label": "Id Type",
+                    "name": "id_type",
+                    "hint": "",
+                    "options": [
+                        {
+                            "key": "National ID",
+                            "value": "National ID"
+                        },
+                        {
+                            "key": "Passport",
+                            "value": "Passport"
+                        },
+                        {
+                            "key": "Driver's License",
+                            "value": "Driver's License"
+                        },
+                        {
+                            "key": "Other",
+                            "value": "Other"
+                        }
+                    ],
+                    "type": "select",
+                    "value": "",
+                    "required": true
+                },
+                {
+                    "label": "Id Number",
+                    "name": "id_number",
+                    "hint": "This has to be unique",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": true
+                }
+            ],
+            "onCreateValidation": {},
+            "onUpdateValidation": {},
+            "renewalFields": [],
+            "implicitRenewalFields": [],
+            "renewalTable": "",
+            "renewalStages": {},
+            "renewalSearchFields": {
+                "fields": [],
+                "joinCondition": ""
+            },
+            "renewalJsonFields": [],
+            "fieldsToUpdateOnRenewal": [],
+            "canApplyForRenewalCriteria": [
+                {}
+            ],
+            "shouldApplyForRenewalCriteria": [],
+            "mustBeInGoodStandingToRenew": false,
+            "renewalCpdCategory1Cutoff": 0,
+            "renewalCpdCategory2Cutoff": 0,
+            "renewalCpdCategory3Cutoff": 0,
+            "renewalCpdTotalCutoff": 0,
+            "daysFromRenewalExpiryToOpenApplication": 0,
+            "revalidationPeriodInYears": 3,
+            "revalidationMessage": "You are required to validate your data before renewing your license",
+            "renewalFilterFields": [],
+            "detailsPageHeaderTabs": [],
+            "detailsPageTabs": [
+                {
+                    "label": "Details",
+                    "key": "details"
+                },
+                {
+                    "label": "Payments",
+                    "key": "payments"
+                },
+                {
+                    "label": "Activities",
+                    "key": "activities"
+                },
+                {
+                    "label": "Documents",
+                    "key": "documents"
+                }
+            ],
+            "searchFields": {
+                "fields": [
+                    "first_name",
+                    "last_name",
+                    "middle_name",
+                    "id_number",
+                    "location",
+                    "training_institution"
+                ],
+                "joinCondition": "licenses.license_number = mca.index_number"
+            },
+            "basicStatisticsFields": [
+                {
+                    "label": "Sex",
+                    "name": "sex",
+                    "type": "bar",
+                    "xAxisLabel": "Sex",
+                    "yAxisLabel": "Number of Licenses"
+                },
+                {
+                    "label": "Nationality",
+                    "name": "nationality",
+                    "type": "bar",
+                    "xAxisLabel": "Nationality",
+                    "yAxisLabel": "Number of Licenses"
+                },
+                {
+                    "label": "Qualification",
+                    "name": "qualification",
+                    "type": "bar",
+                    "xAxisLabel": "Qualification at registration",
+                    "yAxisLabel": "Number of Licenses"
+                },
+                {
+                    "label": "Training Institution",
+                    "name": "training_institution",
+                    "type": "bar",
+                    "xAxisLabel": "Training Institution",
+                    "yAxisLabel": "Number of Licenses"
+                }
+            ],
+            "basicStatisticsFilterFields": [
+                {
+                    "label": "Sex",
+                    "name": "sex",
+                    "hint": "",
+                    "options": [
+                        {
+                            "key": "Male",
+                            "value": "Male"
+                        },
+                        {
+                            "key": "Female",
+                            "value": "Female"
+                        }
+                    ],
+                    "type": "select",
+                    "value": "",
+                    "required": true
+                },
+                {
+                    "label": "Training Institution",
+                    "name": "training_institution",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/training_institutions/name",
+                    "apiKeyProperty": "name",
+                    "apiLabelProperty": "name",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                },
+                {
+                    "label": "Nationality",
+                    "name": "nationality",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/mca/nationality",
+                    "apiKeyProperty": "nationality",
+                    "apiLabelProperty": "nationality",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                }
+            ],
+            "advancedStatisticsFields": [
+                {
+                    "label": "Date of birth",
+                    "name": "date_of_birth",
+                    "hint": "",
+                    "options": [],
+                    "type": "date-range",
+                    "value": "",
+                    "required": false
+                },
+                {
+                    "label": "Sex",
+                    "name": "sex",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/mca/sex",
+                    "apiKeyProperty": "sex",
+                    "apiLabelProperty": "sex",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                },
+                {
+                    "label": "Nationality",
+                    "name": "nationality",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/mca/nationality",
+                    "apiKeyProperty": "nationality",
+                    "apiLabelProperty": "nationality",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                },
+                {
+                    "label": "Id Type",
+                    "name": "id_type",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/mca/id_type",
+                    "apiKeyProperty": "id_type",
+                    "apiLabelProperty": "id_type",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                },
+                {
+                    "label": "Training institution",
+                    "name": "training_institution",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/mca/training_institution",
+                    "apiKeyProperty": "training_institution",
+                    "apiLabelProperty": "training_institution",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                },
+                {
+                    "label": "Qualification",
+                    "name": "qualification",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/mca/qualification",
+                    "apiKeyProperty": "qualification",
+                    "apiLabelProperty": "qualification",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                }
+            ],
+            "searchFormFields": [
+                {
+                    "label": "Search",
+                    "name": "param",
+                    "hint": "Search by first name, last name, middle name, email, phone number",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": false,
+                    "api_url": "",
+                    "apiKeyProperty": "",
+                    "apiLabelProperty": "",
+                    "apiType": ""
+                }
+            ],
+            "renewalBasicStatisticsFields": [],
+            "renewalBasicStatisticsFilterFields": [],
+            "gazetteTableColumns": {}
+        },
+        "indexed_students": {
+            "table": "student_indexes",
+            "uniqueKeyField": "index_number",
+            "selectionFields": [
+                "index_number",
+                "first_name",
+                "middle_name",
+                "last_name",
+                "date_of_birth",
+                "sex",
+                "student_id",
+                "nationality",
+                "training_institution",
+                "year"
+            ],
+            "displayColumns": [
+                "picture",
+                "index_number",
+                "first_name",
+                "middle_name",
+                "last_name",
+                "training_institution",
+                "registration_date",
+                "sex",
+                "year",
+                "email",
+                "phone",
+                "student_id",
+                "status",
+                "postal_address",
+                "created_on",
+                "date_of_birth",
+                "nationality",
+                "deleted_at"
+            ],
+            "fields": [
+                {
+                    "label": "Index Number",
+                    "name": "index_number",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": true
+                },
+                {
+                    "label": "First name",
+                    "name": "first_name",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": true
+                },
+                {
+                    "label": "Middle name",
+                    "name": "middle_name",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": false
+                },
+                {
+                    "label": "Last name",
+                    "name": "last_name",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": true
+                },
+                {
+                    "label": "Date of birth",
+                    "name": "date_of_birth",
+                    "hint": "",
+                    "options": [],
+                    "type": "date",
+                    "value": "",
+                    "required": true
+                },
+                {
+                    "label": "Sex",
+                    "name": "sex",
+                    "hint": "",
+                    "options": [
+                        {
+                            "key": "Male",
+                            "value": "Male"
+                        },
+                        {
+                            "key": "Female",
+                            "value": "Female"
+                        }
+                    ],
+                    "type": "select",
+                    "value": "",
+                    "required": true
+                },
+                {
+                    "label": "Natonality",
+                    "name": "nationality",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": false
+                },
+                {
+                    "label": "Student Id",
+                    "name": "student_id",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": true
+                },
+                {
+                    "label": "Training institution",
+                    "name": "training_institution",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": true,
+                    "api_url": "admin/distinct-values/training_institutions/name",
+                    "apiKeyProperty": "name",
+                    "apiLabelProperty": "name",
+                    "apiType": "select"
+                },
+                {
+                    "label": "Year group",
+                    "name": "year",
+                    "hint": "",
+                    "options": [],
+                    "type": "number",
+                    "value": "",
+                    "required": false
+                }
+            ],
+            "onCreateValidation": {},
+            "onUpdateValidation": {},
+            "renewalFields": [],
+            "implicitRenewalFields": [],
+            "renewalTable": "",
+            "renewalStages": {},
+            "renewalSearchFields": {
+                "fields": [],
+                "joinCondition": ""
+            },
+            "renewalJsonFields": [],
+            "fieldsToUpdateOnRenewal": [],
+            "canApplyForRenewalCriteria": [
+                {}
+            ],
+            "shouldApplyForRenewalCriteria": [],
+            "mustBeInGoodStandingToRenew": false,
+            "renewalCpdCategory1Cutoff": 0,
+            "renewalCpdCategory2Cutoff": 0,
+            "renewalCpdCategory3Cutoff": 0,
+            "renewalCpdTotalCutoff": 0,
+            "daysFromRenewalExpiryToOpenApplication": 0,
+            "revalidationPeriodInYears": 10,
+            "revalidationMessage": "You are required to validate your data before renewing your license",
+            "renewalFilterFields": [],
+            "detailsPageHeaderTabs": [
+                {
+                    "label": "Training Institution",
+                    "key": "training_institution"
+                }
+            ],
+            "detailsPageTabs": [
+                {
+                    "label": "Details",
+                    "key": "details"
+                },
+                {
+                    "label": "Payments",
+                    "key": "payments"
+                },
+                {
+                    "label": "Activities",
+                    "key": "activities"
+                },
+                {
+                    "label": "Documents",
+                    "key": "documents"
+                }
+            ],
+            "searchFields": {
+                "fields": [
+                    "first_name",
+                    "last_name",
+                    "middle_name",
+                    "student_id",
+                    "training_institution"
+                ],
+                "joinCondition": "licenses.license_number = student_indexes.index_number"
+            },
+            "basicStatisticsFields": [
+                {
+                    "label": "Sex",
+                    "name": "sex",
+                    "type": "bar",
+                    "xAxisLabel": "Sex",
+                    "yAxisLabel": "Number of Licenses"
+                },
+                {
+                    "label": "Nationality",
+                    "name": "nationality",
+                    "type": "bar",
+                    "xAxisLabel": "Nationality",
+                    "yAxisLabel": "Number of Licenses"
+                },
+                {
+                    "label": "Training Institution",
+                    "name": "training_institution",
+                    "type": "bar",
+                    "xAxisLabel": "Training Institution",
+                    "yAxisLabel": "Number of Licenses"
+                }
+            ],
+            "basicStatisticsFilterFields": [
+                {
+                    "label": "Sex",
+                    "name": "sex",
+                    "hint": "",
+                    "options": [
+                        {
+                            "key": "Male",
+                            "value": "Male"
+                        },
+                        {
+                            "key": "Female",
+                            "value": "Female"
+                        }
+                    ],
+                    "type": "select",
+                    "value": "",
+                    "required": true
+                },
+                {
+                    "label": "Training Institution",
+                    "name": "training_institution",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/training_institutions/name",
+                    "apiKeyProperty": "name",
+                    "apiLabelProperty": "name",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                },
+                {
+                    "label": "Nationality",
+                    "name": "nationality",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/student_indexes/nationality",
+                    "apiKeyProperty": "nationality",
+                    "apiLabelProperty": "nationality",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                }
+            ],
+            "advancedStatisticsFields": [
+                {
+                    "label": "Date of birth",
+                    "name": "date_of_birth",
+                    "hint": "",
+                    "options": [],
+                    "type": "date-range",
+                    "value": "",
+                    "required": false
+                },
+                {
+                    "label": "Sex",
+                    "name": "sex",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/student_indexes/sex",
+                    "apiKeyProperty": "sex",
+                    "apiLabelProperty": "sex",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                },
+                {
+                    "label": "Nationality",
+                    "name": "nationality",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/student_indexes/nationality",
+                    "apiKeyProperty": "nationality",
+                    "apiLabelProperty": "nationality",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                },
+                {
+                    "label": "Training institution",
+                    "name": "training_institution",
+                    "hint": "",
+                    "options": [],
+                    "type": "api",
+                    "value": "",
+                    "required": false,
+                    "api_url": "admin/distinct-values/student_indexes/training_institution",
+                    "apiKeyProperty": "training_institution",
+                    "apiLabelProperty": "training_institution",
+                    "apiType": "select",
+                    "selection_mode": "multiple"
+                }
+            ],
+            "searchFormFields": [
+                {
+                    "label": "Search",
+                    "name": "param",
+                    "hint": "Search by first name, last name, middle name, email, phone number, student ID, training institution",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": false,
+                    "api_url": "",
+                    "apiKeyProperty": "",
+                    "apiLabelProperty": "",
+                    "apiType": ""
                 }
             ],
             "renewalBasicStatisticsFields": [],
