@@ -130,3 +130,4 @@ nb-configuration.xml
 /.phpunit.*.cache
 
 *.pem
+.env**

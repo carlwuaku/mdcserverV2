@@ -391,7 +391,6 @@ class AuthController extends ResourceController
                 throw new \Exception("Email template or subject for 2FA not found");
             }
             $templateEngine = new TemplateEngineHelper();
-            log_message('info', $secret);
 
             //save the qr code url as a file and generate a link for it. gmail does not accept inline images
             $qrPath = "";//TODO; provide a link to an empty image
@@ -402,7 +401,6 @@ class AuthController extends ResourceController
                 $messageTemplate = $settings->get(SETTING_2_FACTOR_AUTHENTICATION_SETUP_EMAIL_TEMPLATE_CODE_ONLY);
             }
 
-            log_message('info', $portalUrl . '/' . $uuid);
             $message = $templateEngine->process($messageTemplate, ['qr_code_url' => $qrPath, 'secret' => $secret, 'display_name' => $displayName]);
             //add the portal link to the message
             $message .= "<p>Click here to continue the setup: <a href='" . $portalUrl . '/' . $uuid . "'>" . $portalUrl . "</a></p>";

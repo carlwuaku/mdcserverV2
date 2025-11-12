@@ -225,7 +225,7 @@ class PaymentsService
     {
         // Validate and process the data
         $rules = [
-            "unique_id" => "required|is_unique[invoices.invoice_number]",
+            "unique_id" => "required",
             "purpose" => "required",
             "due_date" => "required|valid_date",
             "last_name" => "required",

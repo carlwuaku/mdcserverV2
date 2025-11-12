@@ -1275,7 +1275,6 @@ class Utils
             $fullData['name'] = $fullData['first_name'] . ' ' . $fullData['last_name'];
         }
         //for practitioners, qualifications is a json array. convert it to an array
-        log_message('debug', print_r($fullData, true));
         if (array_key_exists('qualifications', $fullData) && !empty($fullData['qualifications'])) {
             $fullData['qualifications'] = json_decode($fullData['qualifications'], true);
         }
@@ -1374,7 +1373,6 @@ class Utils
 
         foreach ($templates as $template) {
             if ($template['form_name'] == $name || $template['uuid'] == $name) {
-                log_message("info", "Default application form template found: " . json_encode($template));
                 return ApplicationFormTemplateType::fromArray($template);
             }
         }

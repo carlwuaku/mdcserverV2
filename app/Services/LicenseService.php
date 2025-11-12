@@ -256,7 +256,6 @@ class LicenseService
         }
         // Get total count
         $totalBuilder = clone $builder;
-        log_message('debug', $totalBuilder->getCompiledSelect(false));
         $total = $totalBuilder->countAllResults();
         // Get paginated results
         $builder->limit($per_page)->offset($page);

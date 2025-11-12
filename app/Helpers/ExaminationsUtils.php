@@ -307,7 +307,6 @@ class ExaminationsUtils extends Utils
                     $criteriaMatch = false;
                     break;
                 }
-                // log_message("debug", "values empty: " . print_r(!empty($values)) . "int val of first value:" . intval($values[0]) . "registration value:" . $registration[$field] . print_r($values, true));
                 if (count($values) > 0) {
                     if (intval($values[0]) === 1) {
                         if ($registration[$field] === null || trim($registration[$field]) === "") {

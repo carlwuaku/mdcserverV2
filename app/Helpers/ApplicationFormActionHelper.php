@@ -84,7 +84,6 @@ class ApplicationFormActionHelper extends Utils
                 return self::generateInvoice($action, $data);
             } else {
                 // throw new \InvalidArgumentException('No matching criteria found for payment action: ' . $action->type);
-                log_message('info', 'No matching criteria found for payment action: ' . $action->type);
                 return [];
             }
 
@@ -173,7 +172,6 @@ class ApplicationFormActionHelper extends Utils
     private static function generateInvoice(ApplicationStageType $action, array $data)
     {
         try {
-            log_message('info', 'Generating invoice for action: ' . print_r($action, true));
             $paymentsService = \Config\Services::paymentsService();
 
             $purpose = array_key_exists('paymentPurpose', $action->config) ? $action->config['paymentPurpose'] : $action->config['payment_purpose'];
@@ -209,7 +207,6 @@ class ApplicationFormActionHelper extends Utils
             $licenseService = \Config\Services::licenseService();
 
             $result = $licenseService->updateLicense($registration_number, [$field => $value]);
-            log_message('info', 'Updating details from portal edit for action: ' . print_r($action, true));
 
             return $result;
         } catch (\Exception $e) {
@@ -400,7 +397,6 @@ class ApplicationFormActionHelper extends Utils
 
     private static function updateRenewalStatus(object $action, array $data)
     {
-        log_message('info', 'Updating renewal status with data' . print_r($data, true));
         try {
             $renewalService = \Config\Services::licenseRenewalService();
             //get the uuid from the data
@@ -762,7 +758,6 @@ class ApplicationFormActionHelper extends Utils
     private static function mapDataToBody($bodyMapping, $data)
     {
         $body = [];
-        log_message('info', 'Mapping data to body: ' . print_r($bodyMapping, true));
         foreach ($bodyMapping as $apiField => $mapping) {
             if (is_array($mapping)) {
                 // Handle complex mapping with transformations

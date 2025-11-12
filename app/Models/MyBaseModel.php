@@ -149,7 +149,6 @@ class MyBaseModel extends Model
                     //append the table name to the column if it doesn't already have it appended. if there's a dot, leave it.
                     //so that if we add joined tables it doesn't add the wrong table names
                     $columnName = str_contains($column, ".") ? $column : $this->table . "." . $column;
-                    log_message("info", "column name: $columnName");
                     $splitWordLikeConditionsArray[] = "{$columnName} LIKE '%{$splitWord}%' ";
                     //$splitWorkLikeConditionsArray = ["first_name like 'kofi'"]
                 }
@@ -164,7 +163,6 @@ class MyBaseModel extends Model
 
         $likeConditions = implode(" or ", $likeConditionsArray);
         //$likeConditions = (("first_name like 'kofi' or last_name like 'kofi'") and (first_name like 'mensa' or last_name like 'mensah')) or ((first_name like 'akosua' or last_name like 'akosua') and (first_name like 'kobi' or last_name like 'kobi') )
-        // log_message("info", "$likeConditions");
         $builder->where("({$likeConditions})");
         return $builder;
     }

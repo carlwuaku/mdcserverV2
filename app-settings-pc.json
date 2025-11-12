@@ -4040,7 +4040,7 @@
                 ]
             },
             {
-                "value": "available_pa_selection",
+                "value": "available_technician_selection",
                 "key": "Available for selection by Pharmacy Technician",
                 "criteria": [
                     {
@@ -4571,7 +4571,7 @@
     "portalHomeMenu": [
         {
             "title": "Personal Details",
-            "image": "[picture]",
+            "image": "assets/images/medical-bg.jpg",
             "icon": "person_outlined",
             "dataPoints": [],
             "actions": [
@@ -4592,7 +4592,7 @@
             "title": "View/Fill Application Forms",
             "active_children": false,
             "url": "/applications",
-            "image": "assets/images/application.png",
+            "image": "assets/images/medical-bg.jpg",
             "icon": "auto_stories_outlined",
             "dataPoints": [],
             "actions": [
@@ -4621,7 +4621,7 @@
             "title": "Payment",
             "active_children": false,
             "url": "/payment",
-            "image": "assets/images/invoice.png",
+            "image": "assets/images/medical-bg.jpg",
             "icon": "auto_stories_outlined",
             "dataPoints": [
                 {
@@ -4651,7 +4651,7 @@
             "title": "Relicense Status",
             "active_children": false,
             "url": "/renewal",
-            "image": "assets/images/010-gold-medal.png",
+            "image": "assets/images/medical-bg.jpg",
             "dataPoints": [],
             "actions": [
                 {
@@ -4743,7 +4743,7 @@
         },
         {
             "title": "Continuous Professional Development (CPD)",
-            "image": "assets/images/011-work.png",
+            "image": "assets/images/medical-bg.jpg",
             "icon": "",
             "dataPoints": [
                 {
@@ -4795,7 +4795,7 @@
         },
         {
             "title": "Qualifications",
-            "image": "assets/images/graduated.png",
+            "image": "assets/images/medical-bg.jpg",
             "icon": "",
             "dataPoints": [],
             "actions": [
@@ -4814,7 +4814,7 @@
         },
         {
             "title": "Work History",
-            "image": "assets/images/recruitment.png",
+            "image": "assets/images/medical-bg.jpg",
             "icon": "",
             "dataPoints": [],
             "actions": [
@@ -4833,7 +4833,7 @@
         },
         {
             "title": "Examinations",
-            "image": "assets/images/school.png",
+            "image": "assets/images/medical-bg.jpg",
             "icon": "",
             "dataPoints": [],
             "actions": [
@@ -4912,7 +4912,7 @@
         },
         {
             "title": "Housemanship",
-            "image": "assets/images/007-mansion.png",
+            "image": "assets/images/medical-bg.jpg",
             "icon": "",
             "dataPoints": [],
             "actions": [
