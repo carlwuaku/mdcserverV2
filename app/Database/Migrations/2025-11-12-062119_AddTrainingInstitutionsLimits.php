@@ -35,7 +35,7 @@ class AddTrainingInstitutionsLimits extends Migration
 
         $this->forge->addPrimaryKey('id');
         $this->forge->addKey('training_institution_uuid', false);
-        $this->forge->addKey('year', false, true);
+        $this->forge->addKey('year', false);
         $this->forge->addForeignKey('training_institution_uuid', 'training_institutions', 'uuid', 'CASCADE', 'CASCADE');
         $this->forge->addUniqueKey(['training_institution_uuid', 'year'], 'training_institution_year');
         $this->forge->createTable(

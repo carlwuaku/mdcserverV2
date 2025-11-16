@@ -14,6 +14,7 @@ use App\Controllers\PortalController;
 use App\Controllers\PrintQueueController;
 use App\Controllers\RegionController;
 use App\Controllers\SpecialtiesController;
+use App\Controllers\TrainingInstitutionsController;
 use CodeIgniter\Router\RouteCollection;
 use App\Controllers\PractitionerController;
 use App\Controllers\ApplicationsController;
@@ -175,6 +176,19 @@ $routes->group("regions", ["namespace" => "App\Controllers", "filter" => "apiaut
 $routes->group("specialties", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
     $routes->get("specialties", [SpecialtiesController::class, "getSpecialties"]);
     $routes->get("subspecialties", [SpecialtiesController::class, "getSubspecialties"]);
+});
+
+$routes->group("training-institutions", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
+    $routes->get("details", [TrainingInstitutionsController::class, "getTrainingInstitutions"], ["filter" => ["hasPermission:View_Training_Institutions"]]);
+    $routes->get("settings/(:segment)", [TrainingInstitutionsController::class, "getTrainingInstitutionSetting/$1"], ["filter" => ["hasPermission:View_Training_Institutions"]]);
+    $routes->get("details/(:segment)", [TrainingInstitutionsController::class, "getTrainingInstitution/$1"], ["filter" => ["hasPermission:View_Training_Institutions"]]);
+    $routes->post("details", [TrainingInstitutionsController::class, "createTrainingInstitution"], ["filter" => ["hasPermission:Create_Or_Edit_Training_Institutions"]]);
+    $routes->put("details/(:segment)", [TrainingInstitutionsController::class, "updateTrainingInstitution/$1"], ["filter" => ["hasPermission:Create_Or_Edit_Training_Institutions"]]);
+    $routes->delete("details/(:segment)", [TrainingInstitutionsController::class, "deleteTrainingInstitution/$1"], ["filter" => ["hasPermission:Delete_Training_Institutions"]]);
+    $routes->get("details/(:segment)/limits", [TrainingInstitutionsController::class, "getInstitutionLimits/$1"], ["filter" => ["hasPermission:View_Training_Institutions"]]);
+    $routes->post("details/(:segment)/limits", [TrainingInstitutionsController::class, "setInstitutionLimit/$1"], ["filter" => ["hasPermission:Create_Or_Edit_Training_Institutions"]]);
+    $routes->delete("details/(:segment)/limits/(:segment)", [TrainingInstitutionsController::class, "deleteInstitutionLimit/$1/$2"], ["filter" => ["hasPermission:Create_Or_Edit_Training_Institutions"]]);
+    $routes->get("details/(:segment)/students", [TrainingInstitutionsController::class, "getInstitutionStudents/$1"], ["filter" => ["hasPermission:View_Training_Institutions"]]);
 });
 
 $routes->group("file-server", ["namespace" => "App\Controllers"], function (RouteCollection $routes) {

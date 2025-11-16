@@ -329,6 +329,27 @@
             ]
         },
         {
+            "title": "Accredited Training institutions",
+            "active_children": false,
+            "url": "",
+            "icon": "school",
+            "color": "green",
+            "children": [
+                {
+                    "title": "View/Manage Institutions",
+                    "url": "/training-institutions/list",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Add Institutions",
+                    "url": "/training-institutions/new",
+                    "icon": "",
+                    "children": []
+                }
+            ]
+        },
+        {
             "title": "Payment",
             "active_children": false,
             "url": "",
@@ -637,6 +658,36 @@
             "apiLabelProperty": "register_type",
             "apiType": "select",
             "selection_mode": "multiple"
+        }
+    ],
+    "basicStatisticsFields": [
+        {
+            "label": "Region",
+            "name": "region",
+            "type": "bar",
+            "xAxisLabel": "Region",
+            "yAxisLabel": "Number of Licenses"
+        },
+        {
+            "label": "District",
+            "name": "district",
+            "type": "bar",
+            "xAxisLabel": "District",
+            "yAxisLabel": "Number of Licenses"
+        },
+        {
+            "label": "Country",
+            "name": "country_of_practice",
+            "type": "bar",
+            "xAxisLabel": "Country",
+            "yAxisLabel": "Number of Licenses"
+        },
+        {
+            "label": "Register Type",
+            "name": "register_type",
+            "type": "bar",
+            "xAxisLabel": "Register Type",
+            "yAxisLabel": "Number of Licenses"
         }
     ],
     "licenseTypes": {
@@ -2899,7 +2950,7 @@
                     ],
                     "type": "select",
                     "value": "",
-                    "required": true
+                    "required": false
                 },
                 {
                     "label": "Training Institution",
@@ -5917,5 +5968,13 @@
             "type": "array",
             "description": "the types of work institutions"
         }
+    },
+    "trainingInstitutions": {
+        "practitioner_types": [
+            {
+                "key": "Students",
+                "value": "indexed_students"
+            }
+        ]
     }
 }

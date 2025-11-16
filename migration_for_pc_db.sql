@@ -2680,3 +2680,106 @@ FROM
 
 -- Step 3: Clean up
 DROP TEMPORARY TABLE temp_invoice_line_items;
+
+#END IMPORT INVOICE LINE ITEMS
+#IMPORT MCA SCHOOLS
+INSERT
+    IGNORE INTO ci4_pc2.`training_institutions`(
+        `uuid`,
+        `name`,
+        `location`,
+        `phone`,
+        `type`
+    )
+SELECT
+    '',
+    `name`,
+    `location`,
+    `phone`,
+    'mca'
+FROM
+    council.`bf_mca_schools`;
+
+#IMPORT MCAs
+INSERT
+    IGNORE INTO ci4_pc2.`licenses`(
+        `uuid`,
+        `license_number`,
+        `name`,
+        `registration_date`,
+        `status`,
+        `email`,
+        `picture`,
+        `type`,
+        `phone`,
+        `portal_access`,
+        `created_on`,
+        `region`,
+        `district`,
+        `register_type`
+    )
+SELECT
+    '',
+    index_number,
+    CONCAT_WS(
+        ' ',
+        COALESCE(first_name, ''),
+        COALESCE(middle_name, ''),
+        COALESCE(last_name, '')
+    ) as name,
+    registration_date,
+    'Active' as status,
+    email,
+    picture,
+    'mca',
+    phone,
+    'yes' as portal_access,
+    created_on,
+    NULL,
+    NULL,
+    NULL
+from
+    council.bf_mca
+WHERE
+    council.bf_mca.index_number IS NOT NULL
+    AND council.bf_mca.index_number != '';
+
+########-END MCA LICENSE MIGRATION#######- 
+##MIGRATE MCA DETAILS INTO THE mca TABLE##
+INSERT
+    IGNORE INTO ci4_pc2.`mca`(
+        `first_name`,
+        `middle_name`,
+        `last_name`,
+        `date_of_birth`,
+        `index_number`,
+        `sex`,
+        `id_type`,
+        `id_number`,
+        `qualification`,
+        `nationality`,
+        `training_institution`,
+        `workplace_address`,
+        `location`
+    )
+SELECT
+    `first_name`,
+    `middle_name`,
+    `last_name`,
+    `date_of_birth`,
+    `index_number`,
+    COALESCE(sex, ''),
+    `id_type`,
+    `id_number`,
+    `qualification`,
+    `nationality`,
+    `training_institution`,
+    `workplace_address`,
+    `location`
+FROM
+    council.bf_mca
+WHERE
+    index_number IS NOT NULL
+    AND index_number != '';
+
+#END MIGRATE MCA DETAILS##

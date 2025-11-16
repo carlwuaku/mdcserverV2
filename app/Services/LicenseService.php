@@ -440,6 +440,8 @@ class LicenseService
     {
         $builder = $model->builder();
         $licenseTable = $model->getTableName();
+        $licenseDef = Utils::getLicenseSetting($licenseType);
+        $uniqueKeyField = $licenseDef->uniqueKeyField;
 
         // Apply parent parameters
         foreach ($parentParams as $key => $value) {
@@ -449,7 +451,7 @@ class LicenseService
             }
         }
 
-        $builder->join($licenseTypeTable, "$licenseTypeTable.license_number = licenses.license_number");
+        $builder->join($licenseTypeTable, cond: "$licenseTypeTable.$uniqueKeyField = licenses.license_number");
         $builder->select([$field->name, "COUNT(*) as count"]);
         $builder->where("type", $licenseType);
 

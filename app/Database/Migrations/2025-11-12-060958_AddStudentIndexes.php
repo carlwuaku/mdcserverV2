@@ -79,7 +79,7 @@ class AddStudentIndexes extends Migration
         ]);
 
         $this->forge->addPrimaryKey('id');
-        $this->forge->addKey('first_name', false, true);
+        $this->forge->addKey('first_name', false);
         $this->forge->addKey('middle_name', false);
         $this->forge->addKey('last_name', false);
         $this->forge->addKey('sex', false);

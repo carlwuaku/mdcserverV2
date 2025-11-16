@@ -92,7 +92,8 @@ class Filters extends BaseConfig
                 'examinations/*',
                 'activities/*',
                 'payment/*',
-                'portal/*'
+                'portal/*',
+                'training-institutions/*'
             ],
             'after' => [
                 'api/*',
@@ -112,7 +113,8 @@ class Filters extends BaseConfig
                 'activities/*',
                 'activities',
                 'payment/*',
-                'portal/*'
+                'portal/*',
+                'training-institutions/*'
             ]
         ],
     ];

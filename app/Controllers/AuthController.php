@@ -67,6 +67,7 @@ class AuthController extends ResourceController
                         'renewalBasicStatisticsFilterFields',
                         'basicStatisticsFilterFields',
                         'advancedStatisticsFilterFields',
+                        'basicStatisticsFields',
                         'licenseTypes',
                         'cpdFilterFields',
                         'housemanship',

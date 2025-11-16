@@ -3621,7 +3621,7 @@ SELECT
 FROM
     mdc.`bf_fees`;
 
-    #IMPORT INVOICES
+#IMPORT INVOICES
 INSERT
     IGNORE INTO ci4_mdc4.`invoices` (
         `invoice_number`,
@@ -3752,3 +3752,135 @@ FROM
 
 -- Step 3: Clean up
 DROP TEMPORARY TABLE temp_invoice_line_items;
+
+#END IMPORT INVOICE LINE ITEMS
+#IMPORT  SCHOOLS
+INSERT
+    IGNORE INTO ci4_mdc4.`training_institutions`(
+        `uuid`,
+        `name`,
+        `location`,
+        `phone`,
+        `type`,
+        `email`,
+        `default_limit`,
+        `registration_start_month`,
+        `registration_end_month`,
+        `status`,
+        `category`,
+        `accredited_program`
+    )
+SELECT
+    '',
+    `name`,
+    `location`,
+    `phone`,
+    'indexed_students',
+    `email`,
+    `default_limit`,
+    `registration_start_month`,
+    `registration_end_month`,
+    `status`,
+    `category`,
+    `accredited_program`
+FROM
+    mdc.`bf_training_institutions`;
+
+#END IMPORT SCHOOLS
+#IMPORT SCHOOL LIMITS
+#create a temp table to hold the training_institution_id, uuid
+ALTER TABLE
+    `bf_training_institutions` CHANGE `name` `name` VARCHAR(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL;
+
+CREATE TEMPORARY TABLE temp_training_institution_uuid AS
+SELECT
+    mdc.`bf_training_institutions`.`id` as training_institution_id,
+    `uuid`
+FROM
+    ci4_mdc4.`training_institutions`
+    JOIN mdc.`bf_training_institutions` ON ci4_mdc4.`training_institutions`.`name` = mdc.`bf_training_institutions`.`name`;
+
+INSERT
+    IGNORE INTO ci4_mdc4.`training_institutions_limits`(
+        `training_institution_uuid`,
+        `year`,
+        `student_limit`
+    )
+SELECT
+    `uuid`,
+    `year`,
+    `student_limit`
+FROM
+    mdc.`bf_training_institutions_limits`
+    JOIN temp_training_institution_uuid ON mdc.`bf_training_institutions_limits`.`training_institution_id` = temp_training_institution_uuid.training_institution_id;
+
+DROP TEMPORARY TABLE temp_training_institution_uuid;
+
+#IMPORT student index LICENSE MIGRATION
+INSERT
+    IGNORE INTO ci4_mdc4.`licenses`(
+        `uuid`,
+        `license_number`,
+        `name`,
+        `status`,
+        `email`,
+        `type`,
+        `portal_access`,
+        `created_on`,
+        `region`,
+        `district`,
+        `register_type`
+    )
+SELECT
+    '',
+    index_number,
+    CONCAT_WS(
+        ' ',
+        COALESCE(first_name, ''),
+        COALESCE(middle_name, ''),
+        COALESCE(last_name, '')
+    ) as name,
+    `status`,
+    email,
+    'indexed_students',
+    'yes' as portal_access,
+    created_on,
+    NULL,
+    NULL,
+    NULL
+from
+    mdc.bf_student_indexes
+WHERE
+    mdc.bf_student_indexes.index_number IS NOT NULL
+    AND mdc.bf_student_indexes.index_number != '';
+
+########-END student index LICENSE MIGRATION#######- 
+##MIGRATE STUDENT INDEX DETAILS INTO THE STUDENT INDEXES TABLE##
+INSERT
+    IGNORE INTO ci4_mdc4.`student_indexes`(
+        `first_name`,
+        `middle_name`,
+        `last_name`,
+        `date_of_birth`,
+        `index_number`,
+        `sex`,
+        `student_id`,
+        `training_institution`,
+        `year`
+    )
+SELECT
+    `first_name`,
+    `middle_name`,
+    `last_name`,
+    `date_of_birth`,
+    `index_number`,
+    COALESCE(sex, ''),
+    `student_id`,
+    `name`,
+    `year`
+FROM
+    mdc.bf_student_indexes
+    JOIN mdc.bf_training_institutions ON mdc.bf_training_institutions.id = mdc.bf_student_indexes.training_institution_id
+WHERE
+    index_number IS NOT NULL
+    AND index_number != '';

@@ -119,7 +119,8 @@ class AdminController extends ResourceController
                 'otcms' => 'otcms',
                 'application_forms' => 'application_forms',
                 'student_indexes' => 'student_indexes',
-                'mca' => 'mca'
+                'mca' => 'mca',
+                'training_institutions' => 'training_institutions'
             ];
             //check if table is in the map
             if (!array_key_exists($table, $tableMap)) {

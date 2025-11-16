@@ -28,6 +28,7 @@ use App\Helpers\Types\DataResponseType;
 use App\Helpers\Types\AppSettingsLicenseType;
 use App\Helpers\Types\HousemanshipApplicationFormTagsType;
 use App\Helpers\Types\SystemSettingsType;
+use App\Helpers\Types\TrainingInstitutionSettingsType;
 class Utils
 {
 
@@ -1455,6 +1456,16 @@ class Utils
             throw new Exception("$setting not found in system settings");
         }
         return SystemSettingsType::fromArray($settings[$setting]);
+    }
+
+    public static function getTrainingInstitutionsSettings()
+    {
+        /**
+         * @var array
+         */
+        $settings = self::getAppSettings("trainingInstitutions");
+
+        return TrainingInstitutionSettingsType::fromArray($settings);
     }
 
 }

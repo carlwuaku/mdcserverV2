@@ -259,6 +259,7 @@ class PaymentsService
          * @var array
          */
         $invoice = $this->invoiceModel->find($invoiceId);
+        log_message("debug", "Invoice created: " . json_encode($invoice));
         $invoiceUuid = $invoice['uuid'];
         // Create invoice line items
         foreach ($items as $item) {
