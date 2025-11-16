@@ -338,8 +338,7 @@ class LicensesModel extends MyBaseModel implements TableDisplayInterface, FormIn
                 $formData[$uniqueKeyField] = $formData['license_number'];
             }
             $license = $this->builder($table)->where($uniqueKeyField, $formData[$uniqueKeyField])->get()->getFirstRow('array');
-            log_message('debug', 'license: ' . json_encode($license));
-            log_message('debug', 'license: ' . json_encode($data));
+
             if (count(get_object_vars($data)) > 0) {
                 if ($license) {
                     $this->builder($table)->set((array) $data)->where([$uniqueKeyField => $formData[$uniqueKeyField]])->update();

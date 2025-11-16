@@ -28,6 +28,7 @@ use App\Helpers\Types\DataResponseType;
 use App\Helpers\Types\AppSettingsLicenseType;
 use App\Helpers\Types\HousemanshipApplicationFormTagsType;
 use App\Helpers\Types\SystemSettingsType;
+use App\Helpers\Types\TrainingInstitutionSettingsType;
 class Utils
 {
 
@@ -1275,7 +1276,6 @@ class Utils
             $fullData['name'] = $fullData['first_name'] . ' ' . $fullData['last_name'];
         }
         //for practitioners, qualifications is a json array. convert it to an array
-        log_message('debug', print_r($fullData, true));
         if (array_key_exists('qualifications', $fullData) && !empty($fullData['qualifications'])) {
             $fullData['qualifications'] = json_decode($fullData['qualifications'], true);
         }
@@ -1374,7 +1374,6 @@ class Utils
 
         foreach ($templates as $template) {
             if ($template['form_name'] == $name || $template['uuid'] == $name) {
-                log_message("info", "Default application form template found: " . json_encode($template));
                 return ApplicationFormTemplateType::fromArray($template);
             }
         }
@@ -1457,6 +1456,16 @@ class Utils
             throw new Exception("$setting not found in system settings");
         }
         return SystemSettingsType::fromArray($settings[$setting]);
+    }
+
+    public static function getTrainingInstitutionsSettings()
+    {
+        /**
+         * @var array
+         */
+        $settings = self::getAppSettings("trainingInstitutions");
+
+        return TrainingInstitutionSettingsType::fromArray($settings);
     }
 
 }

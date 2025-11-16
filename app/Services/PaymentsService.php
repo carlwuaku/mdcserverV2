@@ -225,7 +225,7 @@ class PaymentsService
     {
         // Validate and process the data
         $rules = [
-            "unique_id" => "required|is_unique[invoices.invoice_number]",
+            "unique_id" => "required",
             "purpose" => "required",
             "due_date" => "required|valid_date",
             "last_name" => "required",
@@ -259,6 +259,7 @@ class PaymentsService
          * @var array
          */
         $invoice = $this->invoiceModel->find($invoiceId);
+        log_message("debug", "Invoice created: " . json_encode($invoice));
         $invoiceUuid = $invoice['uuid'];
         // Create invoice line items
         foreach ($items as $item) {

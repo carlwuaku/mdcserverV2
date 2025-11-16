@@ -99,7 +99,6 @@ Events::on(INVOICE_EVENT, static function (InvoiceEvents $event, string $uuid) {
             break;
     }
     if (empty($actions)) {
-        log_message("info", "No actions found for purpose: $purpose - event: " . $event->value);
         return;
     }
 
@@ -110,7 +109,6 @@ Events::on(INVOICE_EVENT, static function (InvoiceEvents $event, string $uuid) {
         foreach ($actions as $action) {
             //the ApplicationFormActionHelper expects an ApplicationStageType object for the cofig, and some data to process.  
             $result = ApplicationFormActionHelper::runAction(ApplicationStageType::fromArray($action), $invoiceDetails);
-            log_message("info", "action ran for invoice payment file upload" . json_encode($invoiceDetails) . " <br> Results: " . json_encode($result));
         }
 
         $model->db->transComplete();

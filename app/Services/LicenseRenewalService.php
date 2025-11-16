@@ -136,7 +136,6 @@ class LicenseRenewalService
             $permission = $stage->permission;
             $rpModel = new \App\Models\RolePermissionsModel();
             //if an admin, check the permission. if not, check if the user is the owner of the renewal
-            log_message('info', print_r(\auth()->getUser(), true));
 
             if (!$rpModel->hasPermission(auth()->getUser()->role_name, $permission)) {
                 log_message("error", "User " . auth()->getUser()->username . " attempted to activate renewal stage {$stage->label} without the required permission: $permission");
@@ -1097,7 +1096,6 @@ class LicenseRenewalService
         if (empty($renewal)) {
             throw new \InvalidArgumentException("Renewal not found");
         }
-        log_message("debug", print_r($renewal['qualifications'], true));
         if ($renewal['license_uuid'] != $licenseUuid) {
             throw new \InvalidArgumentException("You do not have permission to view this renewal");
         }

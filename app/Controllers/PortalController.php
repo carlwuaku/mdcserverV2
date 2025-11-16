@@ -82,7 +82,7 @@ class PortalController extends ResourceController
         // return CacheHelper::remember('app_settings', function() {
         //read the data from app-settings.json at the root of the project
         try {
-            $settings = ['appName', 'appVersion', 'appLongName', 'logo', 'whiteLogo', 'loginBackground', 'portalContactUsTitle', 'portalContactUsSubTitle', 'institutionEmail', 'portalFooterBackground', 'institutionPhone', 'institutionWebsite', 'institutionAddress', 'institutionWhatsapp'];
+            $settings = ['appName', 'appVersion', 'appLongName', 'logo', 'whiteLogo', 'loginBackground', 'portalContactUsTitle', 'portalContactUsSubTitle', 'institutionEmail', 'portalFooterBackground', 'institutionPhone', 'institutionWebsite', 'institutionAddress', 'institutionWhatsapp', 'portalName'];
             //if the user is logged in, add more settings
             // if (auth("tokens")->loggedIn()) {
             //     $settings = array_merge($settings, ['portalHomeMenu']);

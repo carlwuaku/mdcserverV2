@@ -588,7 +588,8 @@ class ApplicationService
 
         foreach ($initialStage['actions'] as $action) {
             try {
-                ApplicationFormActionHelper::runAction((object) $action, $data);
+                $action = \App\Helpers\Types\ApplicationStageType::fromArray($action);
+                ApplicationFormActionHelper::runAction($action, $data);
             } catch (\Throwable $e) {
                 log_message('error', 'Initial stage action failed: ' . $e);
             }
@@ -627,7 +628,7 @@ class ApplicationService
 
                 // unset($application['form_data']);
                 $action = \App\Helpers\Types\ApplicationStageType::fromArray($action);
-                ApplicationFormActionHelper::runAction((object) $action, $applicationData);
+                ApplicationFormActionHelper::runAction($action, $applicationData);
             }
 
             $model->db->transComplete();
@@ -655,7 +656,7 @@ class ApplicationService
 
                 try {
                     // Run the action
-                    $actionResult = ApplicationFormActionHelper::runAction((object) $action, $applicationData);
+                    $actionResult = ApplicationFormActionHelper::runAction($action, $applicationData);
 
                     // Capture result
                     $results[] = [

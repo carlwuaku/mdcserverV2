@@ -1824,3 +1824,962 @@ SELECT
     `currency`
 FROM
     council.`bf_fees`;
+
+#END IMPORT PAYMENT FEES
+#IMPORT HOUSEMANSHIP FACILITY AVAILABILITY#
+#pharmacy council does not use categories. and previously did not use availabilities for housemanship.
+#so we're going to make it available for all facilities.
+INSERT
+    IGNORE INTO ci4_pc2.`housemanship_facility_availability` (facility_name, year, category, available)
+SELECT
+    name AS facility_name,
+    2025 AS year,
+    'available' AS category,
+    1 AS available
+FROM
+    council.`bf_intern_facilities`;
+
+INSERT
+    IGNORE INTO ci4_pc2.`housemanship_facility_availability` (facility_name, year, category, available)
+SELECT
+    name AS facility_name,
+    2025 AS year,
+    'available_technician_selection' AS category,
+    1 AS available
+FROM
+    council.`bf_intern_facilities`;
+
+#END IMPORT HOUSEMANSHIP FACILITY AVAILABILITY#
+#IMPORT HOUSEMANSHIP CAPACITY#
+#ADD EACH DISCIPLINE FIRST THEN THE MAX CAPACITY
+INSERT
+    IGNORE INTO ci4_pc2.`housemanship_disciplines` (name)
+VALUES
+    ('Pharmacy');
+
+INSERT
+    IGNORE INTO ci4_pc2.`housemanship_facility_capacities` (facility_name, year, discipline, capacity)
+SELECT
+    name AS facility_name,
+    2025 AS year,
+    'Pharmacy' AS discipline,
+    100
+FROM
+    council.`bf_intern_facilities`;
+
+INSERT
+    IGNORE INTO ci4_pc2.`housemanship_disciplines` (name)
+VALUES
+    ('Pharmacy Technicians');
+
+INSERT
+    IGNORE INTO ci4_pc2.`housemanship_facility_capacities` (facility_name, year, discipline, capacity)
+SELECT
+    name AS facility_name,
+    2025 AS year,
+    'Pharmacy Technicians' AS discipline,
+    100 AS capacity
+FROM
+    council.`bf_intern_facilities`;
+
+#END IMPORT HOUSEMANSHIP CAPACITY#
+#IMPORT INTERN REGISTRATIONS, THEN INTERNS AS EXAM CANDIDATES, THEN HOUSEMANSHIP, THEN EXAMINATIONS
+##INTERNSHIP REGISTRATIONS##
+INSERT INTO
+    ci4_pc2.`application_forms` (
+        picture,
+        first_name,
+        last_name,
+        middle_name,
+        email,
+        status,
+        application_code,
+        qr_code,
+        practitioner_type,
+        phone,
+        created_on,
+        form_data,
+        form_type,
+        applicant_unique_id
+    )
+SELECT
+    `picture`,
+    `first_name`,
+    `last_name`,
+    `middle_name`,
+    `email`,
+    `status`,
+    concat('internship_', `intern_code`) as application_code,
+    `qrcode` as qr_code,
+    `type` as practitioner_type,
+    `phone`,
+    `created_on`,
+    JSON_OBJECT(
+        "first_name",
+        `first_name`,
+        "middle_name",
+        `middle_name`,
+        "last_name",
+        `last_name`,
+        "email",
+        `email`,
+        "intern_code",
+        `intern_code`,
+        "sex",
+        `sex`,
+        "registration_date",
+        `registration_date`,
+        "nationality",
+        `nationality`,
+        "postal_address",
+        `postal_address`,
+        "picture",
+        `picture`,
+        "status",
+        `status`,
+        "training_institution",
+        `training_institution`,
+        "date_of_graduation",
+        `date_of_graduation`,
+        "qualification",
+        `qualification`,
+        "date_of_birth",
+        `date_of_birth`,
+        "phone",
+        `phone`,
+        "type",
+        `type`,
+        "marital_status",
+        `marital_status`,
+        "region",
+        `region`,
+        "title",
+        `title`,
+        "internship_site_first_choice",
+        `internship_site_first_choice`,
+        "internship_site_second_choice",
+        `internship_site_second_choice`,
+        "hospital_site",
+        `hospital_site`,
+        "community_site",
+        `community_site`,
+        "community_preceptor",
+        `community_preceptor`,
+        "community_done",
+        `community_done`,
+        "internship_done",
+        `internship_done`,
+        "migration_date",
+        `migration_date`,
+        "nss_number",
+        `nss_number`,
+        "start_year",
+        `start_year`,
+        "residential_address",
+        `residential_address`,
+        "hometown",
+        `hometown`,
+        "qrcode",
+        `qrcode`,
+        "created_on",
+        `created_on`
+    ) as form_data,
+    'Internship Registration Application' as form_type,
+    `intern_code` as applicant_unique_id
+FROM
+    council.`bf_intern_pre_registration`;
+
+##END INTERNSHIP REGISTRATIONS##
+#MIGRATE EXAMINATION CANDIDATES INTO THE LICENSES TABLE.##
+INSERT INTO
+    ci4_pc2.`licenses`(
+        `uuid`,
+        `license_number`,
+        `name`,
+        `registration_date`,
+        `status`,
+        `email`,
+        `postal_address`,
+        `picture`,
+        `type`,
+        `phone`,
+        `portal_access`,
+        `created_on`,
+        `region`,
+        `district`,
+        `register_type`
+    )
+SELECT
+    '',
+    intern_code,
+    CONCAT_WS(
+        ' ',
+        COALESCE(first_name, ''),
+        COALESCE(middle_name, ''),
+        COALESCE(last_name, '')
+    ) as name,
+    registration_date,
+    'Active' as status,
+    email,
+    postal_address,
+    picture,
+    'exam_candidates',
+    phone,
+    'yes' as portal_access,
+    created_on,
+    NULL,
+    NULL,
+    NULL
+from
+    council.bf_intern
+WHERE
+    council.bf_intern.intern_code IS NOT NULL
+    AND council.bf_intern.intern_code != '';
+
+########-END EXAMINATION CANDIDATES LICENSE MIGRATION#######- 
+##MIGRATE EXAMINATION CANDIDATES DETAILS INTO THE exam_candidates TABLE##
+INSERT INTO
+    ci4_pc2.`exam_candidates`(
+        `first_name`,
+        `middle_name`,
+        `last_name`,
+        `date_of_birth`,
+        `intern_code`,
+        `sex`,
+        `registration_date`,
+        `nationality`,
+        `qualification`,
+        `training_institution`,
+        `qualification_date`,
+        `state`,
+        `specialty`,
+        `category`,
+        `practitioner_type`,
+        `number_of_exams`,
+        `metadata`
+    )
+SELECT
+    `first_name`,
+    `middle_name`,
+    `last_name`,
+    `date_of_birth`,
+    `intern_code`,
+    COALESCE(sex, ''),
+    `registration_date`,
+    `nationality`,
+    `qualification`,
+    `training_institution`,
+    `date_of_graduation` as qualification_date,
+    'Apply for examination' as state,
+    null,
+    null,
+    `type` as practitioner_type,
+    0,
+    JSON_OBJECT(
+        "title",
+        COALESCE(`title`, ''),
+        "internship_site_first_choice",
+        COALESCE(`internship_site_first_choice`, ''),
+        "internship_site_second_choice",
+        COALESCE(`internship_site_second_choice`, ''),
+        "start_year",
+        COALESCE(`start_year`, ''),
+        "nss_number",
+        COALESCE(`nss_number`, ''),
+        "residential_address",
+        COALESCE(`residential_address`, ''),
+        "hometown",
+        COALESCE(`hometown`, ''),
+        "region",
+        COALESCE(`region`, ''),
+        "marital_status",
+        COALESCE(`marital_status`, ''),
+        "migration_date",
+        COALESCE(`migration_date`, '')
+    ) as metadata
+FROM
+    council.bf_intern
+WHERE
+    intern_code IS NOT NULL
+    AND intern_code != '';
+
+#END MIGRATE EXAMINATION CANDIDATES DETAILS INTO THE exam_candidates TABLE##
+#MIGRATE EXAMINATIONS INTO EXAMINATIONS TABLE##
+INSERT INTO
+    ci4_pc2.`examinations` (
+        uuid,
+        title,
+        exam_type,
+        open_from,
+        open_to,
+        type,
+        publish_scores,
+        publish_score_date,
+        next_exam_month,
+        scores_names,
+        metadata
+    )
+SELECT
+    '',
+    `title`,
+    `type`,
+    COALESCE(`open_from`, '2020-01-01') as `open_from`,
+    COALESCE(`open_to`, '2020-12-31') as `open_to`,
+    CASE
+        WHEN `type` = 'GPPQE' THEN 'Pharmacist'
+        WHEN `type` = 'MCACE' THEN 'MCA'
+        WHEN `type` = 'PTQE' THEN 'Pharmacy Technician'
+        ELSE 'Pharmacist'
+    END as type,
+    `publish_scores`,
+    `publish_scores_date`,
+    NULL,
+    JSON_ARRAY('MCQ', 'ORALS') as scores_names,
+    JSON_OBJECT(
+        'venue',
+        COALESCE(`venue`, ''),
+        'region',
+        COALESCE(`region`, ''),
+        'date',
+        COALESCE(`date`, '')
+    ) as metadata
+FROM
+    council.`bf_intern_exam`;
+
+#END MIGRATE EXAMINATIONS INTO EXAMINATIONS TABLE##
+#MIGRATE EXAMINATION LETTERS INTO EXAMINATION LETTERS TABLE##
+INSERT INTO
+    ci4_pc2.`examination_letter_templates` (
+        name,
+        exam_id,
+        type,
+        content
+    )
+SELECT
+    'Index number letter - All',
+    examinations.`id`,
+    'registration',
+    COALESCE(index_number_letter, '')
+FROM
+    council.`bf_intern_exam`
+    JOIN ci4_pc2.`examinations` examinations ON council.`bf_intern_exam`.title = examinations.`title`;
+
+INSERT INTO
+    ci4_pc2.`examination_letter_templates` (
+        name,
+        exam_id,
+        type,
+        content
+    )
+SELECT
+    'Pass letter - All',
+    examinations.`id`,
+    'pass',
+    COALESCE(pass_letter, '')
+FROM
+    council.`bf_intern_exam`
+    JOIN ci4_pc2.`examinations` examinations ON council.`bf_intern_exam`.title = examinations.`title`;
+
+INSERT INTO
+    ci4_pc2.`examination_letter_templates` (
+        name,
+        exam_id,
+        type,
+        content
+    )
+SELECT
+    'Fail letter - All',
+    examinations.`id`,
+    'fail',
+    COALESCE(fail_letter, '')
+FROM
+    council.`bf_intern_exam`
+    JOIN ci4_pc2.`examinations` examinations ON council.`bf_intern_exam`.title = examinations.`title`;
+
+#END MIGRATE EXAMINATION LETTERS INTO EXAMINATION LETTERS TABLE##
+#INSERT LETTER TEMPLATE CRITERIA##
+##nothing to do. 
+#END INSERT LETTER TEMPLATE CRITERIA##
+#IMPORT EXAM REGISTRATIONS##
+CREATE TEMPORARY TABLE temp_exam_registration_title_mapping AS
+SELECT
+    ie.id as old_id,
+    ex.id as new_id,
+    ex.title AS title,
+    ie.publish_scores_date as publish_score_date
+FROM
+    council.bf_intern_exam ie
+    JOIN ci4_pc2.examinations ex ON ie.title = ex.title;
+
+INSERT INTO
+    ci4_pc2.`examination_registrations` (
+        uuid,
+        intern_code,
+        exam_id,
+        index_number,
+        result,
+        created_at,
+        registration_letter,
+        result_letter,
+        publish_result_date,
+        scores
+    )
+SELECT
+    '' as uuid,
+    intern_code,
+    new_id,
+    index_number,
+    result,
+    date as created_at,
+    registration_letter,
+    result_letter,
+    publish_score_date,
+    JSON_ARRAY()
+FROM
+    council.`bf_intern_exam_registration`
+    JOIN temp_exam_registration_title_mapping temp ON council.`bf_intern_exam_registration`.exam_id = temp.`old_id`;
+
+DROP TABLE temp_exam_registration_title_mapping;
+
+#END IMPORT EXAM REGISTRATIONS##
+#IMPORT EXAM APPLICATIONS##
+CREATE TEMPORARY TABLE temp_exam_registration_title_mapping AS
+SELECT
+    ie.id as old_id,
+    ex.id as new_id,
+    ex.title AS title
+FROM
+    council.bf_intern_exam ie
+    JOIN ci4_pc2.examinations ex ON ie.title = ex.title;
+
+INSERT INTO
+    ci4_pc2.`examination_applications` (
+        intern_code,
+        exam_id,
+        application_status,
+        created_at
+    )
+SELECT
+    intern_code,
+    new_id,
+    application_status,
+    created_on
+FROM
+    council.`bf_intern_exam_application`
+    JOIN temp_exam_registration_title_mapping temp ON council.`bf_intern_exam_application`.exam_id = temp.`old_id`;
+
+DROP TABLE temp_exam_registration_title_mapping;
+
+#END IMPORT EXAM APPLICATIONS##
+#IMPORT HOUSEMANSHIP POSTINGS SESSION 1#
+INSERT
+    IGNORE INTO ci4_pc2.`housemanship_postings` (
+        uuid,
+        license_number,
+        type,
+        session,
+        year,
+        created_at
+    )
+SELECT
+    '' as uuid,
+    `intern_code` as license_number,
+    'Pharmacist' as type,
+    '1' as session,
+    year(`start_date`) as year,
+    `start_date` as created_at
+FROM
+    council.`bf_intern_posting`;
+
+#END IMPORT HOUSEMANSHIP POSTINGS SESSION 1#
+#IMPORT HOUSEMANSHIP POSTINGS SESSION 1 DETAILS# this query does not get all the data as some of the postings have facility names for facility_id.
+#those ones have to be ignored for now. those were added for existing practitioners at some point and added later
+CREATE TEMPORARY TABLE temp_housemanship_posting_uuid_map AS
+SELECT
+    council.`bf_intern_posting`.id as posting_id,
+    uuid,
+    name,
+    region
+FROM
+    ci4_pc2.`housemanship_postings`
+    JOIN council.`bf_intern_posting` ON council.`bf_intern_posting`.intern_code = ci4_pc2.`housemanship_postings`.license_number
+    JOIN council.`bf_intern_facilities` ON council.`bf_intern_facilities`.id = council.`bf_intern_posting`.facility_id
+WHERE
+    council.`bf_intern_posting`.facility_id REGEXP '^[0-9]+$';
+
+INSERT INTO
+    ci4_pc2.`housemanship_postings_details` (
+        posting_uuid,
+        start_date,
+        end_date,
+        facility_name,
+        facility_region
+    )
+SELECT
+    temp.uuid as posting_uuid,
+    bp.`start_date`,
+    bp.`end_date`,
+    temp.name as facility_name,
+    temp.region as facility_region
+FROM
+    council.`bf_intern_posting` bp
+    JOIN temp_housemanship_posting_uuid_map temp ON temp.posting_id = bp.id;
+
+DROP TEMPORARY TABLE temp_housemanship_posting_uuid_map;
+
+#END IMPORT HOUSEMANSHIP POSTINGS SESSION 1 DETAILS#
+#IMPORT THE COMMUNITY HOUSEMANSHIP POSTINGS
+INSERT
+    IGNORE INTO ci4_pc2.`housemanship_postings` (
+        uuid,
+        license_number,
+        type,
+        session,
+        year,
+        created_at
+    )
+SELECT
+    '' as uuid,
+    `intern_code` as license_number,
+    'Pharmacist' as type,
+    '2' as session,
+    year(`start_date`) as year,
+    `created_on` as created_at
+FROM
+    council.`bf_intern_community_posting`;
+
+#END IMPORT THE COMMUNITY HOUSEMANSHIP POSTINGS
+#IMPORT HOUSEMANSHIP COMMUNITY DETAILS# 
+CREATE TEMPORARY TABLE temp_housemanship_posting_uuid_map AS
+SELECT
+    council.`bf_intern_community_posting`.id as posting_id,
+    uuid,
+    JSON_OBJECT(
+        'id',
+        NULL,
+        'name',
+        COALESCE(`facility_id`, 'Unknown'),
+        'region',
+        'Unknown',
+        'location',
+        'Unknown',
+        'type',
+        'Unknown',
+        'phone',
+        'Unknown',
+        'email',
+        'Unknown',
+        'deleted_at',
+        'Unknown',
+        'updated_at',
+        'Unknown',
+        'created_on',
+        'Unknown',
+        'modified_on',
+        'Unknown'
+    ) as facility_details
+FROM
+    ci4_pc2.`housemanship_postings`
+    JOIN council.`bf_intern_community_posting` ON council.`bf_intern_community_posting`.intern_code = ci4_pc2.`housemanship_postings`.license_number;
+
+INSERT INTO
+    ci4_pc2.`housemanship_postings_details` (
+        posting_uuid,
+        start_date,
+        end_date,
+        facility_name,
+        facility_region,
+        facility_details
+    )
+SELECT
+    temp.uuid as posting_uuid,
+    bp.`start_date`,
+    bp.`end_date`,
+    NULL,
+    NULL,
+    temp.facility_details
+FROM
+    council.`bf_intern_community_posting` bp -- Changed from bf_intern_posting
+    JOIN temp_housemanship_posting_uuid_map temp ON temp.posting_id = bp.id;
+
+DROP TEMPORARY TABLE temp_housemanship_posting_uuid_map;
+
+#END IMPORT HOUSEMANSHIP POSTINGS SESSION 1 DETAILS#
+`id` int(11) NOT NULL,
+`first_name` varchar(255) DEFAULT NULL,
+`last_name` varchar(255) NOT NULL,
+`middle_name` varchar(255) DEFAULT NULL,
+`sex` varchar(7) DEFAULT NULL,
+`date_of_birth` date DEFAULT NULL,
+`marital_status` varchar(50) DEFAULT NULL,
+`training_institution` varchar(255) DEFAULT NULL,
+`date_of_graduation` date DEFAULT NULL,
+`qualification` varchar(255) DEFAULT NULL,
+`email` varchar(500) DEFAULT NULL,
+`postal_address` varchar(500) DEFAULT NULL,
+`residential_address` varchar(255) DEFAULT NULL,
+`hometown` varchar(255) DEFAULT NULL,
+`region` int(11) DEFAULT NULL,
+`picture` varchar(500) DEFAULT NULL,
+`status` int(11) DEFAULT NULL,
+`intern_code` varchar(50) DEFAULT NULL,
+`nationality` varchar(100) DEFAULT NULL,
+`phone` varchar(20) DEFAULT NULL,
+`migration_date` date DEFAULT NULL,
+`nss_number` varchar(25) DEFAULT NULL,
+`start_year` year(4) DEFAULT NULL,
+`registration_date` date DEFAULT NULL,
+`created_on` timestamp NOT NULL DEFAULT current_timestamp(),
+`title` varchar(25) DEFAULT NULL,
+`internship_site_first_choice` varchar(500) DEFAULT NULL,
+`internship_site_second_choice` varchar(500) DEFAULT NULL,
+`type` enum('Pharmacy', 'Technician', 'MCA', '') NOT NULL DEFAULT 'Pharmacy',
+#UPDATE HOUSEMANSHIP POSTING PRACTITIONER DETAILS#
+UPDATE
+    ci4_pc2.`housemanship_postings`
+SET
+    `practitioner_details` = (
+        SELECT
+            JSON_OBJECT(
+                'first_name',
+                COALESCE(`first_name`, ''),
+                'middle_name',
+                COALESCE(`middle_name`, ''),
+                'last_name',
+                COALESCE(`last_name`, ''),
+                'sex',
+                COALESCE(`sex`, ''),
+                'email',
+                COALESCE(`email`, ''),
+                'phone',
+                COALESCE(`phone`, ''),
+                'picture',
+                COALESCE(`picture`, ''),
+                'status',
+                COALESCE(`status`, ''),
+                'intern_code',
+                COALESCE(`intern_code`, ''),
+                'type',
+                COALESCE(`type`, ''),
+                'created_on',
+                COALESCE(`created_on`, ''),
+                'registration_date',
+                COALESCE(`registration_date`, ''),
+                'nss_number',
+                COALESCE(`nss_number`, ''),
+                'start_year',
+                COALESCE(`start_year`, ''),
+                'title',
+                COALESCE(`title`, ''),
+                'internship_site_first_choice',
+                COALESCE(`internship_site_first_choice`, ''),
+                'internship_site_second_choice',
+                COALESCE(`internship_site_second_choice`, ''),
+                'region',
+                COALESCE(`region`, ''),
+                'postal_address',
+                COALESCE(`postal_address`, ''),
+                'residential_address',
+                COALESCE(`residential_address`, ''),
+                'hometown',
+                COALESCE(`hometown`, ''),
+                'marital_status',
+                COALESCE(`marital_status`, ''),
+                'date_of_birth',
+                COALESCE(`date_of_birth`, ''),
+                'qualification',
+                COALESCE(`qualification`, ''),
+                'training_institution',
+                COALESCE(`training_institution`, ''),
+                'date_of_graduation',
+                COALESCE(`date_of_graduation`, ''),
+                'nationality',
+                COALESCE(`nationality`, '')
+            ) as practitioner_details
+        FROM
+            council.`bf_intern`
+        WHERE
+            council.`bf_intern`.`intern_code` = ci4_pc2.`housemanship_postings`.`license_number`
+        LIMIT
+            1
+    )
+WHERE
+    `practitioner_details` IS NULL;
+
+#END UPDATE HOUSEMANSHIP POSTING PRACTITIONER DETAILS
+#UPDATE HOUSEMANSHIP POSTING DETAILS FACILITY DETAILS#
+UPDATE
+    ci4_pc2.`housemanship_postings_details`
+SET
+    `facility_details` = (
+        SELECT
+            JSON_OBJECT(
+                'name',
+                `name`,
+                'region',
+                `region`,
+                'location',
+                `location`,
+                'type',
+                `type`
+            ) as facility_details
+        FROM
+            ci4_pc2.`housemanship_facilities`
+        WHERE
+            ci4_pc2.`housemanship_postings_details`.facility_name = ci4_pc2.`housemanship_facilities`.`name`
+    )
+WHERE
+    `facility_details` IS NULL
+    and ci4_pc2.`housemanship_postings_details`.facility_name is not null;
+
+#END UPDATE HOUSEMANSHIP POSTING DETAILS FACILITY DETAILS#
+#UPDATE HOUSEMANSHIP POSTING DETAILS FACILITY REGION#
+UPDATE
+    ci4_pc2.`housemanship_postings_details`
+SET
+    `facility_region` = (
+        SELECT
+            region
+        FROM
+            ci4_pc2.`housemanship_facilities`
+        WHERE
+            ci4_pc2.`housemanship_postings_details`.facility_name = ci4_pc2.`housemanship_facilities`.`name`
+    )
+WHERE
+    ci4_pc2.`housemanship_postings_details`.facility_name is not null;
+
+#END UPDATE HOUSEMANSHIP POSTING DETAILS FACILITY REGION#
+#IMPORT INVOICES
+INSERT
+    IGNORE INTO ci4_pc2.`invoices` (
+        `invoice_number`,
+        `unique_id`,
+        `first_name`,
+        `amount`,
+        `email`,
+        `phone_number`,
+        `application_id`,
+        `post_url`,
+        `redirect_url`,
+        `purpose`,
+        `year`,
+        `currency`,
+        `due_date`,
+        `status`,
+        `notes`,
+        `created_at`,
+        `updated_at`,
+        `purpose_table`,
+        `purpose_table_uuid`,
+        `payment_method`,
+        `origin`,
+        `online_payment_status`,
+        `online_payment_response`,
+        `mda_branch_code`,
+        `last_name`,
+        `description`,
+        `selected_payment_method`
+    )
+SELECT
+    `invoice_number`,
+    `unique_id`,
+    `firstname`,
+    0,
+    `email`,
+    `phonenumber`,
+    `application_id`,
+    `post_url`,
+    `redirect_url`,
+    `purpose`,
+    `year`,
+    'GHS',
+    NULL,
+    `status`,
+    null,
+    null,
+    null,
+    null,
+    null,
+    'Ghana.gov Platform',
+    `origin`,
+    `response_message`,
+    JSON_UNQUOTE(`response`),
+    `mda_branch_code`,
+    `lastname`,
+    `description`,
+    'Ghana.gov Platform'
+FROM
+    council.`bf_online_payments`;
+
+#END IMPORT INVOICES
+#START IMPORT INVOICE LINE ITEMS
+-- Step 1: Create a temporary table with the data you need
+CREATE TEMPORARY TABLE temp_invoice_line_items AS
+SELECT
+    ci4_pc2.`invoices`.`uuid` as invoice_uuid,
+    JSON_UNQUOTE(
+        JSON_EXTRACT(`invoice_items`, '$[0].service_code')
+    ) as service_code,
+    JSON_UNQUOTE(JSON_EXTRACT(`invoice_items`, '$[0].name')) as description,
+    1 as quantity,
+    CAST(
+        REPLACE(
+            COALESCE(
+                NULLIF(
+                    JSON_UNQUOTE(
+                        JSON_EXTRACT(`invoice_items`, '$[0].amounts[0].amount')
+                    ),
+                    ''
+                ),
+                '0'
+            ),
+            ',',
+            ''
+        ) AS DECIMAL(10, 2)
+    ) as unit_price,
+    CAST(
+        REPLACE(
+            COALESCE(
+                NULLIF(
+                    JSON_UNQUOTE(
+                        JSON_EXTRACT(`invoice_items`, '$[0].amounts[0].amount')
+                    ),
+                    ''
+                ),
+                '0'
+            ),
+            ',',
+            ''
+        ) AS DECIMAL(10, 2)
+    ) as line_total
+FROM
+    ci4_pc2.`invoices`
+    JOIN council.`bf_online_payments` ON ci4_pc2.`invoices`.`invoice_number` = council.`bf_online_payments`.`invoice_number`
+WHERE
+    ci4_pc2.`invoices`.`invoice_number` IS NOT NULL;
+
+-- Step 2: Insert from the temporary table
+INSERT INTO
+    ci4_pc2.`invoice_line_items`(
+        `invoice_uuid`,
+        `service_code`,
+        `description`,
+        `quantity`,
+        `unit_price`,
+        `line_total`
+    )
+SELECT
+    invoice_uuid,
+    service_code,
+    description,
+    quantity,
+    unit_price,
+    line_total
+FROM
+    temp_invoice_line_items;
+
+-- Step 3: Clean up
+DROP TEMPORARY TABLE temp_invoice_line_items;
+
+#END IMPORT INVOICE LINE ITEMS
+#IMPORT MCA SCHOOLS
+INSERT
+    IGNORE INTO ci4_pc2.`training_institutions`(
+        `uuid`,
+        `name`,
+        `location`,
+        `phone`,
+        `type`
+    )
+SELECT
+    '',
+    `name`,
+    `location`,
+    `phone`,
+    'mca'
+FROM
+    council.`bf_mca_schools`;
+
+#IMPORT MCAs
+INSERT
+    IGNORE INTO ci4_pc2.`licenses`(
+        `uuid`,
+        `license_number`,
+        `name`,
+        `registration_date`,
+        `status`,
+        `email`,
+        `picture`,
+        `type`,
+        `phone`,
+        `portal_access`,
+        `created_on`,
+        `region`,
+        `district`,
+        `register_type`
+    )
+SELECT
+    '',
+    index_number,
+    CONCAT_WS(
+        ' ',
+        COALESCE(first_name, ''),
+        COALESCE(middle_name, ''),
+        COALESCE(last_name, '')
+    ) as name,
+    registration_date,
+    'Active' as status,
+    email,
+    picture,
+    'mca',
+    phone,
+    'yes' as portal_access,
+    created_on,
+    NULL,
+    NULL,
+    NULL
+from
+    council.bf_mca
+WHERE
+    council.bf_mca.index_number IS NOT NULL
+    AND council.bf_mca.index_number != '';
+
+########-END MCA LICENSE MIGRATION#######- 
+##MIGRATE MCA DETAILS INTO THE mca TABLE##
+INSERT
+    IGNORE INTO ci4_pc2.`mca`(
+        `first_name`,
+        `middle_name`,
+        `last_name`,
+        `date_of_birth`,
+        `index_number`,
+        `sex`,
+        `id_type`,
+        `id_number`,
+        `qualification`,
+        `nationality`,
+        `training_institution`,
+        `workplace_address`,
+        `location`
+    )
+SELECT
+    `first_name`,
+    `middle_name`,
+    `last_name`,
+    `date_of_birth`,
+    `index_number`,
+    COALESCE(sex, ''),
+    `id_type`,
+    `id_number`,
+    `qualification`,
+    `nationality`,
+    `training_institution`,
+    `workplace_address`,
+    `location`
+FROM
+    council.bf_mca
+WHERE
+    index_number IS NOT NULL
+    AND index_number != '';
+
+#END MIGRATE MCA DETAILS##

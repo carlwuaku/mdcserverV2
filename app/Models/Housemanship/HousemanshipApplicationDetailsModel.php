@@ -138,7 +138,6 @@ class HousemanshipApplicationDetailsModel extends MyBaseModel implements FormInt
      */
     public function getNonAdminFormFields(array $data, array $excludedfacilityRegions = [], array $excludedDisciplines = []): array
     {
-        log_message("info", print_r($excludedDisciplines, true));
         $disciplinesList = $this->getDisciplinesList($data, $excludedDisciplines);
         $facilitiesList = $this->getFacilitiesList($data, $excludedfacilityRegions);
         return [

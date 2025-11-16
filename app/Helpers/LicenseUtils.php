@@ -486,7 +486,6 @@ class LicenseUtils extends Utils
 
             //if the person did not meet the minimum requirement, just return false
             if ($cpd['score'] < $options->cpdTotalCutoff) {
-                log_message('debug', " register: " . print_r($options, true));
                 return new RenewalEligibilityResponse(
                     false,
                     "You did not meet the minimum CPD requirement. You obtained {$cpd['score']} credit points. The minimum required is {$options->cpdTotalCutoff} credit points",

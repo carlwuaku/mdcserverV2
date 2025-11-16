@@ -3620,3 +3620,267 @@ SELECT
     `currency`
 FROM
     mdc.`bf_fees`;
+
+#IMPORT INVOICES
+INSERT
+    IGNORE INTO ci4_mdc4.`invoices` (
+        `invoice_number`,
+        `unique_id`,
+        `first_name`,
+        `amount`,
+        `email`,
+        `phone_number`,
+        `application_id`,
+        `post_url`,
+        `redirect_url`,
+        `purpose`,
+        `year`,
+        `currency`,
+        `due_date`,
+        `status`,
+        `notes`,
+        `created_at`,
+        `updated_at`,
+        `purpose_table`,
+        `purpose_table_uuid`,
+        `payment_method`,
+        `origin`,
+        `online_payment_status`,
+        `online_payment_response`,
+        `mda_branch_code`,
+        `last_name`,
+        `description`,
+        `selected_payment_method`
+    )
+SELECT
+    `invoice_number`,
+    `unique_id`,
+    `firstname`,
+    0,
+    `email`,
+    `phonenumber`,
+    `application_id`,
+    `post_url`,
+    `redirect_url`,
+    `purpose`,
+    `year`,
+    'GHS',
+    NULL,
+    `status`,
+    null,
+    null,
+    null,
+    null,
+    null,
+    'Ghana.gov Platform',
+    `origin`,
+    `response_message`,
+    JSON_UNQUOTE(`response`),
+    `mda_branch_code`,
+    `lastname`,
+    `description`,
+    'Ghana.gov Platform'
+FROM
+    mdc.`bf_online_payments`;
+
+#END IMPORT INVOICES
+#START IMPORT INVOICE LINE ITEMS
+-- Step 1: Create a temporary table with the data you need
+CREATE TEMPORARY TABLE temp_invoice_line_items AS
+SELECT
+    ci4_mdc4.`invoices`.`uuid` as invoice_uuid,
+    JSON_UNQUOTE(
+        JSON_EXTRACT(`invoice_items`, '$[0].service_code')
+    ) as service_code,
+    JSON_UNQUOTE(JSON_EXTRACT(`invoice_items`, '$[0].name')) as description,
+    1 as quantity,
+    CAST(
+        REPLACE(
+            COALESCE(
+                NULLIF(
+                    JSON_UNQUOTE(
+                        JSON_EXTRACT(`invoice_items`, '$[0].amounts[0].amount')
+                    ),
+                    ''
+                ),
+                '0'
+            ),
+            ',',
+            ''
+        ) AS DECIMAL(10, 2)
+    ) as unit_price,
+    CAST(
+        REPLACE(
+            COALESCE(
+                NULLIF(
+                    JSON_UNQUOTE(
+                        JSON_EXTRACT(`invoice_items`, '$[0].amounts[0].amount')
+                    ),
+                    ''
+                ),
+                '0'
+            ),
+            ',',
+            ''
+        ) AS DECIMAL(10, 2)
+    ) as line_total
+FROM
+    ci4_mdc4.`invoices`
+    JOIN mdc.`bf_online_payments` ON ci4_mdc4.`invoices`.`invoice_number` = mdc.`bf_online_payments`.`invoice_number`
+WHERE
+    ci4_mdc4.`invoices`.`invoice_number` IS NOT NULL;
+
+-- Step 2: Insert from the temporary table
+INSERT INTO
+    ci4_mdc4.`invoice_line_items`(
+        `invoice_uuid`,
+        `service_code`,
+        `description`,
+        `quantity`,
+        `unit_price`,
+        `line_total`
+    )
+SELECT
+    invoice_uuid,
+    service_code,
+    description,
+    quantity,
+    unit_price,
+    line_total
+FROM
+    temp_invoice_line_items;
+
+-- Step 3: Clean up
+DROP TEMPORARY TABLE temp_invoice_line_items;
+
+#END IMPORT INVOICE LINE ITEMS
+#IMPORT  SCHOOLS
+INSERT
+    IGNORE INTO ci4_mdc4.`training_institutions`(
+        `uuid`,
+        `name`,
+        `location`,
+        `phone`,
+        `type`,
+        `email`,
+        `default_limit`,
+        `registration_start_month`,
+        `registration_end_month`,
+        `status`,
+        `category`,
+        `accredited_program`
+    )
+SELECT
+    '',
+    `name`,
+    `location`,
+    `phone`,
+    'indexed_students',
+    `email`,
+    `default_limit`,
+    `registration_start_month`,
+    `registration_end_month`,
+    `status`,
+    `category`,
+    `accredited_program`
+FROM
+    mdc.`bf_training_institutions`;
+
+#END IMPORT SCHOOLS
+#IMPORT SCHOOL LIMITS
+#create a temp table to hold the training_institution_id, uuid
+ALTER TABLE
+    `bf_training_institutions` CHANGE `name` `name` VARCHAR(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL;
+
+CREATE TEMPORARY TABLE temp_training_institution_uuid AS
+SELECT
+    mdc.`bf_training_institutions`.`id` as training_institution_id,
+    `uuid`
+FROM
+    ci4_mdc4.`training_institutions`
+    JOIN mdc.`bf_training_institutions` ON ci4_mdc4.`training_institutions`.`name` = mdc.`bf_training_institutions`.`name`;
+
+INSERT
+    IGNORE INTO ci4_mdc4.`training_institutions_limits`(
+        `training_institution_uuid`,
+        `year`,
+        `student_limit`
+    )
+SELECT
+    `uuid`,
+    `year`,
+    `student_limit`
+FROM
+    mdc.`bf_training_institutions_limits`
+    JOIN temp_training_institution_uuid ON mdc.`bf_training_institutions_limits`.`training_institution_id` = temp_training_institution_uuid.training_institution_id;
+
+DROP TEMPORARY TABLE temp_training_institution_uuid;
+
+#IMPORT student index LICENSE MIGRATION
+INSERT
+    IGNORE INTO ci4_mdc4.`licenses`(
+        `uuid`,
+        `license_number`,
+        `name`,
+        `status`,
+        `email`,
+        `type`,
+        `portal_access`,
+        `created_on`,
+        `region`,
+        `district`,
+        `register_type`
+    )
+SELECT
+    '',
+    index_number,
+    CONCAT_WS(
+        ' ',
+        COALESCE(first_name, ''),
+        COALESCE(middle_name, ''),
+        COALESCE(last_name, '')
+    ) as name,
+    `status`,
+    email,
+    'indexed_students',
+    'yes' as portal_access,
+    created_on,
+    NULL,
+    NULL,
+    NULL
+from
+    mdc.bf_student_indexes
+WHERE
+    mdc.bf_student_indexes.index_number IS NOT NULL
+    AND mdc.bf_student_indexes.index_number != '';
+
+########-END student index LICENSE MIGRATION#######- 
+##MIGRATE STUDENT INDEX DETAILS INTO THE STUDENT INDEXES TABLE##
+INSERT
+    IGNORE INTO ci4_mdc4.`student_indexes`(
+        `first_name`,
+        `middle_name`,
+        `last_name`,
+        `date_of_birth`,
+        `index_number`,
+        `sex`,
+        `student_id`,
+        `training_institution`,
+        `year`
+    )
+SELECT
+    `first_name`,
+    `middle_name`,
+    `last_name`,
+    `date_of_birth`,
+    `index_number`,
+    COALESCE(sex, ''),
+    `student_id`,
+    `name`,
+    `year`
+FROM
+    mdc.bf_student_indexes
+    JOIN mdc.bf_training_institutions ON mdc.bf_training_institutions.id = mdc.bf_student_indexes.training_institution_id
+WHERE
+    index_number IS NOT NULL
+    AND index_number != '';
