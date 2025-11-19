@@ -51,6 +51,8 @@ class AppSettingsLicenseType
      */
     public array $userActions;
 
+    public array $licenseNumberFormat;
+
     public function __construct(
         string $table = '',
         string $uniqueKeyField = '',

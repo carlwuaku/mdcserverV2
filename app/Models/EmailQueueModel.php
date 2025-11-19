@@ -81,7 +81,11 @@ class EmailQueueModel extends MyBaseModel implements TableDisplayInterface
     // Update email status
     public function updateStatus($id, $status, $errorMessage = null)
     {
-        $data = ['status' => $status];
+        if (!$id) {
+            return 1;
+        }
+
+        $data = ['status' => $status, 'attempts' => 0, 'error_message' => null];
 
         if ($status === 'sent') {
             $data['sent_at'] = date('Y-m-d H:i:s');
@@ -92,7 +96,7 @@ class EmailQueueModel extends MyBaseModel implements TableDisplayInterface
             $data['error_message'] = $errorMessage;
 
             // If max attempts reached, mark as permanently failed
-            $email = $this->find($id);
+            $email = $this->where('id', $id)->find($id);
             if ($email && $data['attempts'] >= $email['max_attempts']) {
                 $data['status'] = 'failed';
             } else {
@@ -106,7 +110,10 @@ class EmailQueueModel extends MyBaseModel implements TableDisplayInterface
     // Increment attempt count
     private function incrementAttempts($id)
     {
-        $email = $this->find($id);
+        if (!$id) {
+            return 1;
+        }
+        $email = $this->where('id', $id)->find($id);
         if (!$email) {
             return 1;
         }

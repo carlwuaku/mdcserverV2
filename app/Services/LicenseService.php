@@ -35,6 +35,13 @@ class LicenseService
             throw new \InvalidArgumentException('License type is required');
         }
 
+        $licenseDef = Utils::getLicenseSetting($type);
+        $uniqueKeyField = $licenseDef->uniqueKeyField;
+        $data[$uniqueKeyField] = $data[$uniqueKeyField] ?? null;
+        if (!$data[$uniqueKeyField]) {
+            $data[$uniqueKeyField] = $this->licenseUtils->generateLicenseNumber($type);
+        }
+
         // Get validation rules
         $rules = $this->getLicenseValidationRules($type, 'create');
 
@@ -354,8 +361,12 @@ class LicenseService
     {
         $baseRules = [];
         if ($operation === 'create') {
+            //use the unique field of the license type instead of license number
+            $licenseDef = Utils::getLicenseSetting($type);
+            $uniqueKeyField = $licenseDef->uniqueKeyField;
+
             $baseRules = [
-                "license_number" => $operation === 'create'
+                "$uniqueKeyField" => $operation === 'create'
                     ? "required|is_unique[licenses.license_number]"
                     : "if_exist|is_unique[licenses.license_number,uuid,$uuid]",
                 "registration_date" => "required|valid_date",
@@ -363,6 +374,7 @@ class LicenseService
                 "phone" => "required",
                 "type" => "required"
             ];
+
         } else if ($operation === 'update') {
             $baseRules = [
                 "uuid" => "required",

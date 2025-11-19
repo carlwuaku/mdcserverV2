@@ -552,4 +552,10 @@ class LicenseUtils extends Utils
         $licenseDef = Utils::getLicenseSetting($licenseType);
         return $licenseDef->mustBeInGoodStandingToRenew;
     }
+
+    public static function generateLicenseNumber(string $licenseType): string
+    {
+        //get the license number format
+
+    }
 }
