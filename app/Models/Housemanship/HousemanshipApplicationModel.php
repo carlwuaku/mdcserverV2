@@ -339,4 +339,17 @@ year
         ];
     }
 
+    public function getSortColumns(): array
+    {
+
+        return [
+            'license_number',
+            'date',
+            'category',
+            'type',
+            'year',
+            'session',
+            'tags'
+        ];
+    }
 }

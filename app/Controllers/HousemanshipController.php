@@ -1688,9 +1688,9 @@ class HousemanshipController extends ResourceController
             //if the user is not an admin, get the non-admin fields
             $mainFields = $user->isAdmin() ? $model->getFormFields() : $model->getNonAdminFormFields();
             //get the regions from previous postings to ensure they are not repeated
-            $previousPostings = $user->isAdmin() ? [] : $this->housemanshipService->getPractitionerPreviousPostingRegionsAndDisciplines($user->profile_data['license_number']);
-            $previousPostingRegions = $previousPostings->regions;
-            $previousDisciplines = $previousPostings->disciplines;
+            $previousPostings = $user->isAdmin() ? null : $this->housemanshipService->getPractitionerPreviousPostingRegionsAndDisciplines($user->profile_data['license_number']);
+            $previousPostingRegions = $previousPostings ? $previousPostings->regions : [];
+            $previousDisciplines = $previousPostings ? $previousPostings->disciplines : [];
             $detailsFields = $user->isAdmin() ? $detailsModel->getFormFields() : $detailsModel->getNonAdminFormFields($user->profile_data, $previousPostingRegions, $previousDisciplines);
             //add the tags
             $tags = $user->isAdmin() ? Utils::getHousemanshipSettingApplicationFormTags(null) : Utils::getHousemanshipSettingApplicationFormTags($user->profile_data);

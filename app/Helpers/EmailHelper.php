@@ -43,11 +43,11 @@ class EmailHelper extends Utils
 
             return $result;
         } catch (\Brevo\Client\ApiException $e) {
+            log_message('error', $e);
             self::queueEmail($emailConfig);
             throw $e;
         } catch (Exception $e) {
-            log_message('error', $e->getMessage());
-            echo 'Exception when calling TransactionalEmailsApi->sendTransacEmail: ', $e->getMessage(), PHP_EOL;
+            log_message('error', $e);
             throw $e;
         }
     }
@@ -103,7 +103,7 @@ class EmailHelper extends Utils
             }
         } catch (Exception $e) {
             log_message('error', 'Email not sent by default smtp');
-            log_message('error', $e->getMessage());
+            log_message('error', $e);
         }
     }
 
@@ -204,6 +204,7 @@ class EmailHelper extends Utils
                     "bcc" => $emailConfig->bcc,
                     "status" => "sent",
                 ]);
+                $emailId = $emailQueueModel->getInsertID();
             } else {
                 $emailQueueModel->updateStatus($emailId, 'sent', $message);
                 $emailQueueLogModel->logStatusChange($emailId, 'sent', $message);
@@ -211,9 +212,11 @@ class EmailHelper extends Utils
 
 
         } catch (Exception $e) {
-            log_message('error', $e->getMessage());
-            $emailQueueModel->updateStatus($emailId, 'failed', $e->getMessage());
-            $emailQueueLogModel->logStatusChange($emailId, 'failed', $e->getMessage());
+            log_message('error', $e);
+            if ($emailId) {
+                $emailQueueModel->updateStatus($emailId, 'failed', $e->getMessage());
+                $emailQueueLogModel->logStatusChange($emailId, 'failed', $e->getMessage());
+            }
 
         }
         return true;

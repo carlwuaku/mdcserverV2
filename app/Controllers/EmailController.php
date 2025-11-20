@@ -102,7 +102,8 @@ class EmailController extends ResourceController
          ], ResponseInterface::HTTP_OK);
 
       } catch (\Throwable $th) {
-         return $this->respond(['message' => $th->getMessage()], ResponseInterface::HTTP_BAD_REQUEST);
+         log_message('error', $th);
+         return $this->respond(['message' => "Server error. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
       }
    }
 

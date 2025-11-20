@@ -1,0 +1,442 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "MDC Server API Documentation",
+    "description": "API documentation for the MDC Server application - Medical/Healthcare Regulatory Management System for license management, practitioner registration, CPD tracking, examinations, and payment processing",
+    "version": "1.0.0",
+    "contact": {
+      "name": "API Support",
+      "email": "info@mdcghana.org"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Local Development Server"
+    },
+    {
+      "url": "https://api.mdcghana.org",
+      "description": "Production Server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Authentication",
+      "description": "User authentication and authorization endpoints"
+    },
+    {
+      "name": "Licenses",
+      "description": "License management and CRUD operations"
+    },
+    {
+      "name": "Practitioners",
+      "description": "Practitioner registration and management"
+    },
+    {
+      "name": "CPD",
+      "description": "Continuing Professional Development management"
+    },
+    {
+      "name": "Applications",
+      "description": "Application form templates and submissions"
+    },
+    {
+      "name": "Payments",
+      "description": "Payment processing and invoicing"
+    },
+    {
+      "name": "Examinations",
+      "description": "Examination management and candidate tracking"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Enter your JWT token (without Bearer prefix)"
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Error message"
+          },
+          "message": {
+            "type": "string",
+            "description": "Detailed error message"
+          }
+        }
+      },
+      "Success": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Operation success status"
+          },
+          "message": {
+            "type": "string",
+            "description": "Success message"
+          },
+          "data": {
+            "type": "object",
+            "description": "Response data"
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/api/auth/login": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "User login",
+        "description": "Authenticate user and receive JWT token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "password"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "user@example.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "example": "password123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "access_token": {
+                      "type": "string",
+                      "description": "JWT access token"
+                    },
+                    "token_type": {
+                      "type": "string",
+                      "example": "Bearer"
+                    },
+                    "user": {
+                      "type": "object",
+                      "description": "User information"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials"
+          }
+        }
+      }
+    },
+    "/licenses/details": {
+      "get": {
+        "tags": [
+          "Licenses"
+        ],
+        "summary": "Get list of licenses",
+        "description": "Retrieve paginated list of licenses with optional filtering",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page offset",
+            "schema": {
+              "type": "integer",
+              "default": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Items per page",
+            "schema": {
+              "type": "integer",
+              "default": 100
+            }
+          },
+          {
+            "name": "licenseType",
+            "in": "query",
+            "description": "Filter by license type",
+            "schema": {
+              "type": "string",
+              "example": "practitioners"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of licenses",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Licenses"
+        ],
+        "summary": "Create new license",
+        "description": "Create a new license with auto-generated license number if not provided",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "type",
+                  "email",
+                  "phone",
+                  "registration_date"
+                ],
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "practitioners",
+                    "description": "License type"
+                  },
+                  "practitioner_type": {
+                    "type": "string",
+                    "example": "Doctor",
+                    "description": "Type of practitioner (for practitioners license)"
+                  },
+                  "register_type": {
+                    "type": "string",
+                    "example": "Provisional",
+                    "description": "Register type (Provisional, Permanent, Temporary)"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "doctor@example.com"
+                  },
+                  "phone": {
+                    "type": "string",
+                    "example": "+233123456789"
+                  },
+                  "registration_date": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2025-01-01"
+                  },
+                  "license_number": {
+                    "type": "string",
+                    "description": "Optional - will be auto-generated if not provided",
+                    "example": "MDC/PN/00001"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "License created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Success"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/licenses/{uuid}": {
+      "get": {
+        "tags": [
+          "Licenses"
+        ],
+        "summary": "Get license details",
+        "description": "Retrieve detailed information about a specific license",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "description": "License UUID or license number",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "License details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "License not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Licenses"
+        ],
+        "summary": "Update license",
+        "description": "Update an existing license",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "description": "License UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "License updated successfully"
+          },
+          "404": {
+            "description": "License not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Licenses"
+        ],
+        "summary": "Delete license",
+        "description": "Soft delete a license",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "description": "License UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "License deleted successfully"
+          },
+          "404": {
+            "description": "License not found"
+          }
+        }
+      }
+    }
+  }
+}

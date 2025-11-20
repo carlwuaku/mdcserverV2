@@ -15,7 +15,8 @@ class Swagger extends BaseConfig
      * Directories to scan for annotations
      */
     public array $scanDirs = [
-        APPPATH . 'Controllers'
+        APPPATH . 'Controllers',
+        APPPATH . 'Config'
     ];
 
     /**

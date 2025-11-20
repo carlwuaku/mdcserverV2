@@ -8,9 +8,13 @@ use App\Services\PaymentsService;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 use App\Helpers\AuthHelper;
+use App\Traits\CacheInvalidatorTrait;
+use App\Helpers\CacheHelper;
+use App\Helpers\Utils;
 
 class PaymentsController extends ResourceController
 {
+    use CacheInvalidatorTrait;
     private PaymentsService $paymentsService;
     private GhanaGovPaymentService $ghanaGovPaymentService;
     public function __construct()
@@ -37,6 +41,9 @@ class PaymentsController extends ResourceController
             //create the letters objects
             $result = $this->paymentsService->createFee((array) $data);
 
+            // Invalidate cache
+            $this->invalidateCache('app_fees_');
+
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
         } catch (\InvalidArgumentException $e) {
@@ -57,6 +64,9 @@ class PaymentsController extends ResourceController
             //create the letters objects
             $result = $this->paymentsService->updateFee($id, (array) $data);
 
+            // Invalidate cache
+            $this->invalidateCache('app_fees_');
+
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
         } catch (\InvalidArgumentException $e) {
@@ -71,9 +81,12 @@ class PaymentsController extends ResourceController
     {
         try {
             $filters = $this->extractRequestFilters();
-            $result = $this->paymentsService->getAllFees($filters);
+            $cacheKey = Utils::generateHashedCacheKey('app_fees_', $filters);
+            return CacheHelper::remember($cacheKey, function () use ($filters) {
+                $result = $this->paymentsService->getAllFees($filters);
 
-            return $this->respond($result, ResponseInterface::HTTP_OK);
+                return $this->respond($result, ResponseInterface::HTTP_OK);
+            });
 
         } catch (\Throwable $e) {
             log_message("error", $e);
@@ -84,8 +97,11 @@ class PaymentsController extends ResourceController
     public function getFee($id)
     {
         try {
-            $result = $this->paymentsService->getFeeDetails($id);
-            return $this->respond($result, ResponseInterface::HTTP_OK);
+            $cacheKey = Utils::generateHashedCacheKey('app_fees_', ['id' => $id]);
+            return CacheHelper::remember($cacheKey, function () use ($id) {
+                $result = $this->paymentsService->getFeeDetails($id);
+                return $this->respond($result, ResponseInterface::HTTP_OK);
+            });
 
         } catch (\Throwable $e) {
             log_message("error", $e);
@@ -97,6 +113,9 @@ class PaymentsController extends ResourceController
     {
         try {
             $result = $this->paymentsService->deleteFee($id);
+
+            // Invalidate cache
+            $this->invalidateCache('app_fees_');
 
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
@@ -146,6 +165,9 @@ class PaymentsController extends ResourceController
             //create the letters objects
             $result = $this->paymentsService->createInvoice((array) $data, $itemsArray, $paymentOptionsArray);
 
+            // Invalidate cache
+            $this->invalidateCache('app_invoices_');
+
             return $this->respond(["data" => $result, "message" => "Invoice created successfully"], ResponseInterface::HTTP_OK);
 
         } catch (\InvalidArgumentException $e) {
@@ -168,6 +190,9 @@ class PaymentsController extends ResourceController
             //this selects the items of the invoice based on the purpose and adds any additional items
             $dueDate = $this->request->getVar('dueDate');
             $result = $this->paymentsService->generatePresetInvoicesForMultipleUuids($purpose, $uuid, $dueDate, $additionalItems);
+
+            // Invalidate cache
+            $this->invalidateCache('app_invoices_');
 
             return $this->respond(["data" => $result, "message" => "Invoice created successfully"], ResponseInterface::HTTP_OK);
 
@@ -192,6 +217,9 @@ class PaymentsController extends ResourceController
             //create the letters objects
             $result = $this->paymentsService->updateBulkInvoice((array) $data);
 
+            // Invalidate cache
+            $this->invalidateCache('app_invoices_');
+
             return $this->respond(["message" => $result, "data" => null], ResponseInterface::HTTP_OK);
 
         } catch (\InvalidArgumentException $e) {
@@ -210,6 +238,10 @@ class PaymentsController extends ResourceController
                 throw new \InvalidArgumentException("payment_method is required");
             }
             $result = $this->paymentsService->updateInvoicePaymentMethod($uuid, $paymentMethod);
+
+            // Invalidate cache
+            $this->invalidateCache('app_invoices_');
+
             return $this->respond($result, ResponseInterface::HTTP_OK);
         } catch (\InvalidArgumentException $e) {
             return $this->respond(['message' => $e->getMessage()], ResponseInterface::HTTP_BAD_REQUEST);
@@ -223,9 +255,12 @@ class PaymentsController extends ResourceController
     {
         try {
             $filters = $this->extractRequestFilters();
-            $result = $this->paymentsService->getInvoices($filters);
+            $cacheKey = Utils::generateHashedCacheKey('app_invoices_', $filters);
+            return CacheHelper::remember($cacheKey, function () use ($filters) {
+                $result = $this->paymentsService->getInvoices($filters);
 
-            return $this->respond($result, ResponseInterface::HTTP_OK);
+                return $this->respond($result, ResponseInterface::HTTP_OK);
+            });
 
         } catch (\Throwable $e) {
             log_message("error", $e);
@@ -242,20 +277,24 @@ class PaymentsController extends ResourceController
             if (!empty($param)) {
                 $filters['param'] = $param;
             }
-            $result = $this->paymentsService->getInvoices($filters);
-            //remove these fields from each item in data
 
-            $removeFields = ["application_id", "id", "year", "redirect_url", "purpose_table_uuid", "purpose_table", "post_url", "payment_method", "payment_file", "payment_file_date", "mda_branch_code", "online_payment_status", "online_payment_response"];
-            $result['data'] = array_map(function ($item) use ($removeFields) {
-                foreach ($removeFields as $field) {
-                    unset($item->$field);
-                }
-                return $item;
-            }, $result['data']);
-            //remove them from the display_columns string[] as well
-            $result['displayColumns'] = ["description", "amount", "status", "invoice_number", "created_at", "selected_payment_method", "due_date", "notes", "payment_date"];// array_values(array_diff($result['displayColumns'], $removeFields));
+            $cacheKey = Utils::generateHashedCacheKey('app_invoices_license_', array_merge($filters, ['userId' => $userId]));
+            return CacheHelper::remember($cacheKey, function () use ($filters) {
+                $result = $this->paymentsService->getInvoices($filters);
+                //remove these fields from each item in data
 
-            return $this->respond($result, ResponseInterface::HTTP_OK);
+                $removeFields = ["application_id", "id", "year", "redirect_url", "purpose_table_uuid", "purpose_table", "post_url", "payment_method", "payment_file", "payment_file_date", "mda_branch_code", "online_payment_status", "online_payment_response"];
+                $result['data'] = array_map(function ($item) use ($removeFields) {
+                    foreach ($removeFields as $field) {
+                        unset($item->$field);
+                    }
+                    return $item;
+                }, $result['data']);
+                //remove them from the display_columns string[] as well
+                $result['displayColumns'] = ["description", "amount", "status", "invoice_number", "created_at", "selected_payment_method", "due_date", "notes", "payment_date"];// array_values(array_diff($result['displayColumns'], $removeFields));
+
+                return $this->respond($result, ResponseInterface::HTTP_OK);
+            });
 
         } catch (\Throwable $e) {
             log_message("error", $e);
@@ -269,9 +308,13 @@ class PaymentsController extends ResourceController
             $userId = auth("tokens")->id();
             $userData = AuthHelper::getAuthUser($userId);
             $filters = ["unique_id" => $userData->profile_data['license_number'], "status" => $status];
-            $result = $this->paymentsService->getInvoices($filters);
 
-            return $this->respond(['data' => $result['total']], ResponseInterface::HTTP_OK);
+            $cacheKey = Utils::generateHashedCacheKey('app_invoices_count_license_', array_merge($filters, ['userId' => $userId]));
+            return CacheHelper::remember($cacheKey, function () use ($filters) {
+                $result = $this->paymentsService->getInvoices($filters);
+
+                return $this->respond(['data' => $result['total']], ResponseInterface::HTTP_OK);
+            });
 
         } catch (\Throwable $e) {
             log_message("error", $e);
@@ -282,8 +325,11 @@ class PaymentsController extends ResourceController
     public function getLicenseInvoiceDetails($uuid)
     {
         try {
-            $result = $this->paymentsService->getInvoice($uuid);
-            return $this->respond($result, ResponseInterface::HTTP_OK);
+            $cacheKey = Utils::generateHashedCacheKey('app_invoices_', ['uuid' => $uuid]);
+            return CacheHelper::remember($cacheKey, function () use ($uuid) {
+                $result = $this->paymentsService->getInvoice($uuid);
+                return $this->respond($result, ResponseInterface::HTTP_OK);
+            });
 
         } catch (\Throwable $e) {
             log_message("error", $e);
@@ -294,8 +340,11 @@ class PaymentsController extends ResourceController
     public function getInvoice($uuid)
     {
         try {
-            $result = $this->paymentsService->getInvoice($uuid);
-            return $this->respond($result, ResponseInterface::HTTP_OK);
+            $cacheKey = Utils::generateHashedCacheKey('app_invoices_', ['uuid' => $uuid]);
+            return CacheHelper::remember($cacheKey, function () use ($uuid) {
+                $result = $this->paymentsService->getInvoice($uuid);
+                return $this->respond($result, ResponseInterface::HTTP_OK);
+            });
 
         } catch (\Throwable $e) {
             log_message("error", $e);
@@ -315,8 +364,11 @@ class PaymentsController extends ResourceController
     public function getInvoiceByExternal($uuid)
     {
         try {
-            $result = $this->paymentsService->getInvoiceByExternalUuid($uuid);
-            return $this->respond($result, ResponseInterface::HTTP_OK);
+            $cacheKey = Utils::generateHashedCacheKey('app_invoices_external_', ['uuid' => $uuid]);
+            return CacheHelper::remember($cacheKey, function () use ($uuid) {
+                $result = $this->paymentsService->getInvoiceByExternalUuid($uuid);
+                return $this->respond($result, ResponseInterface::HTTP_OK);
+            });
 
         } catch (\InvalidArgumentException $e) {
             return $this->respond(['message' => $e->getMessage()], ResponseInterface::HTTP_BAD_REQUEST);
@@ -330,6 +382,9 @@ class PaymentsController extends ResourceController
     {
         try {
             $result = $this->paymentsService->deleteInvoice($uuid);
+
+            // Invalidate cache
+            $this->invalidateCache('app_invoices_');
 
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
@@ -359,9 +414,13 @@ class PaymentsController extends ResourceController
              * @var array
              */
             $uuid = $this->request->getVar('uuids'); //
-            $result = $this->paymentsService->getInoviceDefaultFeesMultipleUuids($purpose, $uuid);
 
-            return $this->respond(['data' => $result, 'message' => ''], ResponseInterface::HTTP_OK);
+            $cacheKey = Utils::generateHashedCacheKey('app_invoice_default_fees_', ['purpose' => $purpose, 'uuids' => $uuid]);
+            return CacheHelper::remember($cacheKey, function () use ($purpose, $uuid) {
+                $result = $this->paymentsService->getInoviceDefaultFeesMultipleUuids($purpose, $uuid);
+
+                return $this->respond(['data' => $result, 'message' => ''], ResponseInterface::HTTP_OK);
+            });
 
         } catch (\Throwable $e) {
             log_message("error", $e);
@@ -376,6 +435,9 @@ class PaymentsController extends ResourceController
             $data = $this->request->getVar();
 
             $result = $this->paymentsService->submitOfflinePayment($uuid, (array) $data);
+
+            // Invalidate cache
+            $this->invalidateCache('app_invoices_');
 
             return $this->respond(['data' => $result, 'message' => 'Payment submitted successfully'], ResponseInterface::HTTP_OK);
 
@@ -424,6 +486,9 @@ class PaymentsController extends ResourceController
             $mdaBranch = $this->request->getPost("mda_branch_code");
             $response = $this->ghanaGovPaymentService->createCheckoutSession($invoiceUuid, $mdaBranch);
 
+            // Invalidate cache
+            $this->invalidateCache('app_invoices_');
+
             return $this->respond(['data' => $response, 'message' => $response], ResponseInterface::HTTP_OK);
         } catch (DuplicateOnlinePaymentInvoiceException $e) {
             return $this->respond(['message' => $e->getMessage()], ResponseInterface::HTTP_CONFLICT);
@@ -439,6 +504,9 @@ class PaymentsController extends ResourceController
             $invoiceNumber = $this->request->getPost("invoice_number");
 
             $this->ghanaGovPaymentService->ghanaGovInvoicepaymentDone($invoiceNumber);
+
+            // Invalidate cache
+            $this->invalidateCache('app_invoices_');
 
             return $this->respond(['data' => null, 'message' => 'Payment submitted successfully'], ResponseInterface::HTTP_OK);
 
@@ -475,6 +543,9 @@ class PaymentsController extends ResourceController
             //create the letters objects
             $this->paymentsService->createPaymentFileUpload((array) $data);
 
+            // Invalidate cache
+            $this->invalidateCache('app_payment_uploads_');
+
             return $this->respond(['data' => null, 'message' => 'Payment submitted successfully'], ResponseInterface::HTTP_OK);
 
         } catch (\InvalidArgumentException $e) {
@@ -490,9 +561,12 @@ class PaymentsController extends ResourceController
     {
         try {
             $filters = $this->extractRequestFilters();
-            $result = $this->paymentsService->getPaymentFileUploads($filters);
+            $cacheKey = Utils::generateHashedCacheKey('app_payment_uploads_', $filters);
+            return CacheHelper::remember($cacheKey, function () use ($filters) {
+                $result = $this->paymentsService->getPaymentFileUploads($filters);
 
-            return $this->respond($result, ResponseInterface::HTTP_OK);
+                return $this->respond($result, ResponseInterface::HTTP_OK);
+            });
 
         } catch (\Throwable $e) {
             log_message("error", $e);
@@ -503,9 +577,12 @@ class PaymentsController extends ResourceController
     public function countPaymentFileUploads()
     {
         try {
-            $result = $this->paymentsService->countPaymentFileUploads();
+            $cacheKey = 'app_payment_uploads_count';
+            return CacheHelper::remember($cacheKey, function () {
+                $result = $this->paymentsService->countPaymentFileUploads();
 
-            return $this->respond(['data' => $result], ResponseInterface::HTTP_OK);
+                return $this->respond(['data' => $result], ResponseInterface::HTTP_OK);
+            });
 
         } catch (\Throwable $e) {
             log_message("error", $e);
@@ -517,6 +594,9 @@ class PaymentsController extends ResourceController
     {
         try {
             $result = $this->paymentsService->deletePaymentFileUpload($id);
+
+            // Invalidate cache
+            $this->invalidateCache('app_payment_uploads_');
 
             return $this->respond(['data' => $result, 'message' => "Payment deleted successfully"], ResponseInterface::HTTP_OK);
 
@@ -531,6 +611,10 @@ class PaymentsController extends ResourceController
         try {
 
             $this->paymentsService->approvePaymentFileUpload(["id" => $id]);
+
+            // Invalidate cache
+            $this->invalidateCache('app_payment_uploads_');
+            $this->invalidateCache('app_invoices_');
 
             return $this->respond(['data' => null, 'message' => 'Payment submitted successfully'], ResponseInterface::HTTP_OK);
 
@@ -565,9 +649,12 @@ class PaymentsController extends ResourceController
     public function getPaymentMethodBranches($paymentMethod)
     {
         try {
-            $result = $this->paymentsService->getPaymentMethodBranches($paymentMethod);
+            $cacheKey = Utils::generateHashedCacheKey('app_payment_branches_', ['paymentMethod' => $paymentMethod]);
+            return CacheHelper::remember($cacheKey, function () use ($paymentMethod) {
+                $result = $this->paymentsService->getPaymentMethodBranches($paymentMethod);
 
-            return $this->respond(['data' => $result], ResponseInterface::HTTP_OK);
+                return $this->respond(['data' => $result], ResponseInterface::HTTP_OK);
+            });
 
         } catch (\Throwable $e) {
             log_message("error", $e);

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Helpers\LicenseUtils;
+use App\Helpers\LicenseNumberGenerator;
 use App\Helpers\Utils;
 use App\Models\ActivitiesModel;
 use App\Models\Licenses\LicenseRenewalModel;
@@ -17,11 +18,13 @@ class LicenseService
 {
     private LicenseUtils $licenseUtils;
     private ActivitiesModel $activitiesModel;
+    private LicenseNumberGenerator $licenseNumberGenerator;
 
     public function __construct()
     {
         $this->licenseUtils = new LicenseUtils();
         $this->activitiesModel = new ActivitiesModel();
+        $this->licenseNumberGenerator = new LicenseNumberGenerator();
     }
 
     /**
@@ -33,6 +36,25 @@ class LicenseService
 
         if (!$type) {
             throw new \InvalidArgumentException('License type is required');
+        }
+
+        $licenseDef = Utils::getLicenseSetting($type);
+        $uniqueKeyField = $licenseDef->uniqueKeyField;
+        $data[$uniqueKeyField] = $data[$uniqueKeyField] ?? null;
+
+        // Generate license number if not provided
+        if (!$data[$uniqueKeyField]) {
+            // Try to generate using the new format-based system
+            try {
+                $generatedNumber = $this->licenseNumberGenerator->generateLicenseNumber($type, $data);
+
+            } catch (\Throwable $th) {
+                $generatedNumber = null;
+            }
+
+            if ($generatedNumber) {
+                $data[$uniqueKeyField] = $generatedNumber;
+            }
         }
 
         // Get validation rules
@@ -56,7 +78,7 @@ class LicenseService
             $model->db->transComplete();
 
             // Log activity
-            $this->activitiesModel->logActivity("Created license {$data['license_number']}");
+            $this->activitiesModel->logActivity("Created license {$data[$uniqueKeyField]}");
 
             return [
                 'success' => true,
@@ -354,8 +376,12 @@ class LicenseService
     {
         $baseRules = [];
         if ($operation === 'create') {
+            //use the unique field of the license type instead of license number
+            $licenseDef = Utils::getLicenseSetting($type);
+            $uniqueKeyField = $licenseDef->uniqueKeyField;
+
             $baseRules = [
-                "license_number" => $operation === 'create'
+                "$uniqueKeyField" => $operation === 'create'
                     ? "required|is_unique[licenses.license_number]"
                     : "if_exist|is_unique[licenses.license_number,uuid,$uuid]",
                 "registration_date" => "required|valid_date",
@@ -363,6 +389,7 @@ class LicenseService
                 "phone" => "required",
                 "type" => "required"
             ];
+
         } else if ($operation === 'update') {
             $baseRules = [
                 "uuid" => "required",

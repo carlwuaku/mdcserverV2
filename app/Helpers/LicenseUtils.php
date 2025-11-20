@@ -7,6 +7,7 @@ use Exception;
 use SimpleSoftwareIO\QrCode\Generator;
 use App\Models\ActivitiesModel;
 use App\Helpers\Types\RenewalStageType;
+use App\Helpers\Types\CriteriaType;
 
 class RenewalEligibilityResponse
 {
@@ -19,6 +20,18 @@ class RenewalEligibilityResponse
         $this->isEligible = $isEligible;
         $this->reason = $reason;
         $this->score = $score;
+    }
+}
+
+class RenewalOpenResultType
+{
+    public bool $result;
+    public string $message;
+
+    public function __construct(bool $result, string $message)
+    {
+        $this->result = $result;
+        $this->message = $message;
     }
 }
 
@@ -541,15 +554,76 @@ class LicenseUtils extends Utils
         );
     }
 
-    public static function portalRenewalApplicationOpen(string $licenseType)
+    public static function portalRenewalApplicationOpen(string $licenseType, array $licenseDetails): RenewalOpenResultType
     {
-        //TODO: check if portal renewal application is open for the given license type
-        return true;
+        $result = new RenewalOpenResultType(false, "Portal renewal application is not open");
+        $setting = self::checkPortalRenewalOpenSetting($licenseDetails);
+        //check if portal renewal application is open for the given license type
+        //if null or false, then the portal renewal application is not open. null would occur if no setting or criteria exists for the current license, which would be a problem
+        if (!$setting) {
+            return new RenewalOpenResultType(false, "Portal renewal application is not open at this moment.");
+        }
+
+
+        //check how many days after the end of the current renewal period is the portal renewal application open. if negative, it would be open before the end of the current renewal period. if positive, it would be open after the end of the current renewal period
+        //then we check the settings to see if the portal renewal application is open
+        $licenseDef = Utils::getLicenseSetting($licenseType);
+        $mustBeInGoodStandingToRenew = $licenseDef->mustBeInGoodStandingToRenew;
+        $lastRenewalDate = array_key_exists('last_renewal_expiry', $licenseDetails) ? $licenseDetails['last_renewal_expiry'] : null;
+        log_message('info', print_r($licenseDetails, true));
+        if (!$lastRenewalDate) {
+            log_message('info', 'Portal renewal application is open. No previous renewal was found');
+            return new RenewalOpenResultType(true, "Portal renewal application is open. No previous renewal was found");
+        }
+        $renewalPeriod = $licenseDef->daysFromRenewalExpiryToOpenApplication ?? 0;
+
+        // Calculate the date when the portal should open by adding renewalPeriod days to lastRenewalDate
+        // If renewalPeriod is negative, portal opens before lastRenewalDate
+        // If renewalPeriod is positive, portal opens after lastRenewalDate
+        $portalOpenDate = date('Y-m-d', strtotime($lastRenewalDate . " $renewalPeriod days"));
+        $currentDate = date('Y-m-d');
+        $latterDate = max($portalOpenDate, $lastRenewalDate);
+        // Portal is open if current date is past (or equal to) the portal open date
+        //if mustBeInGoodStandingToRenew is true, return false if past the latter of the 2 dates
+        if ($mustBeInGoodStandingToRenew && $currentDate >= $latterDate) {
+            log_message('info', 'must be in good standing' . $currentDate . ' ' . $latterDate);
+            return new RenewalOpenResultType(false, "Portal renewal application is not open at this moment.");
+
+        }
+        if ($currentDate >= $portalOpenDate) {
+            return new RenewalOpenResultType(true, "Portal renewal application is open");
+        }
+
+        return new RenewalOpenResultType(false, "Portal renewal application will open on $portalOpenDate");
     }
 
+    /**
+     * Checks if a practitioner must apply for renewal while their license is still in good standing for the given license type.
+     *
+     * @param string $licenseType the license type
+     * @return bool true if the practitioner must apply for renewal while their license is still in good standing, false otherwise
+     */
     public static function mustApplyWhileInGoodStanding(string $licenseType)
     {
         $licenseDef = Utils::getLicenseSetting($licenseType);
         return $licenseDef->mustBeInGoodStandingToRenew;
     }
+
+    public static function checkPortalRenewalOpenSetting(array $userData)
+    {
+        $setting = Utils::getSystemSetting("portal_renewal_open");
+        //check the criteria
+
+        $returnValue = null;
+        foreach ($setting->value as $value) {
+            if (CriteriaType::matchesCriteria((array) $userData, $value->criteria)) {
+                log_message('info', 'portal_renewal_open value: ' . json_encode($value));
+                $returnValue = $value->value;
+                break;
+            }
+        }
+
+        return $returnValue;
+    }
+
 }

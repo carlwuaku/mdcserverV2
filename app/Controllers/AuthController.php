@@ -52,14 +52,21 @@ class AuthController extends ResourceController
 
     public function appSettings()
     {
+        // Determine authentication state first
+        $isLoggedIn = auth("tokens")->loggedIn();
         $userId = auth("tokens")->id();
-        $cacheKey = $userId ? "app_settings_{$userId}" : "app_settings";
-        return CacheHelper::remember("$cacheKey", function () {
+
+        // Cache key must reflect the auth state to prevent serving wrong content
+        $cacheKey = $isLoggedIn && $userId
+            ? "app_settings_authenticated_{$userId}"
+            : "app_settings_guest";
+
+        return CacheHelper::remember($cacheKey, function () use ($isLoggedIn) {
             //read the data from app-settings.json at the root of the project
             try {
                 $settings = ['appName', 'appVersion', 'appLongName', 'logo', 'whiteLogo', 'loginBackground'];
                 //if the user is logged in, add more settings
-                if (auth("tokens")->loggedIn()) {
+                if ($isLoggedIn) {
                     $settings = array_merge($settings, [
                         'sidebarMenu',
                         'dashboardMenu',
@@ -108,7 +115,7 @@ class AuthController extends ResourceController
                 return $this->respond($data, ResponseInterface::HTTP_OK);
             } catch (\Throwable $th) {
                 log_message('error', $th);
-                CacheHelper::delete('app_settings');
+                // Don't cache errors - invalidate any existing cache
                 return $this->respond(['message' => 'App settings file not found'], ResponseInterface::HTTP_NOT_FOUND);
             }
 
@@ -463,6 +470,10 @@ class AuthController extends ResourceController
             'two_fa_setup_token' => null,
             'google_auth_secret' => $secret,
         ]);
+
+        // Invalidate user caches
+        $this->invalidateCache('auth_users_');
+
         $this->send2FaVerificationEmail($userData->email, $userData->display_name);
         return $this->respond([
             'message' => '2FA has been successfully enabled for your account'
@@ -499,6 +510,10 @@ class AuthController extends ResourceController
         // Remove 2FA
         $userData->google_auth_secret = null;
         $userObject->save($userData);
+
+        // Invalidate user caches
+        $this->invalidateCache('auth_users_');
+
         $this->send2FaDisabledEmail($userData->email, $userData->display_name);
         return $this->respond([
             'message' => '2FA has been successfully disabled for this account'
@@ -543,57 +558,64 @@ class AuthController extends ResourceController
     public function profile()
     {
         $userId = auth()->id();
+        $cacheKey = Utils::generateHashedCacheKey('auth_profile_', ['userId' => $userId]);
 
-        $userData = AuthHelper::getAuthUser($userId);
-        //only return needed fields
+        return CacheHelper::remember($cacheKey, function () use ($userId) {
+            $userData = AuthHelper::getAuthUser($userId);
+            //only return needed fields
 
-        $excludeProfileDataFields = ['uuid', 'id', 'created_at', 'updated_at', 'deleted_at'];
-        $data = [
-            'display_name' => $userData->display_name,
-            'email_address' => $userData->email_address,
-            'user_type' => $userData->user_type,
-            'region' => $userData->region,
-            'role_name' => $userData->role_name
-        ];
-        if ($userData->profile_data) {
-            $data['profile_data'] = array_diff_key((array) $userData->profile_data, array_flip($excludeProfileDataFields));
-        }
-        $permissionsList = AuthHelper::getAuthUserPermissions($userData);
-        return $this->respond([
-            "user" => $data,
-            "permissions" => $permissionsList
-        ], ResponseInterface::HTTP_OK);
+            $excludeProfileDataFields = ['uuid', 'id', 'created_at', 'updated_at', 'deleted_at'];
+            $data = [
+                'display_name' => $userData->display_name,
+                'email_address' => $userData->email_address,
+                'user_type' => $userData->user_type,
+                'region' => $userData->region,
+                'role_name' => $userData->role_name
+            ];
+            if ($userData->profile_data) {
+                $data['profile_data'] = array_diff_key((array) $userData->profile_data, array_flip($excludeProfileDataFields));
+            }
+            $permissionsList = AuthHelper::getAuthUserPermissions($userData);
+            return $this->respond([
+                "user" => $data,
+                "permissions" => $permissionsList
+            ], ResponseInterface::HTTP_OK);
+        }, 300); // Cache for 5 minutes only (sensitive data)
     }
 
     public function portalDashboard()
     {
         ///get the portal dashboard data for a given user. this will be used for non-admin users
         $userId = auth()->id();
-        $userObject = new UsersModel();
-        $userData = $userObject->findById($userId);
-        if (!$userData) {
-            return $this->respond(["message" => "User not found"], ResponseInterface::HTTP_NOT_FOUND);
-        }
-        $permissionsList = [];
-        //for admins use their roles to get permissions
-        if ($userData->user_type === 'admin') {
-            throw new \Exception("Admins are not allowed to use this endpoint");
-        } else {
-            //for non admins use their permissions from the app.settings.json file.
-            //also get their profile details from their profile table
-            $db = \Config\Database::connect();
+        $cacheKey = Utils::generateHashedCacheKey('auth_portal_dashboard_', ['userId' => $userId]);
 
-            $profileData = $db->table($userData->profile_table)->where(["uuid" => $userData->profile_table_uuid])->get()->getFirstRow();
-            if (!empty($profileData)) {
-
-                $userData->profile_data = $profileData;
+        return CacheHelper::remember($cacheKey, function () use ($userId) {
+            $userObject = new UsersModel();
+            $userData = $userObject->findById($userId);
+            if (!$userData) {
+                return $this->respond(["message" => "User not found"], ResponseInterface::HTTP_NOT_FOUND);
             }
-        }
-        $userData->permissions = $permissionsList;
-        return $this->respond([
-            "user" => $userData,
-            "permissions" => $permissionsList
-        ], ResponseInterface::HTTP_OK);
+            $permissionsList = [];
+            //for admins use their roles to get permissions
+            if ($userData->user_type === 'admin') {
+                throw new \Exception("Admins are not allowed to use this endpoint");
+            } else {
+                //for non admins use their permissions from the app.settings.json file.
+                //also get their profile details from their profile table
+                $db = \Config\Database::connect();
+
+                $profileData = $db->table($userData->profile_table)->where(["uuid" => $userData->profile_table_uuid])->get()->getFirstRow();
+                if (!empty($profileData)) {
+
+                    $userData->profile_data = $profileData;
+                }
+            }
+            $userData->permissions = $permissionsList;
+            return $this->respond([
+                "user" => $userData,
+                "permissions" => $permissionsList
+            ], ResponseInterface::HTTP_OK);
+        }, 300); // Cache for 5 minutes only (sensitive data)
     }
 
     private function getUserDetails($userId)
@@ -641,8 +663,15 @@ class AuthController extends ResourceController
      */
     public function logout()
     {
+        $userId = auth()->id();
         auth()->logout();
         auth()->user()->revokeAllAccessTokens();
+
+        // Invalidate user-specific caches
+        $this->invalidateCache('auth_profile_');
+        $this->invalidateCache('auth_portal_dashboard_');
+        $this->invalidateCache('app_settings_authenticated_');
+
         return $this->respondCreated([
             "status" => true,
             "message" => "logged out",
@@ -1275,15 +1304,18 @@ class AuthController extends ResourceController
 
     public function getRole($role_id)
     {
-        $model = new RolesModel();
-        $data = $model->find($role_id);
-        if (!$data) {
-            return $this->respond(["message" => "Role not found"], ResponseInterface::HTTP_BAD_REQUEST);
-        }
-        $permissionsModel = new PermissionsModel();
-        $permissions = $permissionsModel->getRolePermissions($data['role_name']);
-        $excludedPermissions = $permissionsModel->getRoleExcludedPermissions($data['role_name']);
-        return $this->respond(['data' => $data, 'permissions' => $permissions, 'excludedPermissions' => $excludedPermissions], ResponseInterface::HTTP_OK);
+        $cacheKey = Utils::generateHashedCacheKey('auth_role_', ['role_id' => $role_id]);
+        return CacheHelper::remember($cacheKey, function () use ($role_id) {
+            $model = new RolesModel();
+            $data = $model->find($role_id);
+            if (!$data) {
+                return $this->respond(["message" => "Role not found"], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+            $permissionsModel = new PermissionsModel();
+            $permissions = $permissionsModel->getRolePermissions($data['role_name']);
+            $excludedPermissions = $permissionsModel->getRoleExcludedPermissions($data['role_name']);
+            return $this->respond(['data' => $data, 'permissions' => $permissions, 'excludedPermissions' => $excludedPermissions], ResponseInterface::HTTP_OK);
+        }, 600); // Cache for 10 minutes
     }
 
     /**
@@ -1459,6 +1491,10 @@ class AuthController extends ResourceController
         }
 
         $id = $userObject->getInsertID();
+
+        // Invalidate user caches
+        $this->invalidateCache('auth_users_');
+
         return $this->respond(['message' => 'User created successfully', 'data' => $id], ResponseInterface::HTTP_OK);
     }
 
@@ -1645,6 +1681,11 @@ class AuthController extends ResourceController
             $existingUser->email = $data->email_address ?? $existingUser->email;
             $userObject->save($existingUser);
 
+            // Invalidate user caches
+            $this->invalidateCache('auth_users_');
+            $this->invalidateCache('auth_profile_');
+            $this->invalidateCache('auth_portal_dashboard_');
+
             return $this->respond(['message' => 'User updated successfully'], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
             log_message('error', $th);
@@ -1658,18 +1699,25 @@ class AuthController extends ResourceController
         if (!$model->delete($userId)) {
             return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
         }
+
+        // Invalidate user caches
+        $this->invalidateCache('auth_users_');
+
         return $this->respond(['message' => 'User deleted successfully'], ResponseInterface::HTTP_OK);
     }
 
     public function getUser($userId)
     {
-        $model = new UsersModel();
-        $data = $model->find($userId);
-        if (!$data) {
-            return $this->respond("User not found", ResponseInterface::HTTP_BAD_REQUEST);
-        }
+        $cacheKey = Utils::generateHashedCacheKey('auth_users_', ['userId' => $userId]);
+        return CacheHelper::remember($cacheKey, function () use ($userId) {
+            $model = new UsersModel();
+            $data = $model->find($userId);
+            if (!$data) {
+                return $this->respond("User not found", ResponseInterface::HTTP_BAD_REQUEST);
+            }
 
-        return $this->respond(['data' => $data,], ResponseInterface::HTTP_OK);
+            return $this->respond(['data' => $data,], ResponseInterface::HTTP_OK);
+        }, 300); // Cache for 5 minutes (sensitive data)
     }
 
     /**
@@ -1705,38 +1753,43 @@ class AuthController extends ResourceController
     public function getUsers()
     {
         try {
-            $per_page = $this->request->getVar('limit') ? (int) $this->request->getVar('limit') : 100;
-            $param = $this->request->getVar('param');
-            $sortBy = $this->request->getVar('sortBy') ?? "id";
-            $sortOrder = $this->request->getVar('sortOrder') ?? "asc";
-            $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
+            $filters = (array) $this->request->getVar();
+            $cacheKey = Utils::generateHashedCacheKey('auth_users_', $filters);
+
+            return CacheHelper::remember($cacheKey, function () use ($filters) {
+                $per_page = $this->request->getVar('limit') ? (int) $this->request->getVar('limit') : 100;
+                $param = $this->request->getVar('param');
+                $sortBy = $this->request->getVar('sortBy') ?? "id";
+                $sortOrder = $this->request->getVar('sortOrder') ?? "asc";
+                $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
 
 
-            $model = new UsersModel();
-            $builder = $param ? $model->search($param) : $model->builder();
+                $model = new UsersModel();
+                $builder = $param ? $model->search($param) : $model->builder();
 
-            $builder->select("id, uuid, display_name, user_type, username, email_address, status, status_message, active, created_at, region, position, picture, phone, role_name, CASE WHEN google_auth_secret IS NOT NULL THEN 'yes' ELSE 'no' END AS google_authenticator_setup")
-            ;
-            $filterArray = $model->createArrayFromAllowedFields($this->request->getVar());
+                $builder->select("id, uuid, display_name, user_type, username, email_address, status, status_message, active, created_at, region, position, picture, phone, role_name, CASE WHEN google_auth_secret IS NOT NULL THEN 'yes' ELSE 'no' END AS google_authenticator_setup")
+                ;
+                $filterArray = $model->createArrayFromAllowedFields($this->request->getVar());
 
-            // Apply other filters
-            foreach ($filterArray as $key => $value) {
-                $value = Utils::parseParam($value);
-                $builder = Utils::parseWhereClause($builder, $key, $value);
+                // Apply other filters
+                foreach ($filterArray as $key => $value) {
+                    $value = Utils::parseParam($value);
+                    $builder = Utils::parseWhereClause($builder, $key, $value);
 
-            }
+                }
 
-            $builder->orderBy($sortBy, $sortOrder);
-            $totalBuilder = clone $builder;
-            $total = $totalBuilder->countAllResults();
-            $result = $builder->get($per_page, $page)->getResult();
+                $builder->orderBy($sortBy, $sortOrder);
+                $totalBuilder = clone $builder;
+                $total = $totalBuilder->countAllResults();
+                $result = $builder->get($per_page, $page)->getResult();
 
-            return $this->respond([
-                'data' => $result,
-                'total' => $total,
-                'displayColumns' => $model->getDisplayColumns(),
-                'columnFilters' => $model->getDisplayColumnFilters(),
-            ], ResponseInterface::HTTP_OK);
+                return $this->respond([
+                    'data' => $result,
+                    'total' => $total,
+                    'displayColumns' => $model->getDisplayColumns(),
+                    'columnFilters' => $model->getDisplayColumnFilters(),
+                ], ResponseInterface::HTTP_OK);
+            }, 300); // Cache for 5 minutes (sensitive data)
         } catch (\Throwable $th) {
             log_message('error', $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
@@ -1755,6 +1808,10 @@ class AuthController extends ResourceController
             }
 
             $user->ban($reason);
+
+            // Invalidate user caches
+            $this->invalidateCache('auth_users_');
+
             return $this->respond(['message' => 'User banned successfully'], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
             log_message('error', $th);
@@ -1773,6 +1830,10 @@ class AuthController extends ResourceController
             }
 
             $user->unBan();
+
+            // Invalidate user caches
+            $this->invalidateCache('auth_users_');
+
             return $this->respond(['message' => 'User unbanned successfully'], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
             log_message('error', $th);
@@ -1876,16 +1937,19 @@ class AuthController extends ResourceController
     public function getUserTypes()
     {
         try {
-            $userTypesArray = USER_TYPES;
-            $result = array_map(function ($type) {
-                return [
-                    'value' => $type,
-                    'key' => ucfirst($type)
-                ];
-            }, $userTypesArray);
-            return $this->respond([
-                'data' => $result,
-            ], ResponseInterface::HTTP_OK);
+            $cacheKey = 'auth_user_types';
+            return CacheHelper::remember($cacheKey, function () {
+                $userTypesArray = USER_TYPES;
+                $result = array_map(function ($type) {
+                    return [
+                        'value' => $type,
+                        'key' => ucfirst($type)
+                    ];
+                }, $userTypesArray);
+                return $this->respond([
+                    'data' => $result,
+                ], ResponseInterface::HTTP_OK);
+            }, 3600); // Cache for 1 hour (static data)
         } catch (\Throwable $th) {
             log_message('error', $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
@@ -1895,11 +1959,14 @@ class AuthController extends ResourceController
     public function getPortalUserTypes()
     {
         try {
-            $userTypesArray = Utils::getAppSettings("userTypesNames");
+            $cacheKey = 'auth_portal_user_types';
+            return CacheHelper::remember($cacheKey, function () {
+                $userTypesArray = Utils::getAppSettings("userTypesNames");
 
-            return $this->respond([
-                'data' => $userTypesArray,
-            ], ResponseInterface::HTTP_OK);
+                return $this->respond([
+                    'data' => $userTypesArray,
+                ], ResponseInterface::HTTP_OK);
+            }, 3600); // Cache for 1 hour (static data)
         } catch (\Throwable $th) {
             log_message('error', $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
