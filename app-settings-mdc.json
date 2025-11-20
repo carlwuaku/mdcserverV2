@@ -1659,12 +1659,12 @@
                 {}
             ],
             "shouldApplyForRenewalCriteria": [],
-            "mustBeInGoodStandingToRenew": false,
+            "mustBeInGoodStandingToRenew": true,
             "renewalCpdCategory1Cutoff": 0,
             "renewalCpdCategory2Cutoff": 0,
             "renewalCpdCategory3Cutoff": 0,
             "renewalCpdTotalCutoff": 0,
-            "daysFromRenewalExpiryToOpenApplication": 0,
+            "daysFromRenewalExpiryToOpenApplication": -90,
             "revalidationPeriodInYears": 3,
             "revalidationMessage": "You are required to validate your data before renewing your license",
             "renewalJsonFields": [

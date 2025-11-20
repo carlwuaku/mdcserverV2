@@ -183,9 +183,10 @@ class Utils
     {
         $year = date('y');
         $prefix = strtoupper(substr($formType, 0, 3));
+        // Generate a random 6-character suffix using a combination of letters and numbers - year
 
-        $suffix = bin2hex(random_bytes(16)) . $year;
-        return $prefix . $suffix;
+        $suffix = substr(uniqid(), 5, 6) . "-" . $year;
+        return $prefix . "-" . $suffix;
     }
 
     /**

@@ -737,56 +737,37 @@ class LicenseRenewalService
         );
         /** @var string */
         $isInGoodStanding = $userData->profile_data['in_good_standing'];//this will be 'In Good Standing' if the last renewal was approved and in the validity period, 'Not In Good Standing' if expired or not available, or some other status if the renewal is in progress 
-        $mustBeInGoodStandingToRenew = $licenseDef->mustBeInGoodStandingToRenew;
-        $onlineApplicationsOpen = LicenseUtils::portalRenewalApplicationOpen($userData->profile_data['type']);//TODO;Utils::getSetting('online_applications_open');
+
+        $onlineApplicationsOpen = LicenseUtils::portalRenewalApplicationOpen($userData->profile_data['type'], $userData->profile_data);
+        log_message('info', 'onlineApplicationsOpen: ' . json_encode($onlineApplicationsOpen));
         //check if the person is eligible for renewal. the cpd year is the year after the last_renewal_start if it's available and is not more than a year ago
         $cpdYear = date("Y", strtotime("-1 year"));
 
         $isEligibleForRenewal = LicenseUtils::isEligibleForRenewal($licenseNumber, $eligibilityCriteria, $cpdYear);
         $eligible = $isEligibleForRenewal->isEligible;
         //and within the validity period
-        if ($isInGoodStanding === IN_GOOD_STANDING) {
-            if ($mustBeInGoodStandingToRenew) {
-                if ($eligible) {
-                    //check if online applications are open
-                    if ($onlineApplicationsOpen) {
-                        $response = new PractitionerPortalRenewalViewModelType(
-                            "fill_form",
-                            null,
-                            "Please fill the application form to apply for renewal",
-                            $this->getPortalLicenseRenewalFormFields($userData->profile_data['type'], $userData->profile_data),
-                            false,
-                            $lastRenewalId
-                        );
+        if ($isInGoodStanding === IN_GOOD_STANDING || $isInGoodStanding === NOT_IN_GOOD_STANDING) {
+            if ($eligible) {
+                //check if online applications are open
+                if ($onlineApplicationsOpen->result) {
+                    $response = new PractitionerPortalRenewalViewModelType(
+                        "fill_form",
+                        null,
+                        "Please fill the application form to apply for renewal",
+                        $this->getPortalLicenseRenewalFormFields($userData->profile_data['type'], $userData->profile_data),
+                        false,
+                        $lastRenewalId
+                    );
 
-                    } else {
-                        $response = new PractitionerPortalRenewalViewModelType("", null, "Online applications are closed", [], false, $lastRenewalId);
-
-                    }
                 } else {
-                    $response = new PractitionerPortalRenewalViewModelType("", null, "You are not eligible for renewal - " . $isEligibleForRenewal->reason, [], false, $lastRenewalId);
+                    $response = new PractitionerPortalRenewalViewModelType("", null, $onlineApplicationsOpen->message, [], false, $lastRenewalId);
 
                 }
             } else {
-                $response = new PractitionerPortalRenewalViewModelType("", null, "You are in good standing", [], false, $lastRenewalId);
-            }
-        } else if ($isInGoodStanding === NOT_IN_GOOD_STANDING) {
-            if ($mustBeInGoodStandingToRenew) {
-                $response = new PractitionerPortalRenewalViewModelType("", null, "You need to be in good standing to apply for renewal. Please contact us for support.", [], false);
-                //TODO: make this message configurable
-            } else {
-                if ($eligible) {
-                    //check if online applications are open
-                    if ($onlineApplicationsOpen) {
-                        $response = new PractitionerPortalRenewalViewModelType("fill_form", null, "You are eligible for renewal", $this->getPortalLicenseRenewalFormFields($userData->profile_data['type'], $userData->profile_data), false);
-                    } else {
-                        $response = new PractitionerPortalRenewalViewModelType("", null, "Online applications are closed", [], false, $lastRenewalId);
+                $response = new PractitionerPortalRenewalViewModelType("", null, "You are not eligible for renewal - " . $isEligibleForRenewal->reason, [], false, $lastRenewalId);
 
-                    }
-                } else {
-                    $response = new PractitionerPortalRenewalViewModelType("", null, "You are not eligible for renewal - " . $isEligibleForRenewal->reason, [], false, null);
-                }
             }
+
         } else {
             //there's a renewal in progress. get possible actions from the licenseDef and guide the user as to what to do next
             $actions = LicenseUtils::getRenewalStageActions($licenseDef, $isInGoodStanding);

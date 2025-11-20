@@ -8,6 +8,8 @@ use CodeIgniter\RESTful\ResourceController;
 use App\Traits\CacheInvalidatorTrait;
 use App\Services\ApplicationService;
 use App\Services\ApplicationTemplateService;
+use App\Helpers\CacheHelper;
+use App\Helpers\Utils;
 
 
 class ApplicationsController extends ResourceController
@@ -27,6 +29,9 @@ class ApplicationsController extends ResourceController
         try {
             $payload = (array) $this->request->getVar();
             $result = $this->applicationService->createApplication($formType, $payload);
+
+            // Invalidate cache
+            $this->invalidateCache('app_applications_');
 
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
@@ -56,6 +61,9 @@ class ApplicationsController extends ResourceController
             $uniqueId = AuthHelper::getAuthUserUniqueId($userId);
             $payload['applicant_unique_id'] = $uniqueId;
             $result = $this->applicationService->createApplication($formType, $payload);
+
+            // Invalidate cache
+            $this->invalidateCache('app_applications_');
 
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
@@ -88,6 +96,10 @@ class ApplicationsController extends ResourceController
             }
 
             $result = $this->applicationService->approvePermanentApplication($applicationDetails['data'], $registrationNumber);
+
+            // Invalidate cache
+            $this->invalidateCache('app_applications_');
+
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
         } catch (\Throwable $e) {
@@ -102,6 +114,10 @@ class ApplicationsController extends ResourceController
             $applicationDetails = $this->request->getVar();
 
             $result = $this->applicationService->approvePortalEdit($applicationDetails);
+
+            // Invalidate cache
+            $this->invalidateCache('app_applications_');
+
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
         } catch (\Throwable $e) {
@@ -162,6 +178,9 @@ class ApplicationsController extends ResourceController
             $requestData = $this->request->getVar();
             $result = $this->applicationService->updateApplication($uuid, (array) $requestData);
 
+            // Invalidate cache
+            $this->invalidateCache('app_applications_');
+
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
         } catch (\RuntimeException $e) {
@@ -194,6 +213,9 @@ class ApplicationsController extends ResourceController
                 $submittedData
             );
 
+            // Invalidate cache
+            $this->invalidateCache('app_applications_');
+
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
         } catch (\InvalidArgumentException $e) {
@@ -213,6 +235,10 @@ class ApplicationsController extends ResourceController
     {
         try {
             $result = $this->applicationService->deleteApplication($uuid);
+
+            // Invalidate cache
+            $this->invalidateCache('app_applications_');
+
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
         } catch (\RuntimeException $e) {
@@ -227,6 +253,10 @@ class ApplicationsController extends ResourceController
     {
         try {
             $result = $this->applicationService->restoreApplication($uuid);
+
+            // Invalidate cache
+            $this->invalidateCache('app_applications_');
+
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
         } catch (\RuntimeException $e) {
@@ -240,13 +270,16 @@ class ApplicationsController extends ResourceController
     public function getApplication($uuid)
     {
         try {
-            $result = $this->applicationService->getApplicationDetails($uuid);
+            $cacheKey = Utils::generateHashedCacheKey('app_applications_', ['uuid' => $uuid]);
+            return CacheHelper::remember($cacheKey, function () use ($uuid) {
+                $result = $this->applicationService->getApplicationDetails($uuid);
 
-            if (!$result) {
-                return $this->respond(['message' => "Application not found"], ResponseInterface::HTTP_NOT_FOUND);
-            }
+                if (!$result) {
+                    return $this->respond(['message' => "Application not found"], ResponseInterface::HTTP_NOT_FOUND);
+                }
 
-            return $this->respond($result, ResponseInterface::HTTP_OK);
+                return $this->respond($result, ResponseInterface::HTTP_OK);
+            });
 
         } catch (\Throwable $e) {
             log_message('error', $e);
@@ -258,9 +291,12 @@ class ApplicationsController extends ResourceController
     {
         try {
             $filters = $this->extractRequestFilters();
-            $result = $this->applicationService->getApplications($filters);
+            $cacheKey = Utils::generateHashedCacheKey('app_applications_', $filters);
+            return CacheHelper::remember($cacheKey, function () use ($filters) {
+                $result = $this->applicationService->getApplications($filters);
 
-            return $this->respond($result, ResponseInterface::HTTP_OK);
+                return $this->respond($result, ResponseInterface::HTTP_OK);
+            });
 
         } catch (\Throwable $e) {
             log_message('error', $e);
@@ -290,9 +326,13 @@ class ApplicationsController extends ResourceController
             if ($status) {
                 $filters["status"] = $status;
             }
-            $result = $this->applicationService->getApplications($filters, $exclusionFilters);
 
-            return $this->respond($result, ResponseInterface::HTTP_OK);
+            $cacheKey = Utils::generateHashedCacheKey('app_applications_user_', array_merge($filters, $exclusionFilters));
+            return CacheHelper::remember($cacheKey, function () use ($filters, $exclusionFilters) {
+                $result = $this->applicationService->getApplications($filters, $exclusionFilters);
+
+                return $this->respond($result, ResponseInterface::HTTP_OK);
+            });
 
         } catch (\Throwable $e) {
             log_message('error', $e);
@@ -303,8 +343,11 @@ class ApplicationsController extends ResourceController
     public function getApplicationFormTypes($field)
     {
         try {
-            $templates = $this->applicationService->getApplicationFormTypes($field);
-            return $this->respond(['data' => $templates], ResponseInterface::HTTP_OK);
+            $cacheKey = Utils::generateHashedCacheKey('app_applications_form_types_', ['field' => $field]);
+            return CacheHelper::remember($cacheKey, function () use ($field) {
+                $templates = $this->applicationService->getApplicationFormTypes($field);
+                return $this->respond(['data' => $templates], ResponseInterface::HTTP_OK);
+            });
 
         } catch (\Throwable $e) {
             log_message('error', $e);
@@ -315,11 +358,14 @@ class ApplicationsController extends ResourceController
     public function getApplicationStatuses($form)
     {
         try {
-            $data = $this->applicationService->getApplicationStatuses($form);
-            return $this->respond([
-                'data' => $data,
-                'displayColumns' => ["form_type", "status", "count"]
-            ], ResponseInterface::HTTP_OK);
+            $cacheKey = Utils::generateHashedCacheKey('app_applications_statuses_', ['form' => $form]);
+            return CacheHelper::remember($cacheKey, function () use ($form) {
+                $data = $this->applicationService->getApplicationStatuses($form);
+                return $this->respond([
+                    'data' => $data,
+                    'displayColumns' => ["form_type", "status", "count"]
+                ], ResponseInterface::HTTP_OK);
+            });
 
         } catch (\InvalidArgumentException $e) {
             log_message('error', $e);
@@ -346,9 +392,12 @@ class ApplicationsController extends ResourceController
             }
 
             $filters = $this->extractRequestFilters();
-            $total = $this->applicationService->countApplications($filters);
+            $cacheKey = Utils::generateHashedCacheKey('app_applications_count_', $filters);
+            return CacheHelper::remember($cacheKey, function () use ($filters) {
+                $total = $this->applicationService->countApplications($filters);
 
-            return $this->respond(['data' => $total], ResponseInterface::HTTP_OK);
+                return $this->respond(['data' => $total], ResponseInterface::HTTP_OK);
+            });
 
         } catch (\Throwable $e) {
             log_message("error", $e);
@@ -361,8 +410,11 @@ class ApplicationsController extends ResourceController
     public function getApplicationConfig(string $formName, ?string $type = null)
     {
         try {
-            $formConfig = $this->templateService->getApplicationConfig($formName, $type);
-            return $this->respond(['data' => $formConfig], ResponseInterface::HTTP_OK);
+            $cacheKey = Utils::generateHashedCacheKey('app_config_', ['formName' => $formName, 'type' => $type]);
+            return CacheHelper::remember($cacheKey, function () use ($formName, $type) {
+                $formConfig = $this->templateService->getApplicationConfig($formName, $type);
+                return $this->respond(['data' => $formConfig], ResponseInterface::HTTP_OK);
+            });
 
         } catch (\Throwable $e) {
             log_message('error', $e);
@@ -376,9 +428,12 @@ class ApplicationsController extends ResourceController
             $userId = auth("tokens")->id();
             $userData = AuthHelper::getAuthUser($userId);
             $filters = $this->extractRequestFilters();
-            $result = $this->templateService->getApplicationTemplates($userData, $filters);
+            $cacheKey = Utils::generateHashedCacheKey('app_templates_', array_merge($filters, ['userId' => $userId]));
+            return CacheHelper::remember($cacheKey, function () use ($userData, $filters) {
+                $result = $this->templateService->getApplicationTemplates($userData, $filters);
 
-            return $this->respond($result, ResponseInterface::HTTP_OK);
+                return $this->respond($result, ResponseInterface::HTTP_OK);
+            });
 
         } catch (\Throwable $e) {
             log_message('error', $e);
@@ -389,8 +444,11 @@ class ApplicationsController extends ResourceController
     public function getApplicationTemplateForFilling(string $uuid)
     {
         try {
-            $result = $this->templateService->getApplicationTemplateForFilling($uuid);
-            return $this->respond(["data" => $result], ResponseInterface::HTTP_OK);
+            $cacheKey = Utils::generateHashedCacheKey('app_template_filling_', ['uuid' => $uuid]);
+            return CacheHelper::remember($cacheKey, function () use ($uuid) {
+                $result = $this->templateService->getApplicationTemplateForFilling($uuid);
+                return $this->respond(["data" => $result], ResponseInterface::HTTP_OK);
+            });
 
         } catch (\RuntimeException $e) {
             return $this->respond(['message' => $e], ResponseInterface::HTTP_NOT_FOUND);
@@ -403,13 +461,16 @@ class ApplicationsController extends ResourceController
     public function getApplicationTemplate($uuid)
     {
         try {
-            $data = $this->templateService->getApplicationTemplateDetails($uuid);
+            $cacheKey = Utils::generateHashedCacheKey('app_template_', ['uuid' => $uuid]);
+            return CacheHelper::remember($cacheKey, function () use ($uuid) {
+                $data = $this->templateService->getApplicationTemplateDetails($uuid);
 
-            if (!$data) {
-                return $this->respond(['message' => "Application not found"], ResponseInterface::HTTP_NOT_FOUND);
-            }
+                if (!$data) {
+                    return $this->respond(['message' => "Application not found"], ResponseInterface::HTTP_NOT_FOUND);
+                }
 
-            return $this->respond(['data' => $data], ResponseInterface::HTTP_OK);
+                return $this->respond(['data' => $data], ResponseInterface::HTTP_OK);
+            });
 
         } catch (\Throwable $e) {
             log_message('error', $e);
@@ -422,6 +483,10 @@ class ApplicationsController extends ResourceController
         try {
             $data = $this->request->getPost();
             $result = $this->templateService->createApplicationTemplate($data);
+
+            // Invalidate cache
+            $this->invalidateCache('app_templates_');
+            $this->invalidateCache('app_config_');
 
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
@@ -441,6 +506,10 @@ class ApplicationsController extends ResourceController
             $data = (array) $this->request->getVar();
             $result = $this->templateService->updateApplicationTemplate($uuid, $data);
 
+            // Invalidate cache
+            $this->invalidateCache('app_templates_');
+            $this->invalidateCache('app_config_');
+
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
         } catch (\InvalidArgumentException $e) {
@@ -457,6 +526,11 @@ class ApplicationsController extends ResourceController
     {
         try {
             $result = $this->templateService->deleteApplicationTemplate($uuid);
+
+            // Invalidate cache
+            $this->invalidateCache('app_templates_');
+            $this->invalidateCache('app_config_');
+
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
         } catch (\RuntimeException $e) {
@@ -470,11 +544,14 @@ class ApplicationsController extends ResourceController
     public function getApplicationStatusTransitions($form)
     {
         try {
-            $stages = $this->templateService->getApplicationStatusTransitions($form);
-            return $this->respond([
-                'data' => $stages,
-                'displayColumns' => ["form_type", "status", "count"]
-            ], ResponseInterface::HTTP_OK);
+            $cacheKey = Utils::generateHashedCacheKey('app_status_transitions_', ['form' => $form]);
+            return CacheHelper::remember($cacheKey, function () use ($form) {
+                $stages = $this->templateService->getApplicationStatusTransitions($form);
+                return $this->respond([
+                    'data' => $stages,
+                    'displayColumns' => ["form_type", "status", "count"]
+                ], ResponseInterface::HTTP_OK);
+            });
 
         } catch (\InvalidArgumentException $e) {
             return $this->respond([
@@ -495,8 +572,11 @@ class ApplicationsController extends ResourceController
     public function getApplicationTemplateActionTypes()
     {
         try {
-            $actionTypes = $this->templateService->getApplicationTemplateActionTypes();
-            return $this->respond(['data' => $actionTypes], ResponseInterface::HTTP_OK);
+            $cacheKey = 'app_template_action_types';
+            return CacheHelper::remember($cacheKey, function () {
+                $actionTypes = $this->templateService->getApplicationTemplateActionTypes();
+                return $this->respond(['data' => $actionTypes], ResponseInterface::HTTP_OK);
+            });
 
         } catch (\Throwable $e) {
             log_message('error', $e);
@@ -507,11 +587,14 @@ class ApplicationsController extends ResourceController
     public function getApplicationTemplatesApiDefaultConfigs()
     {
         try {
-            $defaultConfigs = $this->templateService->getApplicationTemplatesApiDefaultConfigs();
-            return $this->respond([
-                'data' => $defaultConfigs,
-                'message' => "Default configurations for application templates actions"
-            ], ResponseInterface::HTTP_OK);
+            $cacheKey = 'app_template_api_default_configs';
+            return CacheHelper::remember($cacheKey, function () {
+                $defaultConfigs = $this->templateService->getApplicationTemplatesApiDefaultConfigs();
+                return $this->respond([
+                    'data' => $defaultConfigs,
+                    'message' => "Default configurations for application templates actions"
+                ], ResponseInterface::HTTP_OK);
+            });
 
         } catch (\Throwable $e) {
             log_message("error", $e);
@@ -612,8 +695,11 @@ class ApplicationsController extends ResourceController
     public function getCommonApplicationTemplates()
     {
         try {
-            $data = $this->templateService->getCommonApplicationTemplates();
-            return $this->respond(['data' => $data], ResponseInterface::HTTP_OK);
+            $cacheKey = 'app_common_templates';
+            return CacheHelper::remember($cacheKey, function () {
+                $data = $this->templateService->getCommonApplicationTemplates();
+                return $this->respond(['data' => $data], ResponseInterface::HTTP_OK);
+            });
 
         } catch (\RuntimeException $e) {
             return $this->respond(['message' => $e], ResponseInterface::HTTP_NOT_FOUND);

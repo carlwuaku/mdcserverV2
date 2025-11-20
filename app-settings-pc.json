@@ -5552,7 +5552,7 @@
             "title": "View/Fill Application Forms",
             "active_children": false,
             "url": "/applications",
-            "image": "assets/images/medical-bg.jpg",
+            "image": "assets/images/application-form.jpg",
             "icon": "auto_stories_outlined",
             "dataPoints": [],
             "actions": [
@@ -5581,7 +5581,7 @@
             "title": "Payment",
             "active_children": false,
             "url": "/payment",
-            "image": "assets/images/medical-bg.jpg",
+            "image": "assets/images/payment.jpg",
             "icon": "auto_stories_outlined",
             "dataPoints": [
                 {
@@ -5611,7 +5611,7 @@
             "title": "Relicense Status",
             "active_children": false,
             "url": "/renewal",
-            "image": "assets/images/medical-bg.jpg",
+            "image": "assets/images/hospital.jpg",
             "dataPoints": [],
             "actions": [
                 {
@@ -5621,15 +5621,7 @@
                     "linkProp": "",
                     "url": "/renewals/form",
                     "urlParams": {},
-                    "criteria": [
-                        {
-                            "field": "in_good_standing",
-                            "operator": "equals",
-                            "value": [
-                                "Not In Good Standing"
-                            ]
-                        }
-                    ]
+                    "criteria": []
                 },
                 {
                     "label": "Click to make payment",
@@ -5702,8 +5694,62 @@
             "description": "Check your current relicensure status, & your previous relicensure records, & print your retention certificate"
         },
         {
+            "title": "Pharmacy Superintending",
+            "active_children": false,
+            "url": "/renewal",
+            "image": "assets/images/pharmacy.jpg",
+            "dataPoints": [],
+            "actions": [
+                {
+                    "label": "Click to apply",
+                    "icon": "",
+                    "type": "link",
+                    "linkProp": "",
+                    "url": "/renewals/form",
+                    "urlParams": {},
+                    "criteria": [
+                        {
+                            "field": "in_good_standing",
+                            "operator": "equals",
+                            "value": [
+                                "Not In Good Standing"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Click to make payment",
+                    "icon": "",
+                    "type": "link",
+                    "linkProp": "",
+                    "url": "/renewals/form",
+                    "urlParams": {},
+                    "criteria": [
+                        {
+                            "field": "in_good_standing",
+                            "operator": "equals",
+                            "value": [
+                                "Pending Payment"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "View history/Print certificates",
+                    "icon": "",
+                    "type": "link",
+                    "linkProp": "",
+                    "url": "/pharmacy-superintening",
+                    "urlParams": {},
+                    "criteria": []
+                }
+            ],
+            "alerts": [],
+            "description": "View your pharmacy superintending history"
+        },
+        {
             "title": "Continuous Professional Development (CPD)",
-            "image": "assets/images/medical-bg.jpg",
+            "image": "assets/images/training.jpg",
             "icon": "",
             "dataPoints": [
                 {
@@ -5755,7 +5801,7 @@
         },
         {
             "title": "Qualifications",
-            "image": "assets/images/medical-bg.jpg",
+            "image": "assets/images/university.jpg",
             "icon": "",
             "dataPoints": [],
             "actions": [
@@ -7238,6 +7284,52 @@
             "class": "General",
             "type": "array",
             "description": "the types of work institutions"
+        },
+        "portal_renewal_open": {
+            "key": "portal_renewal_open",
+            "value": [
+                {
+                    "criteria": [
+                        {
+                            "field": "type",
+                            "operator": "equals",
+                            "value": [
+                                "practitioners"
+                            ]
+                        }
+                    ],
+                    "value": true
+                },
+                {
+                    "criteria": [
+                        {
+                            "field": "type",
+                            "operator": "equals",
+                            "value": [
+                                "facilities"
+                            ]
+                        }
+                    ],
+                    "value": true
+                },
+                {
+                    "criteria": [
+                        {
+                            "field": "type",
+                            "operator": "equals",
+                            "value": [
+                                "otcms"
+                            ]
+                        }
+                    ],
+                    "value": true
+                }
+            ],
+            "label": "Portal renewal open",
+            "control_type": "yes-no",
+            "class": "General",
+            "type": "array",
+            "description": "Whether portal renewal is open or not"
         }
     },
     "trainingInstitutions": {
