@@ -438,5 +438,5 @@ $routes->group("payment", ["namespace" => "App\Controllers", "filter" => "apiaut
 service('auth')->routes($routes);
 
 // Swagger Documentation Routes
-// $routes->get('api-docs', 'SwaggerController::index');
-// $routes->get('swagger/spec', 'SwaggerController::spec');
+$routes->get('api-docs', 'SwaggerController::index');
+$routes->get('swagger/spec', 'SwaggerController::spec');

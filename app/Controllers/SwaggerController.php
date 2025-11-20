@@ -1,33 +1,36 @@
 <?php
+
+namespace App\Controllers;
+
 /**
  * @OA\Info(
  *     version="1.0.0",
  *     title="MDC Server API Documentation",
- *     description="API documentation for the MDC Server application",
+ *     description="API documentation for the MDC Server application - Medical/Healthcare Regulatory Management System",
  *     @OA\Contact(
- *         email="admin@example.com",
+ *         email="info@mdcghana.org",
  *         name="API Support"
- *     ),
- *     @OA\License(
- *         name="Apache 2.0",
- *         url="http://www.apache.org/licenses/LICENSE-2.0.html"
  *     )
  * )
- * 
+ *
  * @OA\SecurityScheme(
  *     securityScheme="bearerAuth",
  *     type="http",
  *     scheme="bearer",
- *     bearerFormat="JWT"
+ *     bearerFormat="JWT",
+ *     description="Enter your JWT token in the format: your-token-here"
  * )
- * 
+ *
  * @OA\Server(
  *     description="Local Development",
  *     url="http://localhost:8080"
  * )
+ *
+ * @OA\Server(
+ *     description="Production",
+ *     url="https://api.mdcghana.org"
+ * )
  */
-
-namespace App\Controllers;
 
 use CodeIgniter\Controller;
 use Config\Swagger as SwaggerConfig;

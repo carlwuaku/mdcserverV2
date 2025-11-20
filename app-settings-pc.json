@@ -1132,6 +1132,36 @@
         "practitioners": {
             "table": "practitioners",
             "uniqueKeyField": "license_number",
+            "licenseNumberFormats": [
+                {
+                    "criteria": [
+                        {
+                            "field": "practitioner_type",
+                            "operator": "equals",
+                            "value": [
+                                "Pharmacist"
+                            ]
+                        }
+                    ],
+                    "format": "HPA {number}",
+                    "sequenceKey": "practitioner_type",
+                    "description": "Pharmacist - No padding"
+                },
+                {
+                    "criteria": [
+                        {
+                            "field": "practitioner_type",
+                            "operator": "equals",
+                            "value": [
+                                "Pharmacy Technician"
+                            ]
+                        }
+                    ],
+                    "format": "PT/{number:4}",
+                    "sequenceKey": "practitioner_type",
+                    "description": "Pharmacy Technician - Zero-padded"
+                }
+            ],
             "selectionFields": [
                 "first_name",
                 "middle_name",
@@ -5501,7 +5531,7 @@
     "portalHomeMenu": [
         {
             "title": "Personal Details",
-            "image": "assets/images/medical-bg.jpg",
+            "image": "[picture]",
             "icon": "person_outlined",
             "dataPoints": [],
             "actions": [

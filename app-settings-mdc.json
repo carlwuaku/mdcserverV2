@@ -694,6 +694,134 @@
         "practitioners": {
             "table": "practitioners",
             "uniqueKeyField": "license_number",
+            "licenseNumberFormats": [
+                {
+                    "criteria": [
+                        {
+                            "field": "practitioner_type",
+                            "operator": "equals",
+                            "value": [
+                                "Doctor"
+                            ]
+                        },
+                        {
+                            "field": "register_type",
+                            "operator": "equals",
+                            "value": [
+                                "Provisional"
+                            ]
+                        }
+                    ],
+                    "format": "MDC/PN/{number:5}",
+                    "sequenceKey": "practitioner_type",
+                    "description": "Doctor - Provisional Register"
+                },
+                {
+                    "criteria": [
+                        {
+                            "field": "practitioner_type",
+                            "operator": "equals",
+                            "value": [
+                                "Doctor"
+                            ]
+                        },
+                        {
+                            "field": "register_type",
+                            "operator": "equals",
+                            "value": [
+                                "Permanent"
+                            ]
+                        }
+                    ],
+                    "format": "MDC/RN/{number:5}",
+                    "sequenceKey": "practitioner_type",
+                    "description": "Doctor - Permanent Register"
+                },
+                {
+                    "criteria": [
+                        {
+                            "field": "practitioner_type",
+                            "operator": "equals",
+                            "value": [
+                                "Doctor"
+                            ]
+                        },
+                        {
+                            "field": "register_type",
+                            "operator": "equals",
+                            "value": [
+                                "Temporary"
+                            ]
+                        }
+                    ],
+                    "format": "MDC/TN/{number:5}",
+                    "sequenceKey": "practitioner_type",
+                    "description": "Doctor - Temporary Register"
+                },
+                {
+                    "criteria": [
+                        {
+                            "field": "practitioner_type",
+                            "operator": "equals",
+                            "value": [
+                                "Physician Assistant"
+                            ]
+                        },
+                        {
+                            "field": "register_type",
+                            "operator": "equals",
+                            "value": [
+                                "Provisional"
+                            ]
+                        }
+                    ],
+                    "format": "MDC/PA/PN/{number:5}",
+                    "sequenceKey": "practitioner_type",
+                    "description": "Physician Assistant - Provisional Register"
+                },
+                {
+                    "criteria": [
+                        {
+                            "field": "practitioner_type",
+                            "operator": "equals",
+                            "value": [
+                                "Physician Assistant"
+                            ]
+                        },
+                        {
+                            "field": "register_type",
+                            "operator": "equals",
+                            "value": [
+                                "Permanent"
+                            ]
+                        }
+                    ],
+                    "format": "MDC/PA/RN/{number:5}",
+                    "sequenceKey": "practitioner_type",
+                    "description": "Physician Assistant - Permanent Register"
+                },
+                {
+                    "criteria": [
+                        {
+                            "field": "practitioner_type",
+                            "operator": "equals",
+                            "value": [
+                                "Physician Assistant"
+                            ]
+                        },
+                        {
+                            "field": "register_type",
+                            "operator": "equals",
+                            "value": [
+                                "Temporary"
+                            ]
+                        }
+                    ],
+                    "format": "MDC/PA/TN/{number:5}",
+                    "sequenceKey": "practitioner_type",
+                    "description": "Physician Assistant - Temporary Register"
+                }
+            ],
             "selectionFields": [
                 "first_name",
                 "middle_name",
@@ -999,6 +1127,66 @@
                     "apiKeyProperty": "name",
                     "apiLabelProperty": "name",
                     "apiType": "select"
+                },
+                {
+                    "label": "Next of kin name",
+                    "name": "next_of_kin_name",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": false,
+                    "api_url": "",
+                    "apiKeyProperty": "",
+                    "apiLabelProperty": ""
+                },
+                {
+                    "label": "Next of kin email",
+                    "name": "next_of_kin_email",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": false,
+                    "api_url": "",
+                    "apiKeyProperty": "",
+                    "apiLabelProperty": ""
+                },
+                {
+                    "label": "Next of kin phone",
+                    "name": "next_of_kin_phone",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": false,
+                    "api_url": "",
+                    "apiKeyProperty": "",
+                    "apiLabelProperty": ""
+                },
+                {
+                    "label": "Next of kin relationship",
+                    "name": "next_of_kin_relation",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": false,
+                    "api_url": "",
+                    "apiKeyProperty": "",
+                    "apiLabelProperty": ""
+                },
+                {
+                    "label": "Next of kin address",
+                    "name": "next_of_kin_address",
+                    "hint": "",
+                    "options": [],
+                    "type": "text",
+                    "value": "",
+                    "required": false,
+                    "api_url": "",
+                    "apiKeyProperty": "",
+                    "apiLabelProperty": ""
                 }
             ],
             "onCreateValidation": {
