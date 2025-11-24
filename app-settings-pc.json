@@ -570,6 +570,21 @@
             ]
         },
         {
+            "title": "Registered guest users",
+            "active_children": false,
+            "url": "",
+            "icon": "group",
+            "color": "green",
+            "children": [
+                {
+                    "title": "Verify users",
+                    "url": "/admin/registered-users",
+                    "icon": "",
+                    "children": []
+                }
+            ]
+        },
+        {
             "title": "System Config",
             "active_children": false,
             "url": "",
@@ -6070,7 +6085,10 @@
     ],
     "allowedTestEmails": [
         "wuakuc@gmail.com",
-        "wuakuc+admin@gmail.com"
+        "wuakuc+admin@gmail.com",
+        "wuakuc+pcguest1@gmail.com",
+        "wuakuc+pcguest2@gmail.com",
+        "wuakuc+pcinstitutionuser1@gmail.com"
     ],
     "payments": {
         "purposes": {
@@ -6509,6 +6527,10 @@
         {
             "value": "housemanship_facility",
             "label": "Accredited Housemanship Facilities"
+        },
+        {
+            "value": "training_institution",
+            "label": "Accredited Training Institutions"
         },
         {
             "value": "guest",

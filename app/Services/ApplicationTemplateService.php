@@ -297,6 +297,18 @@ class ApplicationTemplateService
                     'body_mapping' => [],
                     'query_params' => []
                 ]
+            ],
+            [
+                'type' => 'create_custom_invoice',
+                'config_type' => 'payment',
+                'label' => 'Create Invoice',
+                'config' => [
+                    'invoice_items' => [],
+                    'payment_methods' => [],
+                    'purpose' => 'application-fee',
+                    'description' => 'Invoice for {{first_name}} {{last_name}}',
+                    'due_date_days' => 30
+                ]
             ]
 
         ];

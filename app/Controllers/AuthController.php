@@ -11,6 +11,7 @@ use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 use CodeIgniter\Shield\Entities\User;
 use App\Models\UsersModel;
+use App\Models\GuestsModel;
 use CodeIgniter\Database\MigrationRunner;
 use ReCaptcha\ReCaptcha as ReCaptchaReCaptcha;
 use App\Helpers\CacheHelper;
@@ -618,36 +619,7 @@ class AuthController extends ResourceController
         }, 300); // Cache for 5 minutes only (sensitive data)
     }
 
-    private function getUserDetails($userId)
-    {
-        $userObject = new UsersModel();
-        $userData = $userObject->findById($userId);
-        if (!$userData) {
-            throw new \Exception("User not found");
-        }
-        $permissionsList = [];
-        //for admins use their roles to get permissions
-        if ($userData->user_type === 'admin') {
-            $rpObject = new RolePermissionsModel();
-            $permissions = $rpObject->where("role", $userData->role_name)->findAll();
 
-            foreach ($permissions as $permission) {
-                $permissionsList[] = $permission['permission'];
-            }
-        } else {
-            //for non admins use their permissions from the app.settings.json file.
-            //also get their profile details from their profile table
-            $db = \Config\Database::connect();
-
-            $profileData = $db->table($userData->profile_table)->where(["uuid" => $userData->profile_table_uuid])->get()->getFirstRow();
-            if (!empty($profileData)) {
-                //if images are stored in the profile table, get them
-                $userData->profile_data = $profileData;
-            }
-        }
-        $userData->permissions = $permissionsList;
-        return $userData;
-    }
 
     /**
      * @OA\Get(
@@ -1620,6 +1592,7 @@ class AuthController extends ResourceController
                 "student" => ["template" => SETTING_USER_STUDENT_ADDED_EMAIL_TEMPLATE, "subject" => SETTING_USER_STUDENT_ADDED_EMAIL_SUBJECT],
                 "exam_candidate" => ["template" => SETTING_USER_EXAM_CANDIDATE_ADDED_EMAIL_TEMPLATE, "subject" => SETTING_USER_EXAM_CANDIDATE_ADDED_EMAIL_SUBJECT],
                 "housemanship_facility" => ["template" => SETTING_USER_HOUSEMANSHIP_FACILITY_ADDED_EMAIL_TEMPLATE, "subject" => SETTING_USER_HOUSEMANSHIP_FACILITY_ADDED_EMAIL_SUBJECT],
+                "training_institution" => ["template" => SETTING_USER_TRAINING_INSTITUTION_ADDED_EMAIL_TEMPLATE, "subject" => SETTING_USER_TRAINING_INSTITUTION_ADDED_EMAIL_SUBJECT],
                 "guest" => ["template" => SETTING_USER_GUEST_ADDED_EMAIL_TEMPLATE, "subject" => SETTING_USER_GUEST_ADDED_EMAIL_SUBJECT],
             ];
             $userMessageType = $userTypeMessagesMap[$userType] ?? null;
@@ -1627,7 +1600,7 @@ class AuthController extends ResourceController
                 throw new \Exception("Email template or subject not set");
             }
             $messageTemplate = $settings->get($userMessageType['template']);
-            $subject = $settings->get($userMessageType['template']);
+            $subject = $settings->get($userMessageType['subject']);
             if (empty($messageTemplate) || empty($subject)) {
                 throw new \Exception("Email template or subject not found");
             }
@@ -1667,8 +1640,7 @@ class AuthController extends ResourceController
             ];
 
             if (!$this->validate($rules)) {
-                $message = implode(" ", array_values($this->validator->getErrors()));
-                return $this->respond(['message' => $message], ResponseInterface::HTTP_BAD_REQUEST);
+                return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
             }
 
             // Update the user details
@@ -1971,5 +1943,944 @@ class AuthController extends ResourceController
             log_message('error', $th);
             return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_BAD_REQUEST);
         }
+    }
+
+    /**
+     * Guest signup - Step 1: Create guest record and send verification email
+     * @return ResponseInterface
+     */
+    public function guestSignup()
+    {
+        try {
+            $guestsModel = new \App\Models\GuestsModel();
+            $verificationTokenModel = new \App\Models\EmailVerificationTokenModel();
+
+            // Validation rules
+            $rules = [
+                'first_name' => 'required|min_length[2]|max_length[255]',
+                'last_name' => 'required|min_length[2]|max_length[255]',
+                'email' => 'required|valid_email|is_unique[guests.email]|is_unique[users.email_address]',
+                'phone_number' => 'required|min_length[7]|max_length[50]',
+                'id_type' => 'required|max_length[50]',
+                'id_number' => 'required|is_unique[guests.id_number]|max_length[100]',
+                'sex' => 'required|in_list[Male,Female,Other]'
+            ];
+
+            if (!$this->validate($rules)) {
+                return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
+            }
+
+            // Check if email already exists in users table
+            $existingUser = $this->userModel->where('email_address', $this->request->getVar('email'))->first();
+            if ($existingUser) {
+                return $this->respond(['message' => 'Email address is already registered'], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+
+            // Generate unique_id: G-[6 random chars]-[2 digit year]
+            $uniqueId = $this->generateGuestUniqueId($guestsModel);
+
+            // Prepare guest data
+            $guestData = [
+                'unique_id' => $uniqueId,
+                'first_name' => $this->request->getVar('first_name'),
+                'last_name' => $this->request->getVar('last_name'),
+                'email' => $this->request->getVar('email'),
+                'phone_number' => $this->request->getVar('phone_number'),
+                'id_type' => $this->request->getVar('id_type'),
+                'id_number' => $this->request->getVar('id_number'),
+                'postal_address' => $this->request->getVar('postal_address'),
+                'sex' => $this->request->getVar('sex'),
+                'picture' => $this->request->getVar('picture'),
+                'date_of_birth' => $this->request->getVar('date_of_birth'),
+                'country' => $this->request->getVar('country'),
+                'email_verified' => false
+            ];
+
+            // Start transaction
+            $guestsModel->db->transException(true)->transStart();
+
+            // Insert guest record
+            $guestId = $guestsModel->insert($guestData);
+            if (!$guestId) {
+                $guestsModel->db->transRollback();
+                return $this->respond(['message' => 'Failed to create guest account'], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+            }
+
+            // Get the created guest with UUID
+            $guest = $guestsModel->find($guestId);
+
+            // Generate verification token
+            $token = $verificationTokenModel->generateToken();
+            $tokenHash = $verificationTokenModel->hashToken($token);
+
+            // Get expiration time from settings (default 24 hours)
+            $expirationHours = 24;
+            $expiresAt = date('Y-m-d H:i:s', strtotime("+{$expirationHours} hours"));
+
+            // Store verification token
+            $tokenData = [
+                'guest_uuid' => $guest['uuid'],
+                'email' => $guest['email'],
+                'token' => $token,
+                'token_hash' => $tokenHash,
+                'expires_at' => $expiresAt,
+                'ip_address' => $this->request->getIPAddress(),
+                'user_agent' => $this->request->getUserAgent()->getAgentString()
+            ];
+
+            $tokenId = $verificationTokenModel->insert($tokenData);
+            if (!$tokenId) {
+                $guestsModel->db->transRollback();
+                return $this->respond(['message' => 'Failed to generate verification token'], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+            }
+
+            $guestsModel->db->transComplete();
+
+            // Send verification email
+            try {
+                $this->sendVerificationEmail(
+                    $guest['email'],
+                    $guest['first_name'] . ' ' . $guest['last_name'],
+                    $token,
+                    $expirationHours
+                );
+            } catch (\Throwable $th) {
+                //never mind. the user can request for it to be resent
+            }
+
+
+            return $this->respond([
+                'message' => 'Registration successful. Please check your email for the verification code.',
+                'guest_uuid' => $guest['uuid']
+            ], ResponseInterface::HTTP_CREATED);
+
+        } catch (\Throwable $th) {
+            $guestsModel->db->transRollback();
+            log_message('error', 'Guest signup error: ' . $th);
+            return $this->respond(['message' => 'Server error'], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Guest signup - Step 2: Verify email with token
+     * @return ResponseInterface
+     */
+    public function verifyGuestEmail()
+    {
+        try {
+            $guestsModel = new \App\Models\GuestsModel();
+            $verificationTokenModel = new \App\Models\EmailVerificationTokenModel();
+
+            $rules = [
+                'guest_uuid' => 'required',
+                'token' => 'required|exact_length[6]'
+            ];
+
+            if (!$this->validate($rules)) {
+                return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
+            }
+
+            $guestUuid = $this->request->getVar('guest_uuid');
+            $token = $this->request->getVar('token');
+
+            // Find the token
+            $tokenRecord = $verificationTokenModel->findValidToken($token);
+
+            if (!$tokenRecord) {
+                return $this->respond(['message' => 'Invalid or expired verification code'], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+
+            // Verify the token belongs to this guest
+            if ($tokenRecord['guest_uuid'] !== $guestUuid) {
+                return $this->respond(['message' => 'Invalid verification code'], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+
+            // Verify token hash
+            if (!$verificationTokenModel->verifyToken($token, $tokenRecord['token_hash'])) {
+                return $this->respond(['message' => 'Invalid verification code'], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+
+            // Start transaction
+            $guestsModel->db->transException(true)->transStart();
+
+            // Mark token as verified
+            $verificationTokenModel->markAsVerified($tokenRecord['id']);
+
+            // Mark guest email as verified
+            $guest = $guestsModel->findByUuid($guestUuid);
+            if (!$guest) {
+                $guestsModel->db->transRollback();
+                return $this->respond(['message' => 'Guest not found'], ResponseInterface::HTTP_NOT_FOUND);
+            }
+
+            $guestsModel->markEmailAsVerified($guestUuid);
+
+            // Commit transaction
+            $guestsModel->db->transComplete();
+
+            return $this->respond([
+                'message' => 'Email verified successfully. Completing account setup...',
+                'guest_uuid' => $guestUuid
+            ], ResponseInterface::HTTP_OK);
+
+        } catch (\Throwable $th) {
+            log_message('error', $th);
+            return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Guest signup - Step 3: Complete signup by creating user account and setting up 2FA
+     * @return ResponseInterface
+     */
+    public function completeGuestSignup()
+    {
+        try {
+            $guestsModel = new \App\Models\GuestsModel();
+
+            $rules = [
+                'guest_uuid' => 'required',
+                'password' => 'required|min_length[8]'
+            ];
+
+            if (!$this->validate($rules)) {
+                return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
+            }
+
+            $guestUuid = $this->request->getVar('guest_uuid');
+            $password = $this->request->getVar('password');
+
+            // Get guest record
+            $guest = $guestsModel->findByUuid($guestUuid);
+            if (!$guest) {
+                return $this->respond(['message' => 'Guest not found'], ResponseInterface::HTTP_NOT_FOUND);
+            }
+
+            // Check if email is verified
+            if (!$guest['email_verified']) {
+                return $this->respond(['message' => 'Email not verified'], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+
+            // Check if user already exists
+            $existingUser = $this->userModel->where('profile_table_uuid', $guestUuid)->first();
+            if ($existingUser) {
+                return $this->respond(['message' => 'User account already exists'], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+
+            // Start transaction
+            $guestsModel->db->transException(true)->transStart();
+            try {
+                //code...
+
+                // Create user account
+                // Create user account
+                $username = $guest['email'];
+
+                $userEntity = new User([
+                    'username' => $username,
+                    'password' => $password,
+                    'email_address' => $guest['email'],
+                    'email' => $guest['email'],
+                    'active' => 1,
+                    'display_name' => $guest['first_name'] . ' ' . $guest['last_name'],
+                    'profile_table_uuid' => $guestUuid,
+                    'profile_table' => 'guests',
+                    'user_type' => 'guest',
+                    'two_fa_deadline' => date('Y-m-d'),
+                    'phone' => $guest['phone_number'],
+                    'picture' => $guest['picture']
+                ]);
+
+                $userObject = new UsersModel();
+                $userObject->save($userEntity);
+
+
+                // Get the created user
+                $userId = $userObject->getInsertID();
+                $user = $userObject->find($userId);
+
+
+
+                // Set up 2FA
+                $gAuth = new GoogleAuthenticator();
+                $secret = $gAuth->createSecret();
+                $qrCodeUrl = $gAuth->getQRCodeUrl('guest', $username, $secret);
+
+                // Save 2FA setup token
+                $setupToken = bin2hex(random_bytes(32));
+                $userObject->update($userId, [
+                    'google_auth_secret' => null, // Not enabled yet
+                    'two_fa_setup_token' => $setupToken
+                ]);
+            } catch (\Throwable $th) {
+                log_message('error', 'Complete guest signup error - failed to create user: ' . $th->getMessage());
+                log_message('error', $th->getTraceAsString());
+                $guestsModel->db->transRollback();
+                return $this->respond(['message' => 'Server error'], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+            }
+            $guestsModel->db->transComplete();
+            try {
+                // Send 2FA setup email
+                $portalUrl = base_url();
+                $this->send2FaSetupEmail(
+                    $guest['email'],
+                    $guest['first_name'] . ' ' . $guest['last_name'],
+                    $secret,
+                    $qrCodeUrl,
+                    $user->uuid,
+                    $portalUrl
+                );
+            } catch (\Throwable $th) {
+                log_message('error', 'Complete guest signup error - failed to send 2FA setup email: ' . $th->getMessage());
+            }
+
+
+            return $this->respond([
+                'message' => 'Account created successfully. Please check your email to complete 2FA setup.',
+                'user_uuid' => $user->uuid,
+                'secret' => $secret,
+                'qr_code_url' => $qrCodeUrl,
+                'setup_token' => $setupToken
+            ], ResponseInterface::HTTP_CREATED);
+
+        } catch (\Throwable $th) {
+            log_message('error', $th);
+            return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Request verification code by email (when UUID is not available)
+     * @return ResponseInterface
+     */
+    public function requestVerificationByEmail()
+    {
+        try {
+            $guestsModel = new \App\Models\GuestsModel();
+            $verificationTokenModel = new \App\Models\EmailVerificationTokenModel();
+
+            $rules = [
+                'email' => 'required|valid_email'
+            ];
+
+            if (!$this->validate($rules)) {
+                return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
+            }
+
+            $email = $this->request->getVar('email');
+
+            // Find guest by email
+            $guest = $guestsModel->findByEmail($email);
+            if (!$guest) {
+                // For security, don't reveal if email exists or not
+                return $this->respond([
+                    'message' => 'If this email is registered, a verification code will be sent.',
+                    'guest_uuid' => null
+                ], ResponseInterface::HTTP_OK);
+            }
+
+            // Allow re-verification even if already verified
+            // User must go through the process again if they restart
+
+            // Rate limiting: Check last token creation time
+            $recentToken = $verificationTokenModel
+                ->where('guest_uuid', $guest['uuid'])
+                ->orderBy('created_at', 'DESC')
+                ->first();
+
+            if ($recentToken) {
+                $lastSentTime = strtotime($recentToken['created_at']);
+                $currentTime = time();
+                $timeDifference = $currentTime - $lastSentTime;
+
+                // Prevent resending within 60 seconds
+                if ($timeDifference < 60) {
+                    $remainingSeconds = 60 - $timeDifference;
+                    return $this->respond([
+                        'message' => "Please wait {$remainingSeconds} seconds before requesting a new code",
+                        'guest_uuid' => $guest['uuid']
+                    ], ResponseInterface::HTTP_TOO_MANY_REQUESTS);
+                }
+            }
+
+            // Generate new verification token
+            $token = $verificationTokenModel->generateToken();
+            $tokenHash = $verificationTokenModel->hashToken($token);
+
+            // Get expiration time from settings (default 24 hours)
+            $expirationHours = 24;
+            $expiresAt = date('Y-m-d H:i:s', strtotime("+{$expirationHours} hours"));
+
+            // Store new verification token
+            $tokenData = [
+                'guest_uuid' => $guest['uuid'],
+                'email' => $guest['email'],
+                'token' => $token,
+                'token_hash' => $tokenHash,
+                'expires_at' => $expiresAt,
+                'ip_address' => $this->request->getIPAddress(),
+                'user_agent' => $this->request->getUserAgent()->getAgentString()
+            ];
+
+            $tokenId = $verificationTokenModel->insert($tokenData);
+            if (!$tokenId) {
+                return $this->respond(['message' => 'Failed to generate verification token'], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+            }
+
+            // Send verification email
+            try {
+                $this->sendVerificationEmail(
+                    $guest['email'],
+                    $guest['first_name'] . ' ' . $guest['last_name'],
+                    $token,
+                    $expirationHours
+                );
+
+                return $this->respond([
+                    'message' => 'Verification code has been sent to your email',
+                    'guest_uuid' => $guest['uuid']
+                ], ResponseInterface::HTTP_OK);
+
+            } catch (\Throwable $th) {
+                log_message('error', 'Failed to send verification email: ' . $th->getMessage());
+                return $this->respond([
+                    'message' => 'Failed to send email. Please try again later.',
+                    'guest_uuid' => $guest['uuid']
+                ], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+            }
+
+        } catch (\Throwable $th) {
+            log_message('error', $th);
+            return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Send email verification email
+     */
+    /**
+     * Resend email verification code
+     * @return ResponseInterface
+     */
+    public function resendVerificationCode()
+    {
+        try {
+            $guestsModel = new GuestsModel();
+            $verificationTokenModel = new \App\Models\EmailVerificationTokenModel();
+
+            $rules = [
+                'guest_uuid' => 'required'
+            ];
+
+            if (!$this->validate($rules)) {
+                return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
+            }
+
+            $guestUuid = $this->request->getVar('guest_uuid');
+
+            // Find guest
+            $guest = $guestsModel->findByUuid($guestUuid);
+            if (!$guest) {
+                return $this->respond(['message' => 'Guest not found'], ResponseInterface::HTTP_NOT_FOUND);
+            }
+
+
+            // Check if email is already verified and a user has been created. if no user has been created, allow re-verification
+            // Check if user already exists
+            $existingUser = $this->userModel->where('profile_table_uuid', $guestUuid)->first();
+            if ($existingUser) {
+                return $this->respond(['message' => 'User account already exists. Please go to the login page and login or reset your password if you have forgotten it.'], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+
+            // Allow re-verification even if already verified
+            // User must go through the process again if they restart
+
+            // Rate limiting: Check last token creation time
+            $recentToken = $verificationTokenModel
+                ->where('guest_uuid', $guestUuid)
+                ->orderBy('created_at', 'DESC')
+                ->first();
+
+            if ($recentToken) {
+                $lastSentTime = strtotime($recentToken['created_at']);
+                $currentTime = time();
+                $timeDifference = $currentTime - $lastSentTime;
+
+                // Prevent resending within 60 seconds
+                if ($timeDifference < 60) {
+                    $remainingSeconds = 60 - $timeDifference;
+                    return $this->respond([
+                        'message' => "Please wait {$remainingSeconds} seconds before requesting a new code"
+                    ], ResponseInterface::HTTP_TOO_MANY_REQUESTS);
+                }
+            }
+
+            // Generate new verification token
+            $token = $verificationTokenModel->generateToken();
+            $tokenHash = $verificationTokenModel->hashToken($token);
+
+            // Get expiration time from settings (default 24 hours)
+            $expirationHours = 24;
+            $expiresAt = date('Y-m-d H:i:s', strtotime("+{$expirationHours} hours"));
+
+            // Store new verification token
+            $tokenData = [
+                'guest_uuid' => $guest['uuid'],
+                'email' => $guest['email'],
+                'token' => $token,
+                'token_hash' => $tokenHash,
+                'expires_at' => $expiresAt,
+                'ip_address' => $this->request->getIPAddress(),
+                'user_agent' => $this->request->getUserAgent()->getAgentString()
+            ];
+
+            $tokenId = $verificationTokenModel->insert($tokenData);
+            if (!$tokenId) {
+                return $this->respond(['message' => 'Failed to generate verification token'], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+            }
+
+            // Send verification email
+            try {
+                $this->sendVerificationEmail(
+                    $guest['email'],
+                    $guest['first_name'] . ' ' . $guest['last_name'],
+                    $token,
+                    $expirationHours
+                );
+
+                return $this->respond([
+                    'message' => 'Verification code has been resent to your email',
+                    'guest_uuid' => $guest['uuid']
+                ], ResponseInterface::HTTP_OK);
+
+            } catch (\Throwable $th) {
+                log_message('error', 'Failed to send verification email: ' . $th->getMessage());
+                return $this->respond([
+                    'message' => 'Failed to send email. Please try again later.'
+                ], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+            }
+
+        } catch (\Throwable $th) {
+            log_message('error', $th);
+            return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Get all registered guests (admin endpoint)
+     */
+    public function getRegisteredGuests()
+    {
+        try {
+            $cacheKey = Utils::generateHashedCacheKey("get_guests", (array) $this->request->getVar());
+            return CacheHelper::remember($cacheKey, function () {
+                $guestsModel = new GuestsModel();
+                $per_page = $this->request->getVar('limit') ? (int) $this->request->getVar('limit') : 100;
+                $page = $this->request->getVar('page') ? (int) $this->request->getVar('page') : 0;
+                $param = $this->request->getVar('param');
+                $sortBy = $this->request->getVar('sortBy') ?? "id";
+                $sortOrder = $this->request->getVar('sortOrder') ?? "desc";
+
+                $builder = $param ? $guestsModel->search($param) : $guestsModel->builder();
+
+                // Apply filters from allowed fields
+                $filterArray = $guestsModel->createArrayFromAllowedFields($this->request->getVar());
+                foreach ($filterArray as $key => $value) {
+                    $value = Utils::parseParam($value);
+                    $builder = Utils::parseWhereClause($builder, $key, $value);
+                }
+
+                $builder->orderBy($sortBy, $sortOrder);
+                $totalBuilder = clone $builder;
+                $total = $totalBuilder->countAllResults();
+                $result = $builder->get($per_page, $page)->getResult();
+
+                return $this->respond([
+                    'data' => $result,
+                    'total' => $total,
+                    'displayColumns' => $guestsModel->getDisplayColumns(),
+                    'columnFilters' => $guestsModel->getDisplayColumnFilters()
+                ], ResponseInterface::HTTP_OK);
+            }, 300);
+        } catch (\Throwable $th) {
+            log_message('error', $th);
+            return $this->respond(['message' => "Server error"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Manually verify guests (bulk operation)
+     */
+    public function verifyGuests()
+    {
+        try {
+            $rules = [
+                'guest_uuids' => 'required|is_array',
+                'guest_uuids.*' => 'required'
+            ];
+
+            if (!$this->validate($rules)) {
+                return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
+            }
+
+            $guestUuids = $this->request->getVar('guest_uuids');
+            $guestsModel = new GuestsModel();
+
+            $updated = $guestsModel->whereIn('uuid', $guestUuids)
+                ->set(['verified' => true])
+                ->update();
+
+            if (!$updated) {
+                return $this->respond(['message' => 'No guests were updated'], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+
+            // Log activity
+            $activitiesModel = new \App\Models\ActivitiesModel();
+            $activitiesModel->logActivity("Verified " . count($guestUuids) . " guests", null, "guests");
+
+            // Invalidate cache
+            $this->invalidateCache('get_guests');
+
+            return $this->respond([
+                'message' => 'Guests verified successfully',
+                'count' => count($guestUuids)
+            ], ResponseInterface::HTTP_OK);
+
+        } catch (\Throwable $th) {
+            log_message('error', $th);
+            return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Manually unverify guests (bulk operation)
+     */
+    public function unverifyGuests()
+    {
+        try {
+            $rules = [
+                'guest_uuids' => 'required|is_array',
+                'guest_uuids.*' => 'required'
+            ];
+
+            if (!$this->validate($rules)) {
+                return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
+            }
+
+            $guestUuids = $this->request->getVar('guest_uuids');
+            $guestsModel = new GuestsModel();
+
+            $updated = $guestsModel->whereIn('uuid', $guestUuids)
+                ->set(['verified' => false])
+                ->update();
+
+            if (!$updated) {
+                return $this->respond(['message' => 'No guests were updated'], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+
+            // Log activity
+            $activitiesModel = new \App\Models\ActivitiesModel();
+            $activitiesModel->logActivity("Unverified " . count($guestUuids) . " guests", null, "guests");
+
+            // Invalidate cache
+            $this->invalidateCache('get_guests');
+
+            return $this->respond([
+                'message' => 'Guests unverified successfully',
+                'count' => count($guestUuids)
+            ], ResponseInterface::HTTP_OK);
+
+        } catch (\Throwable $th) {
+            log_message('error', $th);
+            return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Delete guest user
+     * Also removes the user from the users table if they exist
+     */
+    public function deleteGuest(?string $uuid = null)
+    {
+        try {
+            if (!$uuid) {
+                return $this->respond(['message' => 'Guest UUID is required'], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+
+            $guestsModel = new GuestsModel();
+            $usersModel = new UsersModel();
+
+            // Find the guest
+            $guest = $guestsModel->where('uuid', $uuid)->first();
+            if (!$guest) {
+                return $this->respond(['message' => 'Guest not found'], ResponseInterface::HTTP_NOT_FOUND);
+            }
+
+            // Start transaction
+            $guestsModel->db->transException(true)->transStart();
+
+            // Check if guest has a corresponding user account and delete it
+            $user = $usersModel->where('email_address', $guest['email'])->first();
+            if ($user) {
+                $usersModel->delete($user->id);
+            }
+
+            // Delete the guest
+            $deleted = $guestsModel->delete($guest['id']);
+            if (!$deleted) {
+                $guestsModel->db->transRollback();
+                return $this->respond(['message' => 'Failed to delete guest'], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+            }
+
+            $guestsModel->db->transComplete();
+
+            // Log activity
+            $activitiesModel = new \App\Models\ActivitiesModel();
+            $activitiesModel->logActivity("Deleted guest {$guest['first_name']} {$guest['last_name']} ({$guest['email']})", null, "guests");
+
+            // Invalidate cache
+            $this->invalidateCache('get_guests');
+
+            return $this->respond([
+                'message' => 'Guest deleted successfully'
+            ], ResponseInterface::HTTP_OK);
+
+        } catch (\Throwable $th) {
+            log_message('error', $th);
+            return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Generate unique ID for guest in format: G-[6 random chars]-[2 digit year]
+     * Ensures uniqueness by checking against existing records
+     */
+    private function generateGuestUniqueId(GuestsModel $guestsModel): string
+    {
+        $year = date('y'); // 2-digit year
+        $maxAttempts = 10;
+        $attempt = 0;
+
+        do {
+            // Generate 6 random alphanumeric characters (uppercase)
+            $randomChars = strtoupper(substr(str_shuffle('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'), 0, 6));
+            $uniqueId = "G-{$randomChars}-{$year}";
+
+            // Check if this ID already exists
+            $exists = $guestsModel->where('unique_id', $uniqueId)->first();
+
+            if (!$exists) {
+                return $uniqueId;
+            }
+
+            $attempt++;
+        } while ($attempt < $maxAttempts);
+
+        // If we still haven't found a unique ID after max attempts, throw an exception
+        throw new \RuntimeException('Failed to generate unique guest ID after ' . $maxAttempts . ' attempts');
+    }
+
+    private function sendVerificationEmail(string $email, string $displayName, string $token, int $expirationHours): void
+    {
+        try {
+            $templateEngine = new TemplateEngineHelper();
+
+            $emailTemplate = Utils::getSetting(SETTING_USER_EMAIL_VERIFICATION_TEMPLATE) ?? DEFAULT_USER_EMAIL_VERIFICATION_TEMPLATE;
+            $emailSubject = Utils::getSetting(SETTING_USER_EMAIL_VERIFICATION_SUBJECT) ?? DEFAULT_USER_EMAIL_VERIFICATION_SUBJECT;
+
+            $data = [
+                'name' => $displayName,
+                'token' => $token,
+                'expiration_hours' => $expirationHours
+            ];
+            log_message('info', 'Email verification data: ' . json_encode($emailTemplate));
+
+            $content = $templateEngine->process($emailTemplate, $data);
+            $subject = $templateEngine->process($emailSubject, $data);
+
+            $emailConfig = new EmailConfig($content, $subject, $email);
+            EmailHelper::sendEmail($emailConfig);
+        } catch (\Throwable $th) {
+            log_message('error', 'Error sending email: ' . $th);
+            throw $th;
+        }
+
+    }
+
+    /**
+     * Create institution user
+     * This endpoint allows admins to create users for external institutions
+     * (cpd_providers, housemanship_facilities, or training_institutions)
+     *
+     * @return ResponseInterface
+     */
+    public function createInstitutionUser()
+    {
+        try {
+            $rules = [
+                "first_name" => "required|min_length[2]",
+                "last_name" => "required|min_length[2]",
+                "phone" => "required|min_length[10]",
+                "email" => "required|valid_email|is_unique[users.email_address]|is_unique[auth_identities.secret]",
+                "institution_uuid" => "required",
+                "institution_type" => "required|in_list[cpd_provider,housemanship_facility,training_institution]",
+            ];
+
+            if (!$this->validate($rules)) {
+                return $this->respond($this->validator->getErrors(), ResponseInterface::HTTP_BAD_REQUEST);
+            }
+
+            $data = $this->request->getVar();
+            $institutionUuid = $data['institution_uuid'];
+            $institutionType = $data['institution_type'];
+
+            // Verify institution exists
+            $institutionName = $this->verifyInstitutionExists($institutionUuid, $institutionType);
+            if (!$institutionName) {
+                return $this->respond(['message' => 'Institution not found'], ResponseInterface::HTTP_BAD_REQUEST);
+            }
+
+            // Generate unique username
+            $username = $this->generateInstitutionUsername($data['first_name'], $data['last_name'], $institutionType);
+
+            // Set user_type based on institution_type
+            $userTypeMap = [
+                'cpd_provider' => 'cpd',
+                'housemanship_facility' => 'housemanship_facility',
+                'training_institution' => 'training_institution'
+            ];
+            $userType = $userTypeMap[$institutionType];
+
+            // Create user
+            $userData = [
+                'username' => $username,
+                'email' => $data['email'],
+                'email_address' => $data['email'],
+                'display_name' => $data['first_name'] . ' ' . $data['last_name'],
+                'phone' => $data['phone'],
+                'user_type' => $userType,
+                'institution_uuid' => $institutionUuid,
+                'institution_type' => $institutionType,
+                'active' => 1,
+            ];
+
+            $userObject = auth()->getProvider();
+            $userEntityObject = new User($userData);
+
+            if (!$userObject->save($userEntityObject)) {
+                return $this->respond(['message' => $userObject->errors()], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+            }
+
+            $userId = $userObject->getInsertID();
+
+            // Log activity
+            $activitiesModel = new \App\Models\ActivitiesModel();
+            $activitiesModel->logActivity("Created institution user {$username} for {$institutionName}", null, "users");
+
+            // Send email notification
+            try {
+                $this->sendNewUserEmail($data['email'], $userData['display_name'], $username, $userType);
+            } catch (\Throwable $th) {
+                log_message('error', "Error sending email for institution user: " . $th->getMessage());
+            }
+
+            // Invalidate caches
+            $this->invalidateCache('auth_users_');
+
+            return $this->respond([
+                'message' => 'Institution user created successfully',
+                'data' => [
+                    'id' => $userId,
+                    'username' => $username,
+                    'institution_name' => $institutionName
+                ]
+            ], ResponseInterface::HTTP_OK);
+
+        } catch (\Throwable $th) {
+            log_message('error', $th);
+            return $this->respond(['message' => "An error occurred. Please try again"], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Verify institution exists and return its name
+     *
+     * @param string $uuid Institution UUID
+     * @param string $type Institution type
+     * @return string|null Institution name or null if not found
+     */
+    private function verifyInstitutionExists(string $uuid, string $type): ?string
+    {
+        try {
+            switch ($type) {
+                case 'cpd_provider':
+                    $model = new \App\Models\Cpd\CpdProviderModel();
+                    $institution = $model->where('uuid', $uuid)->first();
+                    return $institution['name'] ?? null;
+
+                case 'housemanship_facility':
+                    $model = new \App\Models\Housemanship\HousemanshipFacilitiesModel();
+                    $institution = $model->where('uuid', $uuid)->first();
+                    return $institution['name'] ?? null;
+
+                case 'training_institution':
+                    $model = new \App\Models\TrainingInstitutions\TrainingInstitutionModel();
+                    $institution = $model->where('uuid', $uuid)->first();
+                    return $institution['name'] ?? null;
+
+                default:
+                    return null;
+            }
+        } catch (\Throwable $th) {
+            log_message('error', 'Error verifying institution: ' . $th->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Generate unique username for institution user
+     * Format: [type_prefix][first_initial][last_name][random_4_digits]
+     * Example: cpd_jdoe1234, hf_jsmith5678, ti_awhite9012
+     *
+     * @param string $firstName User's first name
+     * @param string $lastName User's last name
+     * @param string $institutionType Institution type
+     * @return string Generated username
+     */
+    private function generateInstitutionUsername(string $firstName, string $lastName, string $institutionType): string
+    {
+        $prefixMap = [
+            'cpd_provider' => 'cpd_',
+            'housemanship_facility' => 'hf_',
+            'training_institution' => 'ti_'
+        ];
+
+        $prefix = $prefixMap[$institutionType] ?? 'inst_';
+
+        // Get first initial and clean last name
+        $firstInitial = strtolower(substr($firstName, 0, 1));
+        $cleanLastName = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $lastName));
+
+        $userModel = new UsersModel();
+        $maxAttempts = 10;
+        $attempt = 0;
+
+        do {
+            // Generate 4 random digits
+            $randomDigits = str_pad((string) rand(0, 9999), 4, '0', STR_PAD_LEFT);
+            $username = $prefix . $firstInitial . $cleanLastName . $randomDigits;
+
+            // Check if username exists
+            $exists = $userModel->where('username', $username)->first();
+
+            if (!$exists) {
+                return $username;
+            }
+
+            $attempt++;
+        } while ($attempt < $maxAttempts);
+
+        // Fallback: use timestamp if all attempts fail
+        return $prefix . $firstInitial . $cleanLastName . time();
     }
 }

@@ -180,3 +180,5 @@ Controllers follow domain-driven design:
 - `writable/`: Application-generated files and logs
 
 When working with this codebase, always consider the multi-tenant nature, maintain the permission system integrity, and follow the established domain-driven organization patterns.
+
+There are 2 UI applications that interact with this application. In the dev environment, they are in the folders mdcv15 (called the admin interface or admin ui) and practitionersPortal (called the practitioners ui or practitioners portal) within the same root folder as this application.

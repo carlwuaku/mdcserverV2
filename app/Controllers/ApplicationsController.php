@@ -487,6 +487,7 @@ class ApplicationsController extends ResourceController
             // Invalidate cache
             $this->invalidateCache('app_templates_');
             $this->invalidateCache('app_config_');
+            $this->invalidateCache('app_template_');
 
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
@@ -509,6 +510,7 @@ class ApplicationsController extends ResourceController
             // Invalidate cache
             $this->invalidateCache('app_templates_');
             $this->invalidateCache('app_config_');
+            $this->invalidateCache('app_template_');
 
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
@@ -530,6 +532,7 @@ class ApplicationsController extends ResourceController
             // Invalidate cache
             $this->invalidateCache('app_templates_');
             $this->invalidateCache('app_config_');
+            $this->invalidateCache('app_template_');
 
             return $this->respond($result, ResponseInterface::HTTP_OK);
 

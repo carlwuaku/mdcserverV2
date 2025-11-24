@@ -1423,6 +1423,13 @@ class Utils
         return $response;
     }
 
+    /**
+     * Retrieves a setting by its name.
+     *
+     * @param string $name The name of the setting to retrieve.
+     * @return mixed The value of the setting, or null if it doesn't exist.
+     * If the setting value is a list represented as a ; separated string, it will be returned as an array.
+     */
     public static function getSetting($name)
     {
         $settings = service("settings");

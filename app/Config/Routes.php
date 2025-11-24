@@ -33,6 +33,15 @@ $routes->group("portal", ["namespace" => "App\Controllers"], function (RouteColl
     $routes->post("send-reset-token", [AuthController::class, "sendResetToken"]);
     $routes->post("reset-password", [AuthController::class, "resetPassword"]);
     $routes->post("login", [AuthController::class, "mobileLogin"]);
+
+    // Guest signup endpoints
+    $routes->post("guest/signup", [AuthController::class, "guestSignup"]);
+    $routes->post("guest/verify-email", [AuthController::class, "verifyGuestEmail"]);
+    $routes->post("guest/resend-verification", [AuthController::class, "resendVerificationCode"]);
+    $routes->post("guest/request-verification", [AuthController::class, "requestVerificationByEmail"]);
+    $routes->post("guest/complete-signup", [AuthController::class, "completeGuestSignup"]);
+
+
     $routes->post("applications/details/(:segment)", [ApplicationsController::class, "createApplicationFromPortal"], ["filter" => ["apiauth"]]);
     $routes->get("applications/details", [ApplicationsController::class, "getApplicationsByUser"], ["filter" => ["apiauth"]]);
     $routes->post("assets/new/(:segment)", [AssetController::class, "upload/$1"], ["filter" => ["apiauth"]]);
@@ -130,6 +139,7 @@ $routes->group("admin", ["namespace" => "App\Controllers", "filter" => "apiauth"
     $routes->post("rolePermissions", [AuthController::class, "addRolePermission"], ["filter" => ["hasPermission:Create_Or_Delete_User_Permissions"]]);
     $routes->delete("rolePermissions/(:segment)/(:segment)", [AuthController::class, "deleteRolePermission/$1/$2"], ["filter" => ["hasPermission:Create_Or_Delete_User_Permissions"]]);
     $routes->post("users", [AuthController::class, "createUser"], ["filter" => ["hasPermission:Create_Or_Edit_User"]]);
+    $routes->post("users/institution", [AuthController::class, "createInstitutionUser"], ["filter" => ["hasPermission:Create_Or_Edit_User"]]);
     $routes->put("users/(:num)", [AuthController::class, "updateUser/$1"], ["filter" => ["hasPermission:Create_Or_Edit_User"]]);
     $routes->put("users/(:num)/deactivate", [AuthController::class, "banUser/$1"], ["filter" => ["hasPermission:Activate_Or_Deactivate_User"]]);
     $routes->put("users/(:num)/activate", [AuthController::class, "unbanUser/$1"], ["filter" => ["hasPermission:Activate_Or_Deactivate_User"]]);
@@ -147,6 +157,11 @@ $routes->group("admin", ["namespace" => "App\Controllers", "filter" => "apiauth"
     $routes->post("users/verify-google-auth", [AuthController::class, "verifyAndEnableGoogleAuth"], ["filter" => ["hasPermission:Create_Or_Edit_User_Role"]]);
     $routes->post("users/non-admin", [AuthController::class, "createNonAdminUsers"], ["filter" => ["hasPermission:Create_Or_Edit_User"]]);
     $routes->get("users/types", [AuthController::class, "getUserTypes"], ["filter" => ["hasPermission:Create_Or_Edit_User"]]);
+    // Guest management endpoints (admin)
+    $routes->get("guests", [AuthController::class, "getRegisteredGuests"], ["filter" => ["hasPermission:View_Users"]]);
+    $routes->post("guests/verify", [AuthController::class, "verifyGuests"], ["filter" => ["hasPermission:Create_Or_Edit_User"]]);
+    $routes->post("guests/unverify", [AuthController::class, "unverifyGuests"], ["filter" => ["hasPermission:Create_Or_Edit_User"]]);
+    $routes->delete("guests/(:segment)", [AuthController::class, "deleteGuest/$1"], ["filter" => ["hasPermission:Delete_User"]]);
 
 });
 
