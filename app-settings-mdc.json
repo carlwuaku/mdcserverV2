@@ -5400,6 +5400,10 @@
             "label": "Accredited Housemanship Facilities"
         },
         {
+            "value": "training_institution",
+            "label": "Accredited Training Institutions"
+        },
+        {
             "value": "guest",
             "label": "Guest"
         }
