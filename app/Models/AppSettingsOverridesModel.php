@@ -16,6 +16,7 @@ class AppSettingsOverridesModel extends Model
         'setting_key',
         'setting_value',
         'value_type',
+        'merge_strategy',
         'description',
         'is_active',
         'created_by',
@@ -40,6 +41,7 @@ class AppSettingsOverridesModel extends Model
     protected $validationRules = [
         'setting_key' => 'required|max_length[255]|is_unique[app_settings_overrides.setting_key,id,{id}]',
         'value_type' => 'required|in_list[string,number,boolean,array,object]',
+        'merge_strategy' => 'permit_empty|in_list[replace,merge,append,prepend]',
     ];
     protected $validationMessages = [
         'setting_key' => [
@@ -92,11 +94,12 @@ class AppSettingsOverridesModel extends Model
      * @param string $key The setting key
      * @param mixed $value The value to set
      * @param string $valueType The type of value
+     * @param string $mergeStrategy How to merge arrays/objects
      * @param string|null $description Optional description
      * @param string|null $userId User making the change
      * @return bool|int True/ID on success, false on failure
      */
-    public function setOverride(string $key, $value, string $valueType, ?string $description = null, ?string $userId = null)
+    public function setOverride(string $key, $value, string $valueType, string $mergeStrategy = 'replace', ?string $description = null, ?string $userId = null)
     {
         $encodedValue = is_string($value) ? $value : json_encode($value);
 
@@ -106,6 +109,7 @@ class AppSettingsOverridesModel extends Model
             'setting_key' => $key,
             'setting_value' => $encodedValue,
             'value_type' => $valueType,
+            'merge_strategy' => $mergeStrategy,
             'is_active' => 1,
         ];
 
@@ -177,6 +181,7 @@ class AppSettingsOverridesModel extends Model
             'setting_key',
             'setting_value',
             'value_type',
+            'merge_strategy',
             'description',
             'is_active',
             'updated_at'

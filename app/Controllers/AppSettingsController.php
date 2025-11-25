@@ -91,6 +91,7 @@ class AppSettingsController extends ResourceController
                 'setting_key' => 'required|max_length[255]',
                 'setting_value' => 'required',
                 'value_type' => 'required|in_list[string,number,boolean,array,object]',
+                'merge_strategy' => 'permit_empty|in_list[replace,merge,append,prepend]',
                 'description' => 'permit_empty|string',
             ];
 
@@ -113,6 +114,7 @@ class AppSettingsController extends ResourceController
                 $data['setting_key'],
                 $value,
                 $data['value_type'],
+                $data['merge_strategy'] ?? 'replace',
                 $data['description'] ?? null,
                 $userId
             );
@@ -156,6 +158,7 @@ class AppSettingsController extends ResourceController
             $rules = [
                 'setting_value' => 'permit_empty',
                 'value_type' => 'permit_empty|in_list[string,number,boolean,array,object]',
+                'merge_strategy' => 'permit_empty|in_list[replace,merge,append,prepend]',
                 'description' => 'permit_empty|string',
                 'is_active' => 'permit_empty|in_list[0,1]',
             ];

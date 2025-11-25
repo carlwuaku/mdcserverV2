@@ -1649,6 +1649,7 @@ class AuthController extends ResourceController
             $this->invalidateCache('auth_users_');
             $this->invalidateCache('auth_profile_');
             $this->invalidateCache('auth_portal_dashboard_');
+            AuthHelper::clearAuthUserCache($userId);
 
             return $this->respond(['message' => 'User updated successfully'], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
@@ -1666,6 +1667,7 @@ class AuthController extends ResourceController
 
         // Invalidate user caches
         $this->invalidateCache('auth_users_');
+        AuthHelper::clearAuthUserCache($userId);
 
         return $this->respond(['message' => 'User deleted successfully'], ResponseInterface::HTTP_OK);
     }
@@ -1775,6 +1777,7 @@ class AuthController extends ResourceController
 
             // Invalidate user caches
             $this->invalidateCache('auth_users_');
+            AuthHelper::clearAuthUserCache($userId);
 
             return $this->respond(['message' => 'User banned successfully'], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
@@ -1797,6 +1800,7 @@ class AuthController extends ResourceController
 
             // Invalidate user caches
             $this->invalidateCache('auth_users_');
+            AuthHelper::clearAuthUserCache($userId);
 
             return $this->respond(['message' => 'User unbanned successfully'], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {

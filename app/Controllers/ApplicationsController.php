@@ -426,11 +426,10 @@ class ApplicationsController extends ResourceController
     {
         try {
             $userId = auth("tokens")->id();
-            $userData = AuthHelper::getAuthUser($userId);
             $filters = $this->extractRequestFilters();
             $cacheKey = Utils::generateHashedCacheKey('app_templates_', array_merge($filters, ['userId' => $userId]));
-            return CacheHelper::remember($cacheKey, function () use ($userData, $filters) {
-                $result = $this->templateService->getApplicationTemplates($userData, $filters);
+            return CacheHelper::remember($cacheKey, function () use ($filters) {
+                $result = $this->templateService->getApplicationTemplates($filters);
 
                 return $this->respond($result, ResponseInterface::HTTP_OK);
             });
@@ -444,9 +443,11 @@ class ApplicationsController extends ResourceController
     public function getApplicationTemplateForFilling(string $uuid)
     {
         try {
+            $userId = auth("tokens")->id();
+            $userData = AuthHelper::getAuthUser($userId);
             $cacheKey = Utils::generateHashedCacheKey('app_template_filling_', ['uuid' => $uuid]);
-            return CacheHelper::remember($cacheKey, function () use ($uuid) {
-                $result = $this->templateService->getApplicationTemplateForFilling($uuid);
+            return CacheHelper::remember($cacheKey, function () use ($uuid, $userData) {
+                $result = $this->templateService->getApplicationTemplateForFilling($uuid, $userData);
                 return $this->respond(["data" => $result], ResponseInterface::HTTP_OK);
             });
 

@@ -1,6 +1,8 @@
 <?php
 namespace App\Services;
 
+use App\Exceptions\ApplicationFormCriteriaNotMatchedException;
+use App\Exceptions\ApplicationFormOutOfDateRangeException;
 use App\Helpers\ApplicationFormActionHelper;
 use App\Helpers\CacheHelper;
 use App\Helpers\Types\CriteriaType;
@@ -20,7 +22,7 @@ class ApplicationTemplateService
     /**
      * Get application templates with filtering and pagination
      */
-    public function getApplicationTemplates(UsersModel $user, array $filters = []): array
+    public function getApplicationTemplates(array $filters = []): array
     {
         $per_page = $filters['limit'] ?? 100;
         $page = $filters['page'] ?? 0;
@@ -56,15 +58,9 @@ class ApplicationTemplateService
         $result = array_merge($result, $defaultTemplates);
         //filter out by available_external 
         $filtered_result = [];
-        //if the user is not an admin, only show templates that match their criteria
-        $isAdmin = $user->isAdmin();
-        $userData = array_merge(["user_type" => $user->user_type, "region" => $user->region], (array) $user->profile_data);
         foreach ($result as $application) {
 
-            $applicationCriteria = property_exists($application, 'criteria') && $application->criteria ? array_map(fn($c) => CriteriaType::fromArray($c), json_decode($application->criteria, true)) : [];
-            if (!$isAdmin && !CriteriaType::matchesCriteria($userData, $applicationCriteria)) {
-                continue;
-            }
+
             if ($application->available_externally == 1) {
                 $filtered_result[] = $application;
             }
@@ -513,7 +509,7 @@ class ApplicationTemplateService
         return !preg_match('/^https?:\/\//', $url);
     }
 
-    public function getApplicationTemplateForFilling(string $uuid)
+    public function getApplicationTemplateForFilling(string $uuid, UsersModel $user)
     {
         $model = new ApplicationTemplateModel();
         $builder = $model->builder();
@@ -527,11 +523,20 @@ class ApplicationTemplateService
             }
             throw new Exception("Application template not found");
         }
+        //if the user is not an admin, only show templates that match their criteria
+        $isAdmin = $user->isAdmin();
+        $userData = array_merge(["user_type" => $user->user_type, "region" => $user->region], (array) $user->profile_data);
+
         if (!empty($data['open_date']) && !empty($data['close_date'])) {
             $currentDate = date("Y-m-d");
             if ($currentDate < $data['open_date'] || $currentDate > $data['close_date']) {
-                throw new Exception("Application template is not available for filling");
+                throw new ApplicationFormOutOfDateRangeException("");
             }
+
+        }
+        $applicationCriteria = array_key_exists("criteria", $data) && $data['criteria'] ? array_map(fn($c) => CriteriaType::fromArray($c), json_decode($data['criteria'], true)) : [];
+        if (!$isAdmin && !CriteriaType::matchesCriteria($userData, $applicationCriteria)) {
+            throw new ApplicationFormCriteriaNotMatchedException("user {$user->id} criteria does not match application template criteria for {$data['form_name']} template");
         }
         $data['data'] = json_decode($data['data'], true);
         return $data;

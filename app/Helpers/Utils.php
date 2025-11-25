@@ -214,7 +214,16 @@ class Utils
         $override = $model->getActiveOverride($key);
 
         if ($override) {
-            $value = self::decodeSettingValue($override['setting_value'], $override['value_type']);
+            // Get file value for merge strategies
+            $data = json_decode(file_get_contents(self::getAppSettingsFileName()), true);
+            $fileValue = $data[$key] ?? null;
+
+            $overrideValue = self::decodeSettingValue($override['setting_value'], $override['value_type']);
+            $mergeStrategy = $override['merge_strategy'] ?? 'replace';
+
+            // Apply merge strategy
+            $value = self::applyMergeStrategy($fileValue, $overrideValue, $mergeStrategy, $override['value_type']);
+
             // Cache for 1 hour
             cache()->save($cacheKey, $value, 3600);
             return $value;
@@ -255,8 +264,17 @@ class Utils
         $overrides = $model->getAllActiveOverrides();
 
         foreach ($overrides as $override) {
-            $data[$override['setting_key']] = self::decodeSettingValue(
+            $fileValue = $data[$override['setting_key']] ?? null;
+            $overrideValue = self::decodeSettingValue(
                 $override['setting_value'],
+                $override['value_type']
+            );
+            $mergeStrategy = $override['merge_strategy'] ?? 'replace';
+
+            $data[$override['setting_key']] = self::applyMergeStrategy(
+                $fileValue,
+                $overrideValue,
+                $mergeStrategy,
                 $override['value_type']
             );
         }
@@ -288,6 +306,88 @@ class Utils
             default:
                 return $value;
         }
+    }
+
+    /**
+     * Apply merge strategy to combine file value with override value
+     * @param mixed $fileValue The value from the file
+     * @param mixed $overrideValue The override value
+     * @param string $strategy The merge strategy (replace, merge, append, prepend)
+     * @param string $type The value type
+     * @return mixed The merged value
+     */
+    private static function applyMergeStrategy($fileValue, $overrideValue, string $strategy, string $type)
+    {
+        // For non-array/object types, always replace
+        if ($type !== 'array' && $type !== 'object') {
+            return $overrideValue;
+        }
+
+        // Handle null file values
+        if ($fileValue === null) {
+            return $overrideValue;
+        }
+
+        switch ($strategy) {
+            case 'replace':
+                // Complete replacement
+                return $overrideValue;
+
+            case 'merge':
+                // Merge arrays or objects
+                if (is_array($fileValue) && is_array($overrideValue)) {
+                    if (self::isAssociativeArray($overrideValue)) {
+                        // For associative arrays (objects), merge recursively
+                        return array_merge($fileValue, $overrideValue);
+                    } else {
+                        // For indexed arrays, combine and remove duplicates
+                        return array_values(array_unique(array_merge($fileValue, $overrideValue)));
+                    }
+                }
+                return $overrideValue;
+
+            case 'append':
+                // Add override items to the end
+                if (is_array($fileValue) && is_array($overrideValue)) {
+                    if (self::isAssociativeArray($fileValue) && self::isAssociativeArray($overrideValue)) {
+                        // For objects, merge
+                        return array_merge($fileValue, $overrideValue);
+                    } else {
+                        // For arrays, append
+                        return array_merge($fileValue, $overrideValue);
+                    }
+                }
+                return $overrideValue;
+
+            case 'prepend':
+                // Add override items to the beginning
+                if (is_array($fileValue) && is_array($overrideValue)) {
+                    if (self::isAssociativeArray($fileValue) && self::isAssociativeArray($overrideValue)) {
+                        // For objects, override keys take precedence
+                        return array_merge($overrideValue, $fileValue);
+                    } else {
+                        // For arrays, prepend
+                        return array_merge($overrideValue, $fileValue);
+                    }
+                }
+                return $overrideValue;
+
+            default:
+                return $overrideValue;
+        }
+    }
+
+    /**
+     * Check if an array is associative (object-like) or indexed
+     * @param array $array
+     * @return bool
+     */
+    private static function isAssociativeArray(array $array): bool
+    {
+        if (empty($array)) {
+            return false;
+        }
+        return array_keys($array) !== range(0, count($array) - 1);
     }
 
     /**

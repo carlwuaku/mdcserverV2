@@ -8,6 +8,7 @@ class AuthHelper
 {
     /**
      * Get the user object with all the details including permissions.
+     * Cached for 5 minutes to reduce database load.
      *
      * @param int $userId The user ID
      * @return UsersModel
@@ -15,6 +16,15 @@ class AuthHelper
      */
     public static function getAuthUser($userId)
     {
+        // Try to get from cache first
+        $cacheKey = 'auth_user_' . $userId;
+        $cached = cache($cacheKey);
+
+        if ($cached !== null) {
+            return $cached;
+        }
+
+        // Cache miss - fetch from database
         $userObject = new UsersModel();
         $userData = $userObject->find($userId);
         if (!$userData) {
@@ -47,8 +57,21 @@ class AuthHelper
             }
         }
 
+        // Cache for 5 minutes (300 seconds)
+        cache()->save($cacheKey, $user, 300);
 
         return $user;
+    }
+
+    /**
+     * Clear the cached auth user data for a specific user
+     *
+     * @param int $userId The user ID
+     * @return void
+     */
+    public static function clearAuthUserCache($userId)
+    {
+        cache()->delete('auth_user_' . $userId);
     }
 
     /**
