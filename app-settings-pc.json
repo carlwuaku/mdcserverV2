@@ -616,6 +616,12 @@
                     "children": []
                 },
                 {
+                    "title": "App Settings",
+                    "url": "/admin/app-settings",
+                    "icon": "",
+                    "children": []
+                },
+                {
                     "title": "Activities",
                     "url": "/activities",
                     "icon": "",

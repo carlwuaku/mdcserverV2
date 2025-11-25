@@ -39,18 +39,6 @@ class AuthController extends ResourceController
 {
     use CacheInvalidatorTrait;
 
-    protected $passwordResetTokenModel;
-    protected $passwordResetAttemptModel;
-
-    protected $userModel;
-
-    public function __construct()
-    {
-        $this->passwordResetTokenModel = new PasswordResetTokenModel();
-        $this->passwordResetAttemptModel = new PasswordResetAttemptModel();
-        $this->userModel = new UsersModel();
-    }
-
     public function appSettings()
     {
         // Determine authentication state first
@@ -863,9 +851,9 @@ class AuthController extends ResourceController
             ], ResponseInterface::HTTP_TOO_MANY_REQUESTS);
         }
 
-        // Find user by username 
-        $user = $this->userModel->where('username', $username)
-            ->first();
+        // Find user by username
+        $userModel = new UsersModel();
+        $user = $userModel->where('username', $username)->first();
 
         // Always return success message for security (don't reveal if user exists)
         $successMessage = 'If an account with that username exists, a password reset link has been sent to the associated email address.';
@@ -878,7 +866,8 @@ class AuthController extends ResourceController
 
         try {
             // Invalidate any existing tokens for this user
-            $this->passwordResetTokenModel->where('user_id', $user->id)
+            $passwordResetTokenModel = new PasswordResetTokenModel();
+            $passwordResetTokenModel->where('user_id', $user->id)
                 ->where('used_at', null)
                 ->where('expires_at >', Time::now())
                 ->set(['used_at' => Time::now()])
@@ -901,7 +890,7 @@ class AuthController extends ResourceController
                 'updated_at' => Time::now()
             ];
 
-            $this->passwordResetTokenModel->insert($tokenData);
+            $passwordResetTokenModel->insert($tokenData);
 
             // Send reset email
             $this->sendResetEmail($user->email_address, $user->display_name, $token, $timeout);
@@ -944,9 +933,9 @@ class AuthController extends ResourceController
         $password = $this->request->getVar('password');
         $ipAddress = $this->request->getIPAddress();
 
-
         // Find and verify token
-        $tokenBuilder = $this->passwordResetTokenModel->builder();
+        $passwordResetTokenModel = new PasswordResetTokenModel();
+        $tokenBuilder = $passwordResetTokenModel->builder();
         $tokenBuilder->where('token', $token)
             ->where('used_at', null)
             ->where('expires_at >', Time::now());
@@ -985,7 +974,7 @@ class AuthController extends ResourceController
             // $userObject->save($user);
 
             // Mark token as used
-            $this->passwordResetTokenModel->delete($tokenRecord->id);
+            $passwordResetTokenModel->delete($tokenRecord->id);
 
             // TODO: Add to password history
             // $this->addToPasswordHistory($user->id, $hashedPassword);
@@ -1051,7 +1040,8 @@ class AuthController extends ResourceController
         $ipAddress = $this->request->getIPAddress();
 
         // Find valid token
-        $tokenRecord = $this->passwordResetTokenModel
+        $passwordResetTokenModel = new PasswordResetTokenModel();
+        $tokenRecord = $passwordResetTokenModel
             ->where('token', $token)
             ->where('used_at', null)
             ->where('expires_at >', Time::now())
@@ -1082,15 +1072,16 @@ class AuthController extends ResourceController
     private function checkRateLimit($identifier, $ipAddress): bool
     {
         $oneHourAgo = Time::now()->subHours(1);
+        $passwordResetAttemptModel = new PasswordResetAttemptModel();
 
         // Check attempts by email/username
-        $emailAttempts = $this->passwordResetAttemptModel
+        $emailAttempts = $passwordResetAttemptModel
             ->where('email', $identifier)
             ->where('created_at >', $oneHourAgo)
             ->countAllResults();
 
         // Check attempts by IP
-        $ipAttempts = $this->passwordResetAttemptModel
+        $ipAttempts = $passwordResetAttemptModel
             ->where('ip_address', $ipAddress)
             ->where('created_at >', $oneHourAgo)
             ->countAllResults();
@@ -1104,7 +1095,8 @@ class AuthController extends ResourceController
      */
     private function logResetAttempt($email, $ipAddress, $userAgent, $success): void
     {
-        $this->passwordResetAttemptModel->insert([
+        $passwordResetAttemptModel = new PasswordResetAttemptModel();
+        $passwordResetAttemptModel->insert([
             'email' => $email,
             'ip_address' => $ipAddress,
             'user_agent' => $userAgent,
@@ -1971,30 +1963,19 @@ class AuthController extends ResourceController
             }
 
             // Check if email already exists in users table
-            $existingUser = $this->userModel->where('email_address', $this->request->getVar('email'))->first();
+            $userModel = new UsersModel();
+            $existingUser = $userModel->where('email_address', $this->request->getVar('email'))->first();
             if ($existingUser) {
                 return $this->respond(['message' => 'Email address is already registered'], ResponseInterface::HTTP_BAD_REQUEST);
             }
 
             // Generate unique_id: G-[6 random chars]-[2 digit year]
             $uniqueId = $this->generateGuestUniqueId($guestsModel);
-
+            $guestData = $guestsModel->createArrayFromAllowedFields((array) $this->request->getVar());
             // Prepare guest data
-            $guestData = [
-                'unique_id' => $uniqueId,
-                'first_name' => $this->request->getVar('first_name'),
-                'last_name' => $this->request->getVar('last_name'),
-                'email' => $this->request->getVar('email'),
-                'phone_number' => $this->request->getVar('phone_number'),
-                'id_type' => $this->request->getVar('id_type'),
-                'id_number' => $this->request->getVar('id_number'),
-                'postal_address' => $this->request->getVar('postal_address'),
-                'sex' => $this->request->getVar('sex'),
-                'picture' => $this->request->getVar('picture'),
-                'date_of_birth' => $this->request->getVar('date_of_birth'),
-                'country' => $this->request->getVar('country'),
-                'email_verified' => false
-            ];
+            $guestData['unique_id'] = $uniqueId;
+            $guestData['email_verified'] = false;
+
 
             // Start transaction
             $guestsModel->db->transException(true)->transStart();
@@ -2162,7 +2143,8 @@ class AuthController extends ResourceController
             }
 
             // Check if user already exists
-            $existingUser = $this->userModel->where('profile_table_uuid', $guestUuid)->first();
+            $userModel = new UsersModel();
+            $existingUser = $userModel->where('profile_table_uuid', $guestUuid)->first();
             if ($existingUser) {
                 return $this->respond(['message' => 'User account already exists'], ResponseInterface::HTTP_BAD_REQUEST);
             }
@@ -2387,7 +2369,8 @@ class AuthController extends ResourceController
 
             // Check if email is already verified and a user has been created. if no user has been created, allow re-verification
             // Check if user already exists
-            $existingUser = $this->userModel->where('profile_table_uuid', $guestUuid)->first();
+            $userModel = new UsersModel();
+            $existingUser = $userModel->where('profile_table_uuid', $guestUuid)->first();
             if ($existingUser) {
                 return $this->respond(['message' => 'User account already exists. Please go to the login page and login or reset your password if you have forgotten it.'], ResponseInterface::HTTP_BAD_REQUEST);
             }
@@ -2480,9 +2463,14 @@ class AuthController extends ResourceController
                 $param = $this->request->getVar('param');
                 $sortBy = $this->request->getVar('sortBy') ?? "id";
                 $sortOrder = $this->request->getVar('sortOrder') ?? "desc";
+                $withDeleted = $this->request->getVar('withDeleted') && $this->request->getVar('withDeleted') === "yes";
 
                 $builder = $param ? $guestsModel->search($param) : $guestsModel->builder();
-
+                if ($withDeleted) {
+                    $guestsModel->withDeleted();
+                } else {
+                    $guestsModel->withDeleted(false);
+                }
                 // Apply filters from allowed fields
                 $filterArray = $guestsModel->createArrayFromAllowedFields($this->request->getVar());
                 foreach ($filterArray as $key => $value) {

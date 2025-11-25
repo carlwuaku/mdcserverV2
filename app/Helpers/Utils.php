@@ -191,19 +191,103 @@ class Utils
 
     /**
      * get the value for a key in app settings
+     * First checks for database overrides, then falls back to file
      * @param string $key
-     * @return array|null|string
+     * @return array|null|string|bool|int
      */
     public static function getAppSettings(?string $key = null)
     {
+        // If no key specified, return entire config with overrides applied
+        if ($key === null) {
+            return self::getAllAppSettingsWithOverrides();
+        }
+
+        // Check cache first
+        $cacheKey = 'app_setting_' . $key;
+        $cached = cache($cacheKey);
+        if ($cached !== null) {
+            return $cached;
+        }
+
+        // Check for database override
+        $model = new \App\Models\AppSettingsOverridesModel();
+        $override = $model->getActiveOverride($key);
+
+        if ($override) {
+            $value = self::decodeSettingValue($override['setting_value'], $override['value_type']);
+            // Cache for 1 hour
+            cache()->save($cacheKey, $value, 3600);
+            return $value;
+        }
+
+        // Fall back to file
         /**
          * @var array
          */
         $data = json_decode(file_get_contents(self::getAppSettingsFileName()), true);
-        if ($key) {
-            return $data[$key] ?? null;
+        $value = $data[$key] ?? null;
+
+        // Cache file value for 1 hour
+        if ($value !== null) {
+            cache()->save($cacheKey, $value, 3600);
         }
+
+        return $value;
+    }
+
+    /**
+     * Get all app settings with database overrides applied
+     * @return array
+     */
+    private static function getAllAppSettingsWithOverrides(): array
+    {
+        $cacheKey = 'app_settings_all_with_overrides';
+        $cached = cache($cacheKey);
+        if ($cached !== null) {
+            return $cached;
+        }
+
+        // Get base settings from file
+        $data = json_decode(file_get_contents(self::getAppSettingsFileName()), true);
+
+        // Apply all active overrides
+        $model = new \App\Models\AppSettingsOverridesModel();
+        $overrides = $model->getAllActiveOverrides();
+
+        foreach ($overrides as $override) {
+            $data[$override['setting_key']] = self::decodeSettingValue(
+                $override['setting_value'],
+                $override['value_type']
+            );
+        }
+
+        // Cache for 1 hour
+        cache()->save($cacheKey, $data, 3600);
+
         return $data;
+    }
+
+    /**
+     * Decode a setting value based on its type
+     * @param string $value
+     * @param string $type
+     * @return mixed
+     */
+    private static function decodeSettingValue(string $value, string $type)
+    {
+        switch ($type) {
+            case 'string':
+                return $value;
+            case 'number':
+                return is_numeric($value) ? ($value + 0) : $value;
+            case 'boolean':
+                return filter_var($value, FILTER_VALIDATE_BOOLEAN);
+            case 'array':
+            case 'object':
+                return json_decode($value, true);
+            default:
+                return $value;
+        }
     }
 
     /**

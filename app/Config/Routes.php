@@ -2,6 +2,7 @@
 
 use App\Controllers\ActivitiesController;
 use App\Controllers\AdminController;
+use App\Controllers\AppSettingsController;
 use App\Controllers\AssetController;
 use App\Controllers\AuthController;
 use App\Controllers\CpdController;
@@ -163,6 +164,17 @@ $routes->group("admin", ["namespace" => "App\Controllers", "filter" => "apiauth"
     $routes->post("guests/unverify", [AuthController::class, "unverifyGuests"], ["filter" => ["hasPermission:Create_Or_Edit_User"]]);
     $routes->delete("guests/(:segment)", [AuthController::class, "deleteGuest/$1"], ["filter" => ["hasPermission:Delete_User"]]);
 
+});
+
+// App Settings Management Routes
+$routes->group("admin/app-settings", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
+    $routes->get("", [AppSettingsController::class, "index"], ["filter" => ["hasPermission:View_Settings"]]);
+    $routes->get("keys", [AppSettingsController::class, "getAvailableKeys"], ["filter" => ["hasPermission:View_Settings"]]);
+    $routes->get("(:segment)", [AppSettingsController::class, "show/$1"], ["filter" => ["hasPermission:View_Settings"]]);
+    $routes->post("", [AppSettingsController::class, "create"], ["filter" => ["hasPermission:Modify_Settings"]]);
+    $routes->put("(:num)", [AppSettingsController::class, "update/$1"], ["filter" => ["hasPermission:Modify_Settings"]]);
+    $routes->delete("(:num)", [AppSettingsController::class, "delete/$1"], ["filter" => ["hasPermission:Modify_Settings"]]);
+    $routes->post("clear-cache", [AppSettingsController::class, "clearCache"], ["filter" => ["hasPermission:Modify_Settings"]]);
 });
 
 $routes->group("practitioners", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
