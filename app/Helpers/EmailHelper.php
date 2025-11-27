@@ -221,7 +221,7 @@ class EmailHelper extends Utils
                 $emailQueueModel->updateStatus($emailId, 'failed', $e->getMessage());
                 $emailQueueLogModel->logStatusChange($emailId, 'failed', $e->getMessage());
             }
-
+            throw $e;
         }
         return true;
     }

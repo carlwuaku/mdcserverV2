@@ -20,6 +20,8 @@ class ApplicationFormActionHelper extends Utils
      */
     public static function runAction(ApplicationStageType $action, array $data)
     {
+        $startTime = microtime(true);
+
         try {
             $result = [];
             //get the license types so that if it's an internal_api_call, we check if it's creating or updating a license
@@ -45,11 +47,46 @@ class ApplicationFormActionHelper extends Utils
                 default:
                     $result = $data;
             }
+
+            // Calculate execution time
+            $executionTimeMs = (int) ((microtime(true) - $startTime) * 1000);
+
+            // Log successful action to audit trail
+            try {
+                $actionsAuditModel = new \App\Models\ActionsAuditModel();
+                $applicationUuid = $data['uuid'] ?? $data['application_uuid'] ?? null;
+                $userId = auth()->user()->id ?? null;
+
+                $actionsAuditModel->logSuccessfulAction(
+                    $action,
+                    $data,
+                    $result,
+                    $executionTimeMs,
+                    $applicationUuid,
+                    $userId
+                );
+            } catch (\Throwable $logError) {
+                // If logging fails, just log it - don't prevent the action from completing
+                log_message('error', 'Failed to log successful action to audit: ' . $logError->getMessage());
+            }
+
             Events::trigger(EVENT_APPLICATION_FORM_ACTION_COMPLETED, $action, $data, $result);
             return $result;
         } catch (\Throwable $th) {
             log_message('error', 'Error running action: ' . $th->getMessage());
-            //log this to the actions database
+
+            // Log this to the failed_actions database
+            try {
+                $failedActionsModel = new \App\Models\FailedActionsModel();
+                $applicationUuid = $data['uuid'] ?? $data['application_uuid'] ?? null;
+                $userId = auth()->user()->id ?? null;
+
+                $failedActionsModel->logFailedAction($action, $data, $th, $applicationUuid, $userId);
+            } catch (\Throwable $logError) {
+                // If logging fails, just log it - don't prevent the original exception from being thrown
+                log_message('error', 'Failed to log action failure to database: ' . $logError->getMessage());
+            }
+
             throw $th;
         }
 
@@ -148,7 +185,8 @@ class ApplicationFormActionHelper extends Utils
         $subject = $templateModel->process($action->config['subject'], $data);
         $emailConfig = new EmailConfig($content, $subject, $data['email']);
 
-        EmailHelper::sendEmail($emailConfig);
+        $result = EmailHelper::sendEmail($emailConfig);
+        $data['email_sent'] = $result;
         return $data;
     }
 
@@ -216,13 +254,13 @@ class ApplicationFormActionHelper extends Utils
             $phone_number = $data['phone_number'] ?? $data['phone'] ?? null;
             $last_name = $data['last_name'] ?? $data['surname'] ?? null;
             $first_name = $data['first_name'] ?? $data['first_names'] ?? '';
-
+            log_message('info', "Generating invoice for unique_id: $unique_id, email: $email, phone_number: $phone_number, last_name: $last_name, first_name: $first_name");
             if (!$unique_id || !$email || !$phone_number || !$last_name) {
                 throw new \InvalidArgumentException('Missing required fields: unique_id, email, phone_number, and last_name are required');
             }
 
             // Get invoice items from config
-            $invoiceItemsConfig = $action->config['invoice_items'] ?? [];
+            $invoiceItemsConfig = $action->config['payment_invoice_items'] ?? [];
             if (empty($invoiceItemsConfig)) {
                 throw new \InvalidArgumentException('No invoice items defined in action config');
             }
@@ -273,26 +311,27 @@ class ApplicationFormActionHelper extends Utils
                     methodName: $method
                 );
             }, $paymentMethods);
-
             // Calculate due date
-            $dueDateDays = $action->config['due_date_days'] ?? 30;
+            $dueDateDays = $action->config['payment_due_date_days'] ?? 30;
             $dueDate = date("Y-m-d", strtotime("+{$dueDateDays} days"));
 
             // Build description from template or use default
-            $description = $action->config['description'] ?? 'Invoice for {{first_name}} {{last_name}}';
+            $description = $action->config['payment_description'] ?? 'Invoice for {{first_name}} {{last_name}}';
             $templateEngine = new TemplateEngineHelper();
             $description = $templateEngine->process($description, $data);
 
             // Create invoice
             $invoiceData = [
                 'unique_id' => $unique_id,
-                'purpose' => $action->config['purpose'] ?? 'application-fee',
+                'purpose' => $action->config['payment_purpose'] ?? 'Invoice',
                 'due_date' => $dueDate,
                 'last_name' => $last_name,
                 'first_name' => $first_name,
                 'email' => $email,
                 'phone_number' => $phone_number,
-                'description' => $description
+                'description' => $description,
+                'purpose_table' => $data['purpose_table'] ?? null,
+                'purpose_table_uuid' => $data['purpose_table_uuid'] ?? null
             ];
 
             $invoiceId = $paymentsService->createInvoice($invoiceData, $invoiceItems, $paymentOptions);

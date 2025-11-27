@@ -177,6 +177,26 @@ $routes->group("admin/app-settings", ["namespace" => "App\Controllers", "filter"
     $routes->post("clear-cache", [AppSettingsController::class, "clearCache"], ["filter" => ["hasPermission:Modify_Settings"]]);
 });
 
+// Failed Actions Management Routes
+$routes->group("admin/failed-actions", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
+    $routes->get("", [\App\Controllers\FailedActionsController::class, "index"], ["filter" => ["hasPermission:View_Settings"]]);
+    $routes->get("stats", [\App\Controllers\FailedActionsController::class, "stats"], ["filter" => ["hasPermission:View_Settings"]]);
+    $routes->get("(:num)", [\App\Controllers\FailedActionsController::class, "show/$1"], ["filter" => ["hasPermission:View_Settings"]]);
+    $routes->post("(:num)/retry", [\App\Controllers\FailedActionsController::class, "retry/$1"], ["filter" => ["hasPermission:Modify_Settings"]]);
+    $routes->delete("(:num)", [\App\Controllers\FailedActionsController::class, "delete/$1"], ["filter" => ["hasPermission:Modify_Settings"]]);
+    $routes->delete("cleanup", [\App\Controllers\FailedActionsController::class, "cleanup"], ["filter" => ["hasPermission:Modify_Settings"]]);
+});
+
+// Actions Audit Routes
+$routes->group("admin/actions-audit", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
+    $routes->get("", [\App\Controllers\ActionsAuditController::class, "index"], ["filter" => ["hasPermission:View_Settings"]]);
+    $routes->get("stats", [\App\Controllers\ActionsAuditController::class, "stats"], ["filter" => ["hasPermission:View_Settings"]]);
+    $routes->get("application/(:segment)", [\App\Controllers\ActionsAuditController::class, "byApplication/$1"], ["filter" => ["hasPermission:View_Settings"]]);
+    $routes->get("(:num)", [\App\Controllers\ActionsAuditController::class, "show/$1"], ["filter" => ["hasPermission:View_Settings"]]);
+    $routes->delete("(:num)", [\App\Controllers\ActionsAuditController::class, "delete/$1"], ["filter" => ["hasPermission:Modify_Settings"]]);
+    $routes->delete("cleanup", [\App\Controllers\ActionsAuditController::class, "cleanup"], ["filter" => ["hasPermission:Modify_Settings"]]);
+});
+
 $routes->group("practitioners", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
     $routes->put("qualifications/(:segment)", [PractitionerController::class, "updatePractitionerQualification/$1"], ["filter" => ["hasPermission:Create_Or_Update_Practitioners_Qualifications"]]);
     $routes->delete("qualifications/(:segment)", [PractitionerController::class, "deletePractitionerQualification/$1"], ["filter" => ["hasPermission:Delete_Practitioners_Qualifications"]]);

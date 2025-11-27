@@ -622,6 +622,18 @@
                     "children": []
                 },
                 {
+                    "title": "All Actions",
+                    "url": "/admin/actions-audit",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "Failed Actions",
+                    "url": "/admin/failed-actions",
+                    "icon": "",
+                    "children": []
+                },
+                {
                     "title": "Activities",
                     "url": "/activities",
                     "icon": "",
