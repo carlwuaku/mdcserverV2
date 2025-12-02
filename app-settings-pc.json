@@ -1825,6 +1825,9 @@
             "renewalCpdTotalCutoff": 10,
             "daysFromRenewalExpiryToOpenApplication": 0,
             "revalidationPeriodInYears": 3,
+            "validRenewalStatuses": [
+                "Active"
+            ],
             "revalidationMessage": "You are required to validate your data before renewing your license",
             "detailsPageHeaderTabs": [
                 {
@@ -2547,22 +2550,70 @@
                     "type": "time",
                     "value": "",
                     "required": true
+                },
+                {
+                    "label": "Support staff details",
+                    "name": "support_staff",
+                    "hint": "",
+                    "options": [],
+                    "type": "json",
+                    "value": "",
+                    "required": true,
+                    "jsonType": "array",
+                    "jsonSchema": {
+                        "type": {
+                            "type": "select",
+                            "options": [
+                                {
+                                    "value": "Pharmacy Technician",
+                                    "label": "Pharmacy Technician"
+                                },
+                                {
+                                    "value": "Medicine Counter Assistant (MCA)",
+                                    "label": "MCA"
+                                }
+                            ]
+                        },
+                        "pin_number": {
+                            "type": "string"
+                        },
+                        "first_name": {
+                            "type": "string",
+                            "required": true
+                        },
+                        "last_name": {
+                            "type": "string"
+                        },
+                        "sex": {
+                            "type": "select",
+                            "options": [
+                                {
+                                    "value": "male",
+                                    "label": "Male"
+                                },
+                                {
+                                    "value": "female",
+                                    "label": "Female"
+                                }
+                            ]
+                        },
+                        "dob": {
+                            "type": "date"
+                        },
+                        "phone_number": {
+                            "type": "string"
+                        },
+                        "email": {
+                            "type": "email"
+                        }
+                    },
+                    "jsonArrayCount": 1,
+                    "jsonEditorMode": "visual",
+                    "jsonAllowKeysEditing": false,
+                    "jsonAllowAddingItems": true
                 }
             ],
             "portalRenewalFields": [
-                {
-                    "label": "Superintendent Pharmacist",
-                    "name": "practitioner_in_charge",
-                    "hint": "",
-                    "options": [],
-                    "type": "api",
-                    "value": "",
-                    "required": true,
-                    "api_url": "licenses/renewal-check-superintendent",
-                    "apiKeyProperty": "license_number",
-                    "apiLabelProperty": "name",
-                    "apiType": "search"
-                },
                 {
                     "label": "Weekdays Start Time",
                     "name": "weekdays_start_time",
@@ -2616,6 +2667,67 @@
                     "type": "time",
                     "value": "",
                     "required": true
+                },
+                {
+                    "label": "Support staff details",
+                    "name": "support_staff",
+                    "hint": "",
+                    "options": [],
+                    "type": "json",
+                    "value": "",
+                    "required": true,
+                    "jsonType": "array",
+                    "jsonSchema": {
+                        "type": {
+                            "type": "select",
+                            "options": [
+                                {
+                                    "value": "Pharmacy Technician",
+                                    "label": "Pharmacy Technician"
+                                },
+                                {
+                                    "value": "Medicine Counter Assistant (MCA)",
+                                    "label": "MCA"
+                                }
+                            ]
+                        },
+                        "pin_number": {
+                            "type": "string"
+                        },
+                        "first_name": {
+                            "type": "string",
+                            "required": true
+                        },
+                        "last_name": {
+                            "type": "string"
+                        },
+                        "sex": {
+                            "type": "select",
+                            "options": [
+                                {
+                                    "value": "male",
+                                    "label": "Male"
+                                },
+                                {
+                                    "value": "female",
+                                    "label": "Female"
+                                }
+                            ]
+                        },
+                        "dob": {
+                            "type": "date"
+                        },
+                        "phone_number": {
+                            "type": "string"
+                        },
+                        "email": {
+                            "type": "email"
+                        }
+                    },
+                    "jsonArrayCount": 1,
+                    "jsonEditorMode": "visual",
+                    "jsonAllowKeysEditing": false,
+                    "jsonAllowAddingItems": true
                 }
             ],
             "portalRenewalFieldsPrePopulate": [],
@@ -2624,16 +2736,40 @@
             ],
             "renewalTable": "facility_renewal",
             "renewalStages": {
+                "Pending Regional Approval": {
+                    "label": "Pending Regional Approval",
+                    "allowedTransitions": [
+                        "Pending Payment"
+                    ],
+                    "fields": [],
+                    "permission": "Mark_Facilities_Renewal_Pending_Regional_Approval",
+                    "printable": false,
+                    "onlineCertificatePrintable": false,
+                    "deletableByUser": true,
+                    "userActions": "",
+                    "title": "Pending Regional Approval",
+                    "active_children": false,
+                    "url": "/licenses/renewal/facilities",
+                    "urlParams": {
+                        "status": "Pending Regional Approval"
+                    },
+                    "icon": "list_alt",
+                    "children": [],
+                    "description": "Manage submitted applications",
+                    "apiCountUrl": "licenses/renewal-count?license_type=facilities&status=Pending Regional Approval",
+                    "apiCountText": "Renewals",
+                    "actions": []
+                },
                 "Pending Payment": {
                     "label": "Pending Payment",
                     "allowedTransitions": [
-                        "Pending Regional Approval"
+                        "Pending Authorization"
                     ],
                     "fields": [],
                     "permission": "Mark_Facilities_Renewal_Pending_Payment",
                     "printable": false,
                     "onlineCertificatePrintable": false,
-                    "deletableByUser": true,
+                    "deletableByUser": false,
                     "userActions": "make_payment",
                     "title": "Pending Payment",
                     "active_children": false,
@@ -2651,8 +2787,8 @@
                             "type": "email",
                             "config_type": "email",
                             "config": {
-                                "template": "your renewal is now approved",
-                                "subject": "Renewal Approved",
+                                "template": "Your application to be superintending pharmacist is now pending payment. Please go to your portal, open the pharmacy superintending page and make the payment.",
+                                "subject": "Pharmacy Renewal Pending Payment",
                                 "admin_email": "",
                                 "endpoint": "",
                                 "method": "",
@@ -2661,32 +2797,26 @@
                                 "body_mapping": [],
                                 "query_params": []
                             }
+                        },
+                        {
+                            "type": "create_invoice",
+                            "config_type": "payment",
+                            "config": {
+                                "template": "",
+                                "subject": "",
+                                "admin_email": "",
+                                "endpoint": "",
+                                "method": "",
+                                "auth_token": "",
+                                "headers": [],
+                                "body_mapping": [],
+                                "query_params": [],
+                                "paymentPurpose": "Pharmacy Renewal",
+                                "paymentInvoiceItems": []
+                            },
+                            "criteria": []
                         }
                     ]
-                },
-                "Pending Regional Approval": {
-                    "label": "Pending Regional Approval",
-                    "allowedTransitions": [
-                        "Pending Authorization"
-                    ],
-                    "fields": [],
-                    "permission": "Mark_Facilities_Renewal_Pending_Regional_Approval",
-                    "printable": false,
-                    "onlineCertificatePrintable": false,
-                    "deletableByUser": false,
-                    "userActions": "",
-                    "title": "Pending Regional Approval",
-                    "active_children": false,
-                    "url": "/licenses/renewal/facilities",
-                    "urlParams": {
-                        "status": "Pending Regional Approval"
-                    },
-                    "icon": "list_alt",
-                    "children": [],
-                    "description": "Manage submitted applications",
-                    "apiCountUrl": "licenses/renewal-count?license_type=facilities&status=Pending Regional Approval",
-                    "apiCountText": "Renewals",
-                    "actions": []
                 },
                 "Pending Authorization": {
                     "label": "Pending Authorization",
@@ -2867,6 +2997,9 @@
             "renewalCpdTotalCutoff": 0,
             "daysFromRenewalExpiryToOpenApplication": 0,
             "revalidationPeriodInYears": 3,
+            "validRenewalStatuses": [
+                "Active"
+            ],
             "revalidationMessage": "You are required to validate your data before renewing your license",
             "fieldsToUpdateOnRenewal": [],
             "detailsPageHeaderTabs": [
@@ -3399,9 +3532,7 @@
             },
             "renewalJsonFields": [],
             "renewalSearchFields": {
-                "fields": [
-                    "name"
-                ],
+                "fields": [],
                 "joinCondition": "otcms_renewal.renewal_id = license_renewal.id"
             },
             "fieldsToUpdateOnRenewal": [],
@@ -3436,6 +3567,9 @@
             "renewalCpdTotalCutoff": 0,
             "daysFromRenewalExpiryToOpenApplication": 0,
             "revalidationPeriodInYears": 3,
+            "validRenewalStatuses": [
+                "Active"
+            ],
             "revalidationMessage": "You are required to validate your data before renewing your license",
             "detailsPageHeaderTabs": [
                 {
@@ -3857,6 +3991,9 @@
             "renewalCpdTotalCutoff": 0,
             "daysFromRenewalExpiryToOpenApplication": 0,
             "revalidationPeriodInYears": 3,
+            "validRenewalStatuses": [
+                "Active"
+            ],
             "revalidationMessage": "You are required to validate your data before renewing your license",
             "renewalFilterFields": [],
             "detailsPageHeaderTabs": [
@@ -4375,6 +4512,9 @@
             "renewalCpdTotalCutoff": 0,
             "daysFromRenewalExpiryToOpenApplication": 0,
             "revalidationPeriodInYears": 3,
+            "validRenewalStatuses": [
+                "Active"
+            ],
             "revalidationMessage": "You are required to validate your data before renewing your license",
             "renewalFilterFields": [],
             "detailsPageHeaderTabs": [],
@@ -4748,6 +4888,7 @@
             "renewalCpdTotalCutoff": 0,
             "daysFromRenewalExpiryToOpenApplication": 0,
             "revalidationPeriodInYears": 10,
+            "validRenewalStatuses": [],
             "revalidationMessage": "You are required to validate your data before renewing your license",
             "renewalFilterFields": [],
             "detailsPageHeaderTabs": [
@@ -5731,54 +5872,69 @@
             "active_children": false,
             "url": "/renewal",
             "image": "assets/images/pharmacy.jpg",
-            "dataPoints": [],
+            "dataPoints": [
+                {
+                    "criteria": [
+                        {
+                            "field": "type",
+                            "operator": "equals",
+                            "value": [
+                                "practitioners"
+                            ]
+                        },
+                        {
+                            "field": "register_type",
+                            "operator": "equals",
+                            "value": [
+                                "Permanent"
+                            ]
+                        }
+                    ],
+                    "dataSource": "api",
+                    "apiUrl": "portal/renewals/superintending/check",
+                    "apiProperty": "message",
+                    "message": "",
+                    "type": "warning"
+                }
+            ],
             "actions": [
                 {
-                    "label": "Click to apply",
+                    "label": "Apply to be a pharmacy superintendent",
                     "icon": "",
                     "type": "link",
                     "linkProp": "",
-                    "url": "/renewals/form",
+                    "url": "/renewals/superintending-form",
                     "urlParams": {},
-                    "criteria": [
-                        {
-                            "field": "in_good_standing",
-                            "operator": "equals",
-                            "value": [
-                                "Not In Good Standing"
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "label": "Click to make payment",
-                    "icon": "",
-                    "type": "link",
-                    "linkProp": "",
-                    "url": "/renewals/form",
-                    "urlParams": {},
-                    "criteria": [
-                        {
-                            "field": "in_good_standing",
-                            "operator": "equals",
-                            "value": [
-                                "Pending Payment"
-                            ]
-                        }
-                    ]
+                    "criteria": []
                 },
                 {
                     "label": "View history/Print certificates",
                     "icon": "",
                     "type": "link",
                     "linkProp": "",
-                    "url": "/pharmacy-superintening",
+                    "url": "/renewals/superintending-history",
                     "urlParams": {},
                     "criteria": []
                 }
             ],
             "alerts": [],
-            "description": "View your pharmacy superintending history"
+            "description": "Apply to be a pharmacy superintendent and view your pharmacy superintending history",
+            "criteria": [
+                {
+                    "field": "type",
+                    "operator": "equals",
+                    "value": [
+                        "practitioners"
+                    ]
+                },
+                {
+                    "field": "practitioner_type",
+                    "operator": "equals",
+                    "value": [
+                        "Pharmacist"
+                    ]
+                }
+            ]
         },
         {
             "title": "Continuous Professional Development (CPD)",
@@ -6183,6 +6339,15 @@
                             {
                                 "service_code": "PC0304",
                                 "quantity": 1
+                            }
+                        ]
+                    },
+                    {
+                        "criteria": [],
+                        "feeServiceCodes": [
+                            {
+                                "service_code": "PC0208",
+                                "quantity": "support_staff"
                             }
                         ]
                     }

@@ -31,6 +31,13 @@ class FormFieldType
     public ?string $placeholder = null;
     public ?string $file_types = null; // Comma separated file types
     public ?string $assetType = null;
+    public ?string $jsonType = null;
+    public ?array $jsonSchema = null;
+    public ?int $jsonArrayCount = null;
+    public ?string $jsonEditorMode = null;
+    public ?bool $jsonAllowKeysEditing = null;
+    public ?bool $jsonAllowAddingItems = null;
+
 
     public function __construct(
         string $label,
@@ -60,7 +67,13 @@ class FormFieldType
         ?string $customTemplate = null,
         ?string $placeholder = null,
         ?string $file_types = null,
-        ?string $assetType = null
+        ?string $assetType = null,
+        ?string $jsonType = null,
+        ?array $jsonSchema = null,
+        ?int $jsonArrayCount = null,
+        ?string $jsonEditorMode = null,
+        ?bool $jsonAllowKeysEditing = null,
+        ?bool $jsonAllowAddingItems = null
     ) {
         $this->label = $label;
         $this->name = $name;
@@ -90,6 +103,12 @@ class FormFieldType
         $this->placeholder = $placeholder;
         $this->file_types = $file_types;
         $this->assetType = $assetType;
+        $this->jsonType = $jsonType;
+        $this->jsonSchema = $jsonSchema;
+        $this->jsonArrayCount = $jsonArrayCount;
+        $this->jsonEditorMode = $jsonEditorMode;
+        $this->jsonAllowKeysEditing = $jsonAllowKeysEditing;
+        $this->jsonAllowAddingItems = $jsonAllowAddingItems;
     }
 
     /**
@@ -125,7 +144,13 @@ class FormFieldType
             customTemplate: $data['customTemplate'] ?? null,
             placeholder: $data['placeholder'] ?? null,
             file_types: $data['file_types'] ?? null,
-            assetType: $data['assetType'] ?? null
+            assetType: $data['assetType'] ?? null,
+            jsonType: $data['jsonType'] ?? null,
+            jsonSchema: $data['jsonSchema'] ?? null,
+            jsonArrayCount: $data['jsonArrayCount'] ?? null,
+            jsonEditorMode: $data['jsonEditorMode'] ?? null,
+            jsonAllowKeysEditing: $data['jsonAllowKeysEditing'] ?? null,
+            jsonAllowAddingItems: $data['jsonAllowAddingItems'] ?? null
         );
     }
 
@@ -163,6 +188,12 @@ class FormFieldType
             'placeholder' => $this->placeholder,
             'file_types' => $this->file_types,
             'assetType' => $this->assetType,
+            'jsonType' => $this->jsonType,
+            'jsonSchema' => $this->jsonSchema,
+            'jsonArrayCount' => $this->jsonArrayCount,
+            'jsonEditorMode' => $this->jsonEditorMode,
+            'jsonAllowKeysEditing' => $this->jsonAllowKeysEditing,
+            'jsonAllowAddingItems' => $this->jsonAllowAddingItems
         ];
     }
 

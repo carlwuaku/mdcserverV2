@@ -57,9 +57,15 @@ $routes->group("portal", ["namespace" => "App\Controllers"], function (RouteColl
     $routes->get("applications/templates/(:segment)", [ApplicationsController::class, "getApplicationTemplateForFilling/$1"], ["filter" => ["apiauth"]]);
     $routes->get("applications/templates", [ApplicationsController::class, "getApplicationTemplates"], ["filter" => ["apiauth"]]);
     $routes->get("renewals", [LicensesController::class, "getRenewalsByLicense"], ["filter" => ["apiauth"]]);
+    $routes->get("renewals/superintending/history", [LicensesController::class, "getSuperintendingHistory"], ["filter" => ["apiauth"]]);
+    $routes->get("renewals/superintending/eligibility", [LicensesController::class, "isPharmacistEligiblePharmacySuperintendent"], ["filter" => ["apiauth"]]);
+    $routes->get("renewals/superintending/form", [LicensesController::class, "getPractitionerSuperintendingRenewalFormFields"], ["filter" => ["apiauth"]]);
+    $routes->get("renewals/superintending/check", [LicensesController::class, "isPharmacistPharmacySuperintendent"], ["filter" => ["apiauth"]]);
+
     $routes->get("renewals/form", [LicensesController::class, "getPractitionerRenewalFormFields"], ["filter" => ["apiauth"]], );
     $routes->get("renewals/(:segment)/print", [LicensesController::class, "printRenewalByLicense/$1"], ["filter" => ["apiauth"]], );
     $routes->post("renewals", [LicensesController::class, "createRenewalByLicense"], ["filter" => ["apiauth"]]);
+    $routes->post("renewals/superintending", [LicensesController::class, "createSuperintendingRenewalByLicense"], ["filter" => ["apiauth"]]);
     $routes->delete("renewals/(:segment)", [LicensesController::class, "deleteRenewalByLicense/$1"], ["filter" => ["apiauth"]]);
     $routes->get("payment/external-invoice/(:segment)", [PaymentsController::class, "getInvoiceByExternal/$1"], ["filter" => ["apiauth"]], );
     $routes->get("payment/invoices", [PaymentsController::class, "getLicenseInvoices"], ["filter" => ["apiauth"]], );

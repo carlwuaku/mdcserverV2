@@ -18,6 +18,7 @@ class LicenseRenewalEligibilityCriteriaType
     public string $revalidationMessage;
     public string $revalidationManualMessage;
     public bool $permitRetention;
+    public array $validStatuses;
 
     public function __construct(
         bool $restrict = false,
@@ -30,7 +31,8 @@ class LicenseRenewalEligibilityCriteriaType
         int $revalidationPeriod = 0,
         string $revalidationMessage = '',
         string $revalidationManualMessage = '',
-        bool $permitRetention = false
+        bool $permitRetention = false,
+        array $validStatuses = []
     ) {
         $this->restrict = $restrict;
         $this->year = $year;
@@ -43,6 +45,7 @@ class LicenseRenewalEligibilityCriteriaType
         $this->revalidationMessage = $revalidationMessage;
         $this->revalidationManualMessage = $revalidationManualMessage;
         $this->permitRetention = $permitRetention;
+        $this->validStatuses = $validStatuses;
     }
 
     /**
@@ -62,6 +65,7 @@ class LicenseRenewalEligibilityCriteriaType
             'revalidationMessage' => $this->revalidationMessage,
             'revalidationManualMessage' => $this->revalidationManualMessage,
             'permitRetention' => $this->permitRetention,
+            'validStatuses' => $this->validStatuses
         ];
     }
 
@@ -81,7 +85,8 @@ class LicenseRenewalEligibilityCriteriaType
             revalidationPeriod: $data['revalidationPeriod'] ?? 0,
             revalidationMessage: $data['revalidationMessage'] ?? '',
             revalidationManualMessage: $data['revalidationManualMessage'] ?? '',
-            permitRetention: $data['permitRetention'] ?? false
+            permitRetention: $data['permitRetention'] ?? false,
+            validStatuses: $data['validStatuses'] ?? []
         );
     }
 

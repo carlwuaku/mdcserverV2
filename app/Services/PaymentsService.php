@@ -229,8 +229,7 @@ class PaymentsService
             "purpose" => "required",
             "due_date" => "required|valid_date",
             "last_name" => "required",
-            "email" => "required|valid_email",
-            "phone_number" => "required"
+            "email" => "permit_empty|valid_email"
         ];
 
         $validator = \Config\Services::validation();

@@ -52,6 +52,7 @@ class AppSettingsLicenseType
     public array $userActions;
 
     public array $licenseNumberFormat;
+    public array $validRenewalStatuses;
 
     public function __construct(
         string $table = '',
@@ -87,7 +88,8 @@ class AppSettingsLicenseType
         array $userActions = [],
         array $searchFields = [],
         array $portalRenewalFields = [],
-        array $portalRenewalFieldsPrePopulate = []
+        array $portalRenewalFieldsPrePopulate = [],
+        array $validRenewalStatuses = []
     ) {
         $this->table = $table;
         $this->uniqueKeyField = $uniqueKeyField;
@@ -123,6 +125,7 @@ class AppSettingsLicenseType
         $this->searchFields = $searchFields;
         $this->portalRenewalFields = $portalRenewalFields;
         $this->portalRenewalFieldsPrePopulate = $portalRenewalFieldsPrePopulate;
+        $this->validRenewalStatuses = $validRenewalStatuses;
     }
 
     /**
@@ -170,7 +173,8 @@ class AppSettingsLicenseType
             $data['userActions'] ?? [],
             $data['searchFields'] ?? [],
             $portalRenewalFields ?? [],
-            $data['portalRenewalFieldsPrePopulate'] ?? []
+            $data['portalRenewalFieldsPrePopulate'] ?? [],
+            $data['validRenewalStatuses'] ?? []
         );
     }
 
@@ -227,7 +231,8 @@ class AppSettingsLicenseType
             'userActions' => $this->userActions,
             'searchFields' => $this->searchFields,
             'portalRenewalFields' => $this->portalRenewalFields,
-            'portalRenewalFieldsPrePopulate' => $this->portalRenewalFieldsPrePopulate
+            'portalRenewalFieldsPrePopulate' => $this->portalRenewalFieldsPrePopulate,
+            'validRenewalStatuses' => $this->validRenewalStatuses
         ];
     }
 

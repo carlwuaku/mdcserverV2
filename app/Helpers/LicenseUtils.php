@@ -1,6 +1,7 @@
 <?php
 namespace App\Helpers;
 
+use App\Exceptions\LicenseNotFoundException;
 use App\Models\Licenses\LicenseRenewalModel;
 use App\Models\Licenses\LicensesModel;
 use Exception;
@@ -14,12 +15,14 @@ class RenewalEligibilityResponse
     public bool $isEligible;
     public string $reason;
     public int $score;
+    public array $licenseDetails;
 
-    public function __construct(bool $isEligible, string $reason, int $score = 0)
+    public function __construct(bool $isEligible, string $reason, int $score = 0, array $licenseDetails = [])
     {
         $this->isEligible = $isEligible;
         $this->reason = $reason;
         $this->score = $score;
+        $this->licenseDetails = $licenseDetails;
     }
 }
 
@@ -332,7 +335,7 @@ class LicenseUtils extends Utils
         if ($diff > $revalidationPeriod * 365) {
             return ["result" => true, "message" => $templateObject->process($revalidationMessage, array_merge(["days" => $diff], (array) $licenseDetails))];
         } else {
-            return ["result" => false, "message" => "Practitioner does not require revalidation"];
+            return ["result" => false, "message" => "License does not require revalidation"];
 
         }
 
@@ -458,11 +461,11 @@ class LicenseUtils extends Utils
             $licenseDetails = self::getLicenseDetails($reg_num);
         } catch (\Throwable $th) {
             log_message('error', $th);
-            throw $th;
+            throw new LicenseNotFoundException("License not found");
         }
-        if ($licenseDetails['status'] == 0) {
-            throw new Exception("Practitioner is inactive");
-        }
+        // if ($licenseDetails['status'] == 0) {
+        //     throw new Exception("License is inactive");
+        // }
         $requires_revalidation = self::licenseRequiresRevalidation($licenseDetails, $options->revalidationPeriod, $options->revalidationMessage, $options->revalidationManualMessage);
         if ($requires_revalidation['result']) {
             return new RenewalEligibilityResponse(false, $requires_revalidation['message']);
@@ -476,13 +479,13 @@ class LicenseUtils extends Utils
 
             if (!$isInGoodStanding) {
                 //not in good standing
-                return new RenewalEligibilityResponse(false, "Practitioners must be in good standing to use the online portal");
+                return new RenewalEligibilityResponse(false, "Licenses must be in good standing to use the online portal");
             }
         }
         try {
             $cpd = self::getCPDAttendanceAndScores($reg_num, $cpdYear);
         } catch (\Throwable $th) {
-            log_message('error', "Error getting CPD score for practitioner: " . $reg_num);
+            log_message('error', "Error getting CPD score for license: " . $reg_num);
             log_message('error', $th);
             throw $th;
         }
@@ -490,7 +493,7 @@ class LicenseUtils extends Utils
 
         //if the person was granted permission, ignore the cpd
         if ($options->permitRetention) {
-            return new RenewalEligibilityResponse(true, "Practitioner has been granted exception to proceed with relicensure despite CPD requirement.", $cpd['score']);
+            return new RenewalEligibilityResponse(true, "License has been granted exception to proceed with relicensure despite CPD requirement.", $cpd['score']);
         }
 
         //cpd requirements apply to permanent register only
@@ -546,11 +549,18 @@ class LicenseUtils extends Utils
 
             }
         }
+        //check if license has the correct status
+        if (count($options->validStatuses) > 0 && !in_array($licenseDetails['status'], $options->validStatuses)) {
+            log_message('error', "License status invalid: " . $licenseDetails['status'] . ":" . $licenseDetails['status'] . " must be in " . implode(", ", $options->validStatuses) . " to renew");
+            return new RenewalEligibilityResponse(false, "License status invalid");
+
+        }
 
         return new RenewalEligibilityResponse(
             true,
             "Meets all requirements",
-            $cpd['score']
+            $cpd['score'],
+            $licenseDetails
         );
     }
 
@@ -598,10 +608,10 @@ class LicenseUtils extends Utils
     }
 
     /**
-     * Checks if a practitioner must apply for renewal while their license is still in good standing for the given license type.
+     * Checks if a license must apply for renewal while their license is still in good standing for the given license type.
      *
      * @param string $licenseType the license type
-     * @return bool true if the practitioner must apply for renewal while their license is still in good standing, false otherwise
+     * @return bool true if the license must apply for renewal while their license is still in good standing, false otherwise
      */
     public static function mustApplyWhileInGoodStanding(string $licenseType)
     {
