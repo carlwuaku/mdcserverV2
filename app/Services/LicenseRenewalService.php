@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Exceptions\LicenseNotFoundException;
+use App\Exceptions\PractitionerNotEligibleForSuperintendingException;
 use App\Helpers\LicenseUtils;
 use App\Helpers\Types\LicenseRenewalEligibilityCriteriaType;
 use App\Helpers\Types\RenewalStageType;
@@ -19,6 +21,33 @@ use App\Helpers\AuthHelper;
 use App\Helpers\Types\PractitionerPortalRenewalViewModelType;
 use DateTime;
 use App\Helpers\TemplateEngineHelper;
+use InvalidArgumentException;
+
+class PractitionerIsSuperintendent
+{
+    public bool $isSuperintendent;
+    public array $renewalDetails;
+    public string $message;
+
+    public function __construct(bool $isSuperintendent, array $facilityDetails, string $message = "")
+    {
+        $this->isSuperintendent = $isSuperintendent;
+        $this->renewalDetails = $facilityDetails;
+        $this->message = $message;
+    }
+}
+
+class PractitionerIsEligibleSuperintendent
+{
+    public bool $isEligible;
+    public array $facilityDetails;
+
+    public function __construct(bool $isEligible, array $facilityDetails)
+    {
+        $this->isEligible = $isEligible;
+        $this->facilityDetails = $facilityDetails;
+    }
+}
 
 /**
  * License Renewal Service - Handles all license renewal-related business logic
@@ -55,7 +84,7 @@ class LicenseRenewalService
         // Validate data
         $validation = \Config\Services::validation();
         if (!$validation->setRules($rules)->run($data)) {
-            throw new \InvalidArgumentException('Validation failed: ' . json_encode($validation->getErrors()));
+            throw new InvalidArgumentException('Validation failed: ' . json_encode($validation->getErrors()));
         }
         //get the valid stages for the license type
         $validStages = LicenseUtils::getLicenseRenewalStagesValues($licenseType);
@@ -415,6 +444,7 @@ class LicenseRenewalService
             $sortOrder = $filters['sortOrder'] ?? "desc";
             $isGazette = $filters['isGazette'] ?? null;
             $licenseType = $filters['license_type'] ?? null;
+            log_message('info', print_r($filters, true));
 
             //if the lisense_uuid was provided, we use it to determine the license type
             if ($license_uuid !== null && $licenseType === null) {
@@ -423,10 +453,10 @@ class LicenseRenewalService
                 if ($licenseData) {
                     $licenseType = $licenseData->type;
                 }
-            }
 
+            }
             if (empty($licenseType)) {
-                throw new \InvalidArgumentException("License type is required");
+                throw new InvalidArgumentException("License type is required");
             }
 
             $model = new LicenseRenewalModel($licenseType);
@@ -473,6 +503,7 @@ class LicenseRenewalService
             }
 
             $builder->orderBy($model->getTableName() . ".$sortBy", $sortOrder);
+            log_message('info', "Renewal query: " . $builder->getCompiledSelect(false));
             // Get total count
             $total = $builder->countAllResults(false);
             $builder->limit($per_page, $page);
@@ -617,11 +648,11 @@ class LicenseRenewalService
      * already a superintendent of any facility.
      *
      * @param string $practitionerLicenseNumber The license number of the practitioner.
-     * @return bool True if the practitioner is eligible to be a pharmacy superintendent, otherwise false.
+     * @return bool 
      * @throws \Exception If any of the eligibility criteria are not met.
      */
 
-    public function isEligiblePharmacySuperintendent(string $practitionerLicenseNumber): array
+    public function isEligiblePharmacySuperintendent(string $practitionerLicenseNumber): bool
     {
         try {
             //for a superintendent, these properties must be met:
@@ -633,27 +664,25 @@ class LicenseRenewalService
             try {
                 $practitionerDetails = LicenseUtils::getLicenseDetails($practitionerLicenseNumber, null, 'practitioners');
             } catch (Exception $e) {
-                throw new \InvalidArgumentException("Practitioner not found");
+                throw new InvalidArgumentException("Practitioner not found");
             }
             if (!array_key_exists('practitioner_type', $practitionerDetails) || strtolower($practitionerDetails['practitioner_type']) !== 'pharmacist') {
-                throw new \InvalidArgumentException("Practitioner is not on a registered pharmacist");
+                throw new PractitionerNotEligibleForSuperintendingException("Practitioner is not on a registered pharmacist");
             }
             if (!array_key_exists('register_type', $practitionerDetails) || strtolower($practitionerDetails['register_type']) !== 'permanent') {
-                throw new \InvalidArgumentException("Practitioner is not on the permanent register");
+                throw new PractitionerNotEligibleForSuperintendingException("Practitioner is not on the permanent register");
             }
             if (!array_key_exists('status', $practitionerDetails) || strtolower($practitionerDetails['status']) !== 'active') {
-                throw new \InvalidArgumentException("Practitioner is not active");
+                throw new PractitionerNotEligibleForSuperintendingException("Practitioner is not active");
             }
             $licenseType = $practitionerDetails['type'];
             $licenseNumber = $practitionerDetails['license_number'];
             $today = date('Y-m-d');
             if (!LicenseUtils::licenseIsInGoodStanding($licenseNumber, $today)) {
-                throw new \InvalidArgumentException("Practitioner is not in good standing");
+                throw new PractitionerNotEligibleForSuperintendingException("Practitioner is not in good standing");
             }
-            if ($this->isFacilitySuperintendent($licenseNumber, $licenseType)) {
-                throw new \InvalidArgumentException("Practitioner is already a facility superintendent");
-            }
-            return $practitionerDetails;
+
+            return true;
 
 
         } catch (\Throwable $th) {
@@ -733,13 +762,11 @@ class LicenseRenewalService
             $licenseDef->revalidationPeriodInYears,
             $licenseDef->revalidationMessage,
             '',
-            $permitRenewal
+            $permitRenewal,
+            $licenseDef->validRenewalStatuses
         );
-        /** @var string */
-        $isInGoodStanding = $userData->profile_data['in_good_standing'];//this will be 'In Good Standing' if the last renewal was approved and in the validity period, 'Not In Good Standing' if expired or not available, or some other status if the renewal is in progress 
 
-        $onlineApplicationsOpen = LicenseUtils::portalRenewalApplicationOpen($userData->profile_data['type'], $userData->profile_data);
-        log_message('info', 'onlineApplicationsOpen: ' . json_encode($onlineApplicationsOpen));
+        $onlineApplicationsOpen = LicenseUtils::portalRenewalApplicationOpen($licenseType, $userData->profile_data);
         //check if the person is eligible for renewal. the cpd year is the year after the last_renewal_start if it's available and is not more than a year ago
         $cpdYear = date("Y", strtotime("-1 year"));
 
@@ -779,6 +806,145 @@ class LicenseRenewalService
         return $response;
     }
 
+    /**
+     * Gets the data for the practitioner to renew a facilities license.
+     *
+     * The practitioner will be given the option to apply for renewal if they are eligible
+     * The eligibility criteria are defined in the license settings.
+     *
+     * If the practitioner is not eligible, they will be given a reason as to why they are not eligible.
+     * If the practitioner is eligible, they will be given the option to apply for renewal.
+     * If there is a renewal in progress, the practitioner will be guided as to what to do next.
+     *
+     * @param string $userId The id of the user who is logged in.
+     * @return PractitionerPortalRenewalViewModelType A view model containing the data and actions for the practitioner to renew their license.
+     */
+    public function getPractitionerPortalSuperintendingRenewal(string $userId, ?string $facilityLicenseNumber)
+    {
+
+        /**
+         * @var PractitionerPortalRenewalViewModelType
+         */
+
+        $response = new PractitionerPortalRenewalViewModelType("", null, '', []);
+        $userData = AuthHelper::getAuthUser($userId);
+        //for some institutions practitioners have to apply to be in good standing while they're still in good standing. others require that they apply after it's expired
+
+        $licenseType = "facilities";
+        $practitionerLicenseNumber = $userData->profile_data['license_number'];
+        try {
+            $isEligibleSuperintendent = $this->isEligiblePharmacySuperintendent($practitionerLicenseNumber);
+
+            if (!$isEligibleSuperintendent) {
+                return new PractitionerPortalRenewalViewModelType("", null, "You are not eligible for superintending", [], false);
+            }
+        } catch (InvalidArgumentException $e) {
+            return new PractitionerPortalRenewalViewModelType("", null, $e->getMessage(), [], false);
+        } catch (PractitionerNotEligibleForSuperintendingException $e) {
+            return new PractitionerPortalRenewalViewModelType("", null, $e->getMessage(), [], false);
+        }
+        /**
+         * @var PractitionerIsSuperintendent
+         */
+        $isFaclitySuperintendent = $this->isFacilitySuperintendent($practitionerLicenseNumber, $licenseType);
+        if ($isFaclitySuperintendent->isSuperintendent) {
+            //if already a superintendent, use the license number of the existing
+            $facilityLicenseNumber = $isFaclitySuperintendent->renewalDetails['license_number'];
+        }
+
+        if (!$facilityLicenseNumber || empty($facilityLicenseNumber)) {
+            throw new LicenseNotFoundException("No facility license number provided");//this specific message is used by UI. don't change it
+        }
+
+        $renewalModel = new LicenseRenewalModel($licenseType);
+        $lastRenewal = $renewalModel->where('license_number', $facilityLicenseNumber)->orderBy('id', 'desc')->first();
+        /** @var string */
+        $isInGoodStanding = NOT_IN_GOOD_STANDING;//this will be 'In Good Standing' if the last renewal was approved and in the validity period, 'Not In Good Standing' if expired or not available, or some other status if the renewal is in progress 
+        $lastRenewalId = null;
+        if (!$lastRenewal) {
+            $isInGoodStanding = NOT_IN_GOOD_STANDING;
+        } else {
+            $lastRenewalId = $lastRenewal['uuid'];
+            $startDate = new DateTime($lastRenewal['start_date']);
+            $expiry = $lastRenewal['expiry']
+                ? new DateTime($lastRenewal['expiry'])
+                : (new DateTime($startDate->format('Y') . '-12-31'));
+
+            $today = new DateTime();
+            $inDateRange = $today >= $startDate && $today <= $expiry;
+            if (!$inDateRange) {
+                $isInGoodStanding = NOT_IN_GOOD_STANDING;
+            } else {
+                $isInGoodStanding = $lastRenewal['status'] === APPROVED
+                    ? IN_GOOD_STANDING
+                    : $lastRenewal['status'];
+            }
+
+        }
+        //get the following settings: revalidationPeriod, cpd_category_1_cutoff, cpd_category_2_cutoff, cpd_category_3_cutoff, cpd_cutoff, revalidation_period
+        $licenseDef = Utils::getLicenseSetting($licenseType);
+        $permitRenewal = false;//TODO: check if  the user has been allowed to bypass eligibility criteria
+        //get the year for the renewal
+        $eligibilityCriteria = new LicenseRenewalEligibilityCriteriaType(
+            $licenseDef->mustBeInGoodStandingToRenew,
+            '',
+            $licenseDef->renewalCpdTotalCutoff,
+            $licenseDef->renewalCpdCategory1Cutoff,
+            $licenseDef->renewalCpdCategory2Cutoff,
+            $licenseDef->renewalCpdCategory3Cutoff,
+            $userData->profile_data['register_type'],
+            $licenseDef->revalidationPeriodInYears,
+            $licenseDef->revalidationMessage,
+            '',
+            $permitRenewal,
+            $licenseDef->validRenewalStatuses
+        );
+        //check if the person is eligible for renewal. the cpd year is the year after the last_renewal_start if it's available and is not more than a year ago
+        $cpdYear = date("Y", strtotime("-1 year"));
+        try {
+            $isEligibleForRenewal = LicenseUtils::isEligibleForRenewal($facilityLicenseNumber, $eligibilityCriteria, $cpdYear);
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+
+        $onlineApplicationsOpen = LicenseUtils::portalRenewalApplicationOpen($licenseType, $isEligibleForRenewal->licenseDetails);
+
+        $eligible = $isEligibleForRenewal->isEligible;
+        $facilityDetails = $isEligibleForRenewal->licenseDetails;
+        //and within the validity period
+        if ($isInGoodStanding === IN_GOOD_STANDING || $isInGoodStanding === NOT_IN_GOOD_STANDING) {
+            if ($eligible) {
+                //check if online applications are open
+                if ($onlineApplicationsOpen->result) {
+                    $response = new PractitionerPortalRenewalViewModelType(
+                        "fill_form",
+                        $facilityDetails,
+                        "Please fill the application form to apply to be a superintendent",
+                        $this->getPortalLicenseRenewalFormFields($licenseType, $userData->profile_data),
+                        null,
+                        $lastRenewalId
+                    );
+
+                } else {
+                    $response = new PractitionerPortalRenewalViewModelType("", $facilityDetails, $onlineApplicationsOpen->message, [], null, $lastRenewalId);
+
+                }
+            } else {
+                $response = new PractitionerPortalRenewalViewModelType("", $facilityDetails, "This facility is not eligible for renewal - " . $isEligibleForRenewal->reason, [], null, $lastRenewalId);
+
+            }
+
+        } else {
+            //there's a renewal in progress. get possible actions from the licenseDef and guide the user as to what to do next
+            $actions = LicenseUtils::getRenewalStageActions($licenseDef, $isInGoodStanding);
+            $withdrawable = LicenseUtils::isRenewalStageDeletable($licenseType, $isInGoodStanding);
+            $response = new PractitionerPortalRenewalViewModelType($actions, $facilityDetails, "Your application to be superintendent for {$lastRenewal['name']} renewal is in progress. Status: $isInGoodStanding", [], $withdrawable, $lastRenewalId);
+        }
+
+
+        return $response;
+    }
+
     // Private helper methods
 
     /**
@@ -794,16 +960,16 @@ class LicenseRenewalService
      * @param string|null $licenseType Optional. The type of license. If not provided,
      *                                 it will be determined based on the practitioner's
      *                                 details.
-     * @return bool True if the practitioner is a facility superintendent, false otherwise.
+     * @return PractitionerIsSuperintendent 
      * @throws \Throwable If an error occurs while retrieving the practitioner's details.
      */
 
-    private function isFacilitySuperintendent(string $practitionerLicenseNumber, $licenseType = null): bool
+    public function isFacilitySuperintendent(string $practitionerLicenseNumber, $licenseType = null): PractitionerIsSuperintendent
     {
         if ($licenseType == null) {
             try {
                 $practitionerDetails = LicenseUtils::getLicenseDetails($practitionerLicenseNumber, null, 'practitioners');
-                $licenseType = $practitionerDetails['license_type'];
+                $licenseType = $practitionerDetails['type'];
             } catch (\Throwable $th) {
                 throw $th;
             }
@@ -818,8 +984,12 @@ class LicenseRenewalService
         $builder->where('expiry >=', $today);
         $builder->where($subTable . '.practitioner_in_charge', $practitionerLicenseNumber);
         $builder->join($subTable, $subTable . '.renewal_id = ' . $renewalModel->getTableName() . '.id');
-        $result = $builder->get()->getResult();
-        return count($result) > 0;
+        $result = $builder->get()->getResultArray();
+
+        if (count($result) > 0) {
+            return new PractitionerIsSuperintendent(true, $result[0]);
+        }
+        return new PractitionerIsSuperintendent(false, []);
 
     }
 

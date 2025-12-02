@@ -1666,6 +1666,9 @@
             "renewalCpdTotalCutoff": 0,
             "daysFromRenewalExpiryToOpenApplication": -90,
             "revalidationPeriodInYears": 3,
+            "validRenewalStatuses": [
+                "Active"
+            ],
             "revalidationMessage": "You are required to validate your data before renewing your license",
             "renewalJsonFields": [
                 "qualifications"
@@ -2585,6 +2588,7 @@
             "renewalCpdTotalCutoff": 0,
             "daysFromRenewalExpiryToOpenApplication": 0,
             "revalidationPeriodInYears": 3,
+            "validRenewalStatuses": [],
             "revalidationMessage": "You are required to validate your data before renewing your license",
             "detailsPageHeaderTabs": [
                 {
@@ -5398,6 +5402,10 @@
         {
             "value": "housemanship_facility",
             "label": "Accredited Housemanship Facilities"
+        },
+        {
+            "value": "training_institution",
+            "label": "Accredited Training Institutions"
         },
         {
             "value": "guest",

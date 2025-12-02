@@ -29,6 +29,9 @@ class UsersModel extends UserModel implements TableDisplayInterface
     public ?string $profile_table;
     public ?string $profile_table_uuid;
 
+    public ?string $institution_uuid;
+    public ?string $institution_type;
+
     public string $display_name;
 
     public ?string $status_message;
@@ -118,6 +121,8 @@ class UsersModel extends UserModel implements TableDisplayInterface
         'two_fa_deadline',
         'profile_table',
         'profile_table_uuid',
+        'institution_uuid',
+        'institution_type',
         'email_address'
     ];
 
@@ -132,6 +137,8 @@ class UsersModel extends UserModel implements TableDisplayInterface
         'two_fa_deadline',
         'profile_table',
         'profile_table_uuid',
+        'institution_uuid',
+        'institution_type',
         'email_address'
     ];
 

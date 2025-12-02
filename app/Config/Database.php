@@ -32,7 +32,7 @@ class Database extends Config
         'database' => '',
         'DBDriver' => 'MySQLi',
         'DBPrefix' => '',
-        'pConnect' => true,
+        'pConnect' => false,
         'DBDebug' => true,
         'charset' => 'utf8',
         'DBCollat' => 'utf8_general_ci',

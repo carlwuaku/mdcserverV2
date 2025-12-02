@@ -62,9 +62,6 @@ class ApplicationService
             $data['status'] = $template->initialStage;
         }
 
-        // Process initial stage actions
-        $this->processInitialStageActions($template, $data);
-
         // Save application
         $model = new ApplicationsModel();
         $insertId = $model->insert((object) $data);
@@ -72,6 +69,10 @@ class ApplicationService
         // Get the created application to retrieve its UUID
         $createdApplication = $model->find($insertId);
         $applicationUuid = is_array($createdApplication) ? $createdApplication['uuid'] : $createdApplication->uuid;
+        $payload['purpose_table'] = "application_forms";
+        $payload['purpose_table_uuid'] = $applicationUuid;
+        // Process initial stage actions
+        $this->processInitialStageActions($template, $payload);
 
         // Create initial timeline entry for application creation
         $this->timelineModel->createTimelineEntry(

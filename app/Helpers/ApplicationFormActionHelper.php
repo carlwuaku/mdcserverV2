@@ -20,6 +20,8 @@ class ApplicationFormActionHelper extends Utils
      */
     public static function runAction(ApplicationStageType $action, array $data)
     {
+        $startTime = microtime(true);
+
         try {
             $result = [];
             //get the license types so that if it's an internal_api_call, we check if it's creating or updating a license
@@ -45,11 +47,46 @@ class ApplicationFormActionHelper extends Utils
                 default:
                     $result = $data;
             }
+
+            // Calculate execution time
+            $executionTimeMs = (int) ((microtime(true) - $startTime) * 1000);
+
+            // Log successful action to audit trail
+            try {
+                $actionsAuditModel = new \App\Models\ActionsAuditModel();
+                $applicationUuid = $data['uuid'] ?? $data['application_uuid'] ?? null;
+                $userId = auth()->user()->id ?? null;
+
+                $actionsAuditModel->logSuccessfulAction(
+                    $action,
+                    $data,
+                    $result,
+                    $executionTimeMs,
+                    $applicationUuid,
+                    $userId
+                );
+            } catch (\Throwable $logError) {
+                // If logging fails, just log it - don't prevent the action from completing
+                log_message('error', 'Failed to log successful action to audit: ' . $logError->getMessage());
+            }
+
             Events::trigger(EVENT_APPLICATION_FORM_ACTION_COMPLETED, $action, $data, $result);
             return $result;
         } catch (\Throwable $th) {
             log_message('error', 'Error running action: ' . $th->getMessage());
-            //log this to the actions database
+
+            // Log this to the failed_actions database
+            try {
+                $failedActionsModel = new \App\Models\FailedActionsModel();
+                $applicationUuid = $data['uuid'] ?? $data['application_uuid'] ?? null;
+                $userId = auth()->user()->id ?? null;
+
+                $failedActionsModel->logFailedAction($action, $data, $th, $applicationUuid, $userId);
+            } catch (\Throwable $logError) {
+                // If logging fails, just log it - don't prevent the original exception from being thrown
+                log_message('error', 'Failed to log action failure to database: ' . $logError->getMessage());
+            }
+
             throw $th;
         }
 
@@ -75,22 +112,22 @@ class ApplicationFormActionHelper extends Utils
      */
     private static function runPayment(ApplicationStageType $action, array $data)
     {
-        if ($action->type == 'create_invoice') {
-            //convert to criteriatype array
-            $criteria = array_map(function ($criterion) {
-                return CriteriaType::fromArray($criterion);
-            }, $action->criteria);
-            if (CriteriaType::matchesCriteria($data, $criteria)) {
-                return self::generateInvoice($action, $data);
-            } else {
-                // throw new \InvalidArgumentException('No matching criteria found for payment action: ' . $action->type);
-                return [];
-            }
+        //convert to criteriatype array
+        $criteria = array_map(function ($criterion) {
+            return CriteriaType::fromArray($criterion);
+        }, $action->criteria);
 
+        if (!CriteriaType::matchesCriteria($data, $criteria)) {
+            return [];
+        }
+
+        if ($action->type == 'create_invoice') {
+            return self::generateInvoice($action, $data);
+        } elseif ($action->type == 'create_custom_invoice') {
+            return self::generateCustomInvoice($action, $data);
         } else {
             throw new \InvalidArgumentException('Unsupported payment action type: ' . $action->type);
         }
-
     }
 
     private static function runInternalApiCall($action, $data)
@@ -148,7 +185,8 @@ class ApplicationFormActionHelper extends Utils
         $subject = $templateModel->process($action->config['subject'], $data);
         $emailConfig = new EmailConfig($content, $subject, $data['email']);
 
-        EmailHelper::sendEmail($emailConfig);
+        $result = EmailHelper::sendEmail($emailConfig);
+        $data['email_sent'] = $result;
         return $data;
     }
 
@@ -185,6 +223,127 @@ class ApplicationFormActionHelper extends Utils
             return $paymentsService->generatePresetInvoiceForSingleUuid($purpose, $uuid, $dueDate, $additionalItems);
         } catch (\Exception $e) {
             log_message('error', 'Error generating invoice: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * Generate a custom invoice with items defined in the action config.
+     * Required form data fields: email, phone_number (or phone), last_name, unique_id (or registration_number)
+     * Optional form data fields: first_name, description
+     *
+     * Action config should contain:
+     * - invoice_items: array of {service_code: string, quantity: number}
+     * - payment_methods: array of payment method names (optional, defaults to app settings)
+     * - description: invoice description template (optional, supports {{field}} placeholders)
+     * - due_date_days: number of days from now for due date (optional, defaults to 30)
+     *
+     * @param ApplicationStageType $action
+     * @param array $data Form data
+     * @return array{invoiceData: array, invoiceItems: array, paymentOptions: array}
+     */
+    private static function generateCustomInvoice(ApplicationStageType $action, array $data)
+    {
+        try {
+            $paymentsService = \Config\Services::paymentsService();
+            $feesModel = new \App\Models\Payments\FeesModel();
+
+            // Extract payer details from form data
+            $unique_id = $data['unique_id'] ?? $data['registration_number'] ?? null;
+            $email = $data['email'] ?? null;
+            $phone_number = $data['phone_number'] ?? $data['phone'] ?? null;
+            $last_name = $data['last_name'] ?? $data['surname'] ?? null;
+            $first_name = $data['first_name'] ?? $data['first_names'] ?? '';
+            log_message('info', "Generating invoice for unique_id: $unique_id, email: $email, phone_number: $phone_number, last_name: $last_name, first_name: $first_name");
+            if (!$unique_id || !$email || !$phone_number || !$last_name) {
+                throw new \InvalidArgumentException('Missing required fields: unique_id, email, phone_number, and last_name are required');
+            }
+
+            // Get invoice items from config
+            $invoiceItemsConfig = $action->config['payment_invoice_items'] ?? [];
+            if (empty($invoiceItemsConfig)) {
+                throw new \InvalidArgumentException('No invoice items defined in action config');
+            }
+
+            // Build invoice items from service codes
+            $invoiceItems = [];
+            foreach ($invoiceItemsConfig as $itemConfig) {
+                $serviceCode = $itemConfig['service_code'] ?? null;
+                $quantity = $itemConfig['quantity'] ?? 1;
+
+                if (!$serviceCode) {
+                    continue;
+                }
+
+                // Look up fee by service code
+                $fee = $feesModel->where('service_code', $serviceCode)->first();
+                if (!$fee) {
+                    log_message('warning', "Fee not found for service code: $serviceCode");
+                    continue;
+                }
+
+                $qty = (int) $quantity;
+                $unitPrice = (float) $fee['rate'];
+                $invoiceItems[] = new \App\Helpers\Types\PaymentInvoiceItemType(
+                    invoice_uuid: null,
+                    service_code: $serviceCode,
+                    name: $fee['name'],
+                    quantity: $qty,
+                    unit_price: $unitPrice,
+                    line_total: $qty * $unitPrice
+                );
+            }
+
+            if (empty($invoiceItems)) {
+                throw new \InvalidArgumentException('No valid invoice items could be created from config');
+            }
+
+            // Get payment methods from config or use defaults
+            $paymentMethods = $action->config['payment_methods'] ?? null;
+            if (!$paymentMethods) {
+                $paymentSettings = self::getAppSettings('paymentSettings');
+                $paymentMethods = array_keys($paymentSettings['paymentMethods'] ?? []);
+            }
+
+            $paymentOptions = array_map(function ($method) {
+                return new \App\Helpers\Types\InvoicePaymentOptionType(
+                    invoiceUuid: null,
+                    methodName: $method
+                );
+            }, $paymentMethods);
+            // Calculate due date
+            $dueDateDays = $action->config['payment_due_date_days'] ?? 30;
+            $dueDate = date("Y-m-d", strtotime("+{$dueDateDays} days"));
+
+            // Build description from template or use default
+            $description = $action->config['payment_description'] ?? 'Invoice for {{first_name}} {{last_name}}';
+            $templateEngine = new TemplateEngineHelper();
+            $description = $templateEngine->process($description, $data);
+
+            // Create invoice
+            $invoiceData = [
+                'unique_id' => $unique_id,
+                'purpose' => $action->config['payment_purpose'] ?? 'Invoice',
+                'due_date' => $dueDate,
+                'last_name' => $last_name,
+                'first_name' => $first_name,
+                'email' => $email,
+                'phone_number' => $phone_number,
+                'description' => $description,
+                'purpose_table' => $data['purpose_table'] ?? null,
+                'purpose_table_uuid' => $data['purpose_table_uuid'] ?? null
+            ];
+
+            $invoiceId = $paymentsService->createInvoice($invoiceData, $invoiceItems, $paymentOptions);
+
+            return [
+                'invoiceId' => $invoiceId,
+                'invoiceData' => $invoiceData,
+                'invoiceItems' => $invoiceItems,
+                'paymentOptions' => $paymentOptions
+            ];
+        } catch (\Exception $e) {
+            log_message('error', 'Error generating custom invoice: ' . $e->getMessage());
             throw $e;
         }
     }

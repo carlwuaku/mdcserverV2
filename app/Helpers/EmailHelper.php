@@ -157,6 +157,10 @@ class EmailHelper extends Utils
     {
         $emailQueueModel = new \App\Models\EmailQueueModel();
         $emailQueueLogModel = new \App\Models\EmailQueueLogModel();
+        $senderName = self::getAppSettings('defaultEmailSenderName');
+        $sender = self::getAppSettings('defaultEmailSenderEmail');
+        $emailConfig->senderName = $senderName;
+        $emailConfig->sender = $sender;
         $method = getenv('EMAIL_METHOD');
         $result = null;
         //if not production environment, only log the email and do not send it if it's not in the list of allowed emails from config
@@ -217,7 +221,7 @@ class EmailHelper extends Utils
                 $emailQueueModel->updateStatus($emailId, 'failed', $e->getMessage());
                 $emailQueueLogModel->logStatusChange($emailId, 'failed', $e->getMessage());
             }
-
+            throw $e;
         }
         return true;
     }

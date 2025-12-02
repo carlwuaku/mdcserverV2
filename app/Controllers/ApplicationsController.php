@@ -2,6 +2,8 @@
 
 namespace App\Controllers;
 
+use App\Exceptions\ApplicationFormCriteriaNotMatchedException;
+use App\Exceptions\ApplicationFormOutOfDateRangeException;
 use App\Helpers\AuthHelper;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
@@ -10,7 +12,8 @@ use App\Services\ApplicationService;
 use App\Services\ApplicationTemplateService;
 use App\Helpers\CacheHelper;
 use App\Helpers\Utils;
-
+use App\Helpers\ApplicationFormActionHelper;
+use App\Helpers\Types\CriteriaType;
 
 class ApplicationsController extends ResourceController
 {
@@ -58,8 +61,37 @@ class ApplicationsController extends ResourceController
         try {
             $payload = (array) $this->request->getVar();
             $userId = auth("tokens")->id();
-            $uniqueId = AuthHelper::getAuthUserUniqueId($userId);
+            $user = AuthHelper::getAuthUser($userId);
+            $isAdmin = $user->isAdmin();
+            $userData = $isAdmin ? (array) $user : array_merge((array) $user, property_exists($user, 'profile_data') ? $user->profile_data : []);
+            log_message("info", "user data: " . print_r($userData, true));
+            $uniqueId = $user->username;
             $payload['applicant_unique_id'] = $uniqueId;
+            $template = ApplicationFormActionHelper::getApplicationTemplate($formType);
+            if (!$template) {
+                throw new \InvalidArgumentException("Form template not found");
+            }
+
+            if (!empty($data['open_date']) && !empty($data['close_date'])) {
+                $currentDate = date("Y-m-d");
+                if ($currentDate < $template->open_date || $currentDate > $template->close_date) {
+                    throw new ApplicationFormOutOfDateRangeException("Application form is closed at this time");
+                }
+
+            }
+            $applicationCriteria = property_exists($template, "criteria") && $template->criteria ? array_map(fn($c) => CriteriaType::fromArray($c), json_decode($template->criteria, true)) : [];
+            if (!$isAdmin && !CriteriaType::matchesCriteria($userData, $applicationCriteria)) {
+                throw new ApplicationFormCriteriaNotMatchedException("user {$user->id} criteria does not match application template criteria for {$formType} template");
+            }
+            //if not an admin, and these fields are not in the payload, add them. this is for the actions that might be ran
+
+            //unique_id, email, phone_number, and last_name
+            $payload['unique_id'] = $uniqueId;
+            $payload['email'] = array_key_exists('email_address', $userData) ? $userData['email_address'] : $userData['email_address'];
+            $payload['phone_number'] = array_key_exists('phone_number', $userData) ? $userData['phone_number'] : $user->phone;
+            $payload['last_name'] = array_key_exists('last_name', $userData) ? $userData['last_name'] : "-";
+            $payload['first_name'] = array_key_exists('first_name', $userData) ? $userData['first_name'] : "-";
+
             $result = $this->applicationService->createApplication($formType, $payload);
 
             // Invalidate cache
@@ -426,11 +458,10 @@ class ApplicationsController extends ResourceController
     {
         try {
             $userId = auth("tokens")->id();
-            $userData = AuthHelper::getAuthUser($userId);
             $filters = $this->extractRequestFilters();
             $cacheKey = Utils::generateHashedCacheKey('app_templates_', array_merge($filters, ['userId' => $userId]));
-            return CacheHelper::remember($cacheKey, function () use ($userData, $filters) {
-                $result = $this->templateService->getApplicationTemplates($userData, $filters);
+            return CacheHelper::remember($cacheKey, function () use ($filters) {
+                $result = $this->templateService->getApplicationTemplates($filters);
 
                 return $this->respond($result, ResponseInterface::HTTP_OK);
             });
@@ -444,12 +475,18 @@ class ApplicationsController extends ResourceController
     public function getApplicationTemplateForFilling(string $uuid)
     {
         try {
+            $userId = auth("tokens")->id();
+            $userData = AuthHelper::getAuthUser($userId);
             $cacheKey = Utils::generateHashedCacheKey('app_template_filling_', ['uuid' => $uuid]);
-            return CacheHelper::remember($cacheKey, function () use ($uuid) {
-                $result = $this->templateService->getApplicationTemplateForFilling($uuid);
+            return CacheHelper::remember($cacheKey, function () use ($uuid, $userData) {
+                $result = $this->templateService->getApplicationTemplateForFilling($uuid, $userData);
                 return $this->respond(["data" => $result], ResponseInterface::HTTP_OK);
             });
 
+        } catch (ApplicationFormCriteriaNotMatchedException $e) {
+            return $this->respond(['message' => "You are not eligible to apply for this form"], ResponseInterface::HTTP_BAD_REQUEST);
+        } catch (ApplicationFormOutOfDateRangeException $e) {
+            return $this->respond(['message' => "Application is not open at this time"], ResponseInterface::HTTP_BAD_REQUEST);
         } catch (\RuntimeException $e) {
             return $this->respond(['message' => $e], ResponseInterface::HTTP_NOT_FOUND);
         } catch (\Throwable $e) {
@@ -487,6 +524,7 @@ class ApplicationsController extends ResourceController
             // Invalidate cache
             $this->invalidateCache('app_templates_');
             $this->invalidateCache('app_config_');
+            $this->invalidateCache('app_template_');
 
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
@@ -509,6 +547,7 @@ class ApplicationsController extends ResourceController
             // Invalidate cache
             $this->invalidateCache('app_templates_');
             $this->invalidateCache('app_config_');
+            $this->invalidateCache('app_template_');
 
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
@@ -530,6 +569,7 @@ class ApplicationsController extends ResourceController
             // Invalidate cache
             $this->invalidateCache('app_templates_');
             $this->invalidateCache('app_config_');
+            $this->invalidateCache('app_template_');
 
             return $this->respond($result, ResponseInterface::HTTP_OK);
 

@@ -4,7 +4,7 @@
     "appLongName": "Medical & Dental Council Ghana",
     "logo": "assets/images/logo.png",
     "defaultEmailSenderEmail": "info@mdcghana.org",
-    "defaultEmailSenderName": "MDC Ghana",
+    "defaultEmailSenderName": "",
     "sidebarMenu": [
         {
             "title": "Dashboard",

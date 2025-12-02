@@ -1,5 +1,6 @@
 <?php
 namespace App\Helpers;
+use App\Exceptions\DefaultInvoiceFeeQuantityNotSetException;
 use App\Helpers\Types\PaymentInvoiceItemType;
 class PaymentUtils extends Utils
 {
@@ -54,13 +55,17 @@ class PaymentUtils extends Utils
         //if no matching criteria is found, we use the default invoice items. that's one with no criteria
         foreach ($defaultInvoiceItems as $defaultInvoiceItem) {
             if (!isset($defaultInvoiceItem["criteria"]) || count($defaultInvoiceItem["criteria"]) == 0) {
+                log_message("info", "No criteria for default invoice item: " . json_encode($defaultInvoiceItem));
                 $defaultServiceCodes = $defaultInvoiceItem["feeServiceCodes"];
                 continue;
             }
             $criteria = $defaultInvoiceItem["criteria"];
             //check if the object matches the criteria
+            log_message("info", "Checking criteria for default invoice item: " . json_encode($defaultInvoiceItem));
+
             if (self::criteriaMatch($criteria, $object)) {
                 $serviceCodes = $defaultInvoiceItem["feeServiceCodes"];
+                log_message("info", "Matched criteria for default invoice item: " . json_encode($defaultInvoiceItem));
                 break;
             }
         }
@@ -88,7 +93,8 @@ class PaymentUtils extends Utils
                 throw new \InvalidArgumentException("Invalid fee code: {$serviceCode['service_code']}");
             }
             $rate = $fee['rate'];
-            $total = $serviceCode['quantity'] * $rate;
+            $quantity = self::parseDefaultFeeQuantity($serviceCode['quantity'], $object);
+            $total = $quantity * $rate;
             $fees[] = new PaymentInvoiceItemType(null, $serviceCode['service_code'], $fee['name'], $serviceCode['quantity'], $rate, $total);
         }
         return $fees;
@@ -102,5 +108,34 @@ class PaymentUtils extends Utils
     {
         $model = new \App\Models\Payments\InvoiceModel();
         return $model->where("uuid", $uuid)->first();
+    }
+
+    /**
+     * Parses the default fee quantity given a string or int and an object.
+     * If the quantity is an int, it is returned as is.
+     * If the quantity is a string, it is checked if it is a field in the object.
+     * If it is, and the value is an array, the count of the array is returned.
+     * If it is, and the value is not an array, the value is cast to an int and returned.
+     * If the quantity is not an int or a string, or if it is a string but not a field in the object, an exception is thrown.
+     * @param string|int $quantity The default fee quantity
+     * @param array $object The object to check for the default fee quantity field
+     * @return int The parsed default fee quantity
+     * @throws \App\Exceptions\DefaultInvoiceFeeQuantityNotSetException If the default fee quantity is invalid
+     */
+    private static function parseDefaultFeeQuantity(string|int $quantity, array $object)
+    {
+        //if it's an int, return it. if its a string, check if it's a field in the object. if it is, and the value is an array return the count of the array. else return the value if it can be cast to an int. else throw an exception
+        if (is_int($quantity)) {
+            return $quantity;
+        }
+        if (is_string($quantity)) {
+            if (isset($object[$quantity])) {
+                if (is_array($object[$quantity])) {
+                    return count($object[$quantity]);
+                }
+                return (int) $object[$quantity];
+            }
+        }
+        throw new DefaultInvoiceFeeQuantityNotSetException("Invalid default fee quantity: $quantity");
     }
 }

@@ -12,11 +12,11 @@ class PractitionerPortalRenewalViewModelType
      */
     public array $formFields;
 
-    public bool $withdrawable;
+    public ?bool $withdrawable;
 
     public ?string $renewalUuid;
 
-    public function __construct(string $action, $data, string $message, array $formFields, bool $withdrawable = false, ?string $renewalUuid = null)
+    public function __construct(string $action, $data, string $message, array $formFields, ?bool $withdrawable = null, ?string $renewalUuid = null)
     {
         $this->action = $action;
         $this->data = $data;

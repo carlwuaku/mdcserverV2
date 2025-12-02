@@ -2,6 +2,7 @@
 
 use App\Controllers\ActivitiesController;
 use App\Controllers\AdminController;
+use App\Controllers\AppSettingsController;
 use App\Controllers\AssetController;
 use App\Controllers\AuthController;
 use App\Controllers\CpdController;
@@ -33,6 +34,15 @@ $routes->group("portal", ["namespace" => "App\Controllers"], function (RouteColl
     $routes->post("send-reset-token", [AuthController::class, "sendResetToken"]);
     $routes->post("reset-password", [AuthController::class, "resetPassword"]);
     $routes->post("login", [AuthController::class, "mobileLogin"]);
+
+    // Guest signup endpoints
+    $routes->post("guest/signup", [AuthController::class, "guestSignup"]);
+    $routes->post("guest/verify-email", [AuthController::class, "verifyGuestEmail"]);
+    $routes->post("guest/resend-verification", [AuthController::class, "resendVerificationCode"]);
+    $routes->post("guest/request-verification", [AuthController::class, "requestVerificationByEmail"]);
+    $routes->post("guest/complete-signup", [AuthController::class, "completeGuestSignup"]);
+
+
     $routes->post("applications/details/(:segment)", [ApplicationsController::class, "createApplicationFromPortal"], ["filter" => ["apiauth"]]);
     $routes->get("applications/details", [ApplicationsController::class, "getApplicationsByUser"], ["filter" => ["apiauth"]]);
     $routes->post("assets/new/(:segment)", [AssetController::class, "upload/$1"], ["filter" => ["apiauth"]]);
@@ -47,9 +57,15 @@ $routes->group("portal", ["namespace" => "App\Controllers"], function (RouteColl
     $routes->get("applications/templates/(:segment)", [ApplicationsController::class, "getApplicationTemplateForFilling/$1"], ["filter" => ["apiauth"]]);
     $routes->get("applications/templates", [ApplicationsController::class, "getApplicationTemplates"], ["filter" => ["apiauth"]]);
     $routes->get("renewals", [LicensesController::class, "getRenewalsByLicense"], ["filter" => ["apiauth"]]);
+    $routes->get("renewals/superintending/history", [LicensesController::class, "getSuperintendingHistory"], ["filter" => ["apiauth"]]);
+    $routes->get("renewals/superintending/eligibility", [LicensesController::class, "isPharmacistEligiblePharmacySuperintendent"], ["filter" => ["apiauth"]]);
+    $routes->get("renewals/superintending/form", [LicensesController::class, "getPractitionerSuperintendingRenewalFormFields"], ["filter" => ["apiauth"]]);
+    $routes->get("renewals/superintending/check", [LicensesController::class, "isPharmacistPharmacySuperintendent"], ["filter" => ["apiauth"]]);
+
     $routes->get("renewals/form", [LicensesController::class, "getPractitionerRenewalFormFields"], ["filter" => ["apiauth"]], );
     $routes->get("renewals/(:segment)/print", [LicensesController::class, "printRenewalByLicense/$1"], ["filter" => ["apiauth"]], );
     $routes->post("renewals", [LicensesController::class, "createRenewalByLicense"], ["filter" => ["apiauth"]]);
+    $routes->post("renewals/superintending", [LicensesController::class, "createSuperintendingRenewalByLicense"], ["filter" => ["apiauth"]]);
     $routes->delete("renewals/(:segment)", [LicensesController::class, "deleteRenewalByLicense/$1"], ["filter" => ["apiauth"]]);
     $routes->get("payment/external-invoice/(:segment)", [PaymentsController::class, "getInvoiceByExternal/$1"], ["filter" => ["apiauth"]], );
     $routes->get("payment/invoices", [PaymentsController::class, "getLicenseInvoices"], ["filter" => ["apiauth"]], );
@@ -130,6 +146,7 @@ $routes->group("admin", ["namespace" => "App\Controllers", "filter" => "apiauth"
     $routes->post("rolePermissions", [AuthController::class, "addRolePermission"], ["filter" => ["hasPermission:Create_Or_Delete_User_Permissions"]]);
     $routes->delete("rolePermissions/(:segment)/(:segment)", [AuthController::class, "deleteRolePermission/$1/$2"], ["filter" => ["hasPermission:Create_Or_Delete_User_Permissions"]]);
     $routes->post("users", [AuthController::class, "createUser"], ["filter" => ["hasPermission:Create_Or_Edit_User"]]);
+    $routes->post("users/institution", [AuthController::class, "createInstitutionUser"], ["filter" => ["hasPermission:Create_Or_Edit_User"]]);
     $routes->put("users/(:num)", [AuthController::class, "updateUser/$1"], ["filter" => ["hasPermission:Create_Or_Edit_User"]]);
     $routes->put("users/(:num)/deactivate", [AuthController::class, "banUser/$1"], ["filter" => ["hasPermission:Activate_Or_Deactivate_User"]]);
     $routes->put("users/(:num)/activate", [AuthController::class, "unbanUser/$1"], ["filter" => ["hasPermission:Activate_Or_Deactivate_User"]]);
@@ -147,7 +164,43 @@ $routes->group("admin", ["namespace" => "App\Controllers", "filter" => "apiauth"
     $routes->post("users/verify-google-auth", [AuthController::class, "verifyAndEnableGoogleAuth"], ["filter" => ["hasPermission:Create_Or_Edit_User_Role"]]);
     $routes->post("users/non-admin", [AuthController::class, "createNonAdminUsers"], ["filter" => ["hasPermission:Create_Or_Edit_User"]]);
     $routes->get("users/types", [AuthController::class, "getUserTypes"], ["filter" => ["hasPermission:Create_Or_Edit_User"]]);
+    // Guest management endpoints (admin)
+    $routes->get("guests", [AuthController::class, "getRegisteredGuests"], ["filter" => ["hasPermission:View_Users"]]);
+    $routes->post("guests/verify", [AuthController::class, "verifyGuests"], ["filter" => ["hasPermission:Create_Or_Edit_User"]]);
+    $routes->post("guests/unverify", [AuthController::class, "unverifyGuests"], ["filter" => ["hasPermission:Create_Or_Edit_User"]]);
+    $routes->delete("guests/(:segment)", [AuthController::class, "deleteGuest/$1"], ["filter" => ["hasPermission:Delete_User"]]);
 
+});
+
+// App Settings Management Routes
+$routes->group("admin/app-settings", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
+    $routes->get("", [AppSettingsController::class, "index"], ["filter" => ["hasPermission:View_Settings"]]);
+    $routes->get("keys", [AppSettingsController::class, "getAvailableKeys"], ["filter" => ["hasPermission:View_Settings"]]);
+    $routes->get("(:segment)", [AppSettingsController::class, "show/$1"], ["filter" => ["hasPermission:View_Settings"]]);
+    $routes->post("", [AppSettingsController::class, "create"], ["filter" => ["hasPermission:Modify_Settings"]]);
+    $routes->put("(:num)", [AppSettingsController::class, "update/$1"], ["filter" => ["hasPermission:Modify_Settings"]]);
+    $routes->delete("(:num)", [AppSettingsController::class, "delete/$1"], ["filter" => ["hasPermission:Modify_Settings"]]);
+    $routes->post("clear-cache", [AppSettingsController::class, "clearCache"], ["filter" => ["hasPermission:Modify_Settings"]]);
+});
+
+// Failed Actions Management Routes
+$routes->group("admin/failed-actions", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
+    $routes->get("", [\App\Controllers\FailedActionsController::class, "index"], ["filter" => ["hasPermission:View_Settings"]]);
+    $routes->get("stats", [\App\Controllers\FailedActionsController::class, "stats"], ["filter" => ["hasPermission:View_Settings"]]);
+    $routes->get("(:num)", [\App\Controllers\FailedActionsController::class, "show/$1"], ["filter" => ["hasPermission:View_Settings"]]);
+    $routes->post("(:num)/retry", [\App\Controllers\FailedActionsController::class, "retry/$1"], ["filter" => ["hasPermission:Modify_Settings"]]);
+    $routes->delete("(:num)", [\App\Controllers\FailedActionsController::class, "delete/$1"], ["filter" => ["hasPermission:Modify_Settings"]]);
+    $routes->delete("cleanup", [\App\Controllers\FailedActionsController::class, "cleanup"], ["filter" => ["hasPermission:Modify_Settings"]]);
+});
+
+// Actions Audit Routes
+$routes->group("admin/actions-audit", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
+    $routes->get("", [\App\Controllers\ActionsAuditController::class, "index"], ["filter" => ["hasPermission:View_Settings"]]);
+    $routes->get("stats", [\App\Controllers\ActionsAuditController::class, "stats"], ["filter" => ["hasPermission:View_Settings"]]);
+    $routes->get("application/(:segment)", [\App\Controllers\ActionsAuditController::class, "byApplication/$1"], ["filter" => ["hasPermission:View_Settings"]]);
+    $routes->get("(:num)", [\App\Controllers\ActionsAuditController::class, "show/$1"], ["filter" => ["hasPermission:View_Settings"]]);
+    $routes->delete("(:num)", [\App\Controllers\ActionsAuditController::class, "delete/$1"], ["filter" => ["hasPermission:Modify_Settings"]]);
+    $routes->delete("cleanup", [\App\Controllers\ActionsAuditController::class, "cleanup"], ["filter" => ["hasPermission:Modify_Settings"]]);
 });
 
 $routes->group("practitioners", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {

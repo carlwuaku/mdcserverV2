@@ -105,7 +105,7 @@ define("QRCODES_ASSETS_FOLDER", "qr_codes");
 define("UPLOADS_FOLDER", "uploads");
 define("USERS_ASSETS_FOLDER", "users");
 define("PRIORITY_FIELDS", ["picture", "license_number", "name", "first_name", "middle_name", "last_name", "status", "facility_type", "email", "phone_number"]);
-define("USER_TYPES", ['admin', 'license', 'cpd', 'student_index', 'guest', 'housemanship_facility', 'exam_candidate']);
+define("USER_TYPES", ['admin', 'license', 'cpd', 'student_index', 'guest', 'housemanship_facility', 'exam_candidate', 'training_institution']);
 define("USER_TYPES_LICENSED_USERS", ['exam_candidate', 'license']);
 define("DATABASE_DATE_FIELDS", [
     'date_of_birth',
@@ -155,6 +155,8 @@ define("SETTING_USER_HOUSEMANSHIP_FACILITY_ADDED_EMAIL_TEMPLATE", "General.user_
 define("SETTING_USER_HOUSEMANSHIP_FACILITY_ADDED_EMAIL_SUBJECT", "General.user_housemanship_facility_added_email_subject");
 define("SETTING_USER_EXAM_CANDIDATE_ADDED_EMAIL_TEMPLATE", "General.user_exam_candidate_added_email_template");
 define("SETTING_USER_EXAM_CANDIDATE_ADDED_EMAIL_SUBJECT", "General.user_exam_candidate_added_email_subject");
+define("SETTING_USER_TRAINING_INSTITUTION_ADDED_EMAIL_TEMPLATE", "General.user_training_institution_added_email_template");
+define("SETTING_USER_TRAINING_INSTITUTION_ADDED_EMAIL_SUBJECT", "General.user_training_institution_added_email_subject");
 define("SETTING_EMAIL_HEADER_AND_FOOTER_TEMPLATE", "General.email_header_and_footer_template");
 define("SETTING_PASSWORD_RESET_TOKEN_TIMEOUT", "General.password_reset_token_timeout");
 define('SETTING_PORTAL_EDITABLE_FIELDS', 'portal_editable_fields');//for now we're not adding the class (General) to the key. we'll use the settings model directly for it
@@ -180,4 +182,8 @@ define("APPROVED", "Approved");
 define("PAYMENT_METHOD_IN_PERSON", "In-Person");
 define("PAYMENT_METHOD_GHANA_GOV_PLATFORM", "Ghana.gov Platform");
 define("ALL", "ALL");
+define("SETTING_USER_EMAIL_VERIFICATION_SUBJECT", "General.user_email_verification_subject");
+define("DEFAULT_USER_EMAIL_VERIFICATION_SUBJECT", "Email Verification");
+define("SETTING_USER_EMAIL_VERIFICATION_TEMPLATE", "General.user_email_verification_template");
+define("DEFAULT_USER_EMAIL_VERIFICATION_TEMPLATE", "<p>[name]</p> <p>Please verify your email address by entering the verification code below:  Verification Code: [token]</p><p>  This code will expire in 24 hours.</p><p>  If you did not create an account, please ignore this email.</p><p>  For security reasons, do not share this code with anyone.</p>");
 
