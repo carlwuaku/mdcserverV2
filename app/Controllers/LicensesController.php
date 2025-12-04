@@ -697,7 +697,14 @@ class LicensesController extends ResourceController
                     'practitioner_in_charge',
                     'practitioner_in_charge_name',
                     'name',
-                    'business_type'
+                    'business_type',
+                    'postal_address',
+                    'phone',
+                    'email',
+                    'region',
+                    'district',
+                    'town',
+                    'suburb'
                 ];
                 foreach ($result['data'] as $renewal) {
                     $renewal->deletable = LicenseUtils::isRenewalStageDeletable($renewal->license_type, $renewal->status);
@@ -709,7 +716,7 @@ class LicensesController extends ResourceController
 
                 }
                 //set the display fields
-                $result['displayColumns'] = ['license_number', 'start_date', 'expiry', 'status'];
+                $result['displayColumns'] = ['name', 'business_type', 'license_number', 'start_date', 'expiry', 'status', 'region', 'district', 'town', 'suburb', 'email', 'phone'];
                 return $this->respond($result, ResponseInterface::HTTP_OK);
             }, 900);
 

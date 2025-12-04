@@ -2763,6 +2763,7 @@
                 "Pending Payment": {
                     "label": "Pending Payment",
                     "allowedTransitions": [
+                        "Pending Regional Approval",
                         "Pending Authorization"
                     ],
                     "fields": [],
@@ -2888,6 +2889,19 @@
                             ],
                             "type": "select",
                             "value": "1",
+                            "required": true,
+                            "api_url": "",
+                            "apiKeyProperty": "",
+                            "apiLabelProperty": "",
+                            "apiType": ""
+                        },
+                        {
+                            "label": "Batch number",
+                            "name": "batch_number",
+                            "hint": "",
+                            "options": [],
+                            "type": "text",
+                            "value": "",
                             "required": true,
                             "api_url": "",
                             "apiKeyProperty": "",
@@ -6285,6 +6299,10 @@
                             {
                                 "service_code": "PC0306",
                                 "quantity": 1
+                            },
+                            {
+                                "service_code": "PC0208",
+                                "quantity": "support_staff"
                             }
                         ]
                     },
@@ -6307,6 +6325,10 @@
                             {
                                 "service_code": "PC0307",
                                 "quantity": 1
+                            },
+                            {
+                                "service_code": "PC0208",
+                                "quantity": "support_staff"
                             }
                         ]
                     },
@@ -6323,6 +6345,10 @@
                             {
                                 "service_code": "PC0302",
                                 "quantity": 1
+                            },
+                            {
+                                "service_code": "PC0208",
+                                "quantity": "support_staff"
                             }
                         ]
                     },
@@ -6339,12 +6365,7 @@
                             {
                                 "service_code": "PC0304",
                                 "quantity": 1
-                            }
-                        ]
-                    },
-                    {
-                        "criteria": [],
-                        "feeServiceCodes": [
+                            },
                             {
                                 "service_code": "PC0208",
                                 "quantity": "support_staff"
@@ -6361,26 +6382,14 @@
                 "activityTypes": [
                     "renewal"
                 ],
-                "onPaymentFileUploadedActions": [
-                    {
-                        "type": "update_renewal_status",
-                        "config_type": "internal_api_call",
-                        "label": "Update renewal status",
-                        "config": {
-                            "body_mapping": {
-                                "status": "Pending Approval",
-                                "in_print_queue": "0"
-                            }
-                        }
-                    }
-                ],
+                "onPaymentFileUploadedActions": [],
                 "onPaymentCompletedActions": [
                     {
                         "type": "email",
                         "config_type": "email",
                         "config": {
-                            "template": "theapplication will be printed",
-                            "subject": "Your application is being processed",
+                            "template": "This is to confirm that payment for your application for superintending has been received. You will be notified once your online renewal certificate and physical renewal certificate is available.",
+                            "subject": "Payment for your application for superintending has been received",
                             "admin_email": "",
                             "endpoint": "",
                             "method": "GET",
@@ -6396,7 +6405,8 @@
                         "label": "Update renewal status",
                         "config": {
                             "body_mapping": {
-                                "status": "Pending Regional Approval"
+                                "status": "Pending Authorization",
+                                "in_print_queue": "0"
                             }
                         }
                     }
@@ -7440,6 +7450,22 @@
     "defaultPrintTemplates": [
         {
             "template_name": "Default Pharmacists/Technicians Renewal Certificate Template",
+            "template_content": "<html><body><p>the application will be printed</p></body></html>"
+        },
+        {
+            "template_name": "Default Retail Pharmacy Renewal Certificate Template",
+            "template_content": "<html><body><p>the application will be printed</p></body></html>"
+        },
+        {
+            "template_name": "Default Retail Pharmacy Temporary (Online) Renewal Certificate Template",
+            "template_content": "<html><body><p>the application will be printed</p></body></html>"
+        },
+        {
+            "template_name": "Default Wholesale/Retail Pharmacy Renewal Certificate Template",
+            "template_content": "<html><body><p>the application will be printed</p></body></html>"
+        },
+        {
+            "template_name": "Default Wholesale/Retail Pharmacy Temporary (Online) Renewal Certificate Template",
             "template_content": "<html><body><p>the application will be printed</p></body></html>"
         }
     ],

@@ -444,7 +444,6 @@ class LicenseRenewalService
             $sortOrder = $filters['sortOrder'] ?? "desc";
             $isGazette = $filters['isGazette'] ?? null;
             $licenseType = $filters['license_type'] ?? null;
-            log_message('info', print_r($filters, true));
 
             //if the lisense_uuid was provided, we use it to determine the license type
             if ($license_uuid !== null && $licenseType === null) {
@@ -783,15 +782,15 @@ class LicenseRenewalService
                         "Please fill the application form to apply for renewal",
                         $this->getPortalLicenseRenewalFormFields($userData->profile_data['type'], $userData->profile_data),
                         false,
-                        $lastRenewalId
+                        null
                     );
 
                 } else {
-                    $response = new PractitionerPortalRenewalViewModelType("", null, $onlineApplicationsOpen->message, [], false, $lastRenewalId);
+                    $response = new PractitionerPortalRenewalViewModelType("", null, $onlineApplicationsOpen->message, [], false, null);
 
                 }
             } else {
-                $response = new PractitionerPortalRenewalViewModelType("", null, "You are not eligible for renewal - " . $isEligibleForRenewal->reason, [], false, $lastRenewalId);
+                $response = new PractitionerPortalRenewalViewModelType("", null, "You are not eligible for renewal - " . $isEligibleForRenewal->reason, [], false, null);
 
             }
 
@@ -913,6 +912,7 @@ class LicenseRenewalService
         $facilityDetails = $isEligibleForRenewal->licenseDetails;
         //and within the validity period
         if ($isInGoodStanding === IN_GOOD_STANDING || $isInGoodStanding === NOT_IN_GOOD_STANDING) {
+            $renewalIdToShow = $isInGoodStanding === IN_GOOD_STANDING ? $lastRenewalId : null;
             if ($eligible) {
                 //check if online applications are open
                 if ($onlineApplicationsOpen->result) {
@@ -922,15 +922,15 @@ class LicenseRenewalService
                         "Please fill the application form to apply to be a superintendent",
                         $this->getPortalLicenseRenewalFormFields($licenseType, $userData->profile_data),
                         null,
-                        $lastRenewalId
+                        $renewalIdToShow
                     );
 
                 } else {
-                    $response = new PractitionerPortalRenewalViewModelType("", $facilityDetails, $onlineApplicationsOpen->message, [], null, $lastRenewalId);
+                    $response = new PractitionerPortalRenewalViewModelType("", $facilityDetails, $onlineApplicationsOpen->message, [], null, $renewalIdToShow);
 
                 }
             } else {
-                $response = new PractitionerPortalRenewalViewModelType("", $facilityDetails, "This facility is not eligible for renewal - " . $isEligibleForRenewal->reason, [], null, $lastRenewalId);
+                $response = new PractitionerPortalRenewalViewModelType("", $facilityDetails, "This facility is not eligible for renewal - " . $isEligibleForRenewal->reason, [], null, $renewalIdToShow);
 
             }
 
