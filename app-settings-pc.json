@@ -585,6 +585,39 @@
             ]
         },
         {
+            "title": "API Keys",
+            "active_children": false,
+            "url": "",
+            "icon": "vpn_key",
+            "color": "indigo",
+            "children": [
+                {
+                    "title": "View Institutions",
+                    "url": "/apimanagement/institutions",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "New Institution",
+                    "url": "/apimanagement/institutions-form",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "API Keys",
+                    "url": "/apimanagement/api-keys",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "New API Key",
+                    "url": "/apimanagement/api-keys-form",
+                    "icon": "",
+                    "children": []
+                }
+            ]
+        },
+        {
             "title": "System Config",
             "active_children": false,
             "url": "",
@@ -1552,7 +1585,7 @@
                 {
                     "label": "Institution Type",
                     "name": "institution_type",
-                    "hint": "",
+                    "hint": "Government, Quasi-Government, CHAG, Private",
                     "options": [],
                     "type": "text",
                     "value": "",
@@ -1823,7 +1856,7 @@
             "renewalCpdCategory2Cutoff": 3,
             "renewalCpdCategory3Cutoff": 3,
             "renewalCpdTotalCutoff": 10,
-            "daysFromRenewalExpiryToOpenApplication": 0,
+            "daysFromRenewalExpiryToOpenApplication": -30,
             "revalidationPeriodInYears": 3,
             "validRenewalStatuses": [
                 "Active"
@@ -7561,6 +7594,34 @@
             "class": "General",
             "type": "array",
             "description": "Whether portal renewal is open or not"
+        },
+        "practitioners_renewal_form_declaration": {
+            "key": "practitioners_renewal_form_declaration",
+            "value": [
+                {
+                    "criteria": [],
+                    "value": "I declare that all the information provided on this form is correct and that I am a Practitioner and that I have read and understand the renewal form for Practitioners."
+                }
+            ],
+            "label": "Practitioners renewal form declaration",
+            "control_type": "textarea",
+            "class": "General",
+            "type": "string",
+            "description": "The declaration content for the renewal form for practitioners"
+        },
+        "superintendent_renewal_form_declaration": {
+            "key": "superintendent_renewal_form_declaration",
+            "value": [
+                {
+                    "criteria": [],
+                    "value": "I declare that I am a Superintendent pharmacist and that I have read and understand the renewal form for Superintendent pharmacists."
+                }
+            ],
+            "label": "Superintendent pharmacist renewal form declaration",
+            "control_type": "textarea",
+            "class": "General",
+            "type": "string",
+            "description": "The declaration content for the renewal form for practitioners"
         }
     },
     "trainingInstitutions": {

@@ -9,11 +9,14 @@ use App\Models\ApiIntegration\ApiKeyModel;
 use App\Models\ApiIntegration\ApiKeyPermissionModel;
 use App\Models\ApiIntegration\ApiRequestLogModel;
 use App\Services\ApiKeyService;
+use App\Traits\CacheInvalidatorTrait;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 
 class ApiKeysController extends ResourceController
 {
+    use CacheInvalidatorTrait;
+
     protected $modelName = ApiKeyModel::class;
     protected $format = 'json';
     private ApiKeyService $apiKeyService;
@@ -164,7 +167,7 @@ class ApiKeysController extends ResourceController
                 ], ResponseInterface::HTTP_BAD_REQUEST);
             }
 
-            CacheHelper::invalidatePattern("get_api_keys");
+            $this->invalidateCache("get_api_keys");
 
             // Return key with secrets (ONLY TIME THEY'RE SHOWN)
             return $this->respond([
@@ -231,7 +234,7 @@ class ApiKeysController extends ResourceController
             unset($updatedKey['key_secret_hash']);
             unset($updatedKey['hmac_secret']);
 
-            CacheHelper::invalidatePattern("get_api_keys");
+            $this->invalidateCache("get_api_keys");
 
             return $this->respond([
                 'message' => "API key updated successfully",
@@ -272,7 +275,7 @@ class ApiKeysController extends ResourceController
                 ], ResponseInterface::HTTP_BAD_REQUEST);
             }
 
-            CacheHelper::invalidatePattern("get_api_keys");
+            $this->invalidateCache("get_api_keys");
 
             return $this->respond([
                 'message' => "API key revoked successfully"
@@ -304,7 +307,7 @@ class ApiKeysController extends ResourceController
                 ], ResponseInterface::HTTP_BAD_REQUEST);
             }
 
-            CacheHelper::invalidatePattern("get_api_keys");
+            $this->invalidateCache("get_api_keys");
 
             return $this->respond([
                 'message' => "API key deleted successfully"
@@ -336,7 +339,7 @@ class ApiKeysController extends ResourceController
                 ], ResponseInterface::HTTP_BAD_REQUEST);
             }
 
-            CacheHelper::invalidatePattern("get_api_keys");
+            $this->invalidateCache("get_api_keys");
 
             return $this->respond([
                 'message' => "API key rotated successfully",

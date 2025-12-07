@@ -1268,7 +1268,7 @@ class AuthController extends ResourceController
 
     public function getRole($role_id)
     {
-        $cacheKey = Utils::generateHashedCacheKey('auth_role_', ['role_id' => $role_id]);
+        $cacheKey = Utils::generateHashedCacheKey('get_role_', ['role_id' => $role_id]);
         return CacheHelper::remember($cacheKey, function () use ($role_id) {
             $model = new RolesModel();
             $data = $model->find($role_id);
@@ -1367,6 +1367,7 @@ class AuthController extends ResourceController
             return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
         }
         $this->invalidateCache('get_roles');
+        $this->invalidateCache('get_role');
         return $this->respond(['message' => 'Permission added to role successfully'], ResponseInterface::HTTP_OK);
     }
 
@@ -1388,6 +1389,7 @@ class AuthController extends ResourceController
             return $this->respond(['message' => $model->errors()], ResponseInterface::HTTP_BAD_REQUEST);
         }
         $this->invalidateCache('get_roles');
+        $this->invalidateCache('get_role');
         return $this->respond(['message' => 'Permission deleted from role successfully'], ResponseInterface::HTTP_OK);
     }
 

@@ -186,4 +186,5 @@ define("SETTING_USER_EMAIL_VERIFICATION_SUBJECT", "General.user_email_verificati
 define("DEFAULT_USER_EMAIL_VERIFICATION_SUBJECT", "Email Verification");
 define("SETTING_USER_EMAIL_VERIFICATION_TEMPLATE", "General.user_email_verification_template");
 define("DEFAULT_USER_EMAIL_VERIFICATION_TEMPLATE", "<p>[name]</p> <p>Please verify your email address by entering the verification code below:  Verification Code: [token]</p><p>  This code will expire in 24 hours.</p><p>  If you did not create an account, please ignore this email.</p><p>  For security reasons, do not share this code with anyone.</p>");
-
+define("START_OF_YEAR", "start_of_year");
+define("END_OF_YEAR", "end_of_year");

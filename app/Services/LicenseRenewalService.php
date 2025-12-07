@@ -363,17 +363,18 @@ class LicenseRenewalService
      * @return array A response with a success message
      * @throws \RuntimeException If the renewal does not exist or the delete fails
      */
-    public function deleteRenewal(string $uuid, ?string $userUuid = null): array
+    public function deleteRenewal(string $uuid, ?string $userUuid = null, ?string $userLicenseNumber = null): array
     {
         $model = new LicenseRenewalModel();
-        $data = $model->where(["uuid" => $uuid])->first();
+        $data = Utils::getLicenseRenewalDetails($uuid);// $model->where(["uuid" => $uuid])->first();
 
         if (!$data) {
             throw new \RuntimeException("License renewal not found");
         }
-        //if a userUuid is provided, make sure the renewal record matches that user's uuid
+        //if a userUuid is provided, make sure the renewal record matches that user's uuid or they're the practitioner_in_charge
         if ($userUuid) {
-            if ($data['license_uuid'] != $userUuid) {
+            $isPractitionerInCharge = $userLicenseNumber && array_key_exists('practitioner_in_charge', $data) && $data['practitioner_in_charge'] == $userLicenseNumber;
+            if ($data['license_uuid'] != $userUuid && !$isPractitionerInCharge) {
                 log_message('error', "User with uuid $userUuid does not have permission to delete renewal with uuid $uuid");
                 throw new \RuntimeException("You do not have permission to delete this renewal");
             }
@@ -713,7 +714,7 @@ class LicenseRenewalService
 
         if (empty($licenseType)) {
             log_message('error', "License type not found for user: $userId");
-            throw new \InvalidArgumentException("License type not found");
+            throw new InvalidArgumentException("License type not found");
         }
         /**
          * @var PractitionerPortalRenewalViewModelType
@@ -736,8 +737,9 @@ class LicenseRenewalService
                 : (new DateTime($startDate->format('Y') . '-12-31'));
 
             $today = new DateTime();
-            $inDateRange = $today >= $startDate && $today <= $expiry;
-            if (!$inDateRange) {
+            //the person might have a valid renewal while applying for next year's renewal. in this case there would be a renewal in progress
+            $lastRenewalValid = $today <= $expiry;
+            if (!$lastRenewalValid) {
                 $isInGoodStanding = NOT_IN_GOOD_STANDING;
             } else {
                 $isInGoodStanding = $lastRenewal['status'] === APPROVED
