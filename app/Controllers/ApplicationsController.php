@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Exceptions\ApplicationFormCriteriaNotMatchedException;
+use App\Exceptions\ApplicationFormNotAvailableExternallyException;
 use App\Exceptions\ApplicationFormOutOfDateRangeException;
 use App\Helpers\AuthHelper;
 use CodeIgniter\HTTP\ResponseInterface;
@@ -477,12 +478,14 @@ class ApplicationsController extends ResourceController
         try {
             $userId = auth("tokens")->id();
             $userData = AuthHelper::getAuthUser($userId);
-            $cacheKey = Utils::generateHashedCacheKey('app_template_filling_', ['uuid' => $uuid]);
-            return CacheHelper::remember($cacheKey, function () use ($uuid, $userData) {
-                $result = $this->templateService->getApplicationTemplateForFilling($uuid, $userData);
-                return $this->respond(["data" => $result], ResponseInterface::HTTP_OK);
-            });
+            // $cacheKey = Utils::generateHashedCacheKey('app_template_filling_', ['uuid' => $uuid, 'userId' => $userId]);
+            // return CacheHelper::remember($cacheKey, function () use ($uuid, $userData) {
+            $result = $this->templateService->getApplicationTemplateForFilling($uuid, $userData);
+            return $this->respond(["data" => $result], ResponseInterface::HTTP_OK);
+            // }, 3600);
 
+        } catch (ApplicationFormNotAvailableExternallyException $e) {
+            return $this->respond(['message' => "Form is not available"], ResponseInterface::HTTP_BAD_REQUEST);
         } catch (ApplicationFormCriteriaNotMatchedException $e) {
             return $this->respond(['message' => "You are not eligible to apply for this form"], ResponseInterface::HTTP_BAD_REQUEST);
         } catch (ApplicationFormOutOfDateRangeException $e) {
@@ -525,6 +528,7 @@ class ApplicationsController extends ResourceController
             $this->invalidateCache('app_templates_');
             $this->invalidateCache('app_config_');
             $this->invalidateCache('app_template_');
+            $this->invalidateCache('app_template_filling_');
 
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
@@ -548,7 +552,7 @@ class ApplicationsController extends ResourceController
             $this->invalidateCache('app_templates_');
             $this->invalidateCache('app_config_');
             $this->invalidateCache('app_template_');
-
+            $this->invalidateCache('app_template_filling_');
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
         } catch (\InvalidArgumentException $e) {
@@ -570,7 +574,7 @@ class ApplicationsController extends ResourceController
             $this->invalidateCache('app_templates_');
             $this->invalidateCache('app_config_');
             $this->invalidateCache('app_template_');
-
+            $this->invalidateCache('app_template_filling_');
             return $this->respond($result, ResponseInterface::HTTP_OK);
 
         } catch (\RuntimeException $e) {

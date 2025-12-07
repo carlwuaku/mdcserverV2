@@ -2,6 +2,7 @@
 
 use App\Controllers\ActivitiesController;
 use App\Controllers\AdminController;
+use App\Controllers\ApiKeysController;
 use App\Controllers\AppSettingsController;
 use App\Controllers\AssetController;
 use App\Controllers\AuthController;
@@ -9,6 +10,7 @@ use App\Controllers\CpdController;
 use App\Controllers\EmailController;
 use App\Controllers\ExaminationController;
 use App\Controllers\HousemanshipController;
+use App\Controllers\InstitutionsController;
 use App\Controllers\LicensesController;
 use App\Controllers\PaymentsController;
 use App\Controllers\PortalController;
@@ -486,6 +488,33 @@ $routes->group("payment", ["namespace" => "App\Controllers", "filter" => "apiaut
     $routes->post("payment-uploads/(:num)/approve", [PaymentsController::class, "approvePaymentFileUpload/$1"], ["filter" => ["hasPermission:Approve_Payment_Evidence_File"]]);
 
 
+});
+
+// API Integration Management Routes (Institutions & API Keys)
+$routes->group("api-integration", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
+    // Institutions
+    $routes->get("institutions", [InstitutionsController::class, "index"], ["filter" => ["hasPermission:View_Institutions"]]);
+    $routes->get("institutions/list", [InstitutionsController::class, "getInstitutionsList"], ["filter" => ["hasPermission:View_Institutions"]]);
+    $routes->get("institutions/form-fields", [InstitutionsController::class, "getFormFields"], ["filter" => ["hasPermission:View_Institutions"]]);
+    $routes->get("institutions/(:segment)", [InstitutionsController::class, "show/$1"], ["filter" => ["hasPermission:View_Institutions"]]);
+    $routes->post("institutions", [InstitutionsController::class, "create"], ["filter" => ["hasPermission:Create_Institutions"]]);
+    $routes->put("institutions/(:segment)", [InstitutionsController::class, "update/$1"], ["filter" => ["hasPermission:Edit_Institutions"]]);
+    $routes->delete("institutions/(:segment)", [InstitutionsController::class, "delete/$1"], ["filter" => ["hasPermission:Delete_Institutions"]]);
+
+    // API Keys
+    $routes->get("api-keys", [ApiKeysController::class, "index"], ["filter" => ["hasPermission:View_API_Keys"]]);
+    $routes->get("api-keys/form-fields", [ApiKeysController::class, "getFormFields"], ["filter" => ["hasPermission:View_API_Keys"]]);
+    $routes->get("api-keys/permissions", [ApiKeysController::class, "getAvailablePermissions"], ["filter" => ["hasPermission:View_API_Keys"]]);
+    $routes->get("api-keys/(:segment)", [ApiKeysController::class, "show/$1"], ["filter" => ["hasPermission:View_API_Keys"]]);
+    $routes->get("api-keys/(:segment)/stats", [ApiKeysController::class, "getStats/$1"], ["filter" => ["hasPermission:View_API_Keys"]]);
+    $routes->get("api-keys/(:segment)/logs", [ApiKeysController::class, "getLogs/$1"], ["filter" => ["hasPermission:View_API_Keys"]]);
+    $routes->get("api-keys/(:segment)/documentation", [ApiKeysController::class, "getDocumentation/$1"], ["filter" => ["hasPermission:View_API_Keys"]]);
+    $routes->post("api-keys", [ApiKeysController::class, "create"], ["filter" => ["hasPermission:Create_API_Keys"]]);
+    $routes->put("api-keys/(:segment)", [ApiKeysController::class, "update/$1"], ["filter" => ["hasPermission:Edit_API_Keys"]]);
+    $routes->put("api-keys/(:segment)/permissions", [ApiKeysController::class, "updatePermissions/$1"], ["filter" => ["hasPermission:Edit_API_Keys"]]);
+    $routes->post("api-keys/(:segment)/revoke", [ApiKeysController::class, "revoke/$1"], ["filter" => ["hasPermission:Revoke_API_Keys"]]);
+    $routes->post("api-keys/(:segment)/rotate", [ApiKeysController::class, "rotate/$1"], ["filter" => ["hasPermission:Edit_API_Keys"]]);
+    $routes->delete("api-keys/(:segment)", [ApiKeysController::class, "delete/$1"], ["filter" => ["hasPermission:Delete_API_Keys"]]);
 });
 
 service('auth')->routes($routes);

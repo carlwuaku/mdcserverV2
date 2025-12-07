@@ -17,12 +17,12 @@ class AuthHelper
     public static function getAuthUser($userId)
     {
         // Try to get from cache first
-        $cacheKey = 'auth_user_' . $userId;
-        $cached = cache($cacheKey);
+        // $cacheKey = 'auth_user_' . $userId;
+        // $cached = cache($cacheKey);
 
-        if ($cached !== null) {
-            return $cached;
-        }
+        // if ($cached !== null) {
+        //     return $cached;
+        // }
 
         // Cache miss - fetch from database
         $userObject = new UsersModel();
@@ -58,7 +58,7 @@ class AuthHelper
         }
 
         // Cache for 5 minutes (300 seconds)
-        cache()->save($cacheKey, $user, 300);
+        // cache()->save($cacheKey, $user, 300);
 
         return $user;
     }

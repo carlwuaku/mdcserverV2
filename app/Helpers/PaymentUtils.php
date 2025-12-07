@@ -95,7 +95,7 @@ class PaymentUtils extends Utils
             $rate = $fee['rate'];
             $quantity = self::parseDefaultFeeQuantity($serviceCode['quantity'], $object);
             $total = $quantity * $rate;
-            $fees[] = new PaymentInvoiceItemType(null, $serviceCode['service_code'], $fee['name'], $serviceCode['quantity'], $rate, $total);
+            $fees[] = new PaymentInvoiceItemType(null, $serviceCode['service_code'], $fee['name'], $quantity, $rate, $total);
         }
         return $fees;
     }
@@ -130,10 +130,11 @@ class PaymentUtils extends Utils
         }
         if (is_string($quantity)) {
             if (isset($object[$quantity])) {
-                if (is_array($object[$quantity])) {
-                    return count($object[$quantity]);
+                //check if the value is an array. check if it's a json array
+                if (!json_decode($object[$quantity])) {
+                    return (int) $object[$quantity];
                 }
-                return (int) $object[$quantity];
+                return count(json_decode($object[$quantity]));
             }
         }
         throw new DefaultInvoiceFeeQuantityNotSetException("Invalid default fee quantity: $quantity");

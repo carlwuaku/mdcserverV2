@@ -2,6 +2,7 @@
 namespace App\Services;
 
 use App\Exceptions\ApplicationFormCriteriaNotMatchedException;
+use App\Exceptions\ApplicationFormNotAvailableExternallyException;
 use App\Exceptions\ApplicationFormOutOfDateRangeException;
 use App\Helpers\ApplicationFormActionHelper;
 use App\Helpers\CacheHelper;
@@ -513,7 +514,7 @@ class ApplicationTemplateService
     {
         $model = new ApplicationTemplateModel();
         $builder = $model->builder();
-        $builder->select("uuid, header,form_name, footer, data, open_date, close_date, on_submit_message, description, guidelines")->where('uuid', $uuid)->orWhere('form_name', $uuid);
+        $builder->select("uuid, header,form_name, footer, data, open_date, close_date, on_submit_message, description, guidelines, criteria, available_externally")->where('uuid', $uuid)->orWhere('form_name', $uuid);
         $data = $model->first();
         if (!$data) {
             //look in the default templates
@@ -526,7 +527,9 @@ class ApplicationTemplateService
         //if the user is not an admin, only show templates that match their criteria
         $isAdmin = $user->isAdmin();
         $userData = array_merge(["user_type" => $user->user_type, "region" => $user->region], (array) $user->profile_data);
-
+        if (!array_key_exists("available_externally", $data) || $data['available_externally'] != 1) {
+            throw new ApplicationFormNotAvailableExternallyException("Application form is not available externally");
+        }
         if (!empty($data['open_date']) && !empty($data['close_date'])) {
             $currentDate = date("Y-m-d");
             if ($currentDate < $data['open_date'] || $currentDate > $data['close_date']) {

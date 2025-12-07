@@ -364,11 +364,11 @@ class PaymentsController extends ResourceController
     public function getInvoiceByExternal($uuid)
     {
         try {
-            $cacheKey = Utils::generateHashedCacheKey('app_invoices_external_', ['uuid' => $uuid]);
-            return CacheHelper::remember($cacheKey, function () use ($uuid) {
-                $result = $this->paymentsService->getInvoiceByExternalUuid($uuid);
-                return $this->respond($result, ResponseInterface::HTTP_OK);
-            });
+            // $cacheKey = Utils::generateHashedCacheKey('app_invoices_external_', ['uuid' => $uuid]);
+            // return CacheHelper::remember($cacheKey, function () use ($uuid) {
+            $result = $this->paymentsService->getInvoiceByExternalUuid($uuid);
+            return $this->respond($result, ResponseInterface::HTTP_OK);
+            // });
 
         } catch (\InvalidArgumentException $e) {
             return $this->respond(['message' => $e->getMessage()], ResponseInterface::HTTP_BAD_REQUEST);

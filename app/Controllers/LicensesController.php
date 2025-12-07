@@ -386,7 +386,9 @@ class LicensesController extends ResourceController
             $userId = auth("tokens")->id();
             $user = AuthHelper::getAuthUser($userId);
             //make sure the uuid belongs to the user
-            $result = $this->renewalService->deleteRenewal($uuid, $user->profile_data['uuid']);
+            $userLicenseNumber = array_key_exists('license_number', $user->profile_data) ? $user->profile_data['license_number'] : null;
+
+            $result = $this->renewalService->deleteRenewal($uuid, $user->profile_data['uuid'], $userLicenseNumber);
             $this->invalidateCache(CACHE_KEY_PREFIX_RENEWALS);
             $this->invalidateCache('app_licenses_'); // Renewals affect license data
             $this->invalidateCache('app_licenses_count_');
@@ -560,12 +562,12 @@ class LicensesController extends ResourceController
     {
         try {
             $userId = auth("tokens")->id();
-            $cacheKey = Utils::generateHashedCacheKey(CACHE_KEY_PREFIX_RENEWALS . '_practitioner_form_', ['user_id' => $userId]);
-            return CacheHelper::remember($cacheKey, function () use ($userId) {
-                $state = $this->renewalService->getPractitionerPortalRenewal($userId);
+            // $cacheKey = Utils::generateHashedCacheKey(CACHE_KEY_PREFIX_RENEWALS . '_practitioner_form_', ['user_id' => $userId]);
+            // return CacheHelper::remember($cacheKey, function () use ($userId) {
+            $state = $this->renewalService->getPractitionerPortalRenewal($userId);
 
-                return $this->respond(["data" => $state], ResponseInterface::HTTP_OK);
-            }, 1800); // Cache for 30 minutes
+            return $this->respond(["data" => $state], ResponseInterface::HTTP_OK);
+            // }, 1800); // Cache for 30 minutes
 
         } catch (\Throwable $e) {
             log_message("error", $e);
@@ -697,7 +699,14 @@ class LicensesController extends ResourceController
                     'practitioner_in_charge',
                     'practitioner_in_charge_name',
                     'name',
-                    'business_type'
+                    'business_type',
+                    'postal_address',
+                    'phone',
+                    'email',
+                    'region',
+                    'district',
+                    'town',
+                    'suburb'
                 ];
                 foreach ($result['data'] as $renewal) {
                     $renewal->deletable = LicenseUtils::isRenewalStageDeletable($renewal->license_type, $renewal->status);
@@ -709,7 +718,7 @@ class LicensesController extends ResourceController
 
                 }
                 //set the display fields
-                $result['displayColumns'] = ['license_number', 'start_date', 'expiry', 'status'];
+                $result['displayColumns'] = ['name', 'business_type', 'license_number', 'start_date', 'expiry', 'status', 'region', 'district', 'town', 'suburb', 'email', 'phone'];
                 return $this->respond($result, ResponseInterface::HTTP_OK);
             }, 900);
 

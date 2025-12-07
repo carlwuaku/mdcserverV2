@@ -122,7 +122,6 @@ class PortalController extends ResourceController
     public function getProfileFields()
     {
         try {
-
             $data = $this->portalService->getUserProfileFields();
             return $this->respond(['data' => $data], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
@@ -138,7 +137,7 @@ class PortalController extends ResourceController
             return $this->respond(['data' => $data], ResponseInterface::HTTP_OK);
         } catch (\Throwable $th) {
             log_message('error', $th);
-            return $this->respond(['message' => 'Unable to get your profile. Please try again'], ResponseInterface::HTTP_NOT_FOUND);
+            return $this->respond(['message' => 'Unable to get setting. Please try again'], ResponseInterface::HTTP_NOT_FOUND);
         }
     }
 }

@@ -31,16 +31,12 @@ class LicenseRenewalDateGenerator extends Utils
      * @param string|null $referenceDate Optional reference date (defaults to today)
      * @return array{start_date:string, expiry_date:string} Array with 'start_date' and 'expiry_date' keys
      */
-    public function generateRenewalDates(array $license, string $referenceDate = null): array
+    public function generateRenewalDates(array $license, ?string $referenceDate = null): array
     {
         $referenceDate = $referenceDate ?: date('Y-m-d');
 
         // Find the matching rule based on criteria
         $rule = $this->findMatchingRule($license);
-
-        if (!$rule) {
-            throw new \InvalidArgumentException('No matching renewal rule found for license');
-        }
 
         $startDate = $this->calculateDate($rule['start_date'], $referenceDate, $license);
         $expiryDate = $this->calculateDate($rule['expiry_date'], $startDate, $license);
@@ -55,16 +51,16 @@ class LicenseRenewalDateGenerator extends Utils
      * Find the first matching rule based on license criteria
      *
      * @param array $license License details
-     * @return array|null Matching rule or null if none found
+     * @return array{name:string, criteria:array, start_date:string, expiry_date:string} Matching rule or null if none found
      */
-    private function findMatchingRule(array $license): ?array
+    public function findMatchingRule(array $license): array
     {
         foreach ($this->config as $rule) {
             if ($this->matchesCriteria($license, $rule['criteria'])) {
                 return $rule;
             }
         }
-        return null;
+        return $this->getDefaultConfiguration();
     }
 
     /**

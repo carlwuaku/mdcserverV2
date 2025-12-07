@@ -585,6 +585,39 @@
             ]
         },
         {
+            "title": "API Keys",
+            "active_children": false,
+            "url": "",
+            "icon": "vpn_key",
+            "color": "indigo",
+            "children": [
+                {
+                    "title": "View Institutions",
+                    "url": "/apimanagement/institutions",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "New Institution",
+                    "url": "/apimanagement/institutions-form",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "API Keys",
+                    "url": "/apimanagement/api-keys",
+                    "icon": "",
+                    "children": []
+                },
+                {
+                    "title": "New API Key",
+                    "url": "/apimanagement/api-keys-form",
+                    "icon": "",
+                    "children": []
+                }
+            ]
+        },
+        {
             "title": "System Config",
             "active_children": false,
             "url": "",
@@ -1552,7 +1585,7 @@
                 {
                     "label": "Institution Type",
                     "name": "institution_type",
-                    "hint": "",
+                    "hint": "Government, Quasi-Government, CHAG, Private",
                     "options": [],
                     "type": "text",
                     "value": "",
@@ -1823,7 +1856,7 @@
             "renewalCpdCategory2Cutoff": 3,
             "renewalCpdCategory3Cutoff": 3,
             "renewalCpdTotalCutoff": 10,
-            "daysFromRenewalExpiryToOpenApplication": 0,
+            "daysFromRenewalExpiryToOpenApplication": -30,
             "revalidationPeriodInYears": 3,
             "validRenewalStatuses": [
                 "Active"
@@ -2763,6 +2796,7 @@
                 "Pending Payment": {
                     "label": "Pending Payment",
                     "allowedTransitions": [
+                        "Pending Regional Approval",
                         "Pending Authorization"
                     ],
                     "fields": [],
@@ -2888,6 +2922,19 @@
                             ],
                             "type": "select",
                             "value": "1",
+                            "required": true,
+                            "api_url": "",
+                            "apiKeyProperty": "",
+                            "apiLabelProperty": "",
+                            "apiType": ""
+                        },
+                        {
+                            "label": "Batch number",
+                            "name": "batch_number",
+                            "hint": "",
+                            "options": [],
+                            "type": "text",
+                            "value": "",
                             "required": true,
                             "api_url": "",
                             "apiKeyProperty": "",
@@ -6285,6 +6332,10 @@
                             {
                                 "service_code": "PC0306",
                                 "quantity": 1
+                            },
+                            {
+                                "service_code": "PC0208",
+                                "quantity": "support_staff"
                             }
                         ]
                     },
@@ -6307,6 +6358,10 @@
                             {
                                 "service_code": "PC0307",
                                 "quantity": 1
+                            },
+                            {
+                                "service_code": "PC0208",
+                                "quantity": "support_staff"
                             }
                         ]
                     },
@@ -6323,6 +6378,10 @@
                             {
                                 "service_code": "PC0302",
                                 "quantity": 1
+                            },
+                            {
+                                "service_code": "PC0208",
+                                "quantity": "support_staff"
                             }
                         ]
                     },
@@ -6339,12 +6398,7 @@
                             {
                                 "service_code": "PC0304",
                                 "quantity": 1
-                            }
-                        ]
-                    },
-                    {
-                        "criteria": [],
-                        "feeServiceCodes": [
+                            },
                             {
                                 "service_code": "PC0208",
                                 "quantity": "support_staff"
@@ -6361,26 +6415,14 @@
                 "activityTypes": [
                     "renewal"
                 ],
-                "onPaymentFileUploadedActions": [
-                    {
-                        "type": "update_renewal_status",
-                        "config_type": "internal_api_call",
-                        "label": "Update renewal status",
-                        "config": {
-                            "body_mapping": {
-                                "status": "Pending Approval",
-                                "in_print_queue": "0"
-                            }
-                        }
-                    }
-                ],
+                "onPaymentFileUploadedActions": [],
                 "onPaymentCompletedActions": [
                     {
                         "type": "email",
                         "config_type": "email",
                         "config": {
-                            "template": "theapplication will be printed",
-                            "subject": "Your application is being processed",
+                            "template": "This is to confirm that payment for your application for superintending has been received. You will be notified once your online renewal certificate and physical renewal certificate is available.",
+                            "subject": "Payment for your application for superintending has been received",
                             "admin_email": "",
                             "endpoint": "",
                             "method": "GET",
@@ -6396,7 +6438,8 @@
                         "label": "Update renewal status",
                         "config": {
                             "body_mapping": {
-                                "status": "Pending Regional Approval"
+                                "status": "Pending Authorization",
+                                "in_print_queue": "0"
                             }
                         }
                     }
@@ -7441,6 +7484,22 @@
         {
             "template_name": "Default Pharmacists/Technicians Renewal Certificate Template",
             "template_content": "<html><body><p>the application will be printed</p></body></html>"
+        },
+        {
+            "template_name": "Default Retail Pharmacy Renewal Certificate Template",
+            "template_content": "<html><body><p>the application will be printed</p></body></html>"
+        },
+        {
+            "template_name": "Default Retail Pharmacy Temporary (Online) Renewal Certificate Template",
+            "template_content": "<html><body><p>the application will be printed</p></body></html>"
+        },
+        {
+            "template_name": "Default Wholesale/Retail Pharmacy Renewal Certificate Template",
+            "template_content": "<html><body><p>the application will be printed</p></body></html>"
+        },
+        {
+            "template_name": "Default Wholesale/Retail Pharmacy Temporary (Online) Renewal Certificate Template",
+            "template_content": "<html><body><p>the application will be printed</p></body></html>"
         }
     ],
     "systemSettings": {
@@ -7535,6 +7594,34 @@
             "class": "General",
             "type": "array",
             "description": "Whether portal renewal is open or not"
+        },
+        "practitioners_renewal_form_declaration": {
+            "key": "practitioners_renewal_form_declaration",
+            "value": [
+                {
+                    "criteria": [],
+                    "value": "I declare that all the information provided on this form is correct and that I am a Practitioner and that I have read and understand the renewal form for Practitioners."
+                }
+            ],
+            "label": "Practitioners renewal form declaration",
+            "control_type": "textarea",
+            "class": "General",
+            "type": "string",
+            "description": "The declaration content for the renewal form for practitioners"
+        },
+        "superintendent_renewal_form_declaration": {
+            "key": "superintendent_renewal_form_declaration",
+            "value": [
+                {
+                    "criteria": [],
+                    "value": "I declare that I am a Superintendent pharmacist and that I have read and understand the renewal form for Superintendent pharmacists."
+                }
+            ],
+            "label": "Superintendent pharmacist renewal form declaration",
+            "control_type": "textarea",
+            "class": "General",
+            "type": "string",
+            "description": "The declaration content for the renewal form for practitioners"
         }
     },
     "trainingInstitutions": {

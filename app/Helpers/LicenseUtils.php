@@ -64,11 +64,26 @@ class LicenseUtils extends Utils
         try {
             $model = new LicenseRenewalModel();
             $renewalDateGenerator = new LicenseRenewalDateGenerator();
-            $dates = $renewalDateGenerator->generateRenewalDates($data);
             $license = self::getLicenseDetails($license_uuid);
+            //update this date range. if it's start of year to end of year, it should start from the greater of year(last renewal expiry) + 1 and the current year
+            $dateRules = $renewalDateGenerator->findMatchingRule($license);
+            $referenceDate = date('Y-m-d');
+            if ($dateRules['start_date'] == START_OF_YEAR && $dateRules['expiry_date'] == END_OF_YEAR) {
+                // it should start from the greater of year(last renewal expiry) + 1 and the current year
+                if (array_key_exists('last_renewal_expiry', $license)) {
+                    $lastRenewalDate = $license['last_renewal_expiry'];
+
+                    $referenceDate = (date('Y', strtotime($lastRenewalDate)) == date('Y'))
+                        ? (date('Y') + 1) . '-01-01'  // Next year
+                        : date('Y') . '-01-01';        // This year
+                } else {
+                    $referenceDate = date('Y-m-d');
+                }
+            }
+            $dates = $renewalDateGenerator->generateRenewalDates($license, $referenceDate);
+
             $licenseType = $license['type'];
             $license_number = $license['license_number'];
-
 
             $data['start_date'] = $dates['start_date'];
             $data['expiry'] = $dates['expiry_date'];
@@ -580,7 +595,6 @@ class LicenseUtils extends Utils
         $licenseDef = Utils::getLicenseSetting($licenseType);
         $mustBeInGoodStandingToRenew = $licenseDef->mustBeInGoodStandingToRenew;
         $lastRenewalDate = array_key_exists('last_renewal_expiry', $licenseDetails) ? $licenseDetails['last_renewal_expiry'] : null;
-        log_message('info', print_r($licenseDetails, true));
         if (!$lastRenewalDate) {
             log_message('info', 'Portal renewal application is open. No previous renewal was found');
             return new RenewalOpenResultType(true, "Portal renewal application is open. No previous renewal was found");
@@ -627,7 +641,6 @@ class LicenseUtils extends Utils
         $returnValue = null;
         foreach ($setting->value as $value) {
             if (CriteriaType::matchesCriteria((array) $userData, $value->criteria)) {
-                log_message('info', 'portal_renewal_open value: ' . json_encode($value));
                 $returnValue = $value->value;
                 break;
             }

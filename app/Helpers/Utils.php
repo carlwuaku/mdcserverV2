@@ -1303,8 +1303,7 @@ class Utils
                 $licenseDetails = $subModel->getLicenseDetailsFromSubTable($uuid, $licenseType);
                 $data = array_merge($data, $licenseDetails);
             } catch (\Throwable $th) {
-                log_message('error', "License with no details {{$data['license_number']} }" . $th);
-                log_message('error', "License with no details {{$data['license_number']} }" . $th->getMessage());
+                log_message('error', "License with no details {{$uuid} }" . $th);
             }
         }
 
@@ -1464,7 +1463,7 @@ class Utils
         if (array_key_exists('qualifications', $fullData) && !empty($fullData['qualifications'])) {
             $fullData['qualifications'] = json_decode($fullData['qualifications'], true);
         }
-        return array_merge($fullData, $data_snapshot);
+        return array_merge($data_snapshot, $fullData);
     }
 
     /**
