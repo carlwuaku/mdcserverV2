@@ -125,36 +125,50 @@ class EmailHelper extends Utils
 
     // }
 
-    public static function queueEmail(EmailConfig $emailConfig)
+    public static function queueEmail(EmailConfig $emailConfig, $priority = 2, $scheduledAt = null)
     {
         $emailQueueModel = new \App\Models\EmailQueueModel();
         $emailQueueLogModel = new \App\Models\EmailQueueLogModel();
 
+        // Get default sender info if not provided
+        $sender = $emailConfig->sender ?? self::getAppSettings('defaultEmailSenderEmail');
+
         $queueData = [
             'to_email' => $emailConfig->to,
-            'from_email' => $emailConfig->sender,
+            'from_email' => $sender,
             'subject' => $emailConfig->subject,
             'message' => $emailConfig->message,
             'cc' => $emailConfig->cc,
             'bcc' => $emailConfig->bcc,
-            'attachment_path' => $emailConfig->attachments,
+            'attachment_path' => is_array($emailConfig->attachments) ? json_encode($emailConfig->attachments) : $emailConfig->attachments,
             'status' => 'pending',
-            'priority' => 2, // Default to medium priority
-            'scheduled_at' => null // Send immediately
+            'priority' => $priority,
+            'max_attempts' => 3,
+            'attempts' => 0,
+            'scheduled_at' => $scheduledAt // Send immediately if null
         ];
 
         // Insert into queue
         $emailId = $emailQueueModel->queueEmail($queueData);
 
         // Log the initial status
-        $emailQueueLogModel->logStatusChange($emailId, 'pending', 'Email queued');
+        $emailQueueLogModel->logStatusChange($emailId, 'pending', 'Email queued for async delivery');
 
         return $emailId;
     }
 
 
-    public static function sendEmail(EmailConfig $emailConfig, $emailId = null)
+    public static function sendEmail(EmailConfig $emailConfig, $emailId = null, $forceSync = false)
     {
+        // Check if async mode is enabled and we're not forcing sync
+        $asyncMode = getenv('EMAIL_ASYNC_MODE') === 'true' || getenv('EMAIL_ASYNC_MODE') === '1';
+
+        if ($asyncMode && !$forceSync && !$emailId) {
+            // Queue the email instead of sending immediately
+            return self::queueEmail($emailConfig);
+        }
+
+        // Send synchronously (either forced or processing from queue)
         $emailQueueModel = new \App\Models\EmailQueueModel();
         $emailQueueLogModel = new \App\Models\EmailQueueLogModel();
         $senderName = self::getAppSettings('defaultEmailSenderName');
@@ -247,7 +261,7 @@ class EmailHelper extends Utils
                 $queuedEmail['bcc'],
                 $queuedEmail['attachment_path']
             );
-            self::sendEmail($emailConfig, $queuedEmail['id']);
+            self::sendEmail($emailConfig, $queuedEmail['id'], true); // Force sync when processing from queue
 
             return true;
         } catch (\Throwable $th) {
@@ -261,5 +275,41 @@ class EmailHelper extends Utils
 
             return false;
         }
+    }
+
+    /**
+     * Process multiple emails from the queue
+     * @param int $batchSize Number of emails to process in this batch
+     * @return array Statistics about the processing
+     */
+    public static function processEmailQueue($batchSize = 50)
+    {
+        $emailQueueModel = new \App\Models\EmailQueueModel();
+
+        // Get pending emails
+        $pendingEmails = $emailQueueModel->getPendingEmails($batchSize);
+
+        $stats = [
+            'total' => count($pendingEmails),
+            'sent' => 0,
+            'failed' => 0,
+            'skipped' => 0
+        ];
+
+        foreach ($pendingEmails as $email) {
+            try {
+                $result = self::processQueuedEmail($email);
+                if ($result) {
+                    $stats['sent']++;
+                } else {
+                    $stats['failed']++;
+                }
+            } catch (\Throwable $th) {
+                log_message('error', 'Error processing email ID ' . $email['id'] . ': ' . $th->getMessage());
+                $stats['failed']++;
+            }
+        }
+
+        return $stats;
     }
 }

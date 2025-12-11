@@ -263,6 +263,9 @@ $routes->group("email", ["namespace" => "App\Controllers", "filter" => "apiauth"
     $routes->put("queue/retry", [EmailController::class, "retry"], ["filter" => ["hasPermission:Send_Email"]]);
 });
 
+// Cron endpoint for processing email queue (no auth required, but can be secured with token)
+$routes->post("cron/email/process-queue", [EmailController::class, "processQueue"]);
+
 $routes->group("applications", ["namespace" => "App\Controllers", "filter" => "apiauth"], function (RouteCollection $routes) {
     $routes->put("details/(:segment)", [ApplicationsController::class, "updateApplication/$1"], ["filter" => ["hasPermission:Update_Application_Forms"]]);
     $routes->delete("details/(:segment)", [ApplicationsController::class, "deleteApplication/$1"], ["filter" => ["hasPermission:Delete_Application_Forms"]]);

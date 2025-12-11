@@ -442,4 +442,73 @@ class EmailController extends ResourceController
       }
    }
 
+   /**
+    * @OA\Post(
+    *     path="/email/process-queue",
+    *     summary="Process email queue (Cron endpoint)",
+    *     description="Process pending emails from the queue. This endpoint is designed to be called by a cron job. It can be secured with a token or IP whitelist.",
+    *     tags={"Email"},
+    *     @OA\Parameter(
+    *         name="batch_size",
+    *         in="query",
+    *         description="Number of emails to process in this batch",
+    *         required=false,
+    *         @OA\Schema(type="integer", default=50)
+    *     ),
+    *     @OA\Parameter(
+    *         name="cron_token",
+    *         in="query",
+    *         description="Cron token for authentication (if configured)",
+    *         required=false,
+    *         @OA\Schema(type="string")
+    *     ),
+    *     @OA\Response(
+    *         response=200,
+    *         description="Queue processed successfully",
+    *         @OA\JsonContent(
+    *             @OA\Property(property="message", type="string"),
+    *             @OA\Property(property="stats", type="object",
+    *                 @OA\Property(property="total", type="integer"),
+    *                 @OA\Property(property="sent", type="integer"),
+    *                 @OA\Property(property="failed", type="integer")
+    *             )
+    *         )
+    *     ),
+    *     @OA\Response(
+    *         response=401,
+    *         description="Unauthorized - invalid cron token"
+    *     )
+    * )
+    */
+   public function processQueue()
+   {
+      try {
+         // Optional: Verify cron token for security
+         $cronToken = $this->request->getVar('cron_token');
+         $expectedToken = getenv('EMAIL_CRON_TOKEN');
+
+         if ($expectedToken && $cronToken !== $expectedToken) {
+            return $this->respond([
+               'message' => 'Unauthorized'
+            ], ResponseInterface::HTTP_UNAUTHORIZED);
+         }
+
+         $batchSize = $this->request->getVar('batch_size') ?? 50;
+
+         // Process the queue
+         $stats = EmailHelper::processEmailQueue((int)$batchSize);
+
+         return $this->respond([
+            'message' => 'Queue processed successfully',
+            'stats' => $stats
+         ], ResponseInterface::HTTP_OK);
+
+      } catch (\Throwable $th) {
+         log_message('error', 'Error processing email queue: ' . $th->getMessage());
+         return $this->respond([
+            'message' => 'Error processing queue: ' . $th->getMessage()
+         ], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+      }
+   }
+
 }

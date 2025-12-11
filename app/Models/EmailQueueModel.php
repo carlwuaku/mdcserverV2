@@ -70,8 +70,10 @@ class EmailQueueModel extends MyBaseModel implements TableDisplayInterface
     public function getPendingEmails($limit = 50)
     {
         return $this->where('status', 'pending')
-            ->where('scheduled_at <=', date('Y-m-d H:i:s'))
-            ->orWhere('scheduled_at', null)
+            ->groupStart()
+                ->where('scheduled_at <=', date('Y-m-d H:i:s'))
+                ->orWhere('scheduled_at IS NULL')
+            ->groupEnd()
             ->orderBy('priority', 'ASC')
             ->orderBy('created_at', 'ASC')
             ->limit($limit)
